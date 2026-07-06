@@ -1,0 +1,115 @@
+{
+ "day": 4,
+ "pop": 14,
+ "seed_counter": 16,
+ "buildings": [
+  {
+   "type": "mushroomhouse",
+   "gx": -1,
+   "gy": 0,
+   "seed": 1,
+   "day": 1
+  },
+  {
+   "type": "burjhouse",
+   "gx": 0,
+   "gy": 1,
+   "seed": 2,
+   "day": 2
+  },
+  {
+   "type": "casinohouse",
+   "gx": -1,
+   "gy": 1,
+   "seed": 3,
+   "day": 2
+  },
+  {
+   "type": "cathouse",
+   "gx": -1,
+   "gy": -1,
+   "seed": 4,
+   "day": 2
+  },
+  {
+   "type": "castlehouse",
+   "gx": 0,
+   "gy": 0,
+   "seed": 5,
+   "day": 2
+  },
+  {
+   "type": "eiffelhouse",
+   "gx": -2,
+   "gy": 0,
+   "seed": 6,
+   "day": 2
+  },
+  {
+   "type": "flowerhouse",
+   "gx": 0,
+   "gy": -1,
+   "seed": 7,
+   "day": 2
+  },
+  {
+   "type": "toilethouse",
+   "gx": 0,
+   "gy": 2,
+   "seed": 8,
+   "day": 3,
+   "face": "e"
+  },
+  {
+   "type": "beachhouse",
+   "gx": 1,
+   "gy": 0,
+   "seed": 9,
+   "day": 3
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -1,
+   "seed": 10,
+   "day": 3
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 1,
+   "seed": 11,
+   "day": 3
+  },
+  {
+   "type": "cottagehouse",
+   "gx": 2,
+   "gy": 0,
+   "seed": 12,
+   "day": 4,
+   "face": "e"
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 3,
+   "seed": 13,
+   "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -3,
+   "seed": 14,
+   "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 0,
+   "seed": 15,
+   "day": 4
+  }
+ ],
+ "milestones": []
+}

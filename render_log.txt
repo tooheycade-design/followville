@@ -1,0 +1,16 @@
+=== HERO+FIREWORKS ===
+RESULT {"day": 4, "population": 14, "buildings": 15, "added": 4, "removed": 0, "time": "sunset", "season": "summer", "milestones": [], "state_file": "/Users/cadetoohey/Documents/neighborhood/world_state.json"}
+VIDEO /Users/cadetoohey/Documents/neighborhood/renders/day_004_hero_
+DESKTOP /Users/cadetoohey/Desktop/day_004_hero_0001-0160.mp4
+=== OVERHEAD FINAL ===
+RESULT {"day": 4, "population": 14, "buildings": 15, "added": 0, "removed": 0, "time": "sunset", "season": "summer", "milestones": [], "state_file": "/Users/cadetoohey/Documents/neighborhood/world_state.json"}
+VIDEO /Users/cadetoohey/Documents/neighborhood/renders/day_004_overhead_
+DESKTOP /Users/cadetoohey/Desktop/day_004_overhead_0001-0142.mp4
+00:00.589  blend            | Read blend: "/Users/cadetoohey/Documents/neighborhood/neighborhood.blend"
+Info: Saved "neighborhood.blend"
+TEXT REFRESHED
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:30:33)
+scripts disabled for "/Users/cadetoohey/Documents/neighborhood/neighborhood.blend", skipping 'neighborhood_blender.py'
+
+Blender quit
+ALL_DONE

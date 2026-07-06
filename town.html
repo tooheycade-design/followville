@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Followville — Walk the Town</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; height:100%; background:#8fb7d8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  canvas { display:block; }
+
+  #hud {
+    position:fixed; top:14px; left:14px; z-index:5;
+    color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.55);
+    font-size:15px; font-weight:600; letter-spacing:0.2px;
+    pointer-events:none; user-select:none;
+  }
+  #hud .sub { font-size:12px; font-weight:400; opacity:0.85; margin-top:2px; }
+
+  #homeLink {
+    position:fixed; top:14px; right:14px; z-index:6;
+    color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.55);
+    font-size:13px; font-weight:600; text-decoration:none;
+    background:rgba(0,0,0,0.25); padding:7px 14px; border-radius:20px;
+    backdrop-filter: blur(4px);
+  }
+
+  #crosshair {
+    position:fixed; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px;
+    border-radius:50%; background:rgba(255,255,255,0.85); z-index:5;
+    box-shadow:0 0 3px rgba(0,0,0,0.5); display:none;
+  }
+
+  #startScreen {
+    position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #6fb4e0, #3f7fb0 70%);
+    color:#fff; text-align:center; flex-direction:column; cursor:pointer;
+  }
+  #startScreen h1 { font-size:28px; margin:0 0 8px; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+  #startScreen p { margin:4px 0; opacity:0.9; font-size:14px; }
+  #startScreen .btn {
+    margin-top:22px; padding:12px 28px; border-radius:30px; background:#fff; color:#2b6a94;
+    font-weight:700; font-size:15px; box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  #loading { position:fixed; inset:0; z-index:20; display:flex; align-items:center;
+    justify-content:center; background:#3f7fb0; color:#fff; font-size:16px; }
+
+  #hint {
+    position:fixed; bottom:14px; left:50%; transform:translateX(-50%); z-index:5;
+    color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.55); font-size:12px; opacity:0.8;
+    pointer-events:none; user-select:none; display:none;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">loading followville…</div>
+
+<a id="homeLink" href="index.html">← Followville</a>
+
+<div id="startScreen" style="display:none;">
+  <h1>Followville</h1>
+  <p id="startSub">a town where every follower is a house</p>
+  <p>WASD or arrows to walk · mouse to look · shift to run</p>
+  <div class="btn">click to enter</div>
+</div>
+
+<div id="hud" style="display:none;">
+  <div id="hudMain">Followville</div>
+  <div class="sub" id="hudSub"></div>
+</div>
+<div id="crosshair"></div>
+<div id="hint">ESC to release mouse</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+/* ══════════════════════════ WORLD LAYOUT CONSTANTS ══════════════════════════
+   Mirrors neighborhood_blender.py so the web town matches the Blender town. */
+const LOT = 10, BLOCK_N = 3, ROAD = 6, PITCH = BLOCK_N * LOT + ROAD;
+
+const WALLS = [[0.96,0.90,0.81],[0.91,0.84,0.77],[0.97,0.82,0.79],
+               [0.85,0.89,0.87],[0.90,0.89,0.94],[0.98,0.93,0.82],[0.86,0.91,0.96]];
+const ROOFS = [[0.75,0.34,0.31],[0.54,0.60,0.36],[0.36,0.49,0.60],
+               [0.71,0.52,0.42],[0.49,0.42,0.57],[0.66,0.37,0.43]];
+const GREENS = [[0.31,0.54,0.31],[0.36,0.61,0.33],[0.25,0.49,0.27]];
+const DOOR = c(0.36,0.24,0.17), WINDOW = c(0.95,0.90,0.70), WINDARK = c(0.16,0.22,0.30),
+      CAP = c(0.32,0.34,0.38), METAL = c(0.25,0.27,0.30), BULB = c(1.0,0.95,0.75),
+      TRUNK = c(0.44,0.31,0.21), WATER = c(0.30,0.58,0.78), GRASS = c(0.40,0.62,0.31);
+
+function c(r,g,b){ return new THREE.Color(r,g,b); }
+function pick(arr, i){ return c(...arr[i % arr.length]); }
+
+/* deterministic seeded RNG (not the same sequence as Python, but stable per-seed) */
+function rngFor(seed){
+  let a = (seed * 2654435761) >>> 0 || 1;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ══════════════════════════════ MESH HELPERS ══════════════════════════════
+   Blender is Z-up (x,y,z). Three.js is Y-up. Mapping used everywhere below:
+     three.x = blender.x   three.y = blender.z (height)   three.z = blender.y (depth)
+   Boxes/cones are specified with their BOTTOM at the given z, matching the
+   original Blender helpers, so porting shapes over is a near copy/paste. */
+const matCache = new Map();
+function lam(color, rough = 0.82){
+  const key = color.getHexString() + "_" + rough;
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.04 }));
+  return matCache.get(key);
+}
+
+function addBox(group, w, d, h, x, y, z, color){
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lam(color));
+  mesh.position.set(x, z + h/2, y);
+  group.add(mesh);
+  return mesh;
+}
+
+function addCone(group, rBot, rTop, h, sides, x, y, z, color, rotY = 0){
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, sides), lam(color));
+  mesh.position.set(x, z + h/2, y);
+  mesh.rotation.y = rotY;
+  group.add(mesh);
+  return mesh;
+}
+
+function addPrismRoof(group, w, d, h, x, y, z, color){
+  const hw = w/2, hd = d/2;
+  const pos = new Float32Array([
+    -hw,0,-hd,  hw,0,-hd,  hw,0,hd,  -hw,0,hd,
+    -hw,h,0,    hw,h,0
+  ]);
+  const idx = [0,1,2, 0,2,3, 0,4,5, 0,5,1, 2,5,4, 2,4,3, 0,3,4, 1,5,2];
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.03, side: THREE.DoubleSide }));
+  mesh.position.set(x, z, y);
+  group.add(mesh);
+  return mesh;
+}
+
+function buildTree(group, rng, scale, px, py){
+  const s = scale;
+  addCone(group, 0.4*s, 0.3*s, 2.0*s, 6, px, py, 0, TRUNK);
+  const green = pick(GREENS, Math.floor(rng()*GREENS.length));
+  if (rng() < 0.5){
+    addCone(group, 1.8*s, 0, 3.0*s, 7, px, py, 1.8*s, green);
+    addCone(group, 1.3*s, 0, 2.3*s, 7, px, py, 3.6*s, green);
+  } else {
+    addCone(group, 1.9*s, 0.7*s, 2.8*s, 7, px, py, 1.8*s, green);
+    addCone(group, 0.7*s, 0, 0.9*s, 7, px, py, 4.6*s, green);
+  }
+}
+
+function buildBushProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const n = 2 + Math.floor(rng()*2);
+  for (let i=0;i<n;i++){
+    const green = pick(GREENS, Math.floor(rng()*GREENS.length));
+    const s = 0.6 + rng()*0.7;
+    addCone(g, s, s*0.55, s*1.1, 7, (rng()-0.5)*3.5, (rng()-0.5)*3.5, 0, green);
+  }
+  if (rng() < 0.5){
+    const fl = c(0.95,0.70,0.78);
+    for (let i=0;i<3;i++) addCone(g, 0.14, 0.1, 0.25, 6, (rng()-0.5)*4, (rng()-0.5)*4, 0, fl);
+  }
+  return g;
+}
+
+function buildRockProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const grey = c(0.62,0.61,0.60);
+  const n = 1 + Math.floor(rng()*3);
+  for (let i=0;i<n;i++){
+    const s = 0.5 + rng()*0.8;
+    const r = addCone(g, s, s*0.4, s*0.8, 6, (rng()-0.5)*3.5, (rng()-0.5)*3.5, 0, grey);
+    r.rotation.y = -rng()*Math.PI*2;
+  }
+  return g;
+}
+
+function buildStreetlightProp(){
+  const g = new THREE.Group();
+  addCone(g, 0.14, 0.10, 4.6, 6, 0, 0, 0, METAL);
+  addBox(g, 1.3, 0.14, 0.14, 0.65, 0, 4.5, METAL);
+  addBox(g, 0.5, 0.4, 0.22, 1.2, 0, 4.35, BULB);
+  return g;
+}
+
+function buildCarProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const body = pick(ROOFS, Math.floor(rng()*ROOFS.length));
+  addBox(g, 3.6, 1.7, 0.85, 0, 0, 0.35, body);
+  addBox(g, 1.9, 1.5, 0.7, -0.2, 0, 1.2, WINDARK);
+  for (const dx of [-1.15, 1.15]) for (const dy of [-0.85, 0.85])
+    addCone(g, 0.36, 0.36, 0.3, 10, dx, dy, 0.0, METAL);
+  return g;
+}
+
+/* ══════════════════════════════ HOUSE BUILDERS ══════════════════════════════ */
+
+function buildHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const wall = pick(WALLS, Math.floor(rng()*WALLS.length));
+  const roof = pick(ROOFS, Math.floor(rng()*ROOFS.length));
+  const w = 5.5 + rng()*1.5, d = 5.0 + rng()*1.2, h = 3.4 + rng()*1.2;
+  addBox(g, w, d, h, 0, 0, 0, wall);
+  addPrismRoof(g, w+0.7, d+0.7, 1.9+rng(), 0, 0, h, roof);
+  addBox(g, 1.1, 0.25, 1.9, (rng()-0.5)*w*0.35, -d/2-0.1, 0, DOOR);
+  addBox(g, 1.0, 0.2, 0.9, -w*0.28, -d/2-0.08, 1.6, WINDOW);
+  addBox(g, 1.0, 0.2, 0.9,  w*0.28, -d/2-0.08, 1.6, WINDOW);
+  if (rng() < 0.6) addBox(g, 0.7, 0.7, 1.3, w*0.25, d*0.15, h+0.8, CAP);
+  if (rng() < 0.65) buildTree(g, rng, 0.6+rng()*0.4, (rng()<0.5?1:-1)*(w/2+1.5), (rng()-0.5)*3);
+  g.userData.radius = Math.max(w, d) * 0.62;
+  return g;
+}
+
+function buildMushroomHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const cream = c(0.97,0.94,0.85);
+  const caps = [[0.52,0.06,0.05],[0.58,0.13,0.04],[0.48,0.05,0.10]];
+  const red = c(...caps[seed % 3]);
+  const white = c(0.98,0.97,0.93);
+  addCone(g, 2.9, 2.35, 3.4, 24, 0, 0, 0, cream);
+  addBox(g, 1.15, 0.35, 2.0, 0, -2.7, 0, DOOR);
+  for (const t of [Math.PI*210/180, Math.PI*330/180]){
+    const win = addBox(g, 0.95, 0.5, 0.95, 2.5*Math.cos(t), 2.5*Math.sin(t), 1.5, WINDOW);
+    win.rotation.y = -(t + Math.PI/2);
+  }
+  addCone(g, 4.95, 4.55, 0.4, 24, 0, 0, 3.1, cream);
+  addCone(g, 4.8, 1.0, 2.8, 24, 0, 0, 3.4, red);
+  addCone(g, 1.02, 0.0, 0.6, 24, 0, 0, 6.18, red);
+  for (let i=0;i<7;i++){
+    const t = rng()*Math.PI*2, r = 1.7 + rng()*2.3;
+    const z = 3.4 + (4.8-r)/(4.8-1.0)*2.8;
+    const s = 0.32 + rng()*0.38;
+    addCone(g, s, s*0.7, 0.5, 10, r*Math.cos(t), r*Math.sin(t), z-0.3, white);
+  }
+  addCone(g, 0.45, 0.38, 1.0, 16, 3.6, -1.6, 0, cream);
+  addCone(g, 1.05, 0.15, 0.85, 16, 3.6, -1.6, 0.95, red);
+  buildTree(g, rng, 0.75, -3.6, 1.8);
+  g.userData.radius = 5.2;
+  return g;
+}
+
+function buildCasinoHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const cream = c(0.96,0.92,0.82), gold = c(0.78,0.62,0.22), red = c(0.62,0.10,0.12);
+  addBox(g, 6.4, 5.4, 3.6, 0, 0, 0, cream);
+  addBox(g, 6.9, 5.9, 0.5, 0, 0, 3.6, gold);
+  addBox(g, 1.5, 0.3, 2.2, 0.6, -2.75, 0, DOOR);
+  addBox(g, 1.7, 1.6, 0.06, 0.6, -3.6, 0, red);
+  addBox(g, 1.3, 0.2, 1.1, -1.8, -2.75, 1.4, WINDARK);
+  const sign = addBox(g, 2.3, 0.4, 3.3, -2.6, -3.1, 0.4, red);
+  sign.rotation.y = -Math.PI*14/180;
+  for (let i=0;i<5;i++) addCone(g, 0.14, 0.1, 0.25, 6, -3.45+i*0.47, -3.45+i*0.11, 3.9, BULB);
+  addCone(g, 0.75, 0.0, 0.9, 5, -2.9, -3.2, 3.95, gold);
+  const die = addBox(g, 1.5, 1.5, 1.5, 1.8, 1.2, 4.1, c(0.97,0.97,0.97));
+  die.rotation.y = -Math.PI*28/180;
+  for (const [dx,dy] of [[-0.35,-0.35],[0.35,0.35],[0,0]])
+    addCone(g, 0.16, 0.16, 0.08, 8, 1.8+dx, 1.2+dy, 5.6, WINDARK);
+  buildTree(g, rng, 0.7, 3.2, -1.8);
+  g.userData.radius = 5.0;
+  return g;
+}
+
+function buildCatHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const fur = c(0.78,0.74,0.71), dark = c(0.45,0.42,0.40), pink = c(0.92,0.60,0.62);
+  addBox(g, 6.0, 5.2, 4.2, 0, 0, 0, fur);
+  addPrismRoof(g, 6.3, 5.5, 0.9, 0, 0, 4.2, fur);
+  for (const sx of [-1,1]){
+    const ear = addCone(g, 0.9, 0.0, 1.8, 4, sx*2.0, -1.4, 4.6, dark);
+    ear.rotation.y = -Math.PI/4;
+  }
+  for (const sx of [-1,1]){
+    addBox(g, 1.05, 0.18, 1.05, sx*1.5, -2.68, 2.6, c(0.97,0.97,0.95));
+    addBox(g, 0.4, 0.12, 0.75, sx*1.5, -2.78, 2.75, WINDARK);
+  }
+  const nose = addBox(g, 0.55, 0.2, 0.55, 0, -2.75, 1.95, pink);
+  nose.rotation.x = -Math.PI/4;
+  for (const sx of [-1,1]){
+    const angles = [-12,0,12];
+    for (let i=0;i<3;i++){
+      const wh = addBox(g, 1.5, 0.08, 0.08, sx*2.6, -2.8, 2.0 + i*0.25, dark);
+      wh.rotation.y = -Math.PI*angles[i]/180;
+    }
+  }
+  addBox(g, 1.3, 0.3, 1.9, 0, -2.7, 0, DOOR);
+  addCone(g, 0.3, 0.26, 2.6, 8, 2.6, 2.9, 0, dark);
+  for (const sx of [-1,1]) addBox(g, 1.0, 0.9, 0.5, sx*1.1, -2.9, 0, fur);
+  buildTree(g, rng, 0.65, -3.3, 2.0);
+  g.userData.radius = 5.2;
+  return g;
+}
+
+function buildCastleHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stone = c(0.63,0.63,0.67), stone2 = c(0.70,0.70,0.73), blue = c(0.25,0.33,0.52), red = c(0.60,0.12,0.12);
+  addBox(g, 5.6, 5.6, 4.2, 0, 0, 0, stone);
+  for (let i=-2;i<=2;i++){
+    addBox(g, 0.7, 0.55, 0.7, i*1.25, -2.65, 4.2, stone2);
+    addBox(g, 0.7, 0.55, 0.7, i*1.25,  2.65, 4.2, stone2);
+  }
+  for (const sx of [-1,1]) for (const sy of [-1,1]){
+    const x = sx*2.8, y = sy*2.8;
+    addCone(g, 1.05, 0.95, 5.4, 10, x, y, 0, stone2);
+    addCone(g, 1.35, 0.0, 1.9, 10, x, y, 5.4, blue);
+  }
+  addBox(g, 1.6, 0.4, 2.5, 0, -2.85, 0, DOOR);
+  addBox(g, 0.3, 0.2, 0.9, -1.4, -2.85, 2.6, WINDARK);
+  addBox(g, 0.3, 0.2, 0.9,  1.4, -2.85, 2.6, WINDARK);
+  addBox(g, 0.9, 0.1, 1.6, 0, -2.9, 2.3, red);
+  addBox(g, 1.0, 0.06, 0.5, 3.35, 2.8, 8.5, red);
+  buildTree(g, rng, 0.6, -3.6, -0.5);
+  g.userData.radius = 5.8;
+  return g;
+}
+
+function buildEiffelHouse(seed){
+  const g = new THREE.Group();
+  const bronze = c(0.45,0.32,0.20), cream = c(0.96,0.92,0.82);
+  const tilt = Math.PI*15/180;
+  for (const sx of [-1,1]) for (const sy of [-1,1]){
+    const leg = addBox(g, 0.85, 0.85, 5.2, sx*2.4, sy*2.4, 0, bronze);
+    leg.rotation.x = -tilt*sy;
+    leg.rotation.z = tilt*sx;
+  }
+  addBox(g, 4.4, 0.5, 0.7, 0, -2.1, 2.6, bronze);
+  addBox(g, 4.6, 4.6, 2.4, 0, 0, 4.6, cream);
+  addBox(g, 1.0, 0.3, 1.7, 0, -2.35, 4.6, DOOR);
+  addBox(g, 0.9, 0.2, 0.8, -1.5, -2.35, 5.6, WINDOW);
+  addBox(g, 0.9, 0.2, 0.8,  1.5, -2.35, 5.6, WINDOW);
+  addBox(g, 5.6, 5.6, 0.4, 0, 0, 6.9, bronze);
+  addCone(g, 1.7, 1.0, 3.2, 4, 0, 0, 7.3, bronze, Math.PI/4);
+  addCone(g, 1.0, 0.5, 2.8, 4, 0, 0, 10.5, bronze, Math.PI/4);
+  addBox(g, 1.6, 1.6, 0.35, 0, 0, 13.3, bronze);
+  addCone(g, 0.3, 0.0, 1.8, 6, 0, 0, 13.65, bronze);
+  addCone(g, 0.18, 0.14, 0.3, 6, 0, 0, 15.0, BULB);
+  g.userData.radius = 4.8;
+  return g;
+}
+
+function buildFlowerHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stemG = c(0.55,0.70,0.48), leafG = c(0.40,0.60,0.36);
+  const pinks = [c(0.93,0.55,0.68), c(0.97,0.70,0.79), c(0.88,0.45,0.60)];
+  addCone(g, 2.85, 2.55, 3.2, 12, 0, 0, 0, stemG);
+  addBox(g, 1.1, 0.35, 1.9, 0, -2.6, 0, DOOR);
+  for (const t of [Math.PI*215/180, Math.PI*325/180]){
+    const win = addBox(g, 0.9, 0.5, 0.9, 2.45*Math.cos(t), 2.45*Math.sin(t), 1.5, WINDOW);
+    win.rotation.y = -(t + Math.PI/2);
+  }
+  for (let i=0;i<6;i++){
+    const a = i/6*Math.PI*2 + 0.3;
+    addCone(g, 1.25, 0.1, 0.6, 5, 3.0*Math.cos(a), 3.0*Math.sin(a), 2.9, leafG);
+  }
+  addCone(g, 2.9, 1.9, 2.1, 12, 0, 0, 3.2, pinks[1]);
+  for (let i=0;i<14;i++){
+    const a = rng()*Math.PI*2, r = 0.6 + rng()*2.2;
+    const z = 4.6 + (2.6-r)*0.55 + rng()*0.4;
+    const s = 0.55 + rng()*0.55;
+    addCone(g, s, s*0.55, s*1.1, 8, r*Math.cos(a), r*Math.sin(a), z-s*0.5, pinks[Math.floor(rng()*3)]);
+  }
+  for (let i=0;i<3;i++) addCone(g, 0.45, 0.45, 0.08, 8, 0, -3.3-i*0.9, 0, pinks[1]);
+  g.userData.radius = 4.6;
+  return g;
+}
+
+function buildBurjHouse(seed){
+  const g = new THREE.Group();
+  const glass = c(0.52,0.63,0.74), trim = c(0.88,0.90,0.93);
+  const tiers = [[2.6,2.3,6.0,0.0],[2.0,1.75,5.5,6.0],[1.5,1.3,5.0,11.5],[1.0,0.85,4.0,16.5]];
+  for (const [rb,rt,h,z] of tiers){
+    addCone(g, rb, rt, h, 6, 0, 0, z, glass);
+    addCone(g, rb+0.12, rb+0.06, 0.35, 6, 0, 0, z, trim);
+  }
+  addCone(g, 0.4, 0.0, 4.5, 6, 0, 0, 20.5, trim);
+  addCone(g, 0.14, 0.1, 0.25, 6, 0, 0, 24.2, BULB);
+  addBox(g, 3.4, 3.4, 1.6, 0, 0, 0, trim);
+  addBox(g, 1.2, 0.3, 1.4, 0, -1.75, 0, DOOR);
+  addBox(g, 2.0, 0.9, 0.2, 0, -2.3, 1.6, glass);
+  buildTree(g, rngFor(seed), 0.6, 2.9, -2.4);
+  g.userData.radius = 3.2;
+  return g;
+}
+
+function buildToiletHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const porcelain = c(0.93,0.94,0.96), seatm = c(0.97,0.95,0.90), silver = c(0.75,0.77,0.80), matp = c(0.55,0.75,0.85);
+  addCone(g, 3.1, 2.55, 2.6, 14, 0, -0.6, 0, porcelain);
+  addCone(g, 3.25, 3.1, 0.35, 14, 0, -0.6, 0, porcelain);
+  addCone(g, 2.95, 2.75, 0.45, 14, 0, -0.6, 2.6, seatm);
+  const lid = addCone(g, 2.85, 2.75, 0.3, 14, 0, 1.05, 3.4, seatm);
+  lid.rotation.x = Math.PI*78/180;
+  addBox(g, 4.4, 1.9, 3.2, 0, 2.35, 2.2, porcelain);
+  addBox(g, 4.7, 2.2, 0.4, 0, 2.35, 5.4, seatm);
+  addBox(g, 0.9, 0.5, 0.25, -1.6, 1.3, 5.5, silver);
+  addBox(g, 1.1, 0.15, 0.9, 0, 1.34, 3.2, WINDOW);
+  addBox(g, 1.15, 0.3, 1.9, 0, -3.35, 0, DOOR);
+  addBox(g, 0.8, 0.3, 0.8, -1.9, -2.55, 1.2, WINDOW);
+  addCone(g, 1.5, 1.5, 0.07, 12, 0, -4.3, 0, matp);
+  addCone(g, 0.5, 0.35, 0.5, 10, 3.3, -1.8, 0, c(0.72,0.28,0.24));
+  buildTree(g, rng, 0.55, -3.4, 1.6);
+  g.userData.radius = 4.6;
+  return g;
+}
+
+function buildBeachHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const sand = c(0.90,0.83,0.62), turq = c(0.55,0.82,0.80), white = c(0.97,0.96,0.93);
+  const thatch = c(0.80,0.68,0.42), board = c(0.95,0.55,0.35);
+  addBox(g, 8.6, 8.6, 0.18, 0, 0, 0, sand);
+  addCone(g, 2.2, 2.2, 0.12, 14, -3.1, -3.0, 0.14, WATER);
+  for (const sx of [-1,1]) for (const sy of [-1,1])
+    addBox(g, 0.5, 0.5, 1.4, sx*2.2, sy*1.8, 0.15, TRUNK);
+  addBox(g, 5.6, 4.6, 2.9, 0, 0.2, 1.5, turq);
+  addPrismRoof(g, 6.3, 5.4, 1.7, 0, 0.2, 4.4, thatch);
+  addBox(g, 1.05, 0.25, 1.8, -0.9, -2.15, 1.5, DOOR);
+  addBox(g, 1.2, 0.2, 1.0, 1.2, -2.15, 2.3, WINDOW);
+  addBox(g, 0.2, 1.2, 1.0, 2.85, 0.6, 2.3, WINDOW);
+  addBox(g, 5.6, 1.6, 0.25, 0, -2.9, 1.25, white);
+  for (let i=0;i<3;i++) addBox(g, 1.4, 0.55, 0.22, -0.9, -3.9-i*0.5, 0.85-i*0.35, white);
+  for (const sx of [-2.6,-0.9,0.9,2.6]) addBox(g, 0.18, 0.18, 0.9, sx, -3.6, 1.5, white);
+  addBox(g, 5.6, 0.18, 0.16, 0, -3.6, 2.35, white);
+  const palm = addCone(g, 0.4, 0.25, 4.6, 7, 3.4, 2.6, 0.1, TRUNK);
+  palm.rotation.x = Math.PI*10/180; palm.rotation.z = -Math.PI*12/180;
+  for (let i=0;i<6;i++){
+    const a = i/6*Math.PI*2;
+    addCone(g, 1.6, 0.12, 0.5, 4, 4.05+1.1*Math.cos(a), 1.85+1.1*Math.sin(a), 4.5, c(0.36,0.62,0.34));
+  }
+  const sb = addBox(g, 0.85, 0.2, 3.0, 2.6, -1.9, 1.6, board);
+  sb.rotation.x = Math.PI*14/180; sb.rotation.y = -Math.PI*8/180;
+  addCone(g, 0.5, 0.28, 0.62, 10, -2.6, -1.2, 0.18, board);
+  g.userData.radius = 5.6;
+  return g;
+}
+
+function buildCottageHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stucco = c(0.96,0.93,0.84), timber = c(0.38,0.27,0.18), straw = c(0.78,0.64,0.38);
+  const stone = c(0.66,0.66,0.68), puff = c(0.96,0.96,0.97);
+  const w=6.0, d=5.0, h=3.2;
+  addBox(g, w, d, h, 0, 0, 0, stucco);
+  for (const sx of [-2.6,-0.9,0.9,2.6]) addBox(g, 0.28, 0.15, h, sx, -d/2-0.02, 0, timber);
+  addBox(g, w+0.2, 0.15, 0.28, 0, -d/2-0.02, h-0.28, timber);
+  addPrismRoof(g, w+1.0, d+1.0, 2.9, 0, 0, h, straw);
+  addPrismRoof(g, w+1.2, 1.0, 0.5, 0, 0, h+2.85, straw);
+  addBox(g, 1.5, 1.2, 1.3, -1.3, -d/2+0.4, h+0.5, stucco);
+  addPrismRoof(g, 1.8, 1.5, 0.8, -1.3, -d/2+0.4, h+1.8, straw);
+  addBox(g, 0.9, 0.2, 0.8, -1.3, -d/2-0.25, h+0.8, WINDOW);
+  addBox(g, 1.15, 0.3, 1.9, 1.3, -d/2-0.08, 0, DOOR);
+  addCone(g, 0.58, 0.55, 0.3, 10, 1.3, -d/2-0.08, 1.9, DOOR);
+  for (const sx of [-1.6, 0.0]){
+    addBox(g, 1.0, 0.2, 0.95, sx, -d/2-0.06, 1.4, WINDOW);
+    addBox(g, 1.1, 0.35, 0.3, sx, -d/2-0.28, 1.05, timber);
+  }
+  addBox(g, 0.95, 0.95, 2.2, 2.0, 1.2, h+1.2, stone);
+  for (const [px,pz,s] of [[0.1,0.5,0.4],[0.45,1.2,0.55],[0.9,2.0,0.7]])
+    addCone(g, s, s*0.75, s, 8, 2.0+px, 1.2+px*0.4, h+3.4+pz, puff);
+  for (let i=0;i<3;i++) addCone(g, 0.42, 0.42, 0.07, 8, 1.3, -3.2-i*0.85, 0, stone);
+  for (const sx of [-2.9,-2.1,-1.3,2.9]) addBox(g, 0.18, 0.18, 0.9, sx, -3.6, 0, stucco);
+  buildTree(g, rngFor(seed), 0.7, -3.3, 1.6);
+  g.userData.radius = 5.4;
+  return g;
+}
+
+const BUILDERS = {
+  house: buildHouse,
+  mushroomhouse: buildMushroomHouse,
+  casinohouse: buildCasinoHouse,
+  cathouse: buildCatHouse,
+  castlehouse: buildCastleHouse,
+  eiffelhouse: buildEiffelHouse,
+  flowerhouse: buildFlowerHouse,
+  burjhouse: buildBurjHouse,
+  toilethouse: buildToiletHouse,
+  beachhouse: buildBeachHouse,
+  cottagehouse: buildCottageHouse,
+};
+
+/* ══════════════════════════════ GRID / PLACEMENT ══════════════════════════════ */
+
+function lotToWorld(gx, gy){
+  const bx = Math.floor(gx / BLOCK_N), ix = ((gx % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const by = Math.floor(gy / BLOCK_N), iy = ((gy % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  return [bx*PITCH + ix*LOT + LOT/2, by*PITCH + iy*LOT + LOT/2];
+}
+
+const FACE_ANGLE = { s: 0, e: -Math.PI/2, n: Math.PI, w: Math.PI/2 };
+
+function blockExtent(buildings){
+  if (!buildings.length) return [-1,1,-1,1];
+  const bxs = buildings.map(b => Math.floor(b.gx / BLOCK_N));
+  const bys = buildings.map(b => Math.floor(b.gy / BLOCK_N));
+  return [Math.min(...bxs,-1), Math.max(...bxs,1), Math.min(...bys,-1), Math.max(...bys,1)];
+}
+
+/* ══════════════════════════════════ SCENE SETUP ══════════════════════════════════ */
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd0f0);
+scene.fog = new THREE.Fog(0x9fd6ee, 90, 320);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.1, 500);
+camera.position.set(0, 1.7, -70);
+camera.rotation.y = Math.PI; // face north into town
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const hemi = new THREE.HemisphereLight(0xbfe0ff, 0x4a5a34, 0.6);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff0d0, 2.2);
+sun.position.set(70, 110, -40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0015;
+scene.add(sun);
+scene.add(sun.target);
+const fill = new THREE.DirectionalLight(0xcfe0ff, 0.35);
+fill.position.set(-60, 50, 60);
+scene.add(fill);
+
+const controls = new PointerLockControls(camera, document.body);
+
+const startScreen = document.getElementById("startScreen");
+const loadingEl = document.getElementById("loading");
+const hud = document.getElementById("hud");
+const hudSub = document.getElementById("hudSub");
+const crosshair = document.getElementById("crosshair");
+const hint = document.getElementById("hint");
+
+startScreen.addEventListener("click", () => controls.lock());
+controls.addEventListener("lock", () => {
+  startScreen.style.display = "none";
+  crosshair.style.display = "block";
+  hint.style.display = "block";
+});
+controls.addEventListener("unlock", () => {
+  startScreen.style.display = "flex";
+  crosshair.style.display = "none";
+  hint.style.display = "none";
+});
+
+/* movement */
+const move = { f:false, b:false, l:false, r:false, run:false };
+document.addEventListener("keydown", e => {
+  switch(e.code){
+    case "KeyW": case "ArrowUp": move.f = true; break;
+    case "KeyS": case "ArrowDown": move.b = true; break;
+    case "KeyA": case "ArrowLeft": move.l = true; break;
+    case "KeyD": case "ArrowRight": move.r = true; break;
+    case "ShiftLeft": case "ShiftRight": move.run = true; break;
+  }
+});
+document.addEventListener("keyup", e => {
+  switch(e.code){
+    case "KeyW": case "ArrowUp": move.f = false; break;
+    case "KeyS": case "ArrowDown": move.b = false; break;
+    case "KeyA": case "ArrowLeft": move.l = false; break;
+    case "KeyD": case "ArrowRight": move.r = false; break;
+    case "ShiftLeft": case "ShiftRight": move.run = false; break;
+  }
+});
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* collision colliders: simple circles pushed out against each building */
+const colliders = [];
+
+function addRoads(buildings){
+  const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
+  const x0 = minBx*PITCH - ROAD, x1 = (maxBx+1)*PITCH;
+  const y0 = minBy*PITCH - ROAD, y1 = (maxBy+1)*PITCH;
+
+  // grass ground, generous margin beyond the road grid
+  const groundSize = Math.max(x1-x0, y1-y0) + 400;
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(groundSize, groundSize),
+    lam(GRASS, 1.0)
+  );
+  ground.rotation.x = -Math.PI/2;
+  ground.position.set((x0+x1)/2, -0.01, (y0+y1)/2);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // size the sun's shadow frustum to the current town so it stays sharp as it grows
+  const span = Math.max(x1-x0, y1-y0) / 2 + 20;
+  sun.shadow.camera.left = -span; sun.shadow.camera.right = span;
+  sun.shadow.camera.top = span; sun.shadow.camera.bottom = -span;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 400;
+  sun.target.position.set((x0+x1)/2, 0, (y0+y1)/2);
+  sun.position.set((x0+x1)/2 + 70, 110, (y0+y1)/2 - 40);
+  sun.shadow.camera.updateProjectionMatrix();
+
+  const roadMat = lam(c(0.30,0.31,0.33), 0.95);
+  const dashMat = lam(c(0.85,0.80,0.40), 0.7);
+  for (let bx = minBx; bx <= maxBx+1; bx++){
+    const x = bx*PITCH - ROAD/2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(ROAD, 0.15, y1-y0), roadMat);
+    m.position.set(x, 0.07, (y0+y1)/2);
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+  for (let by = minBy; by <= maxBy+1; by++){
+    const y = by*PITCH - ROAD/2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(x1-x0, 0.16, ROAD), roadMat);
+    m.position.set((x0+x1)/2, 0.08, y);
+    m.receiveShadow = true;
+    scene.add(m);
+    for (let x = x0 + 4; x < x1 - 4; x += 8){
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 0.45), dashMat);
+      dash.position.set(x, 0.17, y);
+      dash.receiveShadow = true;
+      scene.add(dash);
+    }
+  }
+
+  // streetlights + parked cars at intersections, seeded per-tile so they stay
+  // put as the town grows (won't reshuffle when the block extent changes)
+  const props = new THREE.Group();
+  for (let bx = minBx; bx <= maxBx+1; bx++){
+    for (let by = minBy; by <= maxBy+1; by++){
+      const ix = bx*PITCH - ROAD/2, iy = by*PITCH - ROAD/2;
+      const rng = rngFor(9000 + bx*131 + by*977);
+      if (rng() < 0.65){
+        const light = buildStreetlightProp();
+        light.position.set(ix + ROAD/2 + 0.6, 0, iy + ROAD/2 + 0.6);
+        light.rotation.y = -rng()*Math.PI*2;
+        props.add(light);
+      }
+      if (rng() < 0.4){
+        const car = buildCarProp(Math.floor(rng()*999));
+        const horiz = rng() < 0.5;
+        const off = (rng()-0.5) * PITCH * 0.7;
+        const lane = rng() < 0.5 ? 1.5 : -1.5;
+        if (horiz){
+          car.position.set(ix + off, 0.05, iy + ROAD/2 + lane);
+          car.rotation.y = (rng()<0.5 ? 0 : Math.PI) - Math.PI/2;
+        } else {
+          car.position.set(ix + ROAD/2 + lane, 0.05, iy + off);
+          car.rotation.y = (rng()<0.5 ? Math.PI/2 : -Math.PI/2) - Math.PI/2;
+        }
+        props.add(car);
+      }
+    }
+  }
+  scene.add(props);
+}
+
+function addNature(buildings){
+  const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
+  const occupied = new Set(buildings.map(b => b.gx + "," + b.gy));
+  const nature = new THREE.Group();
+  for (let gx = (minBx-1)*BLOCK_N; gx < (maxBx+2)*BLOCK_N; gx++){
+    for (let gy = (minBy-1)*BLOCK_N; gy < (maxBy+2)*BLOCK_N; gy++){
+      if (occupied.has(gx + "," + gy)) continue;
+      const r = rngFor(gx*7919 + gy*104729 + 13);
+      const roll = r();
+      const [x, y] = lotToWorld(gx, gy);
+      let inst = null;
+      if (roll < 0.22){ inst = new THREE.Group(); buildTree(inst, r, 0.8+r()*0.6, 0, 0); }
+      else if (roll < 0.36) inst = buildBushProp(Math.floor(r()*99999));
+      else if (roll < 0.42) inst = buildRockProp(Math.floor(r()*99999));
+      if (inst){
+        inst.position.x += x; inst.position.z += y;
+        nature.add(inst);
+      }
+      if (r() < 0.3){
+        const inst2 = new THREE.Group();
+        buildTree(inst2, r, 0.8+r()*0.6, 0, 0);
+        inst2.position.set(x + r()*6-3, 0, y + r()*6-3);
+        nature.add(inst2);
+      }
+    }
+  }
+  scene.add(nature);
+}
+
+function addBuildings(buildings){
+  const world = new THREE.Group();
+  for (const b of buildings){
+    const builder = BUILDERS[b.type] || buildHouse;
+    const inst = builder(b.seed || 0);
+    const [x, y] = lotToWorld(b.gx, b.gy);
+    inst.position.x += x;
+    inst.position.z += y;
+    if (b.face && FACE_ANGLE[b.face] !== undefined) inst.rotation.y = FACE_ANGLE[b.face];
+    world.add(inst);
+    colliders.push({ x, z: y, radius: inst.userData.radius || 4.2 });
+  }
+  scene.add(world);
+}
+
+/* ══════════════════════════════════ LOAD + RUN ══════════════════════════════════ */
+
+// Real path: town.glb, exported straight out of Blender by export_web.py —
+// the exact same geometry as your renders, no hand-ported JS shapes.
+// Fallback path (only used if town.glb hasn't been exported yet): rebuild an
+// approximation procedurally from world_state.json using the JS builders above.
+
+function loadFromGLB(buildings){
+  const loader = new GLTFLoader();
+  return loader.loadAsync("town.glb").then(gltf => {
+    const root = gltf.scene;
+    scene.add(root);
+
+    // collision colliders: one per top-level object Blender exported
+    // (each building/tree/car/streetlight ends up as its own top-level node).
+    // Also build the "real town" bounding box from just these reasonably-sized
+    // objects — Blender's export includes a 4000x4000 ground plane as part of
+    // the same scene, and letting that into the framing math would put the
+    // spawn point in the middle of a giant empty field instead of the town.
+    const box = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    const full = new THREE.Box3();
+    let sawAny = false;
+    for (const child of root.children){
+      box.setFromObject(child);
+      if (box.isEmpty()) continue;
+      box.getSize(size);
+      box.getCenter(center);
+      const radius = Math.max(size.x, size.z) * 0.5;
+      if (radius > 200) continue; // the giant ground/road-spanning plane(s) — ignore for framing
+      full.union(box);
+      sawAny = true;
+      // Only flat, walkable stuff (roads, lane dashes, the ground plane) is
+      // under ~1 unit tall; everything meant to be bumped into (a house, a
+      // tree, a car) stands well above that. Use height, not footprint, to
+      // decide what collides — a thin road can still be 70+ units LONG,
+      // which a horizontal-radius check alone was wrongly treating as a
+      // giant circular wall.
+      if (size.y > 1.0 && radius > 0.3 && radius < 40)
+        colliders.push({ x: center.x, z: center.z, radius: radius * 0.85 });
+    }
+    if (!sawAny) full.setFromObject(root); // fallback if every object got filtered out
+
+    // Spawn point: don't derive this from the GLB's bounding box — that box
+    // also contains the ring of scattered trees/bushes/rocks just outside the
+    // town blocks, which put the player behind a wall of foliage instead of
+    // on a road. Use the same grid math the town is laid out from instead,
+    // so the spawn is always exactly on a real road, at the town's south edge.
+    const [minBx, , minBy] = blockExtent(buildings);
+    const spawnX = 0; // the bx=0 road always exists (block_extent guarantees -1..1)
+    const spawnZ = minBy*PITCH - ROAD - 15;
+    camera.position.set(spawnX, 1.7, spawnZ);
+
+    const fullSize = new THREE.Vector3(), fullCenter = new THREE.Vector3();
+    full.getSize(fullSize); full.getCenter(fullCenter);
+    const span = Math.max(fullSize.x, fullSize.z) / 2 + 20;
+    sun.shadow.camera.left = -span; sun.shadow.camera.right = span;
+    sun.shadow.camera.top = span; sun.shadow.camera.bottom = -span;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 400;
+    sun.target.position.set(fullCenter.x, 0, fullCenter.z);
+    sun.position.set(fullCenter.x + 70, 110, fullCenter.z - 40);
+    sun.shadow.camera.updateProjectionMatrix();
+
+    return true;
+  });
+}
+
+fetch("world_state.json")
+  .then(r => r.json())
+  .then(state => {
+    const buildings = state.buildings || [];
+    loadFromGLB(buildings)
+      .catch(err => {
+        console.warn("town.glb not found or failed to load — falling back to the JS-built approximation.", err);
+        addRoads(buildings);
+        addBuildings(buildings);
+        addNature(buildings);
+      })
+      .then(() => {
+        scene.traverse(obj => {
+          if (obj.isMesh){ obj.castShadow = true; obj.receiveShadow = true; }
+        });
+        document.getElementById("startSub").textContent =
+          `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length}`;
+        hudSub.textContent = `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length} · ${buildings.length} buildings`;
+        loadingEl.style.display = "none";
+        startScreen.style.display = "flex";
+        hud.style.display = "block";
+        animate();
+      });
+  })
+  .catch(err => {
+    loadingEl.textContent = "couldn't load world_state.json — make sure it's next to this file.";
+    console.error(err);
+  });
+
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+
+  if (controls.isLocked){
+    const speed = (move.run ? 11 : 5.5) * dt;
+    const dir = new THREE.Vector3();
+    if (move.f) dir.z += 1;
+    if (move.b) dir.z -= 1;
+    if (move.r) dir.x += 1;
+    if (move.l) dir.x -= 1;
+    if (dir.lengthSq() > 0){
+      dir.normalize();
+      controls.moveForward(dir.z * speed);
+      controls.moveRight(dir.x * speed);
+    }
+    // simple push-out collision against building footprints
+    const p = camera.position;
+    for (const col of colliders){
+      const dx = p.x - col.x, dz = p.z - col.z;
+      const distSq = dx*dx + dz*dz;
+      const r = col.radius + 0.6;
+      if (distSq < r*r && distSq > 0.0001){
+        const dist = Math.sqrt(distSq);
+        const push = (r - dist);
+        p.x += (dx/dist) * push;
+        p.z += (dz/dist) * push;
+      }
+    }
+    camera.position.y = 1.7;
+  }
+
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>

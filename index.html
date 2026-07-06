@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Followville</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="A town where every follower is a house — walk it in your browser." />
+<style>
+  :root{
+    --cream:#f2e9da;
+    --cream-deep:#e9dcc4;
+    --navy:#1c2b45;
+    --navy-soft:#2c3f5e;
+    --accent:#c96b4a;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; min-height:100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(circle at 15% 12%, rgba(255,255,255,0.5), transparent 40%),
+      radial-gradient(circle at 85% 88%, rgba(255,255,255,0.35), transparent 45%),
+      linear-gradient(180deg, var(--cream) 0%, var(--cream-deep) 100%);
+    color: var(--navy);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 48px 20px 32px;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  .bg-grid {
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.35;
+    background-image:
+      linear-gradient(rgba(28,43,69,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28,43,69,0.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 75%);
+  }
+
+  .content { position:relative; z-index:1; width:100%; max-width:460px; display:flex; flex-direction:column; align-items:center; }
+
+  .logo-ring {
+    width:132px; height:132px; border-radius:50%;
+    padding:5px;
+    background: var(--navy);
+    box-shadow: 0 14px 32px rgba(28,43,69,0.28);
+    margin-bottom:22px;
+  }
+  .logo-ring img {
+    width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;
+    background:var(--cream);
+  }
+  .logo-fallback {
+    width:100%; height:100%; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; background:var(--cream); font-size:52px;
+  }
+
+  h1 {
+    font-size:34px; margin:0 0 6px; letter-spacing:-0.5px; font-weight:800;
+    text-align:center;
+  }
+  .tagline {
+    margin:0 0 30px; opacity:0.75; font-size:15px; text-align:center; max-width:320px;
+    line-height:1.45;
+  }
+
+  .stats {
+    display:flex; gap:14px; width:100%; margin-bottom:28px;
+  }
+  .stat {
+    flex:1; background:rgba(255,255,255,0.55); border:1px solid rgba(28,43,69,0.08);
+    border-radius:18px; padding:18px 12px; text-align:center;
+    backdrop-filter: blur(6px);
+  }
+  .stat .num {
+    font-size:30px; font-weight:800; line-height:1; transition: transform 0.35s ease;
+  }
+  .stat .num.pulse { transform: scale(1.18); color: var(--accent); }
+  .stat .label {
+    font-size:11.5px; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;
+    margin-top:6px; font-weight:600;
+  }
+
+  .enter-btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:16px 22px; border-radius:16px; border:none;
+    background: var(--navy); color:#fff; font-size:16px; font-weight:700;
+    text-decoration:none; box-shadow: 0 10px 24px rgba(28,43,69,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .enter-btn:active { transform: scale(0.97); }
+  .enter-btn .arrow { transition: transform 0.15s ease; }
+  .enter-btn:hover .arrow { transform: translateX(3px); }
+
+  .hint {
+    margin-top:14px; font-size:12.5px; opacity:0.55; text-align:center;
+  }
+
+  .founders-note {
+    margin-top:38px; font-size:12.5px; opacity:0.55; text-align:center; line-height:1.6;
+    max-width:320px;
+  }
+
+  @media (max-width: 380px){
+    h1 { font-size:28px; }
+    .stat .num { font-size:25px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<div class="content">
+  <div class="logo-ring">
+    <img src="logo.png" alt="Followville" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-fallback',textContent:'🏠'}))" />
+  </div>
+
+  <h1>Followville</h1>
+  <p class="tagline">A persistent little town where every follower becomes a house. Walk it yourself, right in your browser.</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="num" id="statDay">–</div>
+      <div class="label">Day</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="statPop">–</div>
+      <div class="label">Population</div>
+    </div>
+  </div>
+
+  <a class="enter-btn" href="town.html">
+    Walk the town <span class="arrow">→</span>
+  </a>
+  <p class="hint">first-person · WASD to walk · works on desktop</p>
+
+  <p class="founders-note">Population reflects real followers, not just house count —<br/>bigger milestones (like apartment buildings) hold more than one.</p>
+</div>
+
+<script>
+  // Live stats: just reflects world_state.json's own fields, refreshed
+  // periodically. No calendar/date math of any kind — the day counter and
+  // population only ever change when the town itself is actually regrown
+  // (via grow.sh), so polling the same source of truth is all "live" means
+  // here. No guessing what day it "should" be.
+  let lastDay = null, lastPop = null;
+
+  function setStat(el, value){
+    if (el.textContent !== String(value)){
+      el.textContent = value;
+      el.classList.remove("pulse");
+      void el.offsetWidth; // restart animation
+      el.classList.add("pulse");
+    }
+  }
+
+  async function refreshStats(){
+    try {
+      const res = await fetch("world_state.json", { cache: "no-store" });
+      const state = await res.json();
+      const dayEl = document.getElementById("statDay");
+      const popEl = document.getElementById("statPop");
+      if (typeof state.day === "number") setStat(dayEl, state.day);
+      if (typeof state.pop === "number") setStat(popEl, state.pop);
+    } catch (err) {
+      console.warn("couldn't load world_state.json for live stats", err);
+    }
+  }
+
+  refreshStats();
+  setInterval(refreshStats, 45000); // just re-checks the same file; harmless if nothing changed
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Big render videos/previews — keep the repo light for GitHub Pages
+renders/
+*.mp4
+*.png
+!logo.png
+
+# Blender backup file + old test states — not needed for the live site
+*.blend1
+world_state_*_backup.json
+world_state_*_hold.json

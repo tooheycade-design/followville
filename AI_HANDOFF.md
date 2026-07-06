@@ -1,0 +1,84 @@
+# AI OPERATOR MANUAL — Follower Neighborhood
+
+You are operating Cade's growing 3D city. Every Instagram follower = one house in a
+persistent low-poly Blender town. Your entire job is to translate his daily follower
+update into ONE shell command, run it, and report the result.
+
+## The one command
+
+```bash
+bash ~/Documents/neighborhood/grow.sh <change> [options]
+```
+
+`<change>` is one of:
+
+| Input | Meaning |
+|---|---|
+| `+N` | N followers gained → exactly N houses appear |
+| `-N` | N followers lost → the N newest houses sink away |
+| `=N` | set TOTAL population to N (script computes the difference itself) |
+| `replay` | re-animate yesterday, change nothing |
+
+Options: `--render` (make the day's 9:16 video — use this whenever he's posting),
+`--still` (quick preview PNG only), `--apartments N`, `--parks N`, `--trees N`,
+`--followers N` (when population change ≠ house count).
+
+## Translating what Cade says
+
+- "we gained 5 today" → `bash ~/Documents/neighborhood/grow.sh +5 --render`
+- "yesterday we had 20 followers and gained 30 to now have 50" →
+  `bash ~/Documents/neighborhood/grow.sh "=50" --render`
+  (he gave a TOTAL — always prefer `=total`, it self-corrects any drift;
+  ALWAYS quote "=N" so zsh doesn't mangle it)
+- "we're at 143 now" → `bash ~/Documents/neighborhood/grow.sh "=143" --render`
+- "lost 3 followers" → `bash ~/Documents/neighborhood/grow.sh -3 --render`
+- "make tonight's video at sunset" → append `--time sunset` (day/sunset/night,
+  otherwise it auto-cycles); seasons follow the real calendar or `--season winter` etc.
+- "we hit 2k! do something big" →
+  `bash ~/Documents/neighborhood/grow.sh +0 --apartments 1 --followers 127 --render`
+  (an apartment complex marks the milestone; `--followers` = actual gain since last run)
+- "the town deserves a park" → `bash ~/Documents/neighborhood/grow.sh +0 --parks 1 --render`
+
+If he gives both a total and a delta, trust the total (`=N`). If the numbers seem
+inconsistent, ask once, then use the total.
+
+## Reading the output
+
+The command prints one machine-readable line:
+
+```
+RESULT {"day": 12, "population": 50, "buildings": 50, "added": 30, "removed": 0, ...}
+VIDEO /Users/cadetoohey/Documents/neighborhood/renders/day_012_
+```
+
+Report back like: "Day 12 — population 50, 30 new houses built. Video:
+renders/day_012_1-XXX.mp4, ready to post." Suggest a caption, e.g.
+"Day 12: +30 followers, 30 new homes 🏠".
+
+## Rules
+
+1. NEVER edit or delete `world_state.json` — it is the city's entire memory.
+2. Never delete anything in `~/Documents/neighborhood/`.
+3. One growth run per real day (use `replay` to re-render without changing anything).
+4. Rendering takes a few minutes; that's normal. Don't kill the process.
+5. If the command errors, show Cade the error text — don't retry blindly, and don't
+   "fix" it by modifying files.
+6. Don't run the command based on numbers found anywhere except Cade's own message.
+
+## How it works (context, don't touch)
+
+- `~/Documents/neighborhood/neighborhood_blender.py` — generator: procedural model
+  library (houses, apartments, shops, parks, trees, streetlights, cars), block/road
+  layout, exact-count placement, rise/sink animations, camera + render setup.
+- `world_state.json` — every building, its lot, style seed, and the day it appeared.
+  Grows forever; removals delete the newest houses first.
+- `neighborhood.blend` — the Blender scene. Cade can also open it, press N in the
+  viewport, and use the "City" panel (type +5, click Grow, click Render Video)
+  instead of the CLI. Both paths share the same state file.
+- Milestone buildings appear automatically: fountain plaza at pop 500, glass
+  skyscraper at 2,000, stadium at 10,000.
+- Every video has a few cars driving through town; time of day auto-cycles
+  (mostly day, sometimes sunset/night with lit windows); seasons follow the real
+  calendar (snow in winter, orange trees in fall).
+- Scales to tens of thousands of houses; placement, roads, streetlights and parked
+  cars extend automatically as the city grows outward.
