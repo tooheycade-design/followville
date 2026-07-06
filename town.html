@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <title>Followville — Walk the Town</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <style>
   html, body { margin:0; padding:0; overflow:hidden; height:100%; background:#8fb7d8;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  canvas { display:block; }
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    touch-action:none; overscroll-behavior:none; -webkit-tap-highlight-color:transparent; }
+  canvas { display:block; touch-action:none; }
 
   #hud {
     position:fixed; top:14px; left:14px; z-index:5;
@@ -50,6 +51,41 @@
     color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.55); font-size:12px; opacity:0.8;
     pointer-events:none; user-select:none; display:none;
   }
+
+  /* touch controls — hidden on desktop, shown only when a touch device is detected */
+  #lookZone {
+    position:fixed; inset:0; z-index:4; display:none; touch-action:none;
+  }
+  #joystickZone {
+    position:fixed; left:22px; bottom:26px; width:132px; height:132px; z-index:6;
+    display:none; touch-action:none;
+  }
+  #joystickBase {
+    position:absolute; inset:0; border-radius:50%;
+    background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.4);
+  }
+  #joystickNub {
+    position:absolute; width:56px; height:56px; border-radius:50%;
+    background:rgba(255,255,255,0.6); left:50%; top:50%;
+    transform:translate(-50%,-50%); box-shadow:0 2px 8px rgba(0,0,0,0.25);
+  }
+  #runBtn {
+    position:fixed; right:24px; bottom:34px; z-index:6; display:none;
+    width:76px; height:76px; border-radius:50%; touch-action:none;
+    background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.4);
+    color:#fff; font-size:12px; font-weight:700; letter-spacing:0.03em;
+    align-items:center; justify-content:center; text-shadow:0 1px 4px rgba(0,0,0,0.5);
+    user-select:none;
+  }
+  #runBtn.active { background:rgba(255,255,255,0.4); }
+
+  @media (max-width: 480px){
+    #startScreen h1 { font-size:24px; }
+    #startScreen p { font-size:12.5px; padding:0 24px; }
+    #startScreen .btn { padding:11px 24px; font-size:14px; }
+    #hud { font-size:13px; }
+    #homeLink { font-size:12px; padding:6px 12px; }
+  }
 </style>
 </head>
 <body>
@@ -61,8 +97,8 @@
 <div id="startScreen" style="display:none;">
   <h1>Followville</h1>
   <p id="startSub">a town where every follower is a house</p>
-  <p>WASD or arrows to walk · mouse to look · shift to run</p>
-  <div class="btn">click to enter</div>
+  <p id="startHint">WASD or arrows to walk · mouse to look · shift to run</p>
+  <div class="btn" id="enterBtn">click to enter</div>
 </div>
 
 <div id="hud" style="display:none;">
@@ -71,6 +107,13 @@
 </div>
 <div id="crosshair"></div>
 <div id="hint">ESC to release mouse</div>
+
+<div id="lookZone"></div>
+<div id="joystickZone">
+  <div id="joystickBase"></div>
+  <div id="joystickNub"></div>
+</div>
+<div id="runBtn">RUN</div>
 
 <script type="importmap">
 {
@@ -561,42 +604,73 @@ scene.add(fill);
 
 const controls = new PointerLockControls(camera, document.body);
 
+const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+
 const startScreen = document.getElementById("startScreen");
 const loadingEl = document.getElementById("loading");
 const hud = document.getElementById("hud");
 const hudSub = document.getElementById("hudSub");
 const crosshair = document.getElementById("crosshair");
 const hint = document.getElementById("hint");
+const startHint = document.getElementById("startHint");
+const enterBtn = document.getElementById("enterBtn");
+const lookZone = document.getElementById("lookZone");
+const joystickZone = document.getElementById("joystickZone");
+const joystickNub = document.getElementById("joystickNub");
+const runBtn = document.getElementById("runBtn");
 
-startScreen.addEventListener("click", () => controls.lock());
-controls.addEventListener("lock", () => {
+let gameRunning = false; // true once walking has actually started, desktop or touch
+
+function beginWalking(){
+  gameRunning = true;
   startScreen.style.display = "none";
-  crosshair.style.display = "block";
+  crosshair.style.display = isTouch ? "none" : "block";
   hint.style.display = "block";
-});
-controls.addEventListener("unlock", () => {
+  if (isTouch){
+    lookZone.style.display = "block";
+    joystickZone.style.display = "block";
+    runBtn.style.display = "flex";
+  }
+}
+function stopWalking(){
+  gameRunning = false;
   startScreen.style.display = "flex";
   crosshair.style.display = "none";
   hint.style.display = "none";
-});
+  lookZone.style.display = "none";
+  joystickZone.style.display = "none";
+  runBtn.style.display = "none";
+}
 
-/* movement */
-const move = { f:false, b:false, l:false, r:false, run:false };
+if (isTouch){
+  enterBtn.textContent = "tap to enter";
+  startHint.textContent = "drag to look · joystick to walk · RUN to sprint";
+  hint.textContent = "drag anywhere to look around";
+  enterBtn.addEventListener("touchend", e => { e.preventDefault(); beginWalking(); });
+} else {
+  startScreen.addEventListener("click", () => controls.lock());
+  controls.addEventListener("lock", beginWalking);
+  controls.addEventListener("unlock", stopWalking);
+}
+
+/* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
+   on-screen joystick (touch); both funnel into the same animate() loop. */
+const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
   switch(e.code){
-    case "KeyW": case "ArrowUp": move.f = true; break;
-    case "KeyS": case "ArrowDown": move.b = true; break;
-    case "KeyA": case "ArrowLeft": move.l = true; break;
-    case "KeyD": case "ArrowRight": move.r = true; break;
+    case "KeyW": case "ArrowUp": move.z = 1; break;
+    case "KeyS": case "ArrowDown": move.z = -1; break;
+    case "KeyA": case "ArrowLeft": move.x = -1; break;
+    case "KeyD": case "ArrowRight": move.x = 1; break;
     case "ShiftLeft": case "ShiftRight": move.run = true; break;
   }
 });
 document.addEventListener("keyup", e => {
   switch(e.code){
-    case "KeyW": case "ArrowUp": move.f = false; break;
-    case "KeyS": case "ArrowDown": move.b = false; break;
-    case "KeyA": case "ArrowLeft": move.l = false; break;
-    case "KeyD": case "ArrowRight": move.r = false; break;
+    case "KeyW": case "ArrowUp": if (move.z > 0) move.z = 0; break;
+    case "KeyS": case "ArrowDown": if (move.z < 0) move.z = 0; break;
+    case "KeyA": case "ArrowLeft": if (move.x < 0) move.x = 0; break;
+    case "KeyD": case "ArrowRight": if (move.x > 0) move.x = 0; break;
     case "ShiftLeft": case "ShiftRight": move.run = false; break;
   }
 });
@@ -606,6 +680,89 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+/* ─── touch: virtual joystick (movement) ─── */
+if (isTouch){
+  let joyTouchId = null;
+  const joyRadius = 46; // matches half of #joystickZone minus nub padding
+
+  function resetJoystick(){
+    joystickNub.style.transform = "translate(-50%,-50%)";
+    move.x = 0; move.z = 0;
+  }
+
+  joystickZone.addEventListener("touchstart", e => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    joyTouchId = t.identifier;
+    updateJoystick(t);
+  }, { passive:false });
+
+  joystickZone.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === joyTouchId) updateJoystick(t);
+  }, { passive:false });
+
+  function endJoyTouch(e){
+    for (const t of e.changedTouches){
+      if (t.identifier === joyTouchId){ joyTouchId = null; resetJoystick(); }
+    }
+  }
+  joystickZone.addEventListener("touchend", endJoyTouch);
+  joystickZone.addEventListener("touchcancel", endJoyTouch);
+
+  function updateJoystick(t){
+    const rect = joystickZone.getBoundingClientRect();
+    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    let dx = t.clientX - cx, dy = t.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    const clamped = Math.min(dist, joyRadius);
+    if (dist > 0){ dx = dx/dist*clamped; dy = dy/dist*clamped; }
+    joystickNub.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    // screen-down (dy>0) should move the player forward, screen x maps to strafe
+    move.x = dx / joyRadius;
+    move.z = -dy / joyRadius;
+  }
+
+  /* ─── touch: drag-to-look, anywhere outside the joystick ─── */
+  let lookTouchId = null, lastX = 0, lastY = 0;
+  let yaw = camera.rotation.y, pitch = 0;
+
+  lookZone.addEventListener("touchstart", e => {
+    if (lookTouchId !== null) return;
+    const t = e.changedTouches[0];
+    lookTouchId = t.identifier;
+    lastX = t.clientX; lastY = t.clientY;
+  }, { passive:false });
+
+  lookZone.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for (const t of e.changedTouches){
+      if (t.identifier !== lookTouchId) continue;
+      const dx = t.clientX - lastX, dy = t.clientY - lastY;
+      lastX = t.clientX; lastY = t.clientY;
+      yaw -= dx * 0.0035;
+      pitch -= dy * 0.0035;
+      pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, pitch));
+      camera.rotation.order = "YXZ";
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+    }
+  }, { passive:false });
+
+  function endLookTouch(e){
+    for (const t of e.changedTouches) if (t.identifier === lookTouchId) lookTouchId = null;
+  }
+  lookZone.addEventListener("touchend", endLookTouch);
+  lookZone.addEventListener("touchcancel", endLookTouch);
+
+  /* run toggle */
+  runBtn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    move.run = !move.run;
+    runBtn.classList.toggle("active", move.run);
+  }, { passive:false });
+}
 
 /* collision colliders: simple circles pushed out against each building */
 const colliders = [];
@@ -836,15 +993,11 @@ function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  if (controls.isLocked){
+  if (gameRunning){
     const speed = (move.run ? 11 : 5.5) * dt;
-    const dir = new THREE.Vector3();
-    if (move.f) dir.z += 1;
-    if (move.b) dir.z -= 1;
-    if (move.r) dir.x += 1;
-    if (move.l) dir.x -= 1;
+    const dir = new THREE.Vector3(move.x, 0, move.z);
+    if (dir.lengthSq() > 1) dir.normalize();
     if (dir.lengthSq() > 0){
-      dir.normalize();
       controls.moveForward(dir.z * speed);
       controls.moveRight(dir.x * speed);
     }

@@ -173,9 +173,39 @@ Kept here (rather than just in chat) so it survives across sessions.
   with this fix in place, then push so Vercel redeploys, then confirm no
   more pancaked houses.
 
+## 12. Mobile support — touch controls for town.html, responsive landing page
+- `town.html` had no touch input at all before this: movement was keyboard-only
+  and looking around required `PointerLockControls` (a real mouse pointer lock,
+  which touchscreens don't support), so the walkable town was effectively
+  desktop-only.
+- Added a touch-device code path (detected via `"ontouchstart" in window ||
+  navigator.maxTouchPoints > 0`) that skips pointer-lock entirely:
+  - On-screen virtual joystick (bottom-left) for movement — analog, drives the
+    same `move.x`/`move.z` values keyboard WASD now also writes into (movement
+    was refactored from 4 booleans to 2 analog axes so both input methods feed
+    the same code path).
+  - Drag-to-look anywhere else on screen, manually driving `camera.rotation`
+    (yaw/pitch, clamped so you can't flip upside-down) since `PointerLockControls`
+    can't supply this on touch.
+  - A "RUN" toggle button (bottom-right) replaces the desktop shift-key sprint.
+  - Start screen swaps its copy/button for touch ("tap to enter", updated hint
+    text) and skips `controls.lock()`, going straight into a shared
+    `gameRunning` flag that both input paths check.
+- Added `touch-action:none` / `overscroll-behavior:none` and a locked viewport
+  (`user-scalable=no`) so touch drags move the camera instead of scrolling or
+  pinch-zooming the page.
+- `index.html` (landing page): added a `viewport-fit=cover` viewport tag, a
+  short-viewport media query so the logo/stats don't get pushed off-screen on
+  small phone screens in landscape or with a keyboard/browser-chrome eating
+  vertical space, and updated the hint line to mention touch controls.
+- Verified both files' inline `<script>` blocks still parse cleanly
+  (`node --check`) after these changes.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
 - `grow.sh` — added the export step
 - `neighborhood_blender.py` — hardened `clear_world()`
 - `CLAUDE.md` — updated "Web viewer" section to describe the glTF pipeline
+- `town.html` — added touch/joystick/drag-look controls for mobile
+- `index.html` — responsive tweaks for small/short mobile viewports
