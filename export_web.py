@@ -30,12 +30,23 @@ def export_web_glb():
         print("export_web.py: no WORLD collection found — run neighborhood_blender.py first.")
         return None
 
+    # Jump to the LAST frame of the daily rise/sink animation before touching
+    # anything. New buildings animate up from flattened (scale.z ~0.001) to
+    # full height over the clip, and whatever frame the scene happens to be
+    # sitting on when this loads gets baked into the export. Without this,
+    # the newest houses can export "pancaked" mid-rise. frame_end is already
+    # set correctly by setup_render() in the just-saved .blend, so this alone
+    # guarantees every object is captured in its fully-grown resting pose.
+    scene = bpy.context.scene
+    scene.frame_set(scene.frame_end)
+
     # Select everything in WORLD (this includes the collection-instance empties
     # for every building/tree/car/etc AND the plain road/ground meshes).
     bpy.ops.object.select_all(action="DESELECT")
     for obj in col.objects:
         obj.hide_select = False
         obj.hide_viewport = False
+        obj.scale = (1.0, 1.0, 1.0)  # belt-and-braces against any residual mid-animation scale
         obj.select_set(True)
     bpy.context.view_layer.objects.active = col.objects[0] if col.objects else None
 

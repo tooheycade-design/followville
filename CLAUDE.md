@@ -82,6 +82,11 @@ the SAME blender invocation (--python a.py --python b.py). PITFALL (fixed, don't
 the GUI City-panel Grow button saves the .blend including built objects; a separate export
 launch would read that stale scene. Blend was purged + resaved clean on day 4.
 
+PITFALL (fixed, don't reintroduce): export_web.py must jump to the animation's final frame
+(scene.frame_set(scene.frame_end)) before realizing/exporting, or newly-risen houses can get
+baked mid-rise ("pancaked" flat to the ground) — the daily rise animation scales buildings
+from scale.z≈0.001 up to 1 over the clip, and export_apply=True bakes whatever frame is current.
+
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
 grow.sh (CLI) | world_state.json (THE CITY) | renders/ (videos) | AI_HANDOFF.md (cheap-model manual)

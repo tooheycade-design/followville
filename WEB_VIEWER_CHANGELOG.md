@@ -156,6 +156,23 @@ Kept here (rather than just in chat) so it survives across sessions.
   Drop vs. other) before this can actually go in the Instagram bio — this
   folder is only running on a local server (`python3 -m http.server`) so far.
 
+## 11. Bug: deployed houses appeared "pancaked" to the ground
+- Cause: `export_web.py` exported whatever animation frame the Blender scene
+  happened to be on. `neighborhood_blender.py`'s daily rise animation scales
+  new buildings from flat (`scale.z ≈ 0.001`) up to full height over the
+  clip — if the scene wasn't sitting on the final frame when the export ran,
+  `export_apply=True` baked that flattened mid-rise pose straight into the GLB.
+- Fix: `export_web_glb()` now calls `scene.frame_set(scene.frame_end)` first
+  thing (frame_end is already set correctly by `setup_render()` in the saved
+  `.blend`), plus forces every WORLD object's `scale` back to `(1,1,1)` as a
+  belt-and-braces guard, before realizing instances / exporting.
+- Landing page (`index.html`) text also simplified: tagline is now just
+  "Walk it yourself, right in your browser." and the founders-note paragraph
+  about population vs. house count was removed entirely.
+- **Still needed:** re-run `./grow.sh` (or otherwise regenerate `town.glb`)
+  with this fix in place, then push so Vercel redeploys, then confirm no
+  more pancaked houses.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
