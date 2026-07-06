@@ -1,7 +1,7 @@
 {
- "day": 4,
- "pop": 14,
- "seed_counter": 16,
+ "day": 5,
+ "pop": 22,
+ "seed_counter": 23,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -109,6 +109,55 @@
    "gy": 0,
    "seed": 15,
    "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 3,
+   "seed": 16,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -4,
+   "seed": 17,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 3,
+   "seed": 18,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -2,
+   "seed": 19,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -4,
+   "seed": 20,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 3,
+   "seed": 21,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -4,
+   "seed": 22,
+   "day": 5
   }
  ],
  "milestones": []

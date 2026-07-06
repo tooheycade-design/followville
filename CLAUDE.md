@@ -5,7 +5,7 @@ Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEV
 it casually; back it up before risky operations.
 
 ## Current canon (update this section each day!)
-- Day 4, population 14, 15 buildings. Sunset fireworks marked the founder era complete.
+- Day 5, population 22, 22 buildings. Sunset fireworks marked the founder era complete (day 4).
 - Web viewer shipped day 4 (index.html + town.glb, see Web viewer section).
 - FOUNDERS (first 10 residents, custom houses, all built):
   1 mushroom  2 casino  3 cat  4 castle  5 Eiffel home  6 hydrangea flower
@@ -14,7 +14,7 @@ it casually; back it up before risky operations.
   containing custom houses (enforced in code).
 
 ## Daily workflow (Terminal, no Blender GUI needed)
-  cd ~/Documents/neighborhood
+  cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/neighborhood
   ./grow.sh +N --render              # N followers gained -> N houses + video
   ./grow.sh -N | "=TOTAL" | replay   # losses / set total / re-animate
 Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate
@@ -87,7 +87,22 @@ PITFALL (fixed, don't reintroduce): export_web.py must jump to the animation's f
 baked mid-rise ("pancaked" flat to the ground) — the daily rise animation scales buildings
 from scale.z≈0.001 up to 1 over the clip, and export_apply=True bakes whatever frame is current.
 
+## Collaboration (Cade + Zach)
+This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
+each has it synced locally via iCloud Drive, and each points their own
+Cowork/Claude session at their own local copy. They take turns (never edit at the same
+time); check that iCloud Drive shows fully synced to the other's machine automatically,
+so it's just there next time either person (or their AI) opens the folder — no git pull
+needed for this part. GitHub + Vercel (below) are separate and only used for deploying
+the live website; Zach doesn't need GitHub/Vercel access unless he wants to deploy himself.
+
+Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing off (plain-
+English, not technical) — that's the whole "who changed what" tracking mechanism. Check
+TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
+and check that Google Drive shows fully synced before starting your own turn.
+
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
 grow.sh (CLI) | world_state.json (THE CITY) | renders/ (videos) | AI_HANDOFF.md (cheap-model manual)
+TEAM_LOG.md (plain-English "who changed what" between Cade & Zach, see Collaboration section)
 world_state_*_backup.json = old test states, ignorable.
