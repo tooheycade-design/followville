@@ -16,6 +16,11 @@ AI is helping each of them) can see what the other did on their turn.
 ## Log
 
 2026-07-07 — Cade (via Windows Claude) — set up real deploying from Windows: installed
+2026-07-07 — Zach (via Claude) — set up a real GitHub Desktop clone at ~/Documents/GitHub/followville
+  (Separate from the shared iCloud folder, same idea as Cade's Windows deploy_website.bat setup) to
+  Find out whether Cade's collaborator invite gives write access, not just read. This line is the
+  Test: if it shows up on GitHub after a push, write access is confirmed.
+
   Git, cloned the GitHub repo, and built `deploy_website.bat` (one-click push: copies the
   current site files in, commits, pushes -- Vercel redeploys automatically). Used it for
   the first time to push the day 6 growth + the new street-cam feature -- the live site
