@@ -19,7 +19,10 @@ it casually; back it up before risky operations.
   ./grow.sh +N --render              # N followers gained -> N houses + video
   ./grow.sh -N | "=TOTAL" | replay   # losses / set total / re-animate
 Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate
-       --cam overhead --tag NAME --time day|sunset|night --season X --still
+       --cam overhead|street --tag NAME --time day|sunset|night --season X --still
+       (--cam street: added 2026-07-07 — eye-level flythrough down the town's oldest
+       street past the founder blocks, instead of the default overhead orbit; runs at
+       least 12s so it reads as "slow". See build_stage() in neighborhood_blender.py.)
 Videos auto-copy to Desktop. Multi-shot days: hero shot (replay --hero --render --tag hero)
 + overhead/final (+0 --cam overhead --render --tag overhead).
 
@@ -59,11 +62,37 @@ is a safety net only — it's visually approximate and NOT kept in sync with new
 house types. Prefer fixing/regenerating town.glb over touching the JS builders.
 
 Serve via a local server (`python3 -m http.server` in this folder — fetch() needs http://,
-not file://) or deploy the folder as a static site (GitHub Pages/Netlify) for a stable
-Instagram-bio link; redeploy (or re-copy town.glb + world_state.json) after each grow.sh run.
+not file://) to preview locally. For the actual live site, see "Deploying the live site"
+below — growing the town does NOT push those changes live by itself.
 It always shows the CURRENT town only (no time-travel yet). Usernames on houses are a
 planned feature, not wired up — needs a `username` field added to buildings in
 world_state.json first.
+
+## Deploying the live site (GitHub + Vercel) — READ THIS, it's the thing that got missed
+Live URL: `https://followville-kappa.vercel.app`. Repo:
+`https://github.com/tooheycade-design/followville`. Vercel auto-redeploys on every push
+to `main` — but nothing pushes automatically on its own.
+
+**Growing the town (`grow.sh` / `grow_windows.bat`) does NOT push to GitHub or update the
+live site.** Neither script contains a single git command — they only ever touch files in
+this local iCloud folder. Deploying is a separate, manual step, and it's easy to forget:
+on 2026-07-07 the live site was still showing "day 5" a full day after the local town had
+already grown to day 6, because nobody had pushed in between. **After growing the town,
+always also check/push the live site — don't assume it updates itself.**
+- **Windows:** `deploy_website.bat` (built 2026-07-07) does this in one click — copies the
+  current tracked files (index.html, town.html, town.glb, world_state.json,
+  neighborhood_blender.py, grow.sh, export_web.py, the .md docs, etc.) into a local git
+  clone at `C:\Users\cadet\followville_repo`, commits, and pushes. Progress + a final
+  `ALL_DONE`/`ALL_FAILED` land in `deploy_log.txt`. See the "Third AI" section below for
+  the full setup story (installing git, cloning, one-time GitHub sign-in, etc.).
+- **Mac:** no equivalent script was found in this folder as of 2026-07-07 — the repo
+  already had prior commits (e.g. "Day 5: population 22, 22 buildings") before any AI
+  touched git here, so it looks like Cade has just been running `git add / commit / push`
+  by hand from a Mac terminal after growing. **If you're Zach's Claude reading this:**
+  check with Cade whether he already has a routine for this before assuming there isn't
+  one — and if there really isn't one, consider offering to build a `deploy_website.sh`
+  mirroring this same idea (copy tracked files, commit, push, log ALL_DONE) so this stops
+  getting missed.
 
 ## Milestones (auto-built when population crosses)
 500 fountain plaza | 2,000 skyscraper | 10,000 stadium
@@ -94,8 +123,9 @@ each has it synced locally via iCloud Drive, and each points their own
 Cowork/Claude session at their own local copy. They take turns (never edit at the same
 time); check that iCloud Drive shows fully synced to the other's machine automatically,
 so it's just there next time either person (or their AI) opens the folder — no git pull
-needed for this part. GitHub + Vercel (below) are separate and only used for deploying
-the live website; Zach doesn't need GitHub/Vercel access unless he wants to deploy himself.
+needed for this part. GitHub + Vercel (see "Deploying the live site" section below) are
+separate and only used for deploying the live website; Zach doesn't need GitHub/Vercel
+access unless he wants to deploy himself.
 
 Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing off (plain-
 English, not technical) — that's the whole "who changed what" tracking mechanism. Check
@@ -157,12 +187,12 @@ back out without saving. So:
 - If asked to "grow the town" or render a video, it should say so and offer either: point
   Cade to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
   rather than attempting the GUI-clicking approach for a real growth day.
-- **Live site is `https://followville-kappa.vercel.app`** (GitHub repo:
-  `https://github.com/tooheycade-design/followville`, auto-deployed by Vercel on every
-  push to `main`). **`deploy_website.bat` now exists** (built 2026-07-07) — a one-click
-  push script that copies this iCloud folder's known-tracked files (index.html, town.html,
-  town.glb, world_state.json, neighborhood_blender.py, grow.sh, export_web.py, the .md
-  docs, etc. — NOT renders/, debug logs, or one-off scripts) into a local git clone at
+- **Deploying to the live site** (see "Deploying the live site" section above for why this
+  matters — growing the town alone does NOT push). **`deploy_website.bat` now exists**
+  (built 2026-07-07) — a one-click push script that copies this iCloud folder's
+  known-tracked files (index.html, town.html, town.glb, world_state.json,
+  neighborhood_blender.py, grow.sh, export_web.py, the .md docs, etc. — NOT renders/,
+  debug logs, or one-off scripts) into a local git clone at
   `C:\Users\cadet\followville_repo`, commits, and pushes to `origin/main`. Progress + a
   final `ALL_DONE`/`ALL_FAILED` go to `deploy_log.txt`. Git itself wasn't installed on
   this PC before — added via `winget install --id Git.Git -e --source winget`; the clone
@@ -186,3 +216,14 @@ neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.
 grow.sh (CLI) | world_state.json (THE CITY) | renders/ (videos) | AI_HANDOFF.md (cheap-model manual)
 TEAM_LOG.md (plain-English "who changed what" between Cade & Zach, see Collaboration section)
 world_state_*_backup.json = old test states, ignorable.
+
+Windows-only tooling (permanent, keep): grow_windows.bat/.ps1, preview_website.bat/.ps1,
+deploy_website.bat — see "Third AI" section above for what each does.
+
+Windows-only scratch files (safe to ignore, not tracked by git, not part of the deploy
+whitelist — leftover from building/debugging the above on 2026-07-07): clone_repo.bat,
+cleanup_procs.bat, check_repo.bat, inspect_repo.bat, inspect_repo2.bat, git_config.bat, and
+their matching .txt log outputs, plus deploy_check.txt, git_install.txt, proc_check.txt,
+proc_check2.txt, grow_log.txt, grow_step1_growth.txt, grow_step2_hero.txt,
+grow_step3_overhead.txt, grow_street.txt. Nobody has deleted these per the "never delete
+without approval" rule at the top of this file — ask Cade before cleaning them up.
