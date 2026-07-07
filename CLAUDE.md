@@ -5,7 +5,8 @@ Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEV
 it casually; back it up before risky operations.
 
 ## Current canon (update this section each day!)
-- Day 5, population 22, 22 buildings. Sunset fireworks marked the founder era complete (day 4).
+- Day 6, population 26, 26 buildings (grown 2026-07-07 via Windows Claude: +4 houses).
+  Sunset fireworks marked the founder era complete (day 4).
 - Web viewer shipped day 4 (index.html + town.glb, see Web viewer section).
 - FOUNDERS (first 10 residents, custom houses, all built):
   1 mushroom  2 casino  3 cat  4 castle  5 Eiffel home  6 hydrangea flower
@@ -100,6 +101,62 @@ Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing of
 English, not technical) — that's the whole "who changed what" tracking mechanism. Check
 TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
 and check that Google Drive shows fully synced before starting your own turn.
+
+### Third AI: "Cade Claude on Windows" (Cowork)
+As of 2026-07-07, Cade also works this project from a Windows PC, via Claude in Cowork mode.
+That session is a THIRD AI with access to this same folder — alongside Cade's Mac Claude and
+Zach's Mac Claude. It reaches the project through the same iCloud Drive sync (folder path on
+this machine: `C:\Users\cadet\iCloudDrive\neighborhood`), so the same rules apply: take turns,
+check iCloud is fully synced before starting, add a TEAM_LOG.md line before handing off (sign
+it "Cade (via Windows Claude)" so it's clear which AI/machine made the change).
+
+**What's different about the Windows session — corrected 2026-07-07:** its file/bash tools
+run inside a sandboxed Linux shell that only sees this mounted folder (no Blender there,
+no path to launch one) — but this machine ALSO has a separate screen-control tool
+(computer-use) that, once Cade grants access, can see the real Windows desktop and drive
+it with actual clicks/keystrokes. **Blender 5.1 is installed on this PC.** Verified
+2026-07-07: with that access granted, this session opened `neighborhood.blend` in the real
+Blender GUI, used the Scripting tab to inspect the embedded generator script, and closed
+back out without saving. So:
+- It CAN open Blender and click around the GUI (File > Open Recent, Scripting tab, etc.) —
+  useful for inspection/diagnosis. This is something the Mac Claude sessions have never
+  done, since they only ever drive Blender headlessly via `grow.sh`.
+- It should NOT drive the GUI City panel to run growth days. Simulated clicks are fragile —
+  one stray keypress during testing briefly flagged the file as having unsaved changes with
+  no visible edit. For a file where `world_state.json`/the `.blend` is the city's only
+  memory, that risk isn't worth it.
+- **`grow_windows.bat` + `grow_windows.ps1` now exist** (built 2026-07-07) — a proper headless
+  Windows equivalent of `grow.sh`: same `+N`/`-N`/`=N`/`replay` syntax and extras, runs
+  `blender.exe --background` (no GUI, nothing to click), writes progress + the final
+  RESULT/STILL/VIDEO lines to `grow_log.txt` ending `ALL_DONE`/`ALL_FAILED`. Best launched via
+  Win+R (typing works there) with something like
+  `"C:\Users\cadet\iCloudDrive\neighborhood\grow_windows.bat" +5 --render` — typing directly
+  into a visible Command Prompt/Terminal window is blocked for this session, so that's the
+  practical way to pass arguments without a human at the keyboard. **Verified working
+  2026-07-07** with a real `replay` run (safe — never touches `world_state.json`/the
+  `.blend` by design): got `ALL_DONE`, `town.glb` refreshed, state file untouched (checked
+  by hash). Still get Cade's go-ahead before the first real `+N`/`-N`/`=N` growth day from
+  here. Two gotchas already hit and fixed: (1) keep both files plain ASCII — Windows
+  PowerShell 5.1 misreads em-dashes/curly quotes in a BOM-less `.ps1` and can crash
+  mid-string; (2) `$ErrorActionPreference = "Stop"` plus `2>&1` on the Blender call turns
+  even harmless stderr output (e.g. a Python `DeprecationWarning`) into a fatal PowerShell
+  error — the script now relaxes that just around the Blender invocation.
+- **`preview_website.bat` + `preview_website.ps1` also exist** (built 2026-07-07) — a tiny
+  PowerShell-only local HTTP server (no Python/Node dependency) for previewing
+  `index.html`/`town.html` on this machine, since their `fetch()` calls don't work over
+  `file://`. Auto-opens the default browser to `http://localhost:8000/`; auto-stops after
+  20 minutes. Verified working: landing page and `town.html` both correctly showed live
+  "day 5 / population 22" from `world_state.json`, and `town.glb` loaded over the wire
+  (200 OK) — confirms the Blender-to-website pipeline is intact from Windows.
+- It CAN safely do everything else: edit/read docs (README, CLAUDE.md, AI_HANDOFF.md,
+  TEAM_LOG.md, WEB_VIEWER_CHANGELOG.md), tweak the web viewer (`index.html`, `town.html`),
+  inspect `world_state.json` and `town.glb` (read-only unless Cade explicitly asks for a
+  hand-edit — see the "never edit/delete casually" rule at the top of this file), open
+  Blender read-only for diagnosis (always "Ignore"/"Don't Save" on any prompt), and general
+  planning/writing tasks.
+- If asked to "grow the town" or render a video, it should say so and offer either: point
+  Cade to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
+  rather than attempting the GUI-clicking approach for a real growth day.
 
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)

@@ -1123,37 +1123,73 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
 
-    # camera rig: empty at center, camera orbits it
-    rig = bpy.data.objects.new("CamRig", None)
-    rig.location = (cx, cy, 0)
-    world_col.objects.link(rig)
+    if cam == "street":
+        # eye-level flythrough down the town's oldest street (the by=0 road,
+        # which runs past whichever buildings sit at gy 0-2 -- the founder
+        # blocks from day 1) instead of orbiting a fixed point overhead.
+        min_bx, max_bx, min_by, max_by = block_extent(buildings)
+        x0, x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
+        street_y = -ROAD / 2
+        street_z = 1.75  # roughly eye/walking height
 
-    cam_data = bpy.data.cameras.new("Cam")
-    cam_data.lens = 45
-    cam_data.dof.use_dof = True
-    cam_data.dof.focus_object = rig
-    cam_data.dof.aperture_fstop = fstop
-    cam = bpy.data.objects.new("Camera", cam_data)
-    cam.parent = rig
-    az, pol = math.radians(38), math.radians(pol_deg)
-    cam.location = (dist * math.sin(pol) * math.cos(az),
-                    -dist * math.sin(pol) * math.sin(az),
-                    dist * math.cos(pol))
-    tr = cam.constraints.new("TRACK_TO")
-    tr.target = rig
-    tr.track_axis = "TRACK_NEGATIVE_Z"
-    tr.up_axis = "UP_Y"
-    world_col.objects.link(cam)
-    bpy.context.scene.camera = cam
+        cam_data = bpy.data.cameras.new("Cam")
+        cam_data.lens = 32  # wider, more human POV than the establishing shots
+        cam_data.dof.use_dof = False  # a far-ahead aim target makes DOF unreliable here
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        cam_obj.location = (x0, street_y, street_z)
+        world_col.objects.link(cam_obj)
+        bpy.context.scene.camera = cam_obj
 
-    # slow orbit across the whole shot
-    rig.rotation_euler = (0, 0, 0)
-    rig.keyframe_insert("rotation_euler", frame=1)
-    rig.rotation_euler = (0, 0, math.radians(9))
-    rig.keyframe_insert("rotation_euler", frame=frame_end)
-    for fc in obj_fcurves(rig):
-        for kp in fc.keyframe_points:
-            kp.interpolation = "LINEAR"
+        # aim far down the road (not at a nearby point) so heading stays
+        # essentially constant while the camera translates -- like actually
+        # walking/driving straight down the street, not swinging to track it
+        aim = bpy.data.objects.new("StreetAim", None)
+        aim.location = (x1 + 2000, street_y, street_z)
+        world_col.objects.link(aim)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        cam_obj.location = (x0, street_y, street_z)
+        cam_obj.keyframe_insert("location", frame=1)
+        cam_obj.location = (x1, street_y, street_z)
+        cam_obj.keyframe_insert("location", frame=frame_end)
+        for fc in obj_fcurves(cam_obj):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
+    else:
+        # camera rig: empty at center, camera orbits it
+        rig = bpy.data.objects.new("CamRig", None)
+        rig.location = (cx, cy, 0)
+        world_col.objects.link(rig)
+
+        cam_data = bpy.data.cameras.new("Cam")
+        cam_data.lens = 45
+        cam_data.dof.use_dof = True
+        cam_data.dof.focus_object = rig
+        cam_data.dof.aperture_fstop = fstop
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        cam_obj.parent = rig
+        az, pol = math.radians(38), math.radians(pol_deg)
+        cam_obj.location = (dist * math.sin(pol) * math.cos(az),
+                        -dist * math.sin(pol) * math.sin(az),
+                        dist * math.cos(pol))
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = rig
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        world_col.objects.link(cam_obj)
+        bpy.context.scene.camera = cam_obj
+
+        # slow orbit across the whole shot
+        rig.rotation_euler = (0, 0, 0)
+        rig.keyframe_insert("rotation_euler", frame=1)
+        rig.rotation_euler = (0, 0, math.radians(9))
+        rig.keyframe_insert("rotation_euler", frame=frame_end)
+        for fc in obj_fcurves(rig):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
 
     # sun (settings depend on time of day)
     sun_data = bpy.data.lights.new("Sun", type="SUN")
@@ -1369,6 +1405,8 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
+    if cfg.get("cam") == "street":
+        frame_end = max(frame_end, FPS * 12)  # give the street flythrough time to feel slow
     f = prehold
     for e in sink:
         animate_sink(e, f)
