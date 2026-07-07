@@ -157,6 +157,29 @@ back out without saving. So:
 - If asked to "grow the town" or render a video, it should say so and offer either: point
   Cade to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
   rather than attempting the GUI-clicking approach for a real growth day.
+- **Live site is `https://followville-kappa.vercel.app`** (GitHub repo:
+  `https://github.com/tooheycade-design/followville`, auto-deployed by Vercel on every
+  push to `main`). **`deploy_website.bat` now exists** (built 2026-07-07) — a one-click
+  push script that copies this iCloud folder's known-tracked files (index.html, town.html,
+  town.glb, world_state.json, neighborhood_blender.py, grow.sh, export_web.py, the .md
+  docs, etc. — NOT renders/, debug logs, or one-off scripts) into a local git clone at
+  `C:\Users\cadet\followville_repo`, commits, and pushes to `origin/main`. Progress + a
+  final `ALL_DONE`/`ALL_FAILED` go to `deploy_log.txt`. Git itself wasn't installed on
+  this PC before — added via `winget install --id Git.Git -e --source winget`; the clone
+  was made with `git clone https://github.com/tooheycade-design/followville
+  C:\Users\cadet\followville_repo`. First real push (2026-07-07, the day 6 + street-cam
+  update) needed a one-time `git config --global user.name/user.email` (now set) and one
+  interactive GitHub sign-in via the browser (Git Credential Manager popped up a normal
+  github.com login page for Cade to complete himself — this session never sees or handles
+  the credentials). Later pushes should be silent unless that browser login expires.
+  Verified working end to end: pushed day 6/pop 26 + the new street-cam feature, confirmed
+  live on `followville-kappa.vercel.app` within about a minute (stats and `town.glb` both
+  updated).
+  - **Gotcha:** run Windows commands here as a `.bat` file (write it, then launch via
+    Win+R), never as one long `cmd /c "...with nested quotes..."` string typed directly
+    into Win+R — a complex one-liner with nested `"` silently mis-parses and the command
+    chain just stops partway with no visible error, which looked exactly like a hung
+    `git clone` the first time this was tried (it wasn't hung; the quoting broke).
 
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)

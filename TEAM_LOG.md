@@ -15,6 +15,15 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-07 — Cade (via Windows Claude) — set up real deploying from Windows: installed
+  Git, cloned the GitHub repo, and built `deploy_website.bat` (one-click push: copies the
+  current site files in, commits, pushes -- Vercel redeploys automatically). Used it for
+  the first time to push the day 6 growth + the new street-cam feature -- the live site
+  (followville-kappa.vercel.app) had been stuck showing day 5 since the last Mac push;
+  it's now correctly showing day 6/population 26, confirmed in a real browser. Cade did
+  one manual GitHub sign-in in his own browser for the first push (normal one-time step,
+  this session never saw the credentials); future pushes should be silent.
+
 2026-07-07 — Cade (via Windows Claude) — added a new street-view camera mode
   (`--cam street`) to neighborhood_blender.py: instead of orbiting overhead, the camera
   now drives straight down the town's oldest street (the road past the founder blocks)
