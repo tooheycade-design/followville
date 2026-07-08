@@ -57,7 +57,7 @@ def _cli():
         return {}
     args = sys.argv[sys.argv.index("--") + 1:]
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
-             "--hero": "hero", "--celebrate": "celebrate"}
+             "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -299,6 +299,50 @@ def build_park(col, seed):
                    math.cos(a) * r - 2, math.sin(a) * r - 2)
     add_box(col, "bench", 2.2, 0.7, 0.55, -4, 4, 0.35, m["trunk"])
     add_box(col, "bench2", 0.7, 2.2, 0.55, 5, -4, 0.35, m["trunk"])
+
+def build_pond(col, seed):
+    """A small neighborhood pond -- ducks live here (see build_duck / animate_ducks)."""
+    rng = random.Random(seed)
+    m = std_mats()
+    grass = mat("NB_pond_bank", (0.44, 0.62, 0.34), 1.0)
+    reed_g = mat("NB_pond_reed", (0.42, 0.58, 0.28), 0.9)
+    stone = mat("NB_pond_stone", (0.62, 0.61, 0.58), 0.95)
+    lily = mat("NB_pond_lily", (0.30, 0.52, 0.28), 0.7)
+    add_box(col, "bank", LOT - 0.6, LOT - 0.6, 0.25, 0, 0, 0, grass)
+    add_ngon_cone(col, "water", 3.9, 3.9, 0.22, 20, 0, 0, 0.02, m["water"])
+    add_ngon_cone(col, "waterlip", 4.15, 4.05, 0.1, 20, 0, 0, 0.25, stone)
+    for i in range(5 + rng.randrange(3)):  # reeds around the bank
+        a = rng.random() * math.tau
+        r = 4.3 + rng.random() * 0.6
+        add_ngon_cone(col, "reed", 0.08, 0.03, 1.1 + rng.random() * 0.6, 5,
+                      math.cos(a) * r, math.sin(a) * r, 0.25, reed_g)
+    for i in range(3 + rng.randrange(2)):  # loose pebbles
+        a = rng.random() * math.tau
+        r = 4.0 + rng.random() * 0.5
+        s = 0.3 + rng.random() * 0.3
+        add_ngon_cone(col, "pebble", s, s * 0.6, s * 0.5, 6,
+                      math.cos(a) * r, math.sin(a) * r, 0.15, stone)
+    for i in range(2 + rng.randrange(2)):  # lily pads
+        px, py = rng.uniform(-2.0, 2.0), rng.uniform(-2.0, 2.0)
+        add_ngon_cone(col, "lily", 0.5 + rng.random() * 0.3, 0.45, 0.05, 8, px, py, 0.24, lily)
+
+DUCK_COLORS = [(0.94, 0.85, 0.25),   # yellow duckling
+               (0.36, 0.30, 0.20),   # brown hen mallard
+               (0.18, 0.30, 0.20)]   # dark green-headed drake (simplified, whole-body tint)
+
+def build_duck(col, seed):
+    """A small duck that paddles a pond -- see animate_ducks for the swim path."""
+    rng = random.Random(seed)
+    body_c = mat("NB_duck_body%d" % seed, DUCK_COLORS[seed % len(DUCK_COLORS)], 0.6)
+    bill = mat("NB_duck_bill", (0.85, 0.55, 0.12), 0.5)
+    eye = mat("NB_duck_eye", (0.08, 0.08, 0.08), 0.3)
+    b = add_ngon_cone(col, "body", 0.34, 0.24, 0.30, 10, 0, 0, 0.06, body_c)
+    b.scale = (1.0, 1.35, 1.0)
+    add_ngon_cone(col, "head", 0.16, 0.13, 0.18, 8, 0, 0.32, 0.30, body_c)
+    add_box(col, "bill", 0.10, 0.16, 0.06, 0, 0.42, 0.32, bill)
+    for sx in (-1, 1):
+        add_ngon_cone(col, "eye", 0.02, 0.02, 0.02, 6, sx * 0.07, 0.36, 0.37, eye)
+    add_ngon_cone(col, "tail", 0.09, 0.02, 0.14, 6, 0, -0.32, 0.14, body_c)
 
 def build_lone_tree(col, seed):
     rng = random.Random(seed)
@@ -721,6 +765,8 @@ ASSET_VARIANTS = {
     "plaza":       [("AST_plaza_0", lambda c: build_plaza(c, 700))],
     "skyscraper":  [("AST_sky_%d" % i, lambda c, i=i: build_skyscraper(c, 800 + i)) for i in range(2)],
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
+    "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
+    "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
 }
 
 # ═══════════════════════════════ GRID / PLACEMENT ═══════════════════════════════
@@ -735,7 +781,7 @@ def lot_to_world(gx, gy):
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
-        "cottagehouse": 1,
+        "cottagehouse": 1, "pond": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3}
 
 # unlocked automatically the day population crosses the threshold
@@ -800,7 +846,7 @@ def place_instance(world_col, b, name):
                                        "n": math.pi, "w": -math.pi / 2}[b["face"]])
     elif b["type"] in ("tree", "bush", "rock"):
         empty.rotation_euler = (0, 0, rng.random() * math.tau)
-    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car"):
+    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car", "pond", "duck"):
         # face the front door toward the nearest road edge of the block
         bn = BLOCK_N - s
         ix, iy = b["gx"] % BLOCK_N, b["gy"] % BLOCK_N
@@ -923,6 +969,33 @@ def animate_traffic(world_col, buildings, frame_end, day):
         for fc in obj_fcurves(e):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+
+def animate_ducks(world_col, buildings, frame_end):
+    """Ducks paddle slow loops around every pond in town -- the water version
+    of animate_traffic. Ducks aren't saved to world_state; they're
+    re-spawned fresh each run from the pond's own seed."""
+    ponds = [b for b in buildings if b["type"] == "pond"]
+    for b in ponds:
+        cx, cy = lot_to_world(b["gx"], b["gy"])
+        rng = random.Random(5000 + b["seed"])
+        n = 2 + rng.randrange(3)
+        for _ in range(n):
+            d = {"type": "duck", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
+            e = place_instance(world_col, d, "duck")
+            r = 1.6 + rng.random() * 1.6  # swim radius -- stays inside the pond
+            a0 = rng.random() * math.tau
+            spin = (1 if rng.random() < 0.5 else -1) * (0.5 + rng.random() * 0.4)
+            waypoints = 5
+            for wp in range(waypoints + 1):
+                frame = 1 + (frame_end - 1) * wp / waypoints
+                a = a0 + spin * math.tau * wp / waypoints
+                e.location = (cx + math.cos(a) * r, cy + math.sin(a) * r, 0.02)
+                e.rotation_euler = (0, 0, a + math.pi / 2 * (1 if spin > 0 else -1))
+                e.keyframe_insert("location", frame=frame)
+                e.keyframe_insert("rotation_euler", frame=frame)
+            for fc in obj_fcurves(e):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
 
 def build_fireworks(world_col, cx, cy, frame_end):
     """One-off celebration: firework bursts above an area. Not saved to the
@@ -1342,7 +1415,23 @@ def main(cfg=None):
                 specials.append((t, 1, (tgx, tgy)))
             else:
                 specials.append((spec, 1, None))
-        additions = specials + [("house", gained, None), ("mushroomhouse", n_mush, None),
+
+        pond_extras = []
+        house_gained = gained
+        if cfg.get("pond") and gained > 0:
+            # cluster the pond + up to 3 new houses around it in one free 2x2
+            # patch, so the growth video reads as "these houses + this pond
+            # arrived together" rather than scattering them across town
+            (px, py), = find_free_lots(1, 2, occupied)
+            cluster_cells = [(px, py), (px + 1, py), (px, py + 1), (px + 1, py + 1)]
+            pond_extras.append(("pond", 1, cluster_cells[0]))
+            house_cells = cluster_cells[1:1 + min(gained, 3)]
+            for cell in house_cells:
+                pond_extras.append(("house", 1, cell))
+            house_gained = gained - len(house_cells)
+
+        additions = specials + pond_extras + [("house", house_gained, None),
+                                ("mushroomhouse", n_mush, None),
                                 ("apartment", n_apart, None), ("park", n_parks, None),
                                 ("tree", n_trees, None)]
         if gained or lost or n_apart or n_parks or n_trees or n_mush or specials:
@@ -1419,6 +1508,7 @@ def main(cfg=None):
     tod = cfg.get("time") or auto_time(state["day"])
     season = cfg.get("season") or auto_season()
     animate_traffic(world_col, keep or state["buildings"], frame_end, state["day"])
+    animate_ducks(world_col, keep or state["buildings"], frame_end)
     hero = None
     if cfg.get("hero") and new_batch:
         pts = []

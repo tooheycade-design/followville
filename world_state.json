@@ -1,7 +1,7 @@
 {
- "day": 6,
- "pop": 26,
- "seed_counter": 27,
+ "day": 7,
+ "pop": 29,
+ "seed_counter": 31,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -186,6 +186,34 @@
    "gy": 1,
    "seed": 26,
    "day": 6
+  },
+  {
+   "type": "pond",
+   "gx": 1,
+   "gy": 1,
+   "seed": 27,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 1,
+   "seed": 28,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 2,
+   "seed": 29,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 2,
+   "seed": 30,
+   "day": 7
   }
  ],
  "milestones": []
