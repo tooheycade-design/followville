@@ -180,7 +180,9 @@ growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored
 NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
 incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas.
-Admin (verify/reject/revoke) = SQL helpers, see CLAIMING_SETUP.md §3.
+Admin (verify/reject/revoke) = double-click `admin.bat` → local one-click admin
+page (admin.html, reads supabase_sync.env at runtime, LOCAL-ONLY — never add it
+to the deploy whitelist), or SQL helpers, see CLAIMING_SETUP.md §3.
 Setup status: LIVE as of 2026-07-09. Supabase project "followville"
 (ref bposhxtidoyulallvhdp, in Cade's "The Human Archive" org) created, schema run,
 email-confirmation OFF, legacy anon key pasted into town.html (deployed, commit

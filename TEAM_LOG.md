@@ -15,6 +15,19 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 — Cade (via Windows Claude) — polished the claiming experience after Cade's first
+  real playtest, and approved the first two residents (@cade.toohey → the castle, and new
+  user @stellarkehler, verified via DM code). Fixes: name tags were floating over the street
+  (Blender's GLB export mirrors the north-south axis — verified against town.glb itself and
+  corrected), tags are now smaller, sit just above each house's actual roof, and only appear
+  when you're near; the claim prompt now only shows when you're right at a house's front
+  door AND looking at it, with a floating "[E] claim this house" tag over that exact house;
+  the landing page is session-aware (shows "Go to my home" + "logged in as @handle · log
+  out" when appropriate); "go to my home" spawns you facing your own front door. Also built
+  admin.bat/admin.html — a LOCAL-ONLY one-click admin page (approve/reject verifications,
+  revoke claims) that reads the secret key from supabase_sync.env at runtime, so it can
+  never work on the live site; never add it to deploy_website.bat's whitelist.
+
 2026-07-09 — Cade (via Windows Claude) — took claimable homes LIVE: created the Supabase
   project (followville, in "The Human Archive" org) through Cade's browser, ran the schema,
   turned off email-confirmation for smooth signups, wired the anon key into town.html and

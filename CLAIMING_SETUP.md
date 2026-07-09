@@ -60,6 +60,16 @@ and never overwrites manual edits.
 
 ## 3. Verifying followers (manual, until Meta app review)
 
+**The easy way (built 2026-07-09): double-click `admin.bat`.** It opens a local
+admin page (http://localhost:8000/admin.html) with one-click approve / reject
+buttons for everyone waiting, plus every claimed house with a revoke button.
+Check the DM really came from the listed handle, then click approve — done.
+The page is local-only by design: it reads the admin key from
+`supabase_sync.env` at runtime, so it can never work on the live site and must
+never be added to deploy_website.bat's whitelist.
+
+The manual SQL way (works from any machine with dashboard access):
+
 True "does this person follow me?" checking is impossible via Instagram's API —
 what verification proves is that the person **controls the handle** they typed
 (stops one person claiming 50 houses under handles they don't own). Users get a
