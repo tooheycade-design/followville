@@ -8,6 +8,44 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Claude: +41 houses
+  around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
+  New that day, all in neighborhood_blender.py:
+  * `--parkring` flag: gained houses become "ringhouse" buildings laid out on two rings
+    around a "parkdistrict" building (circular park: gazebo, paths, flowers, benches,
+    trees + two ring roads with dashes/lamps + connector road to the grid). These are
+    OFF-GRID: they carry exact `px`/`py`/`rot` fields in world_state.json (see build_pos());
+    footprint() reserves every grid lot under the district circle so nothing collides.
+  * "ringhouse" asset (10 variants): cottages / two-story homes / skinny townhouses in
+    bolder pastels (RING_WALLS) -- intentional variety vs the regular grid houses.
+  * `--cam park`: slow low orbit inside the park (min 12s), for showcase shots.
+  * `--celebrate` now centers fireworks on TODAY'S new batch when there is one
+    (falls back to the founders' custom homes otherwise).
+  * Lighting upgrade (all time-of-day moods): softer sun shadow edges,
+    a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
+    setup_render (all best-effort try/except). LIGHTING SAGA, final numbers (set on
+    Cade's PC the same night, after the Mac-rendered videos still looked washed out):
+    sun 1.0x @ 4.5 deg, fill 0.07x, sky 1.0x -- i.e. back to the approved day-7 look
+    plus a subtle shaded-side lift. Don't re-boost any of these without comparing a
+    frame against day_007_hero on the same machine first.
+  * CORRECTION to the para above (Cade's Windows Claude, same night): Zach's Mac run
+    never actually produced the reshoot -- all three videos on his Desktop were replay
+    (everything rising) + bright lighting, and his --cam park path orbited at r~29.5,
+    straight THROUGH the inner ring houses (r=30.5) -- that was the "camera clipping"
+    Cade reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
+    houses). Fireworks made daylight-visible (emission 9->30, bigger particles). The
+    real final videos (hero rising+fireworks, park + overhead calm +0 showcases) were
+    rendered on Cade's PC via day8_shots.bat. His day-8 state itself was great and was
+    published through the git-backed flow (his Mac had run without NEIGHBORHOOD_REPO_DIR,
+    so day 8 initially existed only in iCloud). Claiming-side follow-ups: parkdistrict
+    set non-claimable (both sync scripts' type lists updated), and town.html claiming
+    understands off-grid px/py/rot buildings now.
+  * day8_grow_and_render.command = the double-clickable one-shot that ran it all
+    (backup -> _refresh_text -> grow +41 --parkring -> 3 renders, logs to render_log.txt).
+  * _refresh_text.py fixed: derives the project folder from the opened .blend instead of
+    a hardcoded ~/Documents path that only existed on one machine.
+  * Latent bug fixed: milestone additions were 2-tuples in a 3-tuple loop (would have
+    crashed the day pop crossed 500).
 - Day 7, population 29, 30 buildings (grown 2026-07-08 via Windows Claude: +3 houses + 1 pond).
   New pond+ducks feature: a "pond" building (SIZE 1, `build_pond`/`ASSET_VARIANTS["pond"]`)
   clusters with new houses in a shared free 2x2 patch via `--pond` (see main()'s `pond_extras`
@@ -30,8 +68,8 @@ you go looking for it here.**
   cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/neighborhood
   ./grow.sh +N --render              # N followers gained -> N houses + video
   ./grow.sh -N | "=TOTAL" | replay   # losses / set total / re-animate
-Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate
-       --cam overhead|street --tag NAME --time day|sunset|night --season X --still
+Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
+       --cam overhead|street|park --tag NAME --time day|sunset|night --season X --still
        (--cam street: added 2026-07-07 — eye-level flythrough down the town's oldest
        street past the founder blocks, instead of the default overhead orbit; runs at
        least 12s so it reads as "slow". See build_stage() in neighborhood_blender.py.)

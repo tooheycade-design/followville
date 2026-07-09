@@ -57,7 +57,8 @@ def _cli():
         return {}
     args = sys.argv[sys.argv.index("--") + 1:]
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
-             "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond"}
+             "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
+             "--parkring": "parkring"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -97,6 +98,9 @@ WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
 ROOFS = [(0.75, 0.34, 0.31), (0.54, 0.60, 0.36), (0.36, 0.49, 0.60),
          (0.71, 0.52, 0.42), (0.49, 0.42, 0.57), (0.66, 0.37, 0.43)]
 GREENS = [(0.31, 0.54, 0.31), (0.36, 0.61, 0.33), (0.25, 0.49, 0.27)]
+# bolder pastels for the day-8 park-ring homes (mint/peach/lilac/butter/sky)
+RING_WALLS = WALLS + [(0.78, 0.91, 0.82), (0.99, 0.86, 0.72), (0.84, 0.80, 0.94),
+                      (0.99, 0.94, 0.70), (0.74, 0.87, 0.95), (0.97, 0.78, 0.84)]
 
 # ═══════════════════════════════ STATE PERSISTENCE ══════════════════════════════
 
@@ -752,6 +756,144 @@ def build_car(col, seed):
             # upright stubby cylinders read as wheels at this scale
             add_ngon_cone(col, "wheel", 0.36, 0.36, 0.3, 10, dx, dy, 0.0, m["metal"])
 
+
+def add_ring(col, name, r_in, r_out, segs, x, y, z, material):
+    """Flat annulus (ring road / circular path), top face only, at height z."""
+    verts, faces = [], []
+    for i in range(segs):
+        a = i / segs * math.tau
+        verts.append((r_in * math.cos(a), r_in * math.sin(a), 0))
+        verts.append((r_out * math.cos(a), r_out * math.sin(a), 0))
+    for i in range(segs):
+        j = (i + 1) % segs
+        faces.append((2 * i, 2 * i + 1, 2 * j + 1, 2 * j))
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    obj.location = (x, y, z)
+    obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+def build_ring_house(col, seed):
+    """Park-ring homes (day 8+): same cute pastel style, more variety --
+    cottages, two-story family homes and skinny townhouses."""
+    rng = random.Random(seed)
+    m = std_mats()
+    wall = mat("NB_rwall%d" % seed, RING_WALLS[rng.randrange(len(RING_WALLS))])
+    trim = mat("NB_rtrim", (0.97, 0.96, 0.93), 0.7)
+    roof = mat("NB_rroof%d" % seed, ROOFS[rng.randrange(len(ROOFS))])
+    style = rng.random()
+    if style < 0.38:      # cozy cottage
+        w = 5.2 + rng.random() * 1.6
+        d = 4.8 + rng.random() * 1.2
+        h = 3.2 + rng.random() * 0.8
+        add_box(col, "base", w, d, h, 0, 0, 0, wall)
+        add_prism_roof(col, "roof", w + 0.8, d + 0.8, 2.0 + rng.random() * 0.8, 0, 0, h, roof)
+        add_box(col, "door", 1.1, 0.25, 1.9, (rng.random() - 0.5) * w * 0.3, -d / 2 - 0.1, 0, m["door"])
+        for sx in (-1, 1):
+            add_box(col, "win", 1.0, 0.2, 0.9, sx * w * 0.28, -d / 2 - 0.08, 1.5, m["window"])
+        if rng.random() < 0.7:  # little porch awning over the door
+            add_box(col, "awn", 1.7, 0.9, 0.16, (rng.random() - 0.5) * w * 0.3, -d / 2 - 0.55, 2.15, trim)
+    elif style < 0.72:    # two-story family home
+        w = 5.6 + rng.random() * 1.4
+        d = 5.2 + rng.random() * 1.0
+        h = 5.6 + rng.random() * 1.0
+        add_box(col, "base", w, d, h, 0, 0, 0, wall)
+        add_box(col, "belt", w + 0.15, d + 0.15, 0.22, 0, 0, h * 0.5, trim)
+        add_prism_roof(col, "roof", w + 0.8, d + 0.8, 1.8 + rng.random() * 0.7, 0, 0, h, roof)
+        add_box(col, "door", 1.15, 0.25, 2.0, (rng.random() - 0.5) * w * 0.3, -d / 2 - 0.1, 0, m["door"])
+        for z in (1.5, h * 0.5 + 1.3):
+            for sx in (-1, 1):
+                add_box(col, "win", 1.0, 0.2, 0.95, sx * w * 0.28, -d / 2 - 0.08, z, m["window"])
+        if rng.random() < 0.6:
+            add_box(col, "chim", 0.7, 0.7, 1.5, w * 0.28, d * 0.2, h + 0.6, m["cap"])
+        if rng.random() < 0.5:  # balcony over the door
+            add_box(col, "balc", 1.9, 0.8, 0.15, 0, -d / 2 - 0.4, h * 0.5 + 0.3, trim)
+            for bx in (-0.85, 0.85):
+                add_box(col, "bpost", 0.12, 0.12, 0.8, bx, -d / 2 - 0.72, h * 0.5 + 0.45, trim)
+            add_box(col, "brail", 1.9, 0.12, 0.12, 0, -d / 2 - 0.72, h * 0.5 + 1.25, trim)
+    else:                 # skinny townhouse
+        w = 3.6 + rng.random() * 0.8
+        d = 6.0 + rng.random() * 1.0
+        h = 6.4 + rng.random() * 1.4
+        add_box(col, "base", w, d, h, 0, 0, 0, wall)
+        add_box(col, "parapet", w + 0.3, d + 0.3, 0.5, 0, 0, h, roof)
+        add_box(col, "stoopA", 1.3, 0.8, 0.55, 0, -d / 2 - 0.4, 0, trim)
+        add_box(col, "stoopB", 1.3, 0.5, 0.28, 0, -d / 2 - 0.8, 0, trim)
+        add_box(col, "door", 1.05, 0.25, 2.0, 0, -d / 2 - 0.1, 0.55, m["door"])
+        zf = 3.3
+        while zf < h - 0.9:
+            for sx in (-1, 1):
+                add_box(col, "win", 0.9, 0.2, 0.95, sx * w * 0.22, -d / 2 - 0.08, zf, m["window"])
+            zf += 2.3
+        add_box(col, "cornice", w + 0.4, 0.5, 0.25, 0, -d / 2 - 0.15, h - 0.3, trim)
+    if rng.random() < 0.55:  # yard tree
+        build_tree(col, rng, 0.55 + rng.random() * 0.4,
+                   (1 if rng.random() < 0.5 else -1) * (w / 2 + 1.4),
+                   (rng.random() - 0.5) * 2.5)
+    if rng.random() < 0.45:  # flowers along the front
+        fl = mat("NB_flower_dot", (0.95, 0.70, 0.78), 0.8)
+        for i in range(3):
+            add_ngon_cone(col, "fdot", 0.13, 0.09, 0.24, 6,
+                          -1.0 + i * 1.0, -d / 2 - 0.9, 0, fl)
+
+def build_park_district(col, seed):
+    """Day-8 circular park district GROUND: central park (gazebo, paths,
+    trees, flowers, benches) + two ring roads with dashes + verge lamps.
+    The ring houses themselves are separate 'ringhouse' buildings that
+    main() lays out on the rings; this asset is everything under them."""
+    rng = random.Random(seed)
+    m = std_mats()
+    stone = mat("NB_stone", (0.80, 0.78, 0.74), 0.9)
+    groof = mat("NB_gazebo_roof", (0.75, 0.34, 0.31), 0.8)
+    # grass pad under the whole district
+    add_ngon_cone(col, "pad", 58.0, 58.0, 0.12, 48, 0, 0, 0, m["grass"])
+    # central park
+    add_ngon_cone(col, "lawn", 15.0, 15.0, 0.3, 36, 0, 0, 0.02, m["lawn"])
+    add_ring(col, "walkloop", 8.2, 10.0, 36, 0, 0, 0.34, stone)
+    # gazebo at the heart
+    add_ngon_cone(col, "gdeck", 3.4, 3.4, 0.5, 6, 0, 0, 0.3, stone)
+    for i in range(6):
+        a = i / 6 * math.tau + math.tau / 12
+        add_box(col, "gpost", 0.28, 0.28, 2.6, 3.0 * math.cos(a), 3.0 * math.sin(a), 0.8, m["trunk"])
+    add_ngon_cone(col, "groof", 4.2, 0.4, 1.9, 6, 0, 0, 3.4, groof)
+    add_ngon_cone(col, "gtip", 0.42, 0.0, 0.5, 6, 0, 0, 5.3, groof)
+    for k in range(4):  # radial paths gazebo -> walking loop
+        a = k / 4 * math.tau + math.tau / 8
+        p = add_box(col, "ppath", 4.9, 1.4, 0.06, 5.9 * math.cos(a), 5.9 * math.sin(a), 0.31, stone)
+        p.rotation_euler = (0, 0, a)
+    for i in range(7):  # park trees
+        a = rng.random() * math.tau
+        r = 11.2 + rng.random() * 2.6
+        build_tree(col, rng, 0.7 + rng.random() * 0.5, math.cos(a) * r, math.sin(a) * r)
+    fls = [mat("NB_fl_a", (0.95, 0.62, 0.72), 0.8), mat("NB_fl_b", (0.98, 0.85, 0.45), 0.8),
+           mat("NB_fl_c", (0.72, 0.62, 0.92), 0.8)]
+    for i in range(16):  # flower beds inside the walking loop
+        a = rng.random() * math.tau
+        r = 4.5 + rng.random() * 3.2
+        add_ngon_cone(col, "flower", 0.16, 0.10, 0.3, 6, math.cos(a) * r, math.sin(a) * r, 0.3, fls[i % 3])
+    for k in range(4):  # benches on the loop, facing the gazebo
+        a = k / 4 * math.tau
+        b = add_box(col, "bench", 2.0, 0.6, 0.55, 9.1 * math.cos(a), 9.1 * math.sin(a), 0.34, m["trunk"])
+        b.rotation_euler = (0, 0, a + math.pi / 2)
+    # two ring roads with lane dashes
+    for r0, r1 in ((17.5, 23.5), (37.5, 43.5)):
+        rc = (r0 + r1) / 2
+        add_ring(col, "ringroad", r0, r1, 64, 0, 0, 0.16, m["road"])
+        nd = int(math.tau * rc / 8)
+        for i in range(nd):
+            a = i / nd * math.tau
+            dsh = add_box(col, "rdash", 2.4, 0.45, 0.02, rc * math.cos(a), rc * math.sin(a), 0.18, m["dash"])
+            dsh.rotation_euler = (0, 0, a + math.pi / 2)
+    for i in range(10):  # verge street lamps
+        a = i / 10 * math.tau + 0.15
+        for rr in (25.4, 35.6):
+            px, py = rr * math.cos(a), rr * math.sin(a)
+            add_ngon_cone(col, "lpole", 0.13, 0.09, 4.2, 6, px, py, 0.1, m["metal"])
+            add_box(col, "llamp", 0.45, 0.35, 0.2, px, py, 4.3, m["bulb"])
+
 ASSET_VARIANTS = {
     "house":       [("AST_house_%d" % i, lambda c, i=i: build_house(c, 100 + i)) for i in range(6)],
     "apartment":   [("AST_apart_%d" % i, lambda c, i=i: build_apartment(c, 200 + i)) for i in range(3)],
@@ -777,6 +919,8 @@ ASSET_VARIANTS = {
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
+    "ringhouse":   [("AST_ring_%d" % i, lambda c, i=i: build_ring_house(c, 2300 + i)) for i in range(10)],
+    "parkdistrict": [("AST_parkdist_0", lambda c: build_park_district(c, 2400))],
 }
 
 # ═══════════════════════════════ GRID / PLACEMENT ═══════════════════════════════
@@ -787,17 +931,33 @@ def lot_to_world(gx, gy):
     return (bx * PITCH + ix * LOT + LOT / 2,
             by * PITCH + iy * LOT + LOT / 2)
 
+def build_pos(b):
+    """World-space anchor: exact px/py if stored (ring houses / park
+    district sit off-grid), else the building's grid lot."""
+    if "px" in b:
+        return b["px"], b["py"]
+    return lot_to_world(b["gx"], b["gy"])
+
 # building footprint in lots (per side); milestone buildings can span a whole block
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
-        "cottagehouse": 1, "pond": 1,
+        "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 
 def footprint(b):
+    if b["type"] == "parkdistrict":
+        # reserve every lot whose center falls inside the district circle
+        cells, rr = [], b.get("r", 57) + LOT
+        for dgx in range(-10, 11):
+            for dgy in range(-10, 11):
+                x, y = lot_to_world(b["gx"] + dgx, b["gy"] + dgy)
+                if math.hypot(x - b.get("px", x), y - b.get("py", y)) <= rr:
+                    cells.append((b["gx"] + dgx, b["gy"] + dgy))
+        return cells
     s = SIZE.get(b["type"], 1)
     return [(b["gx"] + dx, b["gy"] + dy) for dx in range(s) for dy in range(s)]
 
@@ -847,16 +1007,21 @@ def place_instance(world_col, b, name):
     empty = bpy.data.objects.new(name, None)
     empty.instance_type = "COLLECTION"
     empty.instance_collection = asset
-    x, y = lot_to_world(b["gx"], b["gy"])
+    x, y = build_pos(b)
     s = SIZE.get(b["type"], 1)
-    empty.location = (x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2, 0)
+    if "px" in b:  # exact world placement (park district / ring houses)
+        empty.location = (x, y, 0.1 if b["type"] == "ringhouse" else 0)
+    else:
+        empty.location = (x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2, 0)
     rng = random.Random(b["seed"])
-    if b.get("face"):  # explicit facing override stored in the state file
+    if b.get("rot") is not None:  # exact facing (ring houses face their park)
+        empty.rotation_euler = (0, 0, b["rot"])
+    elif b.get("face"):  # explicit facing override stored in the state file
         empty.rotation_euler = (0, 0, {"s": 0.0, "e": math.pi / 2,
                                        "n": math.pi, "w": -math.pi / 2}[b["face"]])
     elif b["type"] in ("tree", "bush", "rock"):
         empty.rotation_euler = (0, 0, rng.random() * math.tau)
-    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car", "pond", "duck"):
+    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car", "pond", "duck", "parkdistrict"):
         # face the front door toward the nearest road edge of the block
         bn = BLOCK_N - s
         ix, iy = b["gx"] % BLOCK_N, b["gy"] % BLOCK_N
@@ -874,7 +1039,9 @@ def place_instance(world_col, b, name):
 
 def block_extent(buildings):
     """The town always has at least a 3x3-block starter road grid, so day 0
-    shows the exact streets that houses will later appear on."""
+    shows the exact streets that houses will later appear on. Off-grid park
+    districts (and their ring houses) don't extend the grid."""
+    buildings = [b for b in buildings if b["type"] not in ("parkdistrict", "ringhouse")]
     if not buildings:
         return -1, 1, -1, 1
     bxs = [b["gx"] // BLOCK_N for b in buildings]
@@ -917,6 +1084,55 @@ def build_roads(world_col, buildings, m):
                 else:
                     e.location = (ix + (1.5 if rng.random() < 0.5 else -1.5), iy + off, 0.05)
                     e.rotation_euler = (0, 0, math.pi / 2 * (1 if rng.random() < 0.5 else -1))
+
+def build_district_roads(world_col, buildings, m):
+    """Straight connector from each park district's entrance (the house gap
+    on its west side) to the town's easternmost grid road."""
+    districts = [b for b in buildings if b["type"] == "parkdistrict"]
+    if not districts:
+        return
+    min_bx, max_bx, min_by, max_by = block_extent(buildings)
+    x_road = (max_bx + 1) * PITCH - ROAD / 2
+    for d in districts:
+        cx, cy = d["px"], d["py"]
+        x_in = cx - (d.get("r", 57) - 18)   # reaches into the outer ring road
+        if x_in <= x_road:
+            continue
+        L = x_in - x_road
+        add_box(world_col, "connector", L, ROAD, 0.18, x_road + L / 2, cy, 0, m["road"])
+        x = x_road + 5
+        while x < x_in - 3:
+            add_box(world_col, "cdash", 2.6, 0.45, 0.05, x, cy, 0.19, m["dash"])
+            x += 8
+        # short spur from the inner ring road to the park's walking loop
+        add_box(world_col, "spur", 12.0, 3.4, 0.18, cx - 16.0, cy, 0, m["road"])
+
+def animate_ring_traffic(world_col, buildings, frame_end):
+    """A couple of cars slowly loop each park district's ring roads."""
+    for d in [b for b in buildings if b["type"] == "parkdistrict"]:
+        rng = random.Random(6000 + d["seed"])
+        for rr in (20.5, 40.5):
+            if rng.random() < 0.2:
+                continue
+            c = {"type": "car", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
+            e = place_instance(world_col, c, "ringtraffic")
+            lane = 1.5 * (1 if rng.random() < 0.5 else -1)
+            r = rr + lane
+            spin = 1 if lane > 0 else -1
+            speed = (10.0 + rng.random() * 5.0) / FPS
+            arc = speed * frame_end / r
+            a0 = rng.random() * math.tau
+            wps = max(12, int(arc * 8))
+            for wp in range(wps + 1):
+                fr = 1 + (frame_end - 1) * wp / wps
+                a = a0 + spin * arc * wp / wps
+                e.location = (d["px"] + r * math.cos(a), d["py"] + r * math.sin(a), 0.17)
+                e.rotation_euler = (0, 0, a + spin * math.pi / 2)
+                e.keyframe_insert("location", frame=fr)
+                e.keyframe_insert("rotation_euler", frame=fr)
+            for fc in obj_fcurves(e):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
 
 def scatter_nature(world_col, occupied, buildings):
     """Trees, bushes and rocks on empty lots + a wild ring around town.
@@ -1019,7 +1235,10 @@ def build_fireworks(world_col, cx, cy, frame_end):
         bsdf = fm.node_tree.nodes.get("Principled BSDF")
         try:
             bsdf.inputs["Emission Color"].default_value = (*c, 1.0)
-            bsdf.inputs["Emission Strength"].default_value = 9.0
+            # 2026-07-09: was 9.0 -- readable at sunset but nearly invisible
+            # against a bright daytime sky at drone distance; boosted so
+            # daylight celebrations actually show up on camera
+            bsdf.inputs["Emission Strength"].default_value = 30.0
         except Exception:
             pass
         fmats.append(fm)
@@ -1035,15 +1254,17 @@ def build_fireworks(world_col, cx, cy, frame_end):
             dx = math.sin(ph) * math.cos(th)
             dy = math.sin(ph) * math.sin(th)
             dz = math.cos(ph)
-            p = add_ngon_cone(world_col, "fw", 0.75, 0.5, 0.9, 6, bx, by, bz, fm)
+            # 2026-07-09: particles enlarged (0.75->1.2) + wider spread so the
+            # bursts read at drone distance in daylight, not just at sunset
+            p = add_ngon_cone(world_col, "fw", 1.2, 0.8, 1.4, 6, bx, by, bz, fm)
             p.scale = (0.001, 0.001, 0.001)
             p.keyframe_insert("scale", frame=t0)
             p.keyframe_insert("location", frame=t0)
-            p.location = (bx + dx * 6.5, by + dy * 6.5, bz + dz * 6.5)
+            p.location = (bx + dx * 8.5, by + dy * 8.5, bz + dz * 8.5)
             p.scale = (1, 1, 1)
             p.keyframe_insert("scale", frame=t0 + 7)
             p.keyframe_insert("location", frame=t0 + 7)
-            p.location = (bx + dx * 10.5, by + dy * 10.5, bz + dz * 10.5 - 2.0)
+            p.location = (bx + dx * 13.0, by + dy * 13.0, bz + dz * 13.0 - 2.0)
             p.scale = (0.001, 0.001, 0.001)
             p.keyframe_insert("scale", frame=t0 + 22)
             p.keyframe_insert("location", frame=t0 + 22)
@@ -1186,8 +1407,10 @@ def city_center_and_extent(buildings):
         return 15, 15, 105  # frame the empty starter road grid
     xs, ys = [], []
     for b in buildings:
-        x, y = lot_to_world(b["gx"], b["gy"])
-        xs.append(x); ys.append(y)
+        x, y = build_pos(b)
+        r = b.get("r", 0)
+        xs += [x - r, x + r]
+        ys += [y - r, y + r]
     cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
     ext = max(max(xs) - min(xs), max(ys) - min(ys), 40)
     return cx, cy, ext
@@ -1241,6 +1464,46 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for fc in obj_fcurves(cam_obj):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+    elif cam == "park":
+        # in-park showcase: slow low orbit around the park's gazebo, looking
+        # across the lawn at the ring houses sweeping by behind it
+        districts = [b for b in buildings if b["type"] == "parkdistrict"]
+        pcx, pcy = (districts[-1]["px"], districts[-1]["py"]) if districts else (cx, cy)
+        rig = bpy.data.objects.new("CamRig", None)
+        rig.location = (pcx, pcy, 2.0)
+        world_col.objects.link(rig)
+        cam_data = bpy.data.cameras.new("Cam")
+        cam_data.lens = 30
+        cam_data.dof.use_dof = True
+        cam_data.dof.focus_object = rig
+        cam_data.dof.aperture_fstop = 5.6
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        cam_obj.parent = rig
+        # 2026-07-09 night fix (Cade's PC), take 2: the first cut orbited at
+        # r~29.5 THROUGH the inner ring houses; take 1's fix (r=20, h=8.5) was
+        # still low enough that park-rim trees (r<=13.8, tops ~7) loomed across
+        # the lower half of frame as the camera swept past. Final: r~17.7 at
+        # h~11.4 -- comfortably above every tree, looking down at the gazebo
+        # with the ring houses behind it, nothing ever crossing the lens.
+        pol = math.radians(62)
+        pdist = 20.0
+        az = math.radians(38)
+        cam_obj.location = (pdist * math.sin(pol) * math.cos(az),
+                            -pdist * math.sin(pol) * math.sin(az),
+                            pdist * math.cos(pol))
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = rig
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        world_col.objects.link(cam_obj)
+        bpy.context.scene.camera = cam_obj
+        rig.rotation_euler = (0, 0, 0)
+        rig.keyframe_insert("rotation_euler", frame=1)
+        rig.rotation_euler = (0, 0, math.radians(75))
+        rig.keyframe_insert("rotation_euler", frame=frame_end)
+        for fc in obj_fcurves(rig):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
     else:
         # camera rig: empty at center, camera orbits it
         rig = bpy.data.objects.new("CamRig", None)
@@ -1274,14 +1537,31 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
 
-    # sun (settings depend on time of day)
+    # sun -- 2026-07-09 lighting upgrade: softer shadow edges, plus a cool
+    # shadow-free "skylight" fill from the opposite side so shaded facades
+    # read as sky-lit instead of near-black. Same time-of-day moods as before.
     sun_data = bpy.data.lights.new("Sun", type="SUN")
+    # 2026-07-09 night (Cade's PC): the "0.95x sun + 6.5deg + 0.15x fill" combo
+    # still washed the town out (fainter shadows + flatter color than day 7).
+    # Full sun strength + near-original shadow sharpness restore the contrast;
+    # the sky fill idea stays but much weaker (a subtle shaded-side lift only).
     sun_data.energy = t["sun_e"]
-    sun_data.angle = math.radians(4)
+    sun_data.angle = math.radians(4.5)
     sun_data.color = t["sun_c"]
     sun = bpy.data.objects.new("Sun", sun_data)
     sun.rotation_euler = tuple(math.radians(a) for a in t["sun_rot"])
     world_col.objects.link(sun)
+    fill_data = bpy.data.lights.new("Fill", type="SUN")
+    fill_data.energy = t["sun_e"] * 0.07
+    fill_data.angle = math.radians(30)
+    fill_data.color = tuple(min(1.0, c * 0.5 + 0.5) for c in t["sky"])
+    try:
+        fill_data.use_shadow = False
+    except Exception:
+        pass
+    fill = bpy.data.objects.new("Fill", fill_data)
+    fill.rotation_euler = (math.radians(55), 0, math.radians(t["sun_rot"][2] + 170))
+    world_col.objects.link(fill)
 
     # sky
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
@@ -1290,7 +1570,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     bg = world.node_tree.nodes.get("Background")
     if bg:
         bg.inputs[0].default_value = (*t["sky"], 1.0)
-        bg.inputs[1].default_value = t["sky_s"]
+        bg.inputs[1].default_value = t["sky_s"]  # 2026-07-09 evening: brightness boost removed
 
 def setup_render(state, frame_end, tag=None):
     sc = bpy.context.scene
@@ -1306,7 +1586,12 @@ def setup_render(state, frame_end, tag=None):
     sc.frame_start = 1
     sc.frame_end = frame_end
     for attr, val in [("use_gtao", True), ("use_bloom", False),
-                      ("use_ssr", False), ("use_raytracing", False)]:
+                      ("use_ssr", False), ("use_raytracing", False),
+                      # 2026-07-09 lighting upgrade (each is best-effort
+                      # across Blender versions thanks to the try/except):
+                      ("shadow_cube_size", "2048"), ("shadow_cascade_size", "2048"),
+                      ("use_shadow_high_bitdepth", True), ("use_soft_shadows", True),
+                      ("gtao_distance", 8.0), ("taa_render_samples", 96)]:
         try:
             setattr(sc.eevee, attr, val)
         except Exception:
@@ -1440,6 +1725,10 @@ def main(cfg=None):
                 pond_extras.append(("house", 1, cell))
             house_gained = gained - len(house_cells)
 
+        parkring_n = 0
+        if cfg.get("parkring") and gained > 0:
+            parkring_n, house_gained = gained, 0
+
         additions = specials + pond_extras + [("house", house_gained, None),
                                 ("mushroomhouse", n_mush, None),
                                 ("apartment", n_apart, None), ("park", n_parks, None),
@@ -1452,8 +1741,51 @@ def main(cfg=None):
             for thr, btype in MILESTONES:
                 if state["pop"] >= thr and thr not in done:
                     done.append(thr)
-                    additions.append((btype, 1))
+                    additions.append((btype, 1, None))
                     unlocked.append("%s (pop %d)" % (btype, thr))
+        if parkring_n:
+            # ── circular park district: park + ring roads at a fixed center
+            # east of town, with today's houses arranged on rings around it,
+            # every front door facing the park ──
+            xs, ys = [], []
+            for b in state["buildings"]:
+                x, y = build_pos(b)
+                xs.append(x); ys.append(y)
+            R_D = 57.0
+            dcx = (max(xs) if xs else 0) + LOT + R_D + 26
+            dcy = ((min(ys) + max(ys)) / 2) if ys else 15.0
+
+            def _near_lot(wx, wy):
+                bx = math.floor(wx / PITCH)
+                ix = min(max(int((wx - bx * PITCH) // LOT), 0), BLOCK_N - 1)
+                by = math.floor(wy / PITCH)
+                iy = min(max(int((wy - by * PITCH) // LOT), 0), BLOCK_N - 1)
+                return int(bx * BLOCK_N + ix), int(by * BLOCK_N + iy)
+
+            gxc, gyc = _near_lot(dcx, dcy)
+            park_b = {"type": "parkdistrict", "gx": gxc, "gy": gyc,
+                      "px": round(dcx, 2), "py": round(dcy, 2), "r": R_D,
+                      "seed": state["seed_counter"], "day": state["day"]}
+            state["seed_counter"] += 1
+            state["buildings"].append(park_b)
+            occupied.update(footprint(park_b))
+            new_batch.append(park_b)
+            n1 = min(parkring_n, 17)
+            for rr, cnt, gap in ((30.5, n1, 0.30), (50.5, parkring_n - n1, 0.20)):
+                if cnt <= 0:
+                    continue
+                a0, span = math.pi + gap, math.tau - 2 * gap
+                for k in range(cnt):
+                    a = a0 + span * (k + 0.5) / cnt
+                    hx, hy = dcx + rr * math.cos(a), dcy + rr * math.sin(a)
+                    hgx, hgy = _near_lot(hx, hy)
+                    hb = {"type": "ringhouse", "gx": hgx, "gy": hgy,
+                          "px": round(hx, 2), "py": round(hy, 2),
+                          "rot": round(a - math.pi / 2, 4),
+                          "seed": state["seed_counter"], "day": state["day"]}
+                    state["seed_counter"] += 1
+                    state["buildings"].append(hb)
+                    new_batch.append(hb)
         for btype, n, target in additions:
             size = SIZE.get(btype, 1)
             if n <= 0:
@@ -1496,6 +1828,7 @@ def main(cfg=None):
             sink.append(e)
     keep = [b for b in state["buildings"] if id(b) not in rem_ids]
     build_roads(world_col, keep or state["buildings"], m)
+    build_district_roads(world_col, keep or state["buildings"], m)
     scatter_nature(world_col, occupied, keep or state["buildings"])
 
     # animation timing: sinks first, then rises
@@ -1504,8 +1837,8 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "street":
-        frame_end = max(frame_end, FPS * 12)  # give the street flythrough time to feel slow
+    if cfg.get("cam") in ("street", "park", "overhead"):
+        frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     f = prehold
     for e in sink:
         animate_sink(e, f)
@@ -1519,13 +1852,18 @@ def main(cfg=None):
     season = cfg.get("season") or auto_season()
     animate_traffic(world_col, keep or state["buildings"], frame_end, state["day"])
     animate_ducks(world_col, keep or state["buildings"], frame_end)
+    animate_ring_traffic(world_col, keep or state["buildings"], frame_end)
     hero = None
     if cfg.get("hero") and new_batch:
         pts = []
         for b in new_batch:
-            x, y = lot_to_world(b["gx"], b["gy"])
+            x, y = build_pos(b)
             s = SIZE.get(b["type"], 1)
-            pts.append((x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2))
+            r = b.get("r", 0)
+            if r:
+                pts += [(x - r, y - r), (x + r, y + r)]
+            else:
+                pts.append((x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2))
         hx = sum(p[0] for p in pts) / len(pts)
         hy = sum(p[1] for p in pts) / len(pts)
         span = max(max(p[0] for p in pts) - min(p[0] for p in pts),
@@ -1533,10 +1871,13 @@ def main(cfg=None):
         hero = (hx, hy, max(42.0, span * 2.1 + 44))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
     if cfg.get("celebrate"):
-        customs = [b for b in state["buildings"]
-                   if b["type"].endswith("house") and b["type"] != "house"]
+        # fireworks over today's new batch if there is one (e.g. the day-8
+        # park district), otherwise over the founders' custom homes
+        today = [b for b in state["buildings"] if b.get("day") == state["day"]]
+        customs = new_batch or today or [b for b in state["buildings"]
+                                if b["type"].endswith("house") and b["type"] != "house"]
         if customs:
-            pts = [lot_to_world(b["gx"], b["gy"]) for b in customs]
+            pts = [build_pos(b) for b in customs]
             build_fireworks(world_col,
                             sum(p[0] for p in pts) / len(pts),
                             sum(p[1] for p in pts) / len(pts), frame_end)

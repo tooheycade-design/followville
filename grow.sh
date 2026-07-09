@@ -54,7 +54,10 @@ esac
 OUT="$("$B" --background "$DIR/neighborhood.blend" --python "$DIR/neighborhood_blender.py" --python "$DIR/export_web.py" -- "${FLAGS[@]}" "$@" 2>&1)" || { echo "$OUT" | tail -20; exit 1; }
 echo "$OUT" | grep -E "^(RESULT|STILL|VIDEO)" || { echo "$OUT" | tail -20; exit 1; }
 GLB_DIR="${NEIGHBORHOOD_REPO_DIR:-$DIR}"
-echo "$OUT" | grep -q "^export_web.py: wrote" && echo "WEB $GLB_DIR/town.glb" || echo "WEB_EXPORT_FAILED"
+# 2026-07-09: pure-bash match instead of `echo | grep -q` -- with pipefail, grep -q
+# exiting early can SIGPIPE the echo and make the whole pipeline "fail" even on a
+# match (this produced a false WEB_EXPORT_FAILED and silently skipped Desktop copies)
+if [[ "$OUT" == *"export_web.py: wrote"* ]]; then echo "WEB $GLB_DIR/town.glb"; else echo "WEB_EXPORT_FAILED"; fi
 
 if [ -n "${NEIGHBORHOOD_REPO_DIR:-}" ]; then
   (
@@ -71,7 +74,7 @@ if [ -n "${NEIGHBORHOOD_REPO_DIR:-}" ]; then
 fi
 
 # if a video was rendered, drop a copy on the Desktop for easy AirDrop -> Instagram
-if echo "$OUT" | grep -q "^VIDEO"; then
+if [[ "$OUT" == *$'\n'"VIDEO "* ]]; then  # 2026-07-09: was `echo|grep -q` -- see SIGPIPE note above
   NEWEST="$(ls -t "$DIR"/renders/*.mp4 2>/dev/null | head -1)"
   if [ -n "$NEWEST" ]; then
     cp "$NEWEST" "$HOME/Desktop/"

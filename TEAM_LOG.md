@@ -15,6 +15,38 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 -- Cade (via Windows Claude) -- picked up Zach's day-8 handoff and finished it.
+  Found: the growth itself was good (day 8, pop 70, park district + 41 ring houses,
+  exactly what Cade wanted) but it lived only in the iCloud folder (his Mac ran grow.sh
+  without NEIGHBORHOOD_REPO_DIR), so GitHub/live site were stuck at day 7; all three
+  videos were rendered with `replay` (so every one showed the houses rising) and with
+  the pre-fix bright lighting; the in-park camera orbited at radius ~29.5 -- straight
+  through the inner ring houses (the "clipping through buildings" Cade saw). Done here:
+  reconciled all of Zach's work from the iCloud conflict copies, published day-8 state +
+  town.glb through the git-backed Windows flow (live site now day 8/pop 70), restored
+  the approved lighting (full sun, near-original shadow sharpness, sky fill kept but cut
+  to 0.07x), fixed the park cam path (r=20, h=8.5 -- between the trees and the houses),
+  made fireworks daylight-visible (bigger + emission 9->30), re-rendered the three shots
+  correctly (hero = rising + fireworks; park + overhead = calm +0 showcases of the
+  finished town), marked the parkdistrict non-claimable in Supabase (it had synced as
+  claimable -- type list updated in both sync scripts), and taught town.html's claiming
+  UI about off-grid buildings (ringhouses carry px/py/rot -- name tags, claim targeting
+  and go-home now use the exact position/rotation instead of grid math).
+
+2026-07-09 -- Zach (via Claude) -- grew the town to day 8, population 70 (+41 houses).
+  Built a whole new circular park district east of town: central park with a gazebo,
+  ring roads, and the 41 new houses arranged in two rings around it, every door facing
+  the park -- with more variety than the grid houses (two-story homes, townhouses, new
+  pastel colors). Rendered three videos with celebration fireworks (houses+park rising,
+  a higher/wider overhead drone of the whole town, and an in-park showcase orbit), all
+  auto-copied to the Desktop. After Zach's review: re-shot the overhead + in-park videos
+  as calm 12-second showcases of the finished town (only the hero shows houses rising)
+  and turned the new lighting's brightness back down (it was washing things out). Also upgraded the lighting for all future videos (softer
+  shadows, sky fill light). Note: this Mac's iCloud copy had fallen behind again --
+  reconciled world_state.json/generator/docs from GitHub (day 7) before growing, and
+  backed up the day-7 state first. Website NOT pushed yet -- waiting for Zach to confirm
+  the videos look right, then deploying.
+
 2026-07-09 — Cade (via Windows Claude) — set Cade's new building-icon image as the site
   logo (landing page profile photo): downscaled to 512px as logo.png (old one kept as
   logo_previous.png, original upload kept as logo_candidate.png). Found why the live site
