@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Followville — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--
+  Followville admin page — approve/reject Instagram verifications, revoke claims.
+
+  This page IS deployed to the live site, and that is safe because it holds no
+  secrets and has no power of its own: every admin action is a Postgres
+  function that checks profiles.is_admin server-side and refuses anyone else.
+  A non-admin (or logged-out) visitor who opens this URL gets "no access" and
+  the database returns nothing.
+
+  Two ways it authenticates:
+  1. LIVE SITE / logged-in admin: uses your normal Followville login session
+     (same as town.html). Works only for accounts with is_admin = true —
+     currently @cade.toohey and @stellarkehler. Grant/remove admins with:
+       update profiles set is_admin = true  where instagram_handle = 'handle';
+  2. LOCAL admin.bat: if supabase_sync.env is present next to this file
+     (localhost only, gitignored), the service key is used directly — no login
+     needed. That file never reaches the live site.
+-->
+<style>
+  :root{ --cream:#f2e9da; --cream-deep:#e9dcc4; --navy:#1c2b45; --accent:#c96b4a;
+         --green:#2e7d32; --red:#b03030; }
+  * { box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-deep) 100%);
+    color: var(--navy); margin:0; min-height:100vh; padding:36px 18px;
+  }
+  .wrap { max-width:760px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .sub { opacity:0.65; font-size:13.5px; margin:0 0 26px; }
+  h2 { font-size:16px; margin:30px 0 10px; }
+  .card {
+    background:rgba(255,255,255,0.6); border:1px solid rgba(28,43,69,0.1);
+    border-radius:14px; padding:14px 16px; margin-bottom:10px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .card .who { font-weight:700; }
+  .card .code {
+    font-family:ui-monospace, Consolas, monospace; background:var(--cream);
+    padding:3px 9px; border-radius:8px; font-size:13px;
+  }
+  .card .meta { font-size:12px; opacity:0.6; }
+  .card .spacer { flex:1; }
+  button {
+    border:none; border-radius:10px; padding:9px 16px; font-weight:700;
+    font-size:13px; cursor:pointer; font-family:inherit;
+  }
+  .approve { background:var(--green); color:#fff; }
+  .reject, .revoke { background:transparent; color:var(--red); border:1.5px solid var(--red); }
+  button:disabled { opacity:0.5; cursor:default; }
+  .empty { opacity:0.55; font-size:13.5px; padding:8px 2px; }
+  #err {
+    display:none; background:#fbe3e3; color:#7a1f1f; border-radius:12px;
+    padding:14px 16px; font-size:13.5px; line-height:1.5; margin-bottom:20px;
+  }
+  .pill { font-size:11px; font-weight:700; border-radius:12px; padding:2px 9px; }
+  .pill.house { background:#dce9f7; color:#22507e; }
+  #toast {
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff; padding:10px 18px; border-radius:12px;
+    font-size:13px; font-weight:600; display:none; z-index:10;
+  }
+  .refresh { background:var(--navy); color:#fff; margin-bottom:4px; }
+  .modebar { font-size:12px; opacity:0.6; margin:0 0 16px; }
+  .backlink { font-size:13px; margin-top:34px; }
+  .backlink a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Followville admin</h1>
+  <p class="sub">Approve Instagram verifications and manage claims.
+  Check the DM really came from the listed handle before approving.</p>
+  <p class="modebar" id="modebar"></p>
+
+  <div id="err"></div>
+  <div id="main" style="display:none;">
+    <button class="refresh" onclick="loadAll()">↻ refresh</button>
+
+    <h2>Waiting for approval <span id="pendingCount"></span></h2>
+    <div id="pending"><div class="empty">loading…</div></div>
+
+    <h2>Claimed houses <span id="claimCount"></span></h2>
+    <div id="claims"><div class="empty">loading…</div></div>
+
+    <h2>Verified, no house yet</h2>
+    <div id="verified"><div class="empty">loading…</div></div>
+  </div>
+
+  <p class="backlink"><a href="index.html">← back to Followville</a></p>
+</div>
+<div id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
+
+let mode = null, serviceKey = null, sb = null;
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 3500);
+}
+function fail(msg){
+  const e = document.getElementById("err");
+  e.innerHTML = msg; e.style.display = "block";
+}
+
+async function rpc(fn, args = {}){
+  if (mode === "service"){
+    const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + fn, {
+      method: "POST",
+      headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey,
+                 "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const txt = await r.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function init(){
+  // mode 1: local service key (admin.bat / preview server; file 404s when live)
+  try {
+    const r = await fetch("supabase_sync.env", { cache: "no-store" });
+    if (r.ok){
+      const text = await r.text();
+      for (const line of text.split("\n")){
+        const t = line.trim();
+        if (t.startsWith("SUPABASE_SERVICE_ROLE_KEY=")) serviceKey = t.slice(26).trim();
+      }
+      if (serviceKey && serviceKey.startsWith("eyJ")){
+        mode = "service";
+        document.getElementById("modebar").textContent = "local mode (admin.bat)";
+      }
+    }
+  } catch (_) { /* not local — fall through */ }
+
+  // mode 2: logged-in admin account (the live site)
+  if (!mode){
+    const m = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    sb = m.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data } = await sb.auth.getSession();
+    if (!data?.session){
+      fail("<b>Not logged in.</b> Log into your Followville account on the " +
+           '<a href="index.html">home page</a> first, then come back here. ' +
+           "Only admin accounts can use this page.");
+      return;
+    }
+    mode = "session";
+    document.getElementById("modebar").textContent = "logged in — admin access is checked by the database";
+  }
+
+  try {
+    await loadAll();                 // throws not_admin for anyone unauthorized
+    document.getElementById("main").style.display = "block";
+    document.getElementById("err").style.display = "none";
+    setInterval(loadAll, 30000);
+  } catch (e){
+    if ((e.message || "").includes("not_admin") || (e.message || "").includes("permission denied")){
+      fail("<b>No access.</b> This account isn't a Followville admin.");
+    } else {
+      fail("Couldn't load data: " + esc(e.message));
+    }
+  }
+}
+
+async function loadAll(){
+  const [pending, claims, verified] = await Promise.all([
+    rpc("admin_list_pending"), rpc("admin_list_claims"), rpc("admin_list_verified_unclaimed"),
+  ]);
+
+  const p = document.getElementById("pending");
+  document.getElementById("pendingCount").textContent = "(" + pending.length + ")";
+  p.innerHTML = pending.length ? "" : '<div class="empty">nobody waiting 🎉</div>';
+  for (const row of pending){
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="code">${esc(row.verification_code)}</span>
+      <span class="meta">signed up ${new Date(row.created_at).toLocaleString()}</span>
+      <span class="spacer"></span>
+      <button class="approve">✓ approve</button>
+      <button class="reject">reject</button>`;
+    d.querySelector(".approve").onclick = () =>
+      act(d, "admin_verify", { p_handle: row.instagram_handle }, "approved @" + row.instagram_handle);
+    d.querySelector(".reject").onclick = () => {
+      if (confirm("Reject @" + row.instagram_handle + "? They won't be able to claim a house."))
+        act(d, "admin_reject", { p_handle: row.instagram_handle }, "rejected @" + row.instagram_handle);
+    };
+    p.appendChild(d);
+  }
+
+  const c = document.getElementById("claims");
+  document.getElementById("claimCount").textContent = "(" + claims.length + ")";
+  c.innerHTML = claims.length ? "" : '<div class="empty">no houses claimed yet</div>';
+  for (const row of claims){
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="pill house">house #${esc(row.house_id)} · ${esc(row.building_type)}</span>
+      <span class="meta">claimed ${new Date(row.claimed_at).toLocaleString()}</span>
+      <span class="spacer"></span>
+      <button class="revoke">revoke</button>`;
+    d.querySelector(".revoke").onclick = () => {
+      if (confirm("Revoke house #" + row.house_id + " from @" + row.instagram_handle +
+                  "?\n\nThis frees the house AND blocks their account (marks it rejected)."))
+        act(d, "admin_revoke_claim", { p_house_id: row.house_id }, "revoked house #" + row.house_id);
+    };
+    c.appendChild(d);
+  }
+
+  const v = document.getElementById("verified");
+  v.innerHTML = verified.length ? "" : '<div class="empty">everyone verified has a house</div>';
+  for (const row of verified){
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="meta">verified ${new Date(row.verified_at).toLocaleString()} — hasn't claimed yet</span>`;
+    v.appendChild(d);
+  }
+}
+
+async function act(card, fn, args, okMsg){
+  for (const b of card.querySelectorAll("button")) b.disabled = true;
+  try {
+    await rpc(fn, args);
+    toast(okMsg);
+    loadAll();
+  } catch (e){
+    toast("failed: " + (e.message || "").slice(0, 120));
+    for (const b of card.querySelectorAll("button")) b.disabled = false;
+  }
+}
+
+window.loadAll = loadAll;
+init();
+</script>
+</body>
+</html>

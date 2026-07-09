@@ -233,6 +233,136 @@ end $$;
 -- keep admin helpers away from clients entirely
 revoke execute on function public.admin_verify(text, text), public.admin_reject(text), public.admin_revoke_claim(bigint) from anon, authenticated;
 
+-- ──────────────── WEB ADMIN ACCESS (added 2026-07-09, run after the above) ────────────────
+-- Lets specific logged-in accounts (profiles.is_admin = true) use the admin
+-- page on the LIVE site. Every admin action below is guarded inside the
+-- function itself, so the database refuses non-admin callers no matter what
+-- the page does. The service-role key (local admin.bat / future DM webhook)
+-- keeps working — auth.role() = 'service_role' bypasses the is_admin check.
+-- ALSO fixes a privilege gap in the original version of this file: functions
+-- get EXECUTE granted to PUBLIC by default, and the original only revoked
+-- from anon/authenticated — leaving admin_verify callable via the PUBLIC
+-- grant. Everything is revoked from PUBLIC explicitly now.
+
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+
+update public.profiles set is_admin = true
+where instagram_handle in ('cade.toohey', 'stellarkehler');
+
+create or replace function public.caller_is_admin()
+returns boolean language sql stable security definer set search_path = public
+as $$
+  select coalesce((select is_admin from public.profiles where user_id = auth.uid()), false);
+$$;
+
+-- guarded versions of the admin actions (CREATE OR REPLACE overwrites the originals)
+create or replace function public.admin_verify(p_handle text, p_instagram_user_id text default null)
+returns public.profiles language plpgsql security definer set search_path = public
+as $$
+declare v_row public.profiles;
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  update public.profiles
+     set verification_status = 'verified', verified_at = now(),
+         instagram_user_id = coalesce(p_instagram_user_id, instagram_user_id)
+   where instagram_handle = lower(trim(both '@' from p_handle))
+   returning * into v_row;
+  if not found then raise exception 'no such handle'; end if;
+  return v_row;
+end $$;
+
+create or replace function public.admin_reject(p_handle text)
+returns void language plpgsql security definer set search_path = public
+as $$
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  update public.profiles set verification_status = 'rejected'
+  where instagram_handle = lower(trim(both '@' from p_handle));
+end $$;
+
+create or replace function public.admin_revoke_claim(p_house_id bigint)
+returns void language plpgsql security definer set search_path = public
+as $$
+declare v_uid uuid;
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  delete from public.claims where house_id = p_house_id returning user_id into v_uid;
+  if v_uid is not null then
+    update public.profiles set verification_status = 'rejected' where user_id = v_uid;
+  end if;
+end $$;
+
+-- read RPCs for the admin page (same guard)
+create or replace function public.admin_list_pending()
+returns json language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  return coalesce((select json_agg(json_build_object(
+      'instagram_handle', instagram_handle,
+      'verification_code', verification_code,
+      'created_at', created_at) order by created_at asc)
+    from public.profiles where verification_status = 'pending'), '[]'::json);
+end $$;
+
+create or replace function public.admin_list_claims()
+returns json language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  return coalesce((select json_agg(json_build_object(
+      'house_id', c.house_id,
+      'claimed_at', c.claimed_at,
+      'instagram_handle', p.instagram_handle,
+      'building_type', h.building_type) order by c.claimed_at desc)
+    from public.claims c
+    join public.profiles p on p.user_id = c.user_id
+    join public.houses h on h.id = c.house_id), '[]'::json);
+end $$;
+
+create or replace function public.admin_list_verified_unclaimed()
+returns json language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if auth.role() <> 'service_role' and not caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  return coalesce((select json_agg(json_build_object(
+      'instagram_handle', p.instagram_handle,
+      'verified_at', p.verified_at) order by p.verified_at desc)
+    from public.profiles p
+    where p.verification_status = 'verified'
+      and not exists (select 1 from public.claims c where c.user_id = p.user_id)), '[]'::json);
+end $$;
+
+-- privileges: nothing via PUBLIC, nothing for anon; authenticated may CALL the
+-- admin functions but the in-function guard rejects non-admins.
+revoke execute on function
+  public.admin_verify(text, text), public.admin_reject(text),
+  public.admin_revoke_claim(bigint), public.caller_is_admin(),
+  public.admin_list_pending(), public.admin_list_claims(),
+  public.admin_list_verified_unclaimed(),
+  public.setup_profile(text), public.claim_house(bigint), public.my_status()
+from public, anon, authenticated;
+
+grant execute on function
+  public.admin_verify(text, text), public.admin_reject(text),
+  public.admin_revoke_claim(bigint), public.caller_is_admin(),
+  public.admin_list_pending(), public.admin_list_claims(),
+  public.admin_list_verified_unclaimed(),
+  public.setup_profile(text), public.claim_house(bigint), public.my_status()
+to authenticated, service_role;
+
 -- ───────────────────────────── NOTES ─────────────────────────────
 -- Abuse safety net (no schema needed):
 --  * Enable CAPTCHA (Cloudflare Turnstile) in Supabase Dashboard →

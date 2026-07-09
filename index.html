@@ -155,6 +155,9 @@
   <a class="enter-btn claim" id="claimBtn" href="town.html#claim">
     Claim your home <span class="arrow">→</span>
   </a>
+  <a class="enter-btn claim" id="adminBtn" href="admin.html" style="display:none;">
+    Admin <span class="arrow">→</span>
+  </a>
   <p class="hint">first-person · WASD or touch controls · desktop &amp; mobile</p>
   <p class="account-line" id="accountLine" style="display:none;">
     logged in as <b id="accountHandle"></b> · <a href="#" id="logoutLink">log out</a>
@@ -221,6 +224,11 @@
         const btn = document.getElementById("claimBtn");
         btn.href = "town.html#home";
         btn.innerHTML = 'Go to my home <span class="arrow">→</span>';
+      }
+      // admins-only button; the admin page itself is also server-side gated,
+      // so hiding this is cosmetic, not the security boundary
+      if (status?.profile?.is_admin){
+        document.getElementById("adminBtn").style.display = "flex";
       }
     }
   } catch (e) {
