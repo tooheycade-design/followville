@@ -1009,7 +1009,15 @@ const TAG_HEIGHT = {
    "face the front door toward the nearest road edge of the block" logic
    (plus the explicit "face" override). When two road edges tie, Blender
    picks one at random — we accept either side rather than guessing wrong. */
-const FACE_DIR = { s: [0, -1], e: [1, 0], n: [0, 1], w: [-1, 0] };
+/* NOTE on coordinates: Blender's glTF exporter maps blender (x, y, z) to
+   three.js (x, z, -y) — blender NORTH (+y) is three -z. Verified empirically
+   against town.glb (toilet house, blender y=25, sits at three z=-25). All
+   world positions derived from grid math below must negate the y axis. */
+const FACE_DIR = { s: [0, 1], e: [1, 0], n: [0, -1], w: [-1, 0] };  // three.js dirs
+function buildingWorldXZ(b){
+  const [x, y] = lotToWorld(b.gx, b.gy);
+  return [x, -y];   // blender y -> three -z (see note above)
+}
 function frontDirsFor(b){
   if (b.face && FACE_DIR[b.face]) return [FACE_DIR[b.face]];
   const ix = ((b.gx % BLOCK_N) + BLOCK_N) % BLOCK_N;
@@ -1074,7 +1082,7 @@ function rebuildClaimSpots(){
   for (const b of worldBuildings){
     const row = houseRows.get(b.seed);
     if (!row || !row.claimable || claimedBy.has(b.seed)) continue;
-    const [x, z] = lotToWorld(b.gx, b.gy);
+    const [x, z] = buildingWorldXZ(b);
     claimSpots.push({ id: b.seed, x, z,
                       fronts: frontDirsFor(b),
                       tagH: TAG_HEIGHT[b.type] ?? 8 });
@@ -1108,7 +1116,7 @@ function rebuildNameTags(){
   for (const [id, handle] of claimedBy){
     const b = worldBuildings.find(bb => bb.seed === id);
     if (!b) continue;
-    const [x, z] = lotToWorld(b.gx, b.gy);
+    const [x, z] = buildingWorldXZ(b);
     const spr = makeTagSprite("@" + handle);
     spr.position.set(x, (TAG_HEIGHT[b.type] ?? 8), z);
     spr.visible = false;   // shown only when the player is nearby (see animate)
@@ -1151,10 +1159,11 @@ function goHome(){
   if (!myClaim) return;
   const b = worldBuildings.find(bb => bb.seed === myClaim.house_id);
   if (!b) return;
-  const [x, z] = lotToWorld(b.gx, b.gy);
-  camera.position.set(x, 1.7, z - 12);   // street side, a couple lots south
+  const [x, z] = buildingWorldXZ(b);
+  const f = frontDirsFor(b)[0];              // the door side
+  camera.position.set(x + f[0]*12, 1.7, z + f[1]*12);  // out front of the door
   camera.rotation.order = "YXZ";
-  camera.rotation.y = Math.PI;           // face north, toward the house
+  camera.rotation.y = Math.atan2(f[0], f[1]); // face back toward the house
   camera.rotation.x = 0;
 }
 
@@ -1211,7 +1220,7 @@ function renderAuthCard(){
       <input id="fHandle" placeholder="@yourhandle" autocapitalize="none" />
       <button class="primary" id="doSetup">continue</button>
       <div class="err" id="authErr"></div>
-      <button class="linkish" id="doSignout">sign out</button>`;
+      <button class="linkish" id="doSignout">log out</button>`;
     document.getElementById("doSetup").onclick = async () => {
       const h = document.getElementById("fHandle").value;
       const { data, error } = await sb.rpc("setup_profile", { p_handle: h });
@@ -1237,7 +1246,7 @@ function renderAuthCard(){
            for now, so it can take a little while</p>
            <button class="primary" id="doRecheck">check again</button>`}
       <div class="err" id="authErr"></div>
-      <button class="linkish" id="doSignout">sign out</button>`;
+      <button class="linkish" id="doSignout">log out</button>`;
     const rc = document.getElementById("doRecheck");
     if (rc) rc.onclick = async () => {
       rc.disabled = true;
@@ -1256,19 +1265,16 @@ function renderAuthCard(){
       up to any open house ${isTouch ? "— a claim button appears when you're close." : "and press <b>E</b>."}</p>
       <button class="primary" id="doStartClaim">start claiming</button>
       <div class="err" id="authErr"></div>
-      <button class="linkish" id="doSignout">sign out</button>`;
+      <button class="linkish" id="doSignout">log out</button>`;
     document.getElementById("doStartClaim").onclick = () => { closeModal(); claimHomeBtn.click(); };
     wireSignout();
     return;
   }
   authCard.innerHTML = `
     <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
-    <p class="muted">Your house is house <b>#${esc(myClaim.house_id)}</b>, claimed
-    ${esc(new Date(myClaim.claimed_at).toLocaleDateString())}. It has your name on it —
-    literally, walk over and look up.</p>
     <button class="primary" id="doGoHome">go to my home</button>
     <div class="err" id="authErr"></div>
-    <button class="linkish" id="doSignout">sign out</button>`;
+    <button class="linkish" id="doSignout">log out</button>`;
   document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
   wireSignout();
 }
@@ -1364,7 +1370,12 @@ async function initSupabase(){
       refreshMyStatus().then(updateAccountUI);
     })
     .subscribe();
-  if (location.hash === "#claim") openModal();
+  if (location.hash === "#home" && myClaim){
+    goHome();               // arriving from the landing page's "Go to my home"
+  } else if (location.hash === "#claim"){
+    if (myClaim) { /* already claimed — no modal nagging, buttons say it all */ }
+    else openModal();
+  }
 }
 
 /* ═══════════════════════ end accounts + claiming ═══════════════════════ */
