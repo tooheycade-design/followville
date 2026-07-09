@@ -1,7 +1,7 @@
 {
- "day": 7,
- "pop": 29,
- "seed_counter": 31,
+ "day": 8,
+ "pop": 70,
+ "seed_counter": 73,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -214,6 +214,426 @@
    "gy": 2,
    "seed": 30,
    "day": 7
+  },
+  {
+   "type": "parkdistrict",
+   "gx": 11,
+   "gy": -1,
+   "px": 134.0,
+   "py": -3.0,
+   "r": 57.0,
+   "seed": 31,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": -2,
+   "px": 106.77,
+   "py": -16.74,
+   "rot": 2.0379,
+   "seed": 32,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": -2,
+   "px": 112.78,
+   "py": -24.91,
+   "rot": 2.3723,
+   "seed": 33,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": -3,
+   "px": 121.15,
+   "py": -30.66,
+   "rot": 2.7066,
+   "seed": 34,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -3,
+   "px": 130.93,
+   "py": -33.35,
+   "rot": 3.0409,
+   "seed": 35,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -3,
+   "px": 141.06,
+   "py": -32.67,
+   "rot": 3.3752,
+   "seed": 36,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": -3,
+   "px": 150.4,
+   "py": -28.71,
+   "rot": 3.7095,
+   "seed": 37,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -2,
+   "px": 157.93,
+   "py": -21.91,
+   "rot": 4.0438,
+   "seed": 38,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -1,
+   "px": 162.81,
+   "py": -13.01,
+   "rot": 4.3781,
+   "seed": 39,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -1,
+   "px": 164.5,
+   "py": -3.0,
+   "rot": 4.7124,
+   "seed": 40,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 0,
+   "px": 162.81,
+   "py": 7.01,
+   "rot": 5.0467,
+   "seed": 41,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 1,
+   "px": 157.93,
+   "py": 15.91,
+   "rot": 5.381,
+   "seed": 42,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": 2,
+   "px": 150.4,
+   "py": 22.71,
+   "rot": 5.7153,
+   "seed": 43,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 2,
+   "px": 141.06,
+   "py": 26.67,
+   "rot": 6.0496,
+   "seed": 44,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 2,
+   "px": 130.93,
+   "py": 27.35,
+   "rot": 6.3839,
+   "seed": 45,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": 2,
+   "px": 121.15,
+   "py": 24.66,
+   "rot": 6.7182,
+   "seed": 46,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": 1,
+   "px": 112.78,
+   "py": 18.91,
+   "rot": 7.0525,
+   "seed": 47,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": 1,
+   "px": 106.77,
+   "py": 10.74,
+   "rot": 7.3868,
+   "seed": 48,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": -2,
+   "px": 86.1,
+   "py": -19.01,
+   "rot": 1.8934,
+   "seed": 49,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": -3,
+   "px": 91.42,
+   "py": -30.15,
+   "rot": 2.1385,
+   "seed": 50,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": -4,
+   "px": 99.28,
+   "py": -39.67,
+   "rot": 2.3836,
+   "seed": 51,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": -4,
+   "px": 109.22,
+   "py": -47.0,
+   "rot": 2.6288,
+   "seed": 52,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": -4,
+   "px": 120.64,
+   "py": -51.7,
+   "rot": 2.8739,
+   "seed": 53,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -5,
+   "px": 132.86,
+   "py": -53.49,
+   "rot": 3.119,
+   "seed": 54,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": -5,
+   "px": 145.15,
+   "py": -52.25,
+   "rot": 3.3642,
+   "seed": 55,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -4,
+   "px": 156.77,
+   "py": -48.08,
+   "rot": 3.6093,
+   "seed": 56,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -4,
+   "px": 167.03,
+   "py": -41.2,
+   "rot": 3.8544,
+   "seed": 57,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -3,
+   "px": 175.31,
+   "py": -32.05,
+   "rot": 4.0996,
+   "seed": 58,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": -2,
+   "px": 181.12,
+   "py": -21.15,
+   "rot": 4.3447,
+   "seed": 59,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": -1,
+   "px": 184.12,
+   "py": -9.17,
+   "rot": 4.5898,
+   "seed": 60,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": 0,
+   "px": 184.12,
+   "py": 3.17,
+   "rot": 4.835,
+   "seed": 61,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": 1,
+   "px": 181.12,
+   "py": 15.15,
+   "rot": 5.0801,
+   "seed": 62,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": 2,
+   "px": 175.31,
+   "py": 26.05,
+   "rot": 5.3252,
+   "seed": 63,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": 2,
+   "px": 167.03,
+   "py": 35.2,
+   "rot": 5.5704,
+   "seed": 64,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 3,
+   "px": 156.77,
+   "py": 42.08,
+   "rot": 5.8155,
+   "seed": 65,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": 4,
+   "px": 145.15,
+   "py": 46.25,
+   "rot": 6.0606,
+   "seed": 66,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 4,
+   "px": 132.86,
+   "py": 47.49,
+   "rot": 6.3058,
+   "seed": 67,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": 3,
+   "px": 120.64,
+   "py": 45.7,
+   "rot": 6.5509,
+   "seed": 68,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": 3,
+   "px": 109.22,
+   "py": 41.0,
+   "rot": 6.796,
+   "seed": 69,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": 2,
+   "px": 99.28,
+   "py": 33.67,
+   "rot": 7.0411,
+   "seed": 70,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": 2,
+   "px": 91.42,
+   "py": 24.15,
+   "rot": 7.2863,
+   "seed": 71,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": 1,
+   "px": 86.1,
+   "py": 13.01,
+   "rot": 7.5314,
+   "seed": 72,
+   "day": 8
   }
  ],
  "milestones": []
