@@ -15,6 +15,18 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 — Cade (via Windows Claude) — took the admin page live, properly gated: added an
+  is_admin flag (currently @cade.toohey and @stellarkehler), rebuilt every admin action as a
+  database function that checks that flag server-side (so only admin accounts can approve/
+  reject/revoke — anyone else who finds admin.html gets "No access" and the database refuses
+  them), and put an "Admin" button on the homepage that only admins see. Along the way found
+  and fixed a real security gap from the original schema: Postgres grants function-execute
+  to PUBLIC by default and the original only revoked anon/authenticated, which had left
+  admin_verify callable with just the public site key — everything is now revoked from
+  PUBLIC explicitly (verified: anon key gets "permission denied"). admin.bat/local mode
+  still works unchanged. Also updated deploy_website.bat's whitelist (admin.html now
+  deploys; admin.bat and supabase_sync.env stay local).
+
 2026-07-09 — Cade (via Windows Claude) — polished the claiming experience after Cade's first
   real playtest, and approved the first two residents (@cade.toohey → the castle, and new
   user @stellarkehler, verified via DM code). Fixes: name tags were floating over the street

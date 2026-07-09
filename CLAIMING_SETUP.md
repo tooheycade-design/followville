@@ -60,13 +60,16 @@ and never overwrites manual edits.
 
 ## 3. Verifying followers (manual, until Meta app review)
 
-**The easy way (built 2026-07-09): double-click `admin.bat`.** It opens a local
-admin page (http://localhost:8000/admin.html) with one-click approve / reject
-buttons for everyone waiting, plus every claimed house with a revoke button.
-Check the DM really came from the listed handle, then click approve — done.
-The page is local-only by design: it reads the admin key from
-`supabase_sync.env` at runtime, so it can never work on the live site and must
-never be added to deploy_website.bat's whitelist.
+**The easy way (built 2026-07-09): the Admin button on the live site.** Log in
+as @cade.toohey or @stellarkehler on followville-kappa.vercel.app and an
+"Admin →" button appears on the home page → one-click approve/reject for
+everyone waiting, plus revoke on every claim. This is safe to have live
+because the page holds no secrets: every admin action is a Postgres function
+that checks `profiles.is_admin` server-side, so non-admins (or anyone with the
+URL) get "No access" and the database refuses them. Manage who's admin with:
+`update profiles set is_admin = true where instagram_handle = 'handle';`
+`admin.bat` still works too (same page served locally, uses supabase_sync.env,
+no login needed).
 
 The manual SQL way (works from any machine with dashboard access):
 
