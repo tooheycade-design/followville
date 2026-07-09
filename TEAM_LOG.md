@@ -15,6 +15,36 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 — Cade (via Windows Claude) — set Cade's new building-icon image as the site
+  logo (landing page profile photo): downscaled to 512px as logo.png (old one kept as
+  logo_previous.png, original upload kept as logo_candidate.png). Found why the live site
+  had been showing the emoji fallback instead of any logo: deploy_website.bat copied the
+  file to UPPERCASE "LOGO.png" while index.html requests lowercase "logo.png", and Vercel
+  is case-sensitive — fixed the deploy script to use the lowercase name (the stale
+  LOGO.png in the repo is harmless, left in place per the no-deletions rule).
+  ── STATE OF THE PROJECT after today (handoff summary for the next AI) ──
+  Everything about claimable homes is LIVE and verified end to end. The complete picture:
+  * Live site followville-kappa.vercel.app: index.html (landing; session-aware buttons,
+    admin button for admins, logo), town.html (walkable town + full account/claim UI),
+    admin.html (admin moderation page, server-side gated), town.glb + world_state.json
+    (from the git repo clone, pushed automatically by growth runs).
+  * Backend: Supabase project "followville" (ref bposhxtidoyulallvhdp, org "The Human
+    Archive"). Canonical schema = supabase_schema.sql (both original section and the
+    "WEB ADMIN ACCESS" migration have been run). Keys: legacy anon key is public (in
+    town.html/index.html/admin.html); legacy service-role key ONLY in supabase_sync.env
+    (iCloud folder, gitignored, never deploy).
+  * Residents so far: @cade.toohey (admin, owns house #5 the castle), @stellarkehler
+    (admin, verified, no house yet). Verification is manual until Meta app review
+    (CLAIMING_SETUP.md §4 has the webhook plan).
+  * Daily ops: grow_windows.bat +N grows the town AND git-pushes state AND syncs new
+    buildings into Supabase houses (HOUSES_SYNC_OK in grow_log.txt); deploy_website.bat
+    pushes doc/code/HTML changes; admin approvals happen on the live Admin page (or
+    admin.bat locally). Docs: CLAIMING_SETUP.md is the feature manual, CLAUDE.md's
+    "Claimable homes" section is the summary. Known quirks worth reading before working
+    here: the iCloud conflict-copy race (CLAUDE.md Third AI section — hit 5+ times today,
+    recovery pattern documented) and the Blender-glTF axis flip (blender +y = three -z,
+    documented in town.html's claims module).
+
 2026-07-09 — Cade (via Windows Claude) — took the admin page live, properly gated: added an
   is_admin flag (currently @cade.toohey and @stellarkehler), rebuilt every admin action as a
   database function that checks that flag server-side (so only admin accounts can approve/
