@@ -997,6 +997,29 @@ let nearestOpen = null, claiming = false, claimMode = false;
 const nameTags = new THREE.Group();
 scene.add(nameTags);
 
+/* Rough roof-top heights per building type, so tags/markers sit just above
+   the house instead of floating in the sky (or inside a tall tower). */
+const TAG_HEIGHT = {
+  house: 7.5, mushroomhouse: 8, casinohouse: 7.5, cathouse: 8, castlehouse: 9.5,
+  eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
+  beachhouse: 8, cottagehouse: 8.5,
+};
+
+/* Which way does the front door face? Mirrors neighborhood_blender.py's
+   "face the front door toward the nearest road edge of the block" logic
+   (plus the explicit "face" override). When two road edges tie, Blender
+   picks one at random — we accept either side rather than guessing wrong. */
+const FACE_DIR = { s: [0, -1], e: [1, 0], n: [0, 1], w: [-1, 0] };
+function frontDirsFor(b){
+  if (b.face && FACE_DIR[b.face]) return [FACE_DIR[b.face]];
+  const ix = ((b.gx % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const iy = ((b.gy % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const bn = BLOCK_N - 1;
+  const dists = { s: iy, n: bn - iy, e: bn - ix, w: ix };
+  const best = Math.min(dists.s, dists.n, dists.e, dists.w);
+  return Object.keys(dists).filter(k => dists[k] === best).map(k => FACE_DIR[k]);
+}
+
 const accountBtn = document.getElementById("accountBtn");
 const claimHomeBtn = document.getElementById("claimHomeBtn");
 const goHomeBtn = document.getElementById("goHomeBtn");
@@ -1052,7 +1075,9 @@ function rebuildClaimSpots(){
     const row = houseRows.get(b.seed);
     if (!row || !row.claimable || claimedBy.has(b.seed)) continue;
     const [x, z] = lotToWorld(b.gx, b.gy);
-    claimSpots.push({ id: b.seed, x, z });
+    claimSpots.push({ id: b.seed, x, z,
+                      fronts: frontDirsFor(b),
+                      tagH: TAG_HEIGHT[b.type] ?? 8 });
   }
 }
 
@@ -1075,7 +1100,7 @@ function makeTagSprite(text){
   const tex = new THREE.CanvasTexture(cv);
   tex.anisotropy = 4;
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-  spr.scale.set(11, 2.75, 1);
+  spr.scale.set(7, 1.75, 1);
   return spr;
 }
 function rebuildNameTags(){
@@ -1085,10 +1110,17 @@ function rebuildNameTags(){
     if (!b) continue;
     const [x, z] = lotToWorld(b.gx, b.gy);
     const spr = makeTagSprite("@" + handle);
-    spr.position.set(x, 9.6, z);
+    spr.position.set(x, (TAG_HEIGHT[b.type] ?? 8), z);
+    spr.visible = false;   // shown only when the player is nearby (see animate)
     nameTags.add(spr);
   }
 }
+
+/* floating marker over the ONE house you're currently able to claim */
+const targetTag = makeTagSprite(isTouch ? "tap to claim" : "[E] claim this house");
+targetTag.scale.set(6.2, 1.55, 1);
+targetTag.visible = false;
+scene.add(targetTag);
 
 /* ── the claim itself ── */
 async function attemptClaim(){
@@ -1147,8 +1179,8 @@ claimHomeBtn.addEventListener("click", e => {
   claimMode = true;
   if (isTouch) beginWalking(); else controls.lock();
   showToast(isTouch
-    ? "Walk up to any open house and tap the claim button when it appears."
-    : "Walk up to any open house and press E to claim it.", 7000);
+    ? "Walk up to the front door of an open house — when the claim tag appears over it, tap to claim."
+    : "Walk up to the front door of an open house — when the claim tag appears over it, press E.", 7000);
 });
 goHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
@@ -1437,6 +1469,7 @@ fetch("world_state.json")
   });
 
 const clock = new THREE.Clock();
+const _camDir = new THREE.Vector3();
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
@@ -1464,25 +1497,48 @@ function animate(){
     }
     camera.position.y = 1.7;
 
-    // "press E to claim" proximity check against currently-open houses
+    // name tags on claimed houses: only visible when you're near that house
+    for (const spr of nameTags.children){
+      const dxT = p.x - spr.position.x, dzT = p.z - spr.position.z;
+      spr.visible = (dxT*dxT + dzT*dzT) < 1225;   // within ~35 units
+    }
+
+    // claim targeting: must be CLOSE to the house (right at its hitbox), on
+    // its FRONT/door side, and LOOKING at it — then exactly one house is the
+    // target, marked by a floating tag right above it.
+    let target = null;
     if (sb && session && myProfile?.verification_status === "verified" && !myClaim && claimSpots.length){
-      let best = null, bestD = 130; // ~11.4 units
+      camera.getWorldDirection(_camDir);
+      let bestLook = 0.5;   // must be within ~60° of screen center
       for (const s of claimSpots){
         const dx = p.x - s.x, dz = p.z - s.z;
-        const d = dx*dx + dz*dz;
-        if (d < bestD){ bestD = d; best = s.id; }
+        const d2 = dx*dx + dz*dz;
+        if (d2 > 90 || d2 < 0.01) continue;        // within ~9.5 units of center
+        const d = Math.sqrt(d2), ux = dx/d, uz = dz/d;
+        let onFront = false;
+        for (const f of s.fronts){
+          if (ux*f[0] + uz*f[1] > 0.45){ onFront = true; break; }  // door side ±63°
+        }
+        if (!onFront) continue;
+        const look = _camDir.x*(-ux) + _camDir.z*(-uz);            // facing the house?
+        if (look > bestLook){ bestLook = look; target = s; }
       }
-      if (best !== nearestOpen){
-        nearestOpen = best;
-        claimPrompt.style.display = best ? "block" : "none";
-        if (best && isTouch){
+    }
+    if (target){
+      if (nearestOpen !== target.id){
+        nearestOpen = target.id;
+        claimPrompt.style.display = "block";
+        if (isTouch){
           claimPrompt.querySelector(".key").style.display = "none";
           claimPromptText.textContent = "tap to claim this house";
         }
       }
+      targetTag.position.set(target.x, target.tagH, target.z);
+      targetTag.visible = true;
     } else if (nearestOpen){
       nearestOpen = null;
       claimPrompt.style.display = "none";
+      targetTag.visible = false;
     }
   }
 
