@@ -94,6 +94,10 @@
   .enter-btn:active { transform: scale(0.97); }
   .enter-btn .arrow { transition: transform 0.15s ease; }
   .enter-btn:hover .arrow { transform: translateX(3px); }
+  .enter-btn.claim {
+    margin-top:12px; background:transparent; color:var(--navy);
+    border:2px solid var(--navy); box-shadow:none;
+  }
 
   .hint {
     margin-top:14px; font-size:12.5px; opacity:0.55; text-align:center;
@@ -143,6 +147,9 @@
 
   <a class="enter-btn" href="town.html">
     Walk the town <span class="arrow">→</span>
+  </a>
+  <a class="enter-btn claim" href="town.html#claim">
+    Claim your home <span class="arrow">→</span>
   </a>
   <p class="hint">first-person · WASD or touch controls · desktop &amp; mobile</p>
 </div>

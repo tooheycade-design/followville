@@ -8,3 +8,6 @@ renders/
 *.blend1
 world_state_*_backup.json
 world_state_*_hold.json
+
+# Supabase service-role key for the houses-table sync — SECRET, never commit/deploy
+supabase_sync.env

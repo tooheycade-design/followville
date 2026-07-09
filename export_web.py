@@ -74,12 +74,35 @@ def export_web_glb():
     # in-memory scene of this throwaway process, never the saved .blend.)
     bpy.ops.object.duplicates_make_real(use_base_parent=True, use_hierarchy=True)
 
+    # SANITY CHECK (added 2026-07-08, after the pancaked-houses incident): don't
+    # just trust the fixes above -- verify. Any realized object with a
+    # near-zero scale on ANY axis is exactly what a pancaked/mid-rise export
+    # looks like, and the day-7 pond+houses bug shipped silently for a full day
+    # before anyone noticed on the live site. Fail loudly here instead: raise,
+    # so Blender exits non-zero, so grow_windows.ps1/grow.sh's existing
+    # "non-zero exit = ALL_FAILED" handling catches it automatically, before
+    # anything gets deployed.
+    THRESH = 0.05
+    squashed = [obj.name for obj in col.objects
+                if any(abs(v) < THRESH for v in obj.scale)]
+    if squashed:
+        msg = ("SANITY_CHECK_FAILED: %d object(s) exported with a near-zero "
+               "scale (pancaked): %s" % (len(squashed), ", ".join(squashed[:10])))
+        print(msg)
+        raise RuntimeError(msg)
+
     # Re-select the whole WORLD collection (now full of real meshes) for export.
     bpy.ops.object.select_all(action="DESELECT")
     for obj in col.objects:
         obj.select_set(True)
 
-    base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")
+    # Same NEIGHBORHOOD_STATE_DIR override as neighborhood_blender.py's
+    # state_path() -- if set, town.glb is written straight into the git repo
+    # clone alongside world_state.json instead of next to the .blend, so the
+    # git commit/push step (see grow_windows.ps1) has both files ready with no
+    # separate copy step. Unset = old behavior, unchanged.
+    base = (os.environ.get("NEIGHBORHOOD_STATE_DIR")
+            or (os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")))
     out_path = os.path.join(base, "town.glb")
 
     bpy.ops.export_scene.gltf(

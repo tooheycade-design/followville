@@ -15,6 +15,96 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 — Cade (via Windows Claude) — built the "claimable homes" feature: followers can
+  now create an account on the site, verify their Instagram handle with a one-time DM code
+  (manually approved by Cade until Meta's app review goes through), and claim exactly one
+  house in the town — first come first served, enforced by the database so two people can
+  never grab the same house, with live updates in every open browser. New files:
+  supabase_schema.sql (run once in Supabase), sync_houses.py + a sync step inside
+  grow_windows.ps1/grow.sh (new buildings automatically become claimable after each growth
+  day), and CLAIMING_SETUP.md (the full setup + admin guide). town.html got the whole
+  account/claim UI (sign up, verification code screen, walk-up-and-press-E claiming, name
+  tags floating over claimed houses, "go to my home" spawn); index.html got a "Claim your
+  home" button. NOT live yet — Cade still needs to create the Supabase project and paste
+  in the keys (15-minute checklist in CLAIMING_SETUP.md §1). Until then the site behaves
+  exactly as before. Also: TEAM_LOG.md's plain filename had been eaten by the iCloud race
+  again — restored from the freshest conflict copy (TEAM_LOG 7.md) while writing this.
+
+2026-07-09 — Cade (via Windows Claude) — installed Blender's official MCP add-on (from
+  blender.org/lab/mcp-server) into the Windows Blender 5.1 install, enabled "Allow Online
+  Access" in Blender's System preferences (required for the add-on's local server to run),
+  and started the MCP bridge on localhost:9876. This lets this session (and future ones)
+  inspect the live Blender scene directly (materials, object hierarchy, scale, etc.) instead
+  of only driving Blender headlessly via grow_windows.bat or round-tripping through
+  town.glb + pygltflib. Heads up for whoever opens neighborhood.blend next: the add-on's own
+  security notice says it lets any connected AI run unsandboxed Python inside Blender with no
+  guardrails against data loss/exfiltration -- Cade explicitly approved installing it anyway
+  on this everyday PC (not a VM), so if that tradeoff ever needs revisiting, disable/remove
+  the "MCP" add-on in Edit > Preferences > Add-ons.
+  Also confirmed something worth knowing: neighborhood.blend's saved scene is stale (still
+  shows roughly the day-4 state, missing the day 5-7 houses and the pond) because growth has
+  been headless-only since day 4 and nothing has re-saved the .blend since. This does NOT
+  affect world_state.json, town.glb, or the live site (those are correct/current, built fresh
+  by the headless pipeline each run) -- it only matters if someone opens the .blend in the
+  GUI expecting to see the current town.
+
+2026-07-09 — Cade (via Windows Claude) — verified the new git-backed grow pipeline end to end
+  (test_git_pipeline3.txt): git pull succeeded, Blender read/wrote world_state.json + town.glb
+  from C:\Users\cadet\followville_repo via NEIGHBORHOOD_STATE_DIR (state_file in the RESULT line
+  confirms it), the sanity check passed (no SANITY_CHECK_FAILED), and git add/commit/push ran
+  automatically, correctly reporting NOCHANGES since this was a no-op replay of the already-
+  committed day 7 state. Log ended in ALL_DONE. Hit the iCloud race one more time on the way in
+  (neighborhood_blender.py's plain filename had been renamed to a numbered conflict copy again --
+  restored from the freshest copy) and again on TEAM_LOG.md itself while writing this entry --
+  another data point for why the git-backed approach above is the right fix, not a patch.
+
+2026-07-09 — Cade (via Windows Claude) — root-caused the recurring iCloud sync race for real
+  this time, instead of just working around it. world_state.json/town.glb now live
+  authoritatively in the git repo clone (C:\Users\cadet\followville_repo), not in this iCloud
+  folder: neighborhood_blender.py/export_web.py gained a NEIGHBORHOOD_STATE_DIR env-var
+  override (unset = old behavior, fully backward compatible), and grow_windows.ps1 now does
+  git pull -> point Blender at the repo clone -> git add/commit/push automatically after every
+  growth run. Growing the town and publishing its state are one step now instead of two --
+  this also kills the "forgot to deploy, site stuck a day behind" failure mode from 2026-07-07.
+  Updated deploy_website.bat to stop copying world_state.json/town.glb (it would've stomped
+  the fresher git-committed copies) and preview_website.ps1 to serve those two files from the
+  repo clone so local preview still works. Added the same opt-in pattern to grow.sh via
+  NEIGHBORHOOD_REPO_DIR for Mac -- untested from here, needs a Mac session to verify before
+  relying on it. Also built check_town_glb.py (standalone, no-Blender pygltflib check for the
+  exact pancaked-scale bug from yesterday) and wired it in twice: once inside export_web.py
+  itself (fails the Blender run outright if it finds anything squashed) and once as a GitHub
+  Action (.github/workflows/check_town_glb.yml, had a Fable subagent draft the workflow YAML)
+  that runs on every push to main -- so a bad export can't reach the live site undetected even
+  if the in-Blender check somehow gets bypassed later. Full writeup in CLAUDE.md under "Where
+  world_state.json + town.glb actually live now."
+
+2026-07-08 — Cade (via Windows Claude) — found and fixed the real cause of the "pancaked
+  houses" bug Cade reported on the live day-7 site (pond + 3 new houses showing up flat,
+  as if caught mid-rise). It wasn't the frame_end jump (that fix from 2026-07-05 was still
+  needed but not enough) — it was that export_web.py's scale reset only overrides the
+  Python-side value; the new buildings still had live rise-animation keyframes attached,
+  and Blender's duplicates_make_real() re-applies that animation during export, silently
+  baking the mid-rise scale back in. Confirmed directly in the deployed town.glb with
+  pygltflib (37 mesh parts squashed to scale 0.001). Fix: export_web.py now also calls
+  obj.animation_data_clear() before realizing instances, so there's no animation left to
+  reassert anything. Re-exported town.glb (verified 0 squashed nodes, was 37), redeployed
+  via deploy_website.bat, confirmed the push landed on origin/main (commit 630e634). Full
+  writeup in CLAUDE.md's Web viewer section (new 2026-07-08 PITFALL note) in case this
+  pattern ever resurfaces.
+
+2026-07-08 — Cade (via Windows Claude) — grew the town to day 7, population 29 (30
+  buildings): added a brand-new "pond" building type with animated ducks
+  (build_pond/build_duck/animate_ducks in neighborhood_blender.py, new --pond flag) and
+  clustered the 3 new houses around it in a shared 2x2 patch. Rendered a hero shot of the
+  pond+houses appearing (day_007_hero_0001-0160.mp4) and a final overhead/drone shot of
+  the whole town (day_007_overhead_0001-0160.mp4), both copied to the Desktop. Deployed
+  live via deploy_website.bat, confirmed the push landed on origin/main (commit bcf77d0).
+  Hit a nasty iCloud sync issue along the way — world_state.json's plain filename kept
+  getting renamed to a numbered conflict copy between separate command launches, causing
+  one render to silently run against an empty town. Documented the cause and the fix
+  (combine the restore + the next action into one script) in CLAUDE.md's Third AI section
+  — worth reading if anything like this happens again.
+
 2026-07-07 — Cade (via Windows Claude) — set up real deploying from Windows: installed
 2026-07-07 — Zach (via Claude) — set up a real GitHub Desktop clone at ~/Documents/GitHub/followville
   (Separate from the shared iCloud folder, same idea as Cade's Windows deploy_website.bat setup) to

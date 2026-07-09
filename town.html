@@ -86,6 +86,80 @@
     #hud { font-size:13px; }
     #homeLink { font-size:12px; padding:6px 12px; }
   }
+
+  /* ─── accounts + home claiming ─── */
+  #startScreen .btn.alt {
+    background:rgba(255,255,255,0.16); color:#fff;
+    border:2px solid rgba(255,255,255,0.65); box-shadow:none;
+  }
+  #startBtns { display:flex; flex-direction:column; gap:12px; align-items:center; }
+
+  #accountBtn {
+    position:fixed; top:54px; right:14px; z-index:6; cursor:pointer;
+    color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.55);
+    font-size:13px; font-weight:600; border:none; font-family:inherit;
+    background:rgba(0,0,0,0.25); padding:7px 14px; border-radius:20px;
+    backdrop-filter: blur(4px); display:none;
+  }
+
+  #claimPrompt {
+    position:fixed; bottom:92px; left:50%; transform:translateX(-50%); z-index:7;
+    background:rgba(12,22,38,0.72); color:#fff; padding:11px 20px; border-radius:24px;
+    font-size:14.5px; font-weight:600; display:none; cursor:pointer;
+    backdrop-filter: blur(5px); border:1px solid rgba(255,255,255,0.25);
+    text-shadow:0 1px 3px rgba(0,0,0,0.4); user-select:none;
+  }
+  #claimPrompt .key {
+    display:inline-block; background:#fff; color:#1c2b45; border-radius:6px;
+    padding:1px 8px; margin-right:7px; font-weight:800;
+  }
+
+  #toast {
+    position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:30;
+    background:rgba(20,30,48,0.94); color:#fff; padding:11px 20px; border-radius:14px;
+    font-size:13.5px; font-weight:600; display:none; max-width:84vw; text-align:center;
+    box-shadow:0 8px 26px rgba(0,0,0,0.35); line-height:1.45;
+  }
+
+  #authModal {
+    position:fixed; inset:0; z-index:25; display:none; align-items:center;
+    justify-content:center; background:rgba(12,22,38,0.55); backdrop-filter: blur(3px);
+  }
+  #authCard {
+    background:#fdfaf4; color:#1c2b45; border-radius:20px; padding:26px 24px 20px;
+    width:min(370px, 92vw); box-shadow:0 18px 50px rgba(0,0,0,0.4);
+    max-height:86vh; overflow:auto;
+  }
+  #authCard h2 { margin:0 0 6px; font-size:21px; letter-spacing:-0.3px; }
+  #authCard .muted { font-size:13px; line-height:1.55; opacity:0.78; margin:6px 0 10px; }
+  #authCard label { font-size:11.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em; opacity:0.6; display:block; margin-top:10px; }
+  #authCard input {
+    width:100%; padding:11px 12px; margin-top:4px; border-radius:10px;
+    border:1px solid #c9d1dc; font-size:14px; box-sizing:border-box; background:#fff;
+    font-family:inherit;
+  }
+  #authCard .primary {
+    width:100%; padding:13px; margin-top:16px; border:none; border-radius:12px;
+    background:#1c2b45; color:#fff; font-weight:700; font-size:14.5px; cursor:pointer;
+    font-family:inherit;
+  }
+  #authCard .primary:disabled { opacity:0.55; }
+  #authCard .linkish {
+    background:none; border:none; color:#2b6a94; font-size:13px; margin-top:13px;
+    cursor:pointer; display:block; width:100%; text-align:center; font-family:inherit;
+  }
+  #authCard .err { color:#b03030; font-size:12.5px; min-height:17px; margin-top:8px; text-align:center; }
+  #authCard .code {
+    font-size:27px; font-weight:800; letter-spacing:2.5px; text-align:center;
+    background:#f2e9da; border-radius:12px; padding:15px; margin:12px 0 4px; user-select:all;
+  }
+  #authCard .badge {
+    display:inline-block; font-size:11.5px; font-weight:700; border-radius:20px;
+    padding:3px 11px; margin-left:6px; vertical-align:2px;
+  }
+  #authCard .badge.pending { background:#f6e3b4; color:#7a5b12; }
+  #authCard .badge.verified { background:#cdeccc; color:#20621f; }
 </style>
 </head>
 <body>
@@ -98,13 +172,22 @@
   <h1>Followville</h1>
   <p id="startSub">a town where every follower is a house</p>
   <p id="startHint">WASD or arrows to walk · mouse to look · shift to run</p>
-  <div class="btn" id="enterBtn">click to enter</div>
+  <div id="startBtns">
+    <div class="btn" id="enterBtn">click to enter</div>
+    <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
+    <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
+  </div>
 </div>
 
 <div id="hud" style="display:none;">
   <div id="hudMain">Followville</div>
   <div class="sub" id="hudSub"></div>
 </div>
+
+<button id="accountBtn"></button>
+<div id="claimPrompt"><span class="key">E</span><span id="claimPromptText">claim this house</span></div>
+<div id="toast"></div>
+<div id="authModal"><div id="authCard"></div></div>
 <div id="crosshair"></div>
 <div id="hint">ESC to release mouse</div>
 
@@ -657,15 +740,18 @@ if (isTouch){
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
+  if (modalOpen()) return;  // don't walk around while typing in the account modal
   switch(e.code){
     case "KeyW": case "ArrowUp": move.z = 1; break;
     case "KeyS": case "ArrowDown": move.z = -1; break;
     case "KeyA": case "ArrowLeft": move.x = -1; break;
     case "KeyD": case "ArrowRight": move.x = 1; break;
     case "ShiftLeft": case "ShiftRight": move.run = true; break;
+    case "KeyE": if (gameRunning) attemptClaim(); break;
   }
 });
 document.addEventListener("keyup", e => {
+  if (modalOpen()) return;
   switch(e.code){
     case "KeyW": case "ArrowUp": if (move.z > 0) move.z = 0; break;
     case "KeyS": case "ArrowDown": if (move.z < 0) move.z = 0; break;
@@ -891,6 +977,366 @@ function addBuildings(buildings){
   scene.add(world);
 }
 
+/* ═══════════════════════ ACCOUNTS + HOME CLAIMING ═══════════════════════
+   Every real follower can create an account, verify their Instagram handle,
+   and claim exactly ONE house. Backend: Supabase (Postgres + Auth + Realtime),
+   schema in supabase_schema.sql, full guide in CLAIMING_SETUP.md.
+   If the two constants below are left empty, ALL of this is disabled and the
+   page behaves exactly like the original free-roam viewer. */
+
+const SUPABASE_URL = "";        // ← paste from Supabase dashboard → Settings → API
+const SUPABASE_ANON_KEY = "";   // ← the "anon / public" key (safe to ship in HTML)
+
+let sb = null;                  // supabase client (null = feature off/unavailable)
+let session = null, myProfile = null, myClaim = null;
+let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
+let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
+let worldBuildings = [];        // from world_state.json (geometry truth)
+let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
+let nearestOpen = null, claiming = false, claimMode = false;
+const nameTags = new THREE.Group();
+scene.add(nameTags);
+
+const accountBtn = document.getElementById("accountBtn");
+const claimHomeBtn = document.getElementById("claimHomeBtn");
+const goHomeBtn = document.getElementById("goHomeBtn");
+const claimPrompt = document.getElementById("claimPrompt");
+const claimPromptText = document.getElementById("claimPromptText");
+const authModal = document.getElementById("authModal");
+const authCard = document.getElementById("authCard");
+const toast = document.getElementById("toast");
+
+let toastTimer = null;
+function showToast(msg, ms = 4200){
+  toast.textContent = msg;
+  toast.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.display = "none"; }, ms);
+}
+function modalOpen(){ return authModal.style.display === "flex"; }
+function openModal(){ authModal.style.display = "flex"; renderAuthCard(); }
+function closeModal(){ authModal.style.display = "none"; }
+authModal.addEventListener("mousedown", e => { if (e.target === authModal) closeModal(); });
+
+/* ── data refresh ── */
+async function refreshHouses(){
+  const { data, error } = await sb.from("houses").select("id,gx,gy,claimable");
+  if (!error && data) houseRows = new Map(data.map(h => [h.id, h]));
+}
+async function refreshClaims(){
+  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle");
+  if (!error && data){
+    claimedBy = new Map(data.map(r => [r.house_id, r.instagram_handle]));
+    rebuildNameTags();
+    rebuildClaimSpots();
+  }
+}
+async function refreshMyStatus(){
+  if (!session){ myProfile = null; myClaim = null; return; }
+  const { data, error } = await sb.rpc("my_status");
+  if (error) return;
+  myProfile = data?.profile ?? null;
+  myClaim = data?.claim ?? null;
+  // first login after signup: profile row doesn't exist yet — create it from
+  // the handle stashed in auth metadata at signup time
+  const metaHandle = session.user?.user_metadata?.instagram_handle;
+  if (!myProfile && metaHandle){
+    const { data: prof } = await sb.rpc("setup_profile", { p_handle: metaHandle });
+    if (prof) myProfile = prof;
+  }
+}
+
+function rebuildClaimSpots(){
+  claimSpots = [];
+  for (const b of worldBuildings){
+    const row = houseRows.get(b.seed);
+    if (!row || !row.claimable || claimedBy.has(b.seed)) continue;
+    const [x, z] = lotToWorld(b.gx, b.gy);
+    claimSpots.push({ id: b.seed, x, z });
+  }
+}
+
+/* ── floating @handle name tags on claimed houses ── */
+function makeTagSprite(text){
+  const cv = document.createElement("canvas");
+  cv.width = 512; cv.height = 128;
+  const ctx = cv.getContext("2d");
+  ctx.font = "bold 54px -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const tw = Math.min(ctx.measureText(text).width, 440);
+  const bw = tw + 56, bh = 92, bx = (512 - bw) / 2, by = (128 - bh) / 2, r = 26;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, r);
+  else ctx.rect(bx, by, bw, bh);   // older browsers: square corners, no crash
+  ctx.fillStyle = "rgba(20,30,48,0.82)";
+  ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, 256, 66, 440);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = 4;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  spr.scale.set(11, 2.75, 1);
+  return spr;
+}
+function rebuildNameTags(){
+  nameTags.clear();
+  for (const [id, handle] of claimedBy){
+    const b = worldBuildings.find(bb => bb.seed === id);
+    if (!b) continue;
+    const [x, z] = lotToWorld(b.gx, b.gy);
+    const spr = makeTagSprite("@" + handle);
+    spr.position.set(x, 9.6, z);
+    nameTags.add(spr);
+  }
+}
+
+/* ── the claim itself ── */
+async function attemptClaim(){
+  if (!sb || !session || !nearestOpen || claiming) return;
+  claiming = true;
+  const houseId = nearestOpen;
+  const { error } = await sb.rpc("claim_house", { p_house_id: houseId });
+  claiming = false;
+  if (error){
+    const m = error.message || "";
+    if (m.includes("house_taken"))            showToast("Someone claimed this house seconds ago — pick another!");
+    else if (m.includes("already_have_house")) showToast("You already have a house in Followville!");
+    else if (m.includes("not_verified"))       showToast("Your Instagram isn't verified yet — check your account panel.");
+    else if (m.includes("not_claimable"))      showToast("This building can't be claimed.");
+    else                                       showToast("Couldn't claim: " + m);
+    refreshClaims();
+  } else {
+    await Promise.all([refreshClaims(), refreshMyStatus()]);
+    updateAccountUI();
+    claimMode = false;
+    showToast("🏠 It's yours! Welcome home" + (myProfile ? ", @" + myProfile.instagram_handle : "") + "!");
+  }
+}
+claimPrompt.addEventListener("click", attemptClaim);
+
+/* ── spawn at your own house ── */
+function goHome(){
+  if (!myClaim) return;
+  const b = worldBuildings.find(bb => bb.seed === myClaim.house_id);
+  if (!b) return;
+  const [x, z] = lotToWorld(b.gx, b.gy);
+  camera.position.set(x, 1.7, z - 12);   // street side, a couple lots south
+  camera.rotation.order = "YXZ";
+  camera.rotation.y = Math.PI;           // face north, toward the house
+  camera.rotation.x = 0;
+}
+
+/* ── account button + start-screen routing ── */
+function updateAccountUI(){
+  if (!sb){ accountBtn.style.display = "none"; return; }
+  accountBtn.style.display = "block";
+  if (!session)            accountBtn.textContent = "sign in · claim a home";
+  else if (!myProfile)     accountBtn.textContent = "finish account setup";
+  else if (myProfile.verification_status === "verified")
+                           accountBtn.textContent = "@" + myProfile.instagram_handle + " ✓";
+  else                     accountBtn.textContent = "@" + myProfile.instagram_handle + " · pending";
+  const verified = myProfile?.verification_status === "verified";
+  claimHomeBtn.style.display = (session && verified && !myClaim) ? "" : "none";
+  goHomeBtn.style.display = (session && myClaim) ? "" : "none";
+  if (modalOpen()) renderAuthCard();
+}
+accountBtn.addEventListener("click", openModal);
+
+claimHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  claimMode = true;
+  if (isTouch) beginWalking(); else controls.lock();
+  showToast(isTouch
+    ? "Walk up to any open house and tap the claim button when it appears."
+    : "Walk up to any open house and press E to claim it.", 7000);
+});
+goHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  goHome();
+  if (isTouch) beginWalking(); else controls.lock();
+});
+
+/* ── auth modal panels ── */
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch])); }
+
+function renderAuthCard(){
+  if (!sb) return;
+  if (!session){
+    authCard.innerHTML = `
+      <h2>Claim your home</h2>
+      <p class="muted">Every follower owns a house in Followville. Sign up, verify
+      your Instagram, then walk up to any open house and make it yours.</p>
+      <div id="authForms"></div>`;
+    renderAuthForms("signup");
+    return;
+  }
+  if (!myProfile){
+    authCard.innerHTML = `
+      <h2>One last step</h2>
+      <p class="muted">Which Instagram account is yours? You'll verify it next,
+      so it has to be a handle you control.</p>
+      <label>instagram handle</label>
+      <input id="fHandle" placeholder="@yourhandle" autocapitalize="none" />
+      <button class="primary" id="doSetup">continue</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">sign out</button>`;
+    document.getElementById("doSetup").onclick = async () => {
+      const h = document.getElementById("fHandle").value;
+      const { data, error } = await sb.rpc("setup_profile", { p_handle: h });
+      if (error) setErr(error.message);
+      else { myProfile = data; updateAccountUI(); renderAuthCard(); }
+    };
+    wireSignout();
+    return;
+  }
+  if (myProfile.verification_status !== "verified"){
+    const rejected = myProfile.verification_status === "rejected";
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)}
+        <span class="badge pending">${rejected ? "rejected" : "pending"}</span></h2>
+      ${rejected
+        ? `<p class="muted">This account's verification was rejected. If you think
+           that's a mistake, DM @followville on Instagram.</p>`
+        : `<p class="muted">Prove this handle is yours — send this code as a DM to
+           <b>@followville</b> on Instagram (or put it in your bio for a day).
+           Once we see it, you're verified and can claim a house.</p>
+           <div class="code">${esc(myProfile.verification_code)}</div>
+           <p class="muted" style="text-align:center;">verification is checked by a human
+           for now, so it can take a little while</p>
+           <button class="primary" id="doRecheck">check again</button>`}
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">sign out</button>`;
+    const rc = document.getElementById("doRecheck");
+    if (rc) rc.onclick = async () => {
+      rc.disabled = true;
+      await refreshMyStatus(); updateAccountUI();
+      rc.disabled = false;
+      if (myProfile?.verification_status !== "verified") setErr("not verified yet — hang tight!");
+      else renderAuthCard();
+    };
+    wireSignout();
+    return;
+  }
+  if (!myClaim){
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+      <p class="muted">You're verified! Close this, hit <b>claim a home</b>, and walk
+      up to any open house ${isTouch ? "— a claim button appears when you're close." : "and press <b>E</b>."}</p>
+      <button class="primary" id="doStartClaim">start claiming</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">sign out</button>`;
+    document.getElementById("doStartClaim").onclick = () => { closeModal(); claimHomeBtn.click(); };
+    wireSignout();
+    return;
+  }
+  authCard.innerHTML = `
+    <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+    <p class="muted">Your house is house <b>#${esc(myClaim.house_id)}</b>, claimed
+    ${esc(new Date(myClaim.claimed_at).toLocaleDateString())}. It has your name on it —
+    literally, walk over and look up.</p>
+    <button class="primary" id="doGoHome">go to my home</button>
+    <div class="err" id="authErr"></div>
+    <button class="linkish" id="doSignout">sign out</button>`;
+  document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
+  wireSignout();
+}
+
+function setErr(msg){
+  const el = document.getElementById("authErr");
+  if (el) el.textContent = (msg || "").replace(/^.*?(handle_taken|bad_handle|already_verified).*$/,
+    (m, code) => ({ handle_taken: "that handle is already registered",
+                    bad_handle: "that doesn't look like a valid instagram handle",
+                    already_verified: "this account is already verified" }[code]));
+}
+function wireSignout(){
+  const el = document.getElementById("doSignout");
+  if (el) el.onclick = async () => { await sb.auth.signOut(); closeModal(); };
+}
+
+function renderAuthForms(mode){
+  const wrap = document.getElementById("authForms");
+  if (!wrap) return;
+  if (mode === "signup"){
+    wrap.innerHTML = `
+      <label>email</label><input id="fEmail" type="email" autocomplete="email" />
+      <label>password</label><input id="fPass" type="password" autocomplete="new-password" />
+      <label>instagram handle</label><input id="fHandle" placeholder="@yourhandle" autocapitalize="none" />
+      <button class="primary" id="doSignup">create account</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="swap">already have an account? sign in</button>`;
+    document.getElementById("doSignup").onclick = async () => {
+      const email = document.getElementById("fEmail").value.trim();
+      const pass = document.getElementById("fPass").value;
+      const handle = document.getElementById("fHandle").value.trim();
+      if (!email || !pass || !handle) return setErr("fill in all three fields");
+      const btn = document.getElementById("doSignup"); btn.disabled = true;
+      const { data, error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { instagram_handle: handle.replace(/^@/, "").toLowerCase() } }
+      });
+      btn.disabled = false;
+      if (error) return setErr(error.message);
+      if (!data.session){
+        wrap.innerHTML = `<p class="muted" style="text-align:center;">Almost there — click the
+          confirmation link we just emailed to <b>${esc(email)}</b>, then come back and sign in.</p>
+          <button class="linkish" id="swap">back to sign in</button>`;
+        document.getElementById("swap").onclick = () => renderAuthForms("signin");
+        return;
+      }
+      // session is live; onAuthStateChange picks it up and setup_profile runs
+    };
+    document.getElementById("swap").onclick = () => renderAuthForms("signin");
+  } else {
+    wrap.innerHTML = `
+      <label>email</label><input id="fEmail" type="email" autocomplete="email" />
+      <label>password</label><input id="fPass" type="password" autocomplete="current-password" />
+      <button class="primary" id="doSignin">sign in</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="swap">new here? create an account</button>`;
+    document.getElementById("doSignin").onclick = async () => {
+      const btn = document.getElementById("doSignin"); btn.disabled = true;
+      const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById("fEmail").value.trim(),
+        password: document.getElementById("fPass").value
+      });
+      btn.disabled = false;
+      if (error) setErr(error.message);
+    };
+    document.getElementById("swap").onclick = () => renderAuthForms("signup");
+  }
+}
+
+/* ── boot ── */
+async function initSupabase(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;   // feature off — page unchanged
+  try {
+    const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    sb = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e){
+    console.warn("supabase-js failed to load — claiming disabled this visit", e);
+    sb = null;
+    return;
+  }
+  const { data } = await sb.auth.getSession();
+  session = data?.session ?? null;
+  sb.auth.onAuthStateChange((_evt, s) => {
+    session = s;
+    refreshMyStatus().then(updateAccountUI);
+  });
+  await Promise.all([refreshHouses(), refreshClaims(), refreshMyStatus()]);
+  updateAccountUI();
+  // live updates: any claim anywhere refreshes every visitor's map instantly
+  sb.channel("claims-live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => {
+      refreshClaims();
+      refreshMyStatus().then(updateAccountUI);
+    })
+    .subscribe();
+  if (location.hash === "#claim") openModal();
+}
+
+/* ═══════════════════════ end accounts + claiming ═══════════════════════ */
+
 /* ══════════════════════════════════ LOAD + RUN ══════════════════════════════════ */
 
 // Real path: town.glb, exported straight out of Blender by export_web.py —
@@ -963,6 +1409,8 @@ fetch("world_state.json")
   .then(r => r.json())
   .then(state => {
     const buildings = state.buildings || [];
+    worldBuildings = buildings;
+    initSupabase();   // accounts + claiming; no-op until configured
     loadFromGLB(buildings)
       .catch(err => {
         console.warn("town.glb not found or failed to load — falling back to the JS-built approximation.", err);
@@ -1015,6 +1463,27 @@ function animate(){
       }
     }
     camera.position.y = 1.7;
+
+    // "press E to claim" proximity check against currently-open houses
+    if (sb && session && myProfile?.verification_status === "verified" && !myClaim && claimSpots.length){
+      let best = null, bestD = 130; // ~11.4 units
+      for (const s of claimSpots){
+        const dx = p.x - s.x, dz = p.z - s.z;
+        const d = dx*dx + dz*dz;
+        if (d < bestD){ bestD = d; best = s.id; }
+      }
+      if (best !== nearestOpen){
+        nearestOpen = best;
+        claimPrompt.style.display = best ? "block" : "none";
+        if (best && isTouch){
+          claimPrompt.querySelector(".key").style.display = "none";
+          claimPromptText.textContent = "tap to claim this house";
+        }
+      }
+    } else if (nearestOpen){
+      nearestOpen = null;
+      claimPrompt.style.display = "none";
+    }
   }
 
   renderer.render(scene, camera);

@@ -101,6 +101,16 @@ GREENS = [(0.31, 0.54, 0.31), (0.36, 0.61, 0.33), (0.25, 0.49, 0.27)]
 # ═══════════════════════════════ STATE PERSISTENCE ══════════════════════════════
 
 def state_path():
+    # NEIGHBORHOOD_STATE_DIR lets the caller redirect world_state.json somewhere
+    # other than "next to the .blend" -- specifically, grow_windows.ps1/grow.sh
+    # can point this at a git repo clone instead of the iCloud-synced folder,
+    # so the one file that gets read-modified-written every growth day never
+    # sits inside iCloud's sync path (see CLAUDE.md's iCloud race-condition
+    # writeup, 2026-07-08, for why that matters). Unset = old behavior,
+    # unchanged, so this is a no-op for anyone who hasn't opted in.
+    override = os.environ.get("NEIGHBORHOOD_STATE_DIR")
+    if override:
+        return os.path.join(override, "world_state.json")
     if bpy.data.filepath:
         return os.path.join(os.path.dirname(bpy.data.filepath), "world_state.json")
     return os.path.join(os.path.expanduser("~"), "neighborhood_world_state.json")

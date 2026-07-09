@@ -2,7 +2,10 @@
 
 Cade's Instagram project: a persistent 3D low-poly town in Blender. Every follower = a house.
 Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEVER edit/delete
-it casually; back it up before risky operations.
+it casually; back it up before risky operations. **As of 2026-07-09, on Windows this file (and
+town.glb) live in the git repo clone (`C:\Users\cadet\followville_repo`), NOT in this iCloud
+folder, by default — see "Where world_state.json + town.glb actually live now" below before
+you go looking for it here.**
 
 ## Current canon (update this section each day!)
 - Day 7, population 29, 30 buildings (grown 2026-07-08 via Windows Claude: +3 houses + 1 pond).
@@ -11,7 +14,10 @@ it casually; back it up before risky operations.
   block); ducks are NOT saved to world_state (spawned fresh each run by `animate_ducks`,
   analogous to `animate_traffic`, using each pond building's own seed). Rendered hero shot
   (`replay --hero --render --tag hero`) + overhead/drone shot (`replay --cam overhead --render
-  --tag overhead`), then deployed live.
+  --tag overhead`), then deployed live. Live site initially showed the pond+3 new houses
+  pancaked flat — root-caused and fixed same day (export_web.py now calls
+  `obj.animation_data_clear()` before realizing instances; see the Web viewer section's
+  2026-07-08 PITFALL note below for the full story), re-exported, redeployed, confirmed live.
   Sunset fireworks marked the founder era complete (day 4).
 - Web viewer shipped day 4 (index.html + town.glb, see Web viewer section).
 - FOUNDERS (first 10 residents, custom houses, all built):
@@ -100,6 +106,84 @@ always also check/push the live site — don't assume it updates itself.**
   mirroring this same idea (copy tracked files, commit, push, log ALL_DONE) so this stops
   getting missed.
 
+## Where world_state.json + town.glb actually live now (2026-07-09)
+This section supersedes most of the "combined restore + launch script" workaround described
+in the iCloud race-condition gotcha further down (that workaround still applies to plain docs
+like this one, which haven't moved — see below). The race itself was: `world_state.json`'s
+plain filename in this iCloud folder kept getting silently renamed to a numbered conflict copy
+between separate command launches, because it's a file that gets read-modified-written every
+single growth day, and that's exactly the wrong kind of file to leave in an iCloud/Dropbox-style
+sync path. The actual fix isn't a smarter workaround, it's removing the file from iCloud's sync
+path entirely and using git instead — a `git pull` either gets you the latest committed state or
+fails loudly; it never silently hands you an empty file the way iCloud's conflict-copy renaming did.
+
+**How it works now (Windows):**
+- `neighborhood_blender.py`'s `state_path()` and `export_web.py`'s town.glb output path both
+  check an environment variable, `NEIGHBORHOOD_STATE_DIR`. If set, `world_state.json`/`town.glb`
+  are read/written there instead of "next to the .blend" (the old default). Unset = old
+  behavior, unchanged — this is fully backward compatible.
+- `grow_windows.ps1` sets `NEIGHBORHOOD_STATE_DIR` to `C:\Users\cadet\followville_repo` (the git
+  clone) before every Blender invocation. Before that, it does `git pull origin main` in the
+  clone — if the pull fails, the whole run aborts loudly rather than growing on top of state we
+  might not have the latest copy of. After Blender succeeds, it `git add`s `world_state.json` +
+  `town.glb`, commits (message: `Grow: <change> (auto-committed by grow_windows.ps1 <timestamp>)`),
+  and pushes to `origin/main` automatically — growing the town and publishing its new state are
+  now ONE step, not two. (This also closes the *other* recurring problem, "forgot to deploy,
+  live site stuck a day behind" — see the old note below.)
+- Pass `--no-git` to `grow_windows.bat`/`.ps1` to fall back to the pre-2026-07-09 behavior
+  (state next to the `.blend`, in this iCloud folder, no git pull/push) if this ever needs
+  troubleshooting.
+- `deploy_website.bat` no longer copies `world_state.json`/`town.glb` from this iCloud folder —
+  doing so would silently overwrite the fresher git-committed copies with a stale iCloud copy.
+  It still handles every OTHER tracked file (docs, code, the HTML). Growing (`grow_windows.bat`)
+  publishes state; `deploy_website.bat` publishes everything else (docs/code changes made
+  directly in this iCloud folder, outside of a growth run).
+- `preview_website.ps1` (local preview server) was updated to serve `world_state.json`/`town.glb`
+  from the repo clone if present there, and everything else from this iCloud folder as before —
+  so local preview still shows the real current state after a `grow_windows.bat` run.
+- **Mac (`grow.sh`):** the equivalent opt-in exists — set `NEIGHBORHOOD_REPO_DIR` (e.g.
+  `export NEIGHBORHOOD_REPO_DIR="$HOME/Documents/GitHub/followville"`) before running `grow.sh`,
+  and it mirrors the same pull/env-var/commit-push pattern. **This was written from the Windows
+  session and has NOT been tested on an actual Mac** — Cade's and Zach's Mac repo clone paths
+  weren't known/verifiable from here. Leave `NEIGHBORHOOD_REPO_DIR` unset and `grow.sh` behaves
+  exactly as before (fully backward compatible); whoever's on a Mac should verify this once
+  before relying on it, and update this note with what was actually found.
+- **Docs (this file, TEAM_LOG.md, etc.) have NOT moved** — they're far less frequently
+  read-modified-written than `world_state.json` was, but they DO still occasionally get hit by
+  the same iCloud race (it happened again mid-edit while writing this very section, 2026-07-09 —
+  see the recovery pattern in the gotcha note below). If this becomes a recurring problem for
+  docs too, the same fix applies: move their canonical copy into the git repo clone as well.
+
+**Also added 2026-07-08/09, closing the OTHER half of the pancaked-houses problem (that it shipped
+silently for a full day before anyone noticed):** `export_web.py` now has an in-Blender check
+right after `duplicates_make_real()` — if ANY realized object has a near-zero scale on any axis,
+it raises and fails the whole Blender process, which `grow_windows.ps1`/`grow.sh` already treat as
+fatal (`ALL_FAILED`). A second, independent copy of the same check lives in a standalone script,
+`check_town_glb.py` (needs only `pip install pygltflib`, no Blender required), wired into a
+GitHub Action (`.github/workflows/check_town_glb.yml`) that runs on every push to `main` — so
+even a bad export that somehow bypassed the in-Blender check (a hand-edited file, a future
+refactor that drops it, etc.) can't reach the live site without GitHub itself flagging the push
+red. Verify it's working by checking the Actions tab on the GitHub repo after any push.
+
+## Claimable homes (accounts) — built 2026-07-09, see CLAIMING_SETUP.md
+Followers can sign up on the site, verify their Instagram handle (DM-code, manually
+approved by Cade until Meta app review), and claim exactly ONE house. Backend:
+Supabase (Postgres+Auth+Realtime) — schema in `supabase_schema.sql`, run once in the
+Supabase SQL editor. One-house-per-account and one-account-per-house are enforced by
+DB unique constraints via the `claim_house()` RPC (first commit wins, loser gets a
+clean error, Realtime updates every open browser). `town.html` has the whole
+account/claim UI; it stays 100% dormant until `SUPABASE_URL`/`SUPABASE_ANON_KEY` are
+pasted in near the top of its script. **Pipeline integration (don't lose this):**
+`grow_windows.ps1` (Sync-Houses function) and `grow.sh` (sync_houses.py call) now
+sync new world_state.json buildings into the Supabase `houses` table after each
+growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored,
+NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
+HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
+incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas.
+Admin (verify/reject/revoke) = SQL helpers, see CLAIMING_SETUP.md §3.
+Setup status: schema + code shipped; Cade still needs to create the Supabase
+project + paste keys (CLAIMING_SETUP.md §1) before any of it goes live.
+
 ## Milestones (auto-built when population crosses)
 500 fountain plaza | 2,000 skyscraper | 10,000 stadium
 
@@ -122,6 +206,27 @@ PITFALL (fixed, don't reintroduce): export_web.py must jump to the animation's f
 (scene.frame_set(scene.frame_end)) before realizing/exporting, or newly-risen houses can get
 baked mid-rise ("pancaked" flat to the ground) — the daily rise animation scales buildings
 from scale.z≈0.001 up to 1 over the clip, and export_apply=True bakes whatever frame is current.
+
+PITFALL (fixed 2026-07-08, don't reintroduce — this is the REAL fix for the "pancaked houses"
+bug, the frame_end jump above was necessary but not sufficient): the frame_end jump only sets
+which frame the SCENE is on: it does nothing to remove the actual keyframe animation still
+attached to that day's new buildings. `duplicates_make_real()` forces Blender to re-evaluate
+the depsgraph, and if an object still carries a live Action with scale keyframes (which every
+NEW building does — that's exactly what `animate_rise()` just gave it), that re-evaluation
+reasserts the F-curve's value and silently overwrites a plain `obj.scale = (1,1,1)` Python
+assignment right back to whatever the curve says. Confirmed directly in the deployed day-7
+town.glb via pygltflib: the pond and all 3 new houses (this run's only animated objects) came
+out with every mesh part at scale `(1, 0.001, 1)` — the exact frame-1 "not risen yet" value —
+baked as orphaned top-level nodes with no parent, while every older building (which has NO
+animation data in a later day's Blender session, since `animate_rise()` is only ever called
+on the day a building is born) exported fine. That's why it only ever hits the NEWEST batch
+and looked so mysterious — it's invisible until the next growth day adds something new.
+The fix, in export_web.py's WORLD-collection loop, right before `duplicates_make_real()`:
+call `obj.animation_data_clear()` on every object (in addition to, not instead of, the
+existing scale-reset and frame_end jump — keep all three). Clearing animation_data removes
+the Action outright, so there is no F-curve left that could ever reassert a stale value,
+regardless of depsgraph evaluation order. Verified fixed by re-running export_web.py and
+checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the fix, 0 after.
 
 ## Collaboration (Cade + Zach)
 This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
@@ -231,7 +336,11 @@ back out without saving. So:
     instead. This happened repeatedly, not once — restoring the plain filename (Write tool,
     or a `copy` command) and then waiting even ~30-45s before the next Blender launch was
     NOT enough; iCloud renamed it away again in that gap every time. The same thing then hit
-    THIS FILE (`CLAUDE.md`) mid-edit while writing up this very lesson.
+    THIS FILE (`CLAUDE.md`) mid-edit while writing up this very lesson — and it hit again on
+    2026-07-08 during the pancaked-houses fix, mid-edit for the SAME `CLAUDE.md` file for the
+    exact same reason (an Edit call landed on `CLAUDE 4.md` instead of the plain filename;
+    recovered by reading the fully-edited conflict copy and Write-ing it straight to the
+    canonical path, per the fix below — no data was lost, just an extra round-trip).
     **The fix that actually worked:** stop doing "restore the file" and "launch Blender" as
     two separate tool calls with a gap between them. Instead write ONE `.bat` that does the
     `copy /y "world_state N.json" "world_state.json"` restore AND the
@@ -239,10 +348,28 @@ back out without saving. So:
     then run that single combined `.bat` via one Win+R. With no round-trip back through
     Claude's tools in between, the race window closes and Blender reliably sees the correct
     file. Used this pattern for both shot renders and the deploy step on day 7 — all three
-    worked first time once combined this way. If this happens again: find whichever
-    `world_state N.json` / `CLAUDE N.md` conflict copy has the freshest/correct content
-    (check timestamps + open a few to compare), then always pair its restore with the next
-    action in one script, never as two separate steps.
+    worked first time once combined this way. For a plain doc edit (no Blender involved,
+    like this file), there's no combined-script equivalent — when an Edit call reports the
+    canonical path doesn't exist, just find whichever `CLAUDE N.md` conflict copy has the
+    edit, finish editing THAT copy, then `Write` its full final content straight back to the
+    canonical path in one shot (not another `Edit`) to close out the recovery in a single
+    tool call. If this happens again: find whichever `world_state N.json` / `CLAUDE N.md`
+    conflict copy has the freshest/correct content (check timestamps + open a few to
+    compare), then always pair its restore with the next action in one script (for
+    Blender/deploy work) or do a single `Write` of the finished content (for doc edits).
+  - **Another gotcha, same day:** `grow_log.txt` (and possibly other plain-named files read
+    via the Linux-sandbox bash mount) can appear STALE/frozen mid-write from that mount's
+    point of view — `tail`/`wc -l` kept returning the exact same byte count across several
+    checks 15-25s apart even while the underlying Blender process was still actively running
+    and had in fact already finished. Bash's `ls`/`stat` metadata for this same mount was ALSO
+    seen showing a day-old mtime for `town.glb` even once its actual just-written content was
+    already fresh and correct. **Lesson: for this iCloud-synced folder, don't trust bash's
+    view of file freshness (`ls`, `stat`, `tail`, `wc -l`) as proof that a write hasn't
+    happened yet.** If a Windows-side process should have finished, verify by reading the
+    file's actual CONTENT through a tool that does a real fresh read (the Read tool, or a
+    Python script that opens and parses the file, e.g. `pygltflib` on `town.glb`) rather than
+    concluding from a stale directory-listing/log-tail that the process is still running or
+    stuck.
 
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
@@ -253,6 +380,12 @@ world_state_*_backup.json = old test states, ignorable.
 Windows-only tooling (permanent, keep): grow_windows.bat/.ps1, preview_website.bat/.ps1,
 deploy_website.bat — see "Third AI" section above for what each does.
 
+check_town_glb.py (permanent, keep, cross-platform — no Blender needed, just
+`pip install pygltflib`): standalone sanity check for town.glb (catches pancaked/squashed-scale
+exports and world_state.json/town.glb mismatches). Runs as part of export_web.py automatically,
+and again independently via the `.github/workflows/check_town_glb.yml` GitHub Action on every
+push to main. See "Where world_state.json + town.glb actually live now" above.
+
 Windows-only scratch files (safe to ignore, not tracked by git, not part of the deploy
 whitelist — leftover from building/debugging the above on 2026-07-07): clone_repo.bat,
 cleanup_procs.bat, check_repo.bat, inspect_repo.bat, inspect_repo2.bat, git_config.bat, and
@@ -262,8 +395,16 @@ grow_step3_overhead.txt, grow_street.txt. Also from 2026-07-08 (day 7 pond growt
 the `world_state.json` race gotcha above): fix_and_hero.bat, fix_and_overhead.bat,
 fix_and_deploy.bat (the combined restore-copy + launch scripts that fixed the race),
 check_push_status.bat/.txt, restore_canonical.bat/.txt, pull_and_check.bat/.txt,
-check_remote.bat/.txt, list_folder.bat. Nobody has deleted these per the "never delete
-without approval" rule at the top of this file — ask Cade before cleaning them up.
+check_remote.bat/.txt, list_folder.bat, fix_reexport.bat (re-exports town.glb after the
+2026-07-08 pancaked-houses fix; safe replay-mode, no world_state.json/blend changes),
+install_ci_check.bat/.txt (one-off script from 2026-07-09 that copied check_town_glb.py +
+check_town_glb.yml into the git repo clone and pushed them — already ran, safe to ignore/delete
+once confirmed the GitHub Action shows up on the repo's Actions tab), check_town_glb.yml (the
+GitHub Action source file, kept here for reference — the live copy that matters is the one
+already pushed to `.github/workflows/check_town_glb.yml` inside the git repo clone),
+check_town_glb_setup_note.txt (Fable-written setup note for the above, safe to ignore once read).
+Nobody has deleted these per the "never delete without approval" rule at the top of this
+file — ask Cade before cleaning them up.
 
 Numbered/parenthesized conflict copies (`world_state 2.json`, `CLAUDE(1).md`, etc.) are
 iCloud sync artifacts, not intentional files — see the race-condition gotcha in the Third AI
