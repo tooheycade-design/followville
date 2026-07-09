@@ -15,6 +15,18 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-09 — Cade (via Windows Claude) — took claimable homes LIVE: created the Supabase
+  project (followville, in "The Human Archive" org) through Cade's browser, ran the schema,
+  turned off email-confirmation for smooth signups, wired the anon key into town.html and
+  the service-role key into supabase_sync.env (secret, local only), backfilled all 30
+  buildings into the houses table, deployed, and verified the live site + database end to
+  end. Followers can now sign up and claim houses at followville-kappa.vercel.app — Cade
+  approves each Instagram verification by hand for now (CLAIMING_SETUP.md §3: check DMs for
+  the code, then `select admin_verify('handle');` in the Supabase SQL editor). Also fixed
+  the "website won't load" confusion (double-clicking town.html can't fetch data over
+  file:// — use preview_website.bat) and added the new files to deploy_website.bat's
+  whitelist.
+
 2026-07-09 — Cade (via Windows Claude) — built the "claimable homes" feature: followers can
   now create an account on the site, verify their Instagram handle with a one-time DM code
   (manually approved by Cade until Meta's app review goes through), and claim exactly one

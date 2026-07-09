@@ -181,8 +181,15 @@ NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
 incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas.
 Admin (verify/reject/revoke) = SQL helpers, see CLAIMING_SETUP.md §3.
-Setup status: schema + code shipped; Cade still needs to create the Supabase
-project + paste keys (CLAIMING_SETUP.md §1) before any of it goes live.
+Setup status: LIVE as of 2026-07-09. Supabase project "followville"
+(ref bposhxtidoyulallvhdp, in Cade's "The Human Archive" org) created, schema run,
+email-confirmation OFF, legacy anon key pasted into town.html (deployed, commit
+c180164), service-role key in supabase_sync.env (local only), all 30 buildings
+backfilled into `houses`. Verified end to end: anon REST reads houses (30 rows),
+public_claims readable, profiles hidden from anon. Still TODO someday: enable
+CAPTCHA (Auth -> Attack Protection, needs a Cloudflare Turnstile account) and the
+automated Instagram DM webhook (CLAIMING_SETUP.md §4). To approve verifications:
+CLAIMING_SETUP.md §3 (SQL editor, `select admin_verify('handle');`).
 
 ## Milestones (auto-built when population crosses)
 500 fountain plaza | 2,000 skyscraper | 10,000 stadium
