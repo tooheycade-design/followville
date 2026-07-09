@@ -984,8 +984,8 @@ function addBuildings(buildings){
    If the two constants below are left empty, ALL of this is disabled and the
    page behaves exactly like the original free-roam viewer. */
 
-const SUPABASE_URL = "";        // ← paste from Supabase dashboard → Settings → API
-const SUPABASE_ANON_KEY = "";   // ← the "anon / public" key (safe to ship in HTML)
+const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk"; // anon/public key — safe to ship in HTML (RLS enforces access)
 
 let sb = null;                  // supabase client (null = feature off/unavailable)
 let session = null, myProfile = null, myClaim = null;
