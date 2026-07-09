@@ -42,10 +42,28 @@ def export_web_glb():
 
     # Select everything in WORLD (this includes the collection-instance empties
     # for every building/tree/car/etc AND the plain road/ground meshes).
+    #
+    # PITFALL (fixed 2026-07-08, don't reintroduce): frame_set() above is NOT
+    # enough by itself for objects that were just animated with animate_rise()
+    # THIS SAME run (i.e. today's newest buildings). Those objects still carry
+    # a live Action with scale keyframes. duplicates_make_real() below forces a
+    # depsgraph re-evaluation, and if any animation data is still attached to
+    # an object, that re-evaluation reasserts the F-curve's value and silently
+    # overwrites a plain `obj.scale = (1,1,1)` Python assignment right back to
+    # whatever frame the curve lands on -- in the day-7 pond+houses incident,
+    # every mesh part of the newest batch came out of the export at scale
+    # (1, 0.001, 1), the exact frame-1 "not risen yet" value, even though this
+    # scale reset AND the frame_end jump above both ran. Older buildings never
+    # showed this because in later runs they're placed with no animate_rise()
+    # call at all (only THIS run's new_batch gets animated), so they have no
+    # Action to reassert anything from. The fix: strip the animation data
+    # outright with animation_data_clear() so there is no F-curve left that
+    # could ever override the manual reset, regardless of evaluation order.
     bpy.ops.object.select_all(action="DESELECT")
     for obj in col.objects:
         obj.hide_select = False
         obj.hide_viewport = False
+        obj.animation_data_clear()   # remove any Action so nothing can reassert scale/visibility
         obj.scale = (1.0, 1.0, 1.0)  # belt-and-braces against any residual mid-animation scale
         obj.select_set(True)
     bpy.context.view_layer.objects.active = col.objects[0] if col.objects else None

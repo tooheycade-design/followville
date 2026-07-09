@@ -5,7 +5,13 @@ Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEV
 it casually; back it up before risky operations.
 
 ## Current canon (update this section each day!)
-- Day 6, population 26, 26 buildings (grown 2026-07-07 via Windows Claude: +4 houses).
+- Day 7, population 29, 30 buildings (grown 2026-07-08 via Windows Claude: +3 houses + 1 pond).
+  New pond+ducks feature: a "pond" building (SIZE 1, `build_pond`/`ASSET_VARIANTS["pond"]`)
+  clusters with new houses in a shared free 2x2 patch via `--pond` (see main()'s `pond_extras`
+  block); ducks are NOT saved to world_state (spawned fresh each run by `animate_ducks`,
+  analogous to `animate_traffic`, using each pond building's own seed). Rendered hero shot
+  (`replay --hero --render --tag hero`) + overhead/drone shot (`replay --cam overhead --render
+  --tag overhead`), then deployed live.
   Sunset fireworks marked the founder era complete (day 4).
 - Web viewer shipped day 4 (index.html + town.glb, see Web viewer section).
 - FOUNDERS (first 10 residents, custom houses, all built):
@@ -210,6 +216,33 @@ back out without saving. So:
     into Win+R — a complex one-liner with nested `"` silently mis-parses and the command
     chain just stops partway with no visible error, which looked exactly like a hung
     `git clone` the first time this was tried (it wasn't hung; the quoting broke).
+  - **Bigger gotcha, hit hard on 2026-07-08 (day 7 pond growth day) — READ THIS:**
+    `world_state.json`'s plain filename is NOT stable between two separate Win+R-launched
+    `.bat` invocations, even seconds apart, even with no other person actively editing
+    anything. The pattern: run #1 (`grow_windows.bat +3 --pond`) correctly grows and saves
+    the town (day 7 confirmed in `grow_log.txt`'s RESULT line) — then run #2 (a `replay`
+    call to render a shot) comes back with `"day": 0, "population": 0, "buildings": 0`,
+    i.e. `load_state()` found nothing and fell back to the empty default. Checked via
+    Notepad's File > Open dialog (the most authoritative "does Windows itself see this
+    file" test — more reliable than File Explorer's status icons, which kept showing a
+    stuck blue "syncing" bar on a file that Notepad said flatly did not exist): the plain
+    `world_state.json` really was gone, and iCloud had spun up a numbered conflict copy
+    (`world_state 3.json`, `world_state 4.json`, ...) holding the correct day-7 content
+    instead. This happened repeatedly, not once — restoring the plain filename (Write tool,
+    or a `copy` command) and then waiting even ~30-45s before the next Blender launch was
+    NOT enough; iCloud renamed it away again in that gap every time. The same thing then hit
+    THIS FILE (`CLAUDE.md`) mid-edit while writing up this very lesson.
+    **The fix that actually worked:** stop doing "restore the file" and "launch Blender" as
+    two separate tool calls with a gap between them. Instead write ONE `.bat` that does the
+    `copy /y "world_state N.json" "world_state.json"` restore AND the
+    `call grow_windows.bat replay ...` (or `call deploy_website.bat`) launch back-to-back,
+    then run that single combined `.bat` via one Win+R. With no round-trip back through
+    Claude's tools in between, the race window closes and Blender reliably sees the correct
+    file. Used this pattern for both shot renders and the deploy step on day 7 — all three
+    worked first time once combined this way. If this happens again: find whichever
+    `world_state N.json` / `CLAUDE N.md` conflict copy has the freshest/correct content
+    (check timestamps + open a few to compare), then always pair its restore with the next
+    action in one script, never as two separate steps.
 
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
@@ -225,5 +258,15 @@ whitelist — leftover from building/debugging the above on 2026-07-07): clone_r
 cleanup_procs.bat, check_repo.bat, inspect_repo.bat, inspect_repo2.bat, git_config.bat, and
 their matching .txt log outputs, plus deploy_check.txt, git_install.txt, proc_check.txt,
 proc_check2.txt, grow_log.txt, grow_step1_growth.txt, grow_step2_hero.txt,
-grow_step3_overhead.txt, grow_street.txt. Nobody has deleted these per the "never delete
+grow_step3_overhead.txt, grow_street.txt. Also from 2026-07-08 (day 7 pond growth day, see
+the `world_state.json` race gotcha above): fix_and_hero.bat, fix_and_overhead.bat,
+fix_and_deploy.bat (the combined restore-copy + launch scripts that fixed the race),
+check_push_status.bat/.txt, restore_canonical.bat/.txt, pull_and_check.bat/.txt,
+check_remote.bat/.txt, list_folder.bat. Nobody has deleted these per the "never delete
 without approval" rule at the top of this file — ask Cade before cleaning them up.
+
+Numbered/parenthesized conflict copies (`world_state 2.json`, `CLAUDE(1).md`, etc.) are
+iCloud sync artifacts, not intentional files — see the race-condition gotcha in the Third AI
+section for why they keep appearing and how to recover from them. Don't delete these either
+without checking their content first (one of them may hold the only copy of the current
+canonical state, as happened on day 7).
