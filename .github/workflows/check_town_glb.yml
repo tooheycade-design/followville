@@ -1,0 +1,29 @@
+# Safety net for the town export. Twice now (most recently 2026-07-08) a
+# mid-animation Blender export shipped a "pancaked" town.glb -- houses baked
+# with a near-zero scale on one axis -- and it sat on the live site unnoticed.
+# Vercel deploys straight from main, so this check runs on every push to main
+# and turns red if town.glb is broken, empty, or out of sync with
+# world_state.json. Move this file to .github/workflows/ in the repo.
+
+name: Check town.glb
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pygltflib
+        run: pip install pygltflib
+
+      - name: Validate town.glb against world_state.json
+        run: python check_town_glb.py town.glb world_state.json
