@@ -1480,8 +1480,23 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # eye-level flythrough down the town's oldest street (the by=0 road,
         # which runs past whichever buildings sit at gy 0-2 -- the founder
         # blocks from day 1) instead of orbiting a fixed point overhead.
+        #
+        # 2026-07-10: was min_bx*PITCH-ROAD to (max_bx+1)*PITCH -- the FULL
+        # grid width. That was fine when the town was small, but now (day 9,
+        # grid spans x -78..72) covering the whole width in the fixed 12s
+        # floor works out to ~12.5 m/s -- more like a car than "walking into
+        # town," and most of that distance is plain grid houses, not the
+        # founders' custom landmarks Zach actually wants visible. Fixed to a
+        # town-size-independent window centered on the founder cluster
+        # (measured x -21..25): a little approach room before it, straight
+        # through it, a little continuation after -- at a brisk-but-human
+        # ~7.5 m/s (a fast walk/light jog, not a crawl and not a drive-by).
+        # Clipped to whatever's actually built so this can't run off into
+        # blank grass on a tiny town either.
         min_bx, max_bx, min_by, max_by = block_extent(buildings)
-        x0, x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
+        full_x0, full_x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
+        x0 = max(full_x0, -40.0)
+        x1 = min(full_x1, 50.0)
         street_y = -ROAD / 2
         street_z = 1.75  # roughly eye/walking height
 
