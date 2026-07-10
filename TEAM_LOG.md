@@ -15,6 +15,19 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — fixed a road gap in the park district Zach spotted in the
+  web preview ("a road belongs there to get into the circle"): build_district_roads() in
+  neighborhood_blender.py builds a connector from the grid to the OUTER ring road, and
+  separately a spur from the INNER ring to the gazebo's walking loop, but nothing ever
+  bridged the outer ring to the inner ring themselves — a bare ~14-unit strip of grass
+  between the two concentric rings with no way to drive/walk from one to the other. Added
+  one more road segment that starts exactly where the connector ends and hands off exactly
+  where the spur begins, closing the gap with no seam. Verified by querying the actual
+  object positions in the open Blender session: connector [69,95] + new "radial" [95,112]
+  + spur [112,124] now form one continuous stretch. Re-exported town.glb with the fix —
+  reload the local preview to see it. Not yet committed/pushed (still sitting as an
+  uncommitted change on top of the `wip` branch already on GitHub).
+
 2026-07-09 — Zach (via Claude) — fixed two real bugs and started moving collaboration off
   iCloud sync onto git, at Zach's request ("work off each other's stuff, not copies").
   Bugs fixed in neighborhood_blender.py/export_web.py (both now the canonical files):

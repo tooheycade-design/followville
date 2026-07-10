@@ -1106,6 +1106,20 @@ def build_district_roads(world_col, buildings, m):
             x += 8
         # short spur from the inner ring road to the park's walking loop
         add_box(world_col, "spur", 12.0, 3.4, 0.18, cx - 16.0, cy, 0, m["road"])
+        # 2026-07-10: the connector above only reaches the OUTER ring (ends at
+        # x_in), and the spur above only reaches from the INNER ring inward to
+        # the walking loop (starts at cx-22) -- nothing bridges the two ring
+        # roads themselves. That left a bare ~14-unit strip of grass between
+        # them with no way to drive/walk from the outer ring to the inner one,
+        # even though each individually connects fine to its own ring. Zach
+        # spotted this in the web preview ("a road belongs there to get into
+        # the circle"). Fix: one more straight segment closing that exact gap,
+        # picking up right where the connector ends and handing off right
+        # where the spur begins, so the whole path from the grid to the
+        # gazebo is continuous.
+        radial_w = (cx - 22.0) - x_in
+        if radial_w > 0:
+            add_box(world_col, "radial", radial_w, ROAD, 0.18, x_in + radial_w / 2, cy, 0, m["road"])
 
 def animate_ring_traffic(world_col, buildings, frame_end):
     """A couple of cars slowly loop each park district's ring roads."""
