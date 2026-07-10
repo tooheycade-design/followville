@@ -1,0 +1,18 @@
+What this is
+------------
+check_town_glb.yml is a GitHub Actions workflow. On every push to main (the
+branch Vercel deploys from), and whenever you trigger it manually from the
+Actions tab, GitHub checks out the repo, installs Python 3.11 plus pygltflib,
+and runs check_town_glb.py. If the script finds a problem (pancaked/near-zero
+scale geometry, an empty or missing town.glb, or a building-count mismatch
+with world_state.json), the job fails with a red X so a broken export can't
+sit on the live site unnoticed.
+
+How to install it
+-----------------
+Move the file into the git repo clone at C:\Users\cadet\followville_repo,
+placing it at .github\workflows\check_town_glb.yml (create those folders if
+needed), then commit and push. GitHub picks it up automatically.
+
+Requirement: check_town_glb.py must exist at the repo root -- it should
+already be there with the other tracked files.

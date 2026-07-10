@@ -78,6 +78,24 @@ AI is helping each of them) can see what the other did on their turn.
 
 2026-07-09 — Zach (via Codex) — locally upgraded the walkable website's materials, lighting, and sky for a richer painted low-poly look, plus added a founder-district screenshot view; previewed successfully and did not deploy anything.
 
+2026-07-09 -- Cade (via Windows Claude) -- picked up Zach's day-8 handoff and finished it.
+  Found: the growth itself was good (day 8, pop 70, park district + 41 ring houses,
+  exactly what Cade wanted) but it lived only in the iCloud folder (his Mac ran grow.sh
+  without NEIGHBORHOOD_REPO_DIR), so GitHub/live site were stuck at day 7; all three
+  videos were rendered with `replay` (so every one showed the houses rising) and with
+  the pre-fix bright lighting; the in-park camera orbited at radius ~29.5 -- straight
+  through the inner ring houses (the "clipping through buildings" Cade saw). Done here:
+  reconciled all of Zach's work from the iCloud conflict copies, published day-8 state +
+  town.glb through the git-backed Windows flow (live site now day 8/pop 70), restored
+  the approved lighting (full sun, near-original shadow sharpness, sky fill kept but cut
+  to 0.07x), fixed the park cam path (r=20, h=8.5 -- between the trees and the houses),
+  made fireworks daylight-visible (bigger + emission 9->30), re-rendered the three shots
+  correctly (hero = rising + fireworks; park + overhead = calm +0 showcases of the
+  finished town), marked the parkdistrict non-claimable in Supabase (it had synced as
+  claimable -- type list updated in both sync scripts), and taught town.html's claiming
+  UI about off-grid buildings (ringhouses carry px/py/rot -- name tags, claim targeting
+  and go-home now use the exact position/rotation instead of grid math).
+
 2026-07-09 -- Zach (via Claude) -- grew the town to day 8, population 70 (+41 houses).
   Built a whole new circular park district east of town: central park with a gazebo,
   ring roads, and the 41 new houses arranged in two rings around it, every door facing

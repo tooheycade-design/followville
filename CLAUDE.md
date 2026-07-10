@@ -21,15 +21,25 @@ you go looking for it here.**
   * `--cam park`: slow low orbit inside the park (min 12s), for showcase shots.
   * `--celebrate` now centers fireworks on TODAY'S new batch when there is one
     (falls back to the founders' custom homes otherwise).
-  * Lighting upgrade (all time-of-day moods): softer sun shadow edges (angle 4->6.5 deg),
+  * Lighting upgrade (all time-of-day moods): softer sun shadow edges,
     a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
-    setup_render (all best-effort try/except). NOTE: the first cut also boosted sun
-    +12%/sky +15% -- Zach reviewed the videos and it washed the town out, so the
-    boosts were removed same day (sun now 0.95x, sky 1.0x, fill 0.15x). Final day-8
-    videos: hero = houses+park rising; overhead + park shots reshot as 12s static
-    showcases of the finished town (`+0 --cam overhead|park`), fireworks in all three
-    (--celebrate now also falls back to "today's buildings" so +0 showcase runs still
-    center fireworks on the new district).
+    setup_render (all best-effort try/except). LIGHTING SAGA, final numbers (set on
+    Cade's PC the same night, after the Mac-rendered videos still looked washed out):
+    sun 1.0x @ 4.5 deg, fill 0.07x, sky 1.0x -- i.e. back to the approved day-7 look
+    plus a subtle shaded-side lift. Don't re-boost any of these without comparing a
+    frame against day_007_hero on the same machine first.
+  * CORRECTION to the para above (Cade's Windows Claude, same night): Zach's Mac run
+    never actually produced the reshoot -- all three videos on his Desktop were replay
+    (everything rising) + bright lighting, and his --cam park path orbited at r~29.5,
+    straight THROUGH the inner ring houses (r=30.5) -- that was the "camera clipping"
+    Cade reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
+    houses). Fireworks made daylight-visible (emission 9->30, bigger particles). The
+    real final videos (hero rising+fireworks, park + overhead calm +0 showcases) were
+    rendered on Cade's PC via day8_shots.bat. His day-8 state itself was great and was
+    published through the git-backed flow (his Mac had run without NEIGHBORHOOD_REPO_DIR,
+    so day 8 initially existed only in iCloud). Claiming-side follow-ups: parkdistrict
+    set non-claimable (both sync scripts' type lists updated), and town.html claiming
+    understands off-grid px/py/rot buildings now.
   * day8_grow_and_render.command = the double-clickable one-shot that ran it all
     (backup -> _refresh_text -> grow +41 --parkring -> 3 renders, logs to render_log.txt).
   * _refresh_text.py fixed: derives the project folder from the opened .blend instead of
