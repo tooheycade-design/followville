@@ -15,6 +15,18 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — made growing the town auto-share to `wip`, so the routine
+  below is one step shorter in practice: `grow.sh` (Mac) and `grow_windows.bat`/`.ps1`
+  (Windows) now call the share_progress push themselves right after a successful growth
+  run, best-effort (a failed auto-share doesn't fail the growth itself). Deploying to the
+  live site is still a separate, deliberate step (deploy_website), on purpose. Also fixed a
+  latent bug this surfaced: share_progress.bat was copying world_state.json/town.glb from
+  the iCloud folder, which is stale-by-design on Windows since grow_windows.ps1 already
+  pushes those two files straight to main — would have silently reverted them on wip every
+  single auto-share run. Fixed to skip those two files, matching deploy_website.bat's
+  existing 2026-07-08 fix. Not yet verified on Cade's actual PC — next real growth day
+  there is the real test.
+
 2026-07-10 — Zach (via Claude) — built real infrastructure so this stops happening: three
   double-clickable scripts (Mac: pull_latest.command / share_progress.command, alongside
   the existing deploy_website.command; Windows equivalents pull_latest.bat /

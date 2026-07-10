@@ -50,9 +50,22 @@ if errorlevel 1 (
   git reset --hard origin/%BRANCH% >> "%LOG%" 2>&1
 )
 
-echo -- copying tracked files from iCloud folder -- >> "%LOG%"
+echo -- copying tracked files from iCloud folder (world_state.json/town.glb excluded, see note below) -- >> "%LOG%"
+REM 2026-07-10: world_state.json and town.glb are DELIBERATELY skipped here,
+REM same reasoning as deploy_website.bat's 2026-07-08 fix. grow_windows.ps1
+REM already writes those two files straight into C:\Users\cadet\followville_repo
+REM (via NEIGHBORHOOD_STATE_DIR) and commits/pushes them to "main" right after
+REM every growth day. The copy of those two files still sitting in this iCloud
+REM folder is stale BY DESIGN under that pipeline -- if this loop copied them
+REM too, it would silently overwrite the fresher git-committed copies on main
+REM with a stale iCloud snapshot, right as part of the new auto-share-after-grow
+REM step (see grow_windows.ps1). That's exactly the kind of divergence that
+REM caused the day-8 main/wip merge conflict. This script now only shares the
+REM OTHER tracked files (docs, code, the web viewer HTML) to wip.
 for /f "delims=" %%F in ('git ls-files') do (
-  if exist "%SRC%\%%F" copy /y "%SRC%\%%F" "%DST%\%%F" >> "%LOG%" 2>&1
+  if /I not "%%F"=="world_state.json" if /I not "%%F"=="town.glb" (
+    if exist "%SRC%\%%F" copy /y "%SRC%\%%F" "%DST%\%%F" >> "%LOG%" 2>&1
+  )
 )
 
 echo -- git add -- >> "%LOG%"
@@ -80,6 +93,11 @@ if errorlevel 1 (
 
 echo PUSHED to %BRANCH% -- NOT live, Zach can pull_latest.bat wip to see it >> "%LOG%"
 echo ALL_DONE >> "%LOG%"
+
+REM 2026-07-10: NEIGHBORHOOD_NO_PAUSE lets grow_windows.ps1 call this script
+REM automatically after every growth day without sitting through an 8-second
+REM interactive pause meant for a human double-clicking this file directly.
+if "%NEIGHBORHOOD_NO_PAUSE%"=="1" goto :eof
 echo.
 echo Done -- see share_progress_log.txt next to this script for the full result.
 timeout /t 8

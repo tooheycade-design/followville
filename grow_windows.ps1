@@ -293,6 +293,36 @@ try {
     Log-Line "-- houses table sync (claimable homes, see CLAIMING_SETUP.md) --"
     Sync-Houses
 
+    # 2026-07-10: auto-share progress to wip after every successful growth run,
+    # so Zach (or his AI) can pull_latest.command wip and see it without Cade
+    # remembering a second manual step. world_state.json/town.glb were already
+    # pushed straight to "main" above -- this only covers the OTHER tracked
+    # files (docs, code, the web viewer HTML), via share_progress.bat, which
+    # was fixed today to skip those two files (see its own comments) so it
+    # can't undo the main push that just happened a few lines up. Best-effort:
+    # a failure here does NOT fail this grow run -- the town itself already
+    # grew and saved successfully. Check share_progress_log.txt if you see
+    # AUTO_SHARE_FAILED. Only runs when $UseGit is true (--no-git means there's
+    # no repo clone relationship to push docs/code into either).
+    if ($UseGit) {
+        Log-Line "-- auto-sharing other tracked files (docs/code) to wip --"
+        try {
+            $ShareBat = Join-Path $Dir 'share_progress.bat'
+            if (Test-Path -LiteralPath $ShareBat) {
+                $env:NEIGHBORHOOD_NO_PAUSE = "1"
+                & cmd /c "`"$ShareBat`""
+                Remove-Item Env:\NEIGHBORHOOD_NO_PAUSE -ErrorAction SilentlyContinue
+                Log-Line "AUTO_SHARE_INVOKED -- see share_progress_log.txt for the result"
+            }
+            else {
+                Log-Line "AUTO_SHARE_SKIPPED (share_progress.bat not found next to this script)"
+            }
+        }
+        catch {
+            Log-Line ("AUTO_SHARE_FAILED " + $_.Exception.Message + " -- growth itself succeeded and was saved; only sharing docs/code to wip failed")
+        }
+    }
+
     Log-Line "ALL_DONE"
 }
 catch {

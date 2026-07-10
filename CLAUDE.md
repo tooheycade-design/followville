@@ -304,6 +304,25 @@ loudly, it never silently hands you stale or half-written files.
    the "who changed what" narrative record. Check TEAM_LOG.md at the start of a session
    too, same as always.
 
+**2026-07-10: growing the town now auto-shares to `wip` — step 3 above became partly
+automatic.** `grow.sh` (Mac) and `grow_windows.bat`/`.ps1` (Windows) each call
+`share_progress.command`/`.bat` themselves right after a successful growth run, so a plain
+`./grow.sh +5 --render` (or the Windows equivalent) both grows the town AND pushes it to
+`wip` in one step — you don't have to remember the manual double-click just to let the
+other person see today's growth. This is best-effort: if the push fails (e.g. a network
+hiccup, or `origin/wip` moved since you last pulled), the growth run still succeeds and
+is saved locally — you'll see `AUTO_SHARE_FAILED` in the log, and can re-run
+`share_progress.command`/`.bat` by hand once fixed. **You still need to `deploy_website`
+yourself when it's ready to go live** — auto-share only ever pushes to `wip`, on purpose,
+so a day you're not happy with yet never accidentally reaches the live site. On Windows,
+auto-share only pushes the OTHER tracked files (docs/code) — `world_state.json`/`town.glb`
+are already pushed straight to `main` by the existing `NEIGHBORHOOD_STATE_DIR` mechanism a
+few steps earlier in the same run, and `share_progress.bat` was fixed the same day to skip
+those two files so it can't undo that push with a stale iCloud copy (see its own comments).
+**Not yet verified on Cade's actual Windows PC** — built and reasoned through the same way
+the rest of the Windows tooling was, but the first real `+N`/`-N` growth day after this
+change should be treated as a test of the auto-share step specifically.
+
 None of these scripts need you to know or type any git commands — that's the whole point.
 They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,
 `C:\Users\cadet\followville_repo` on Windows — the same one `deploy_website.*` already
