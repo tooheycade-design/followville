@@ -993,6 +993,16 @@ def find_free_lots(count, size, occupied, blocked_blocks=None):
             else:
                 if (gx, gy) in taken:
                     continue
+                # 2026-07-10: skip the lot dead-center of its 3x3 block --
+                # it's fully boxed in by the other 8 lots with no road
+                # frontage on any side, so a house placed there is
+                # unreachable from the street (Zach spotted several of these
+                # "encapsulated" houses in the day-9 video). Leaving it
+                # unbuilt turns it into a little green square instead, via
+                # the existing scatter_nature() pass over unoccupied lots.
+                center = BLOCK_N // 2
+                if gx % BLOCK_N == center and gy % BLOCK_N == center:
+                    continue
                 taken.add((gx, gy))
                 found.append((gx, gy))
         if len(found) >= count:
