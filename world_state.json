@@ -1,7 +1,7 @@
 {
- "day": 8,
- "pop": 70,
- "seed_counter": 73,
+ "day": 9,
+ "pop": 134,
+ "seed_counter": 137,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -634,6 +634,454 @@
    "rot": 7.5314,
    "seed": 72,
    "day": 8
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -4,
+   "seed": 73,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 4,
+   "seed": 74,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -2,
+   "seed": 75,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 3,
+   "seed": 76,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": -1,
+   "seed": 77,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -2,
+   "seed": 78,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 4,
+   "seed": 79,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -5,
+   "seed": 80,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -3,
+   "seed": 81,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 5,
+   "seed": 82,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 0,
+   "seed": 83,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 2,
+   "seed": 84,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 3,
+   "seed": 85,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 5,
+   "seed": 86,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 1,
+   "seed": 87,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 5,
+   "seed": 88,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 4,
+   "seed": 89,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": -2,
+   "seed": 90,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -5,
+   "seed": 91,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 4,
+   "seed": 92,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -1,
+   "seed": 93,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 1,
+   "seed": 94,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 2,
+   "seed": 95,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 4,
+   "seed": 96,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -5,
+   "seed": 97,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -5,
+   "seed": 98,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": -2,
+   "seed": 99,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 5,
+   "seed": 100,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 4,
+   "seed": 101,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 3,
+   "seed": 102,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -3,
+   "seed": 103,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -4,
+   "seed": 104,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": 0,
+   "seed": 105,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 0,
+   "seed": 106,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -4,
+   "seed": 107,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": -3,
+   "seed": 108,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": 2,
+   "seed": 109,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -6,
+   "seed": 110,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": 1,
+   "seed": 111,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": -1,
+   "seed": 112,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 3,
+   "seed": 113,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -6,
+   "seed": 114,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 3,
+   "seed": 115,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": 2,
+   "seed": 116,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 5,
+   "seed": 117,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 4,
+   "seed": 118,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -4,
+   "seed": 119,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": -4,
+   "seed": 120,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -4,
+   "seed": 121,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 2,
+   "seed": 122,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -5,
+   "seed": 123,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": 3,
+   "seed": 124,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 4,
+   "seed": 125,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -5,
+   "seed": 126,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -6,
+   "seed": 127,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 4,
+   "seed": 128,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -6,
+   "seed": 129,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 5,
+   "seed": 130,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": 1,
+   "seed": 131,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": -3,
+   "seed": 132,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -5,
+   "seed": 133,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 4,
+   "seed": 134,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -4,
+   "seed": 135,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 5,
+   "seed": 136,
+   "day": 9
   }
  ],
  "milestones": []
