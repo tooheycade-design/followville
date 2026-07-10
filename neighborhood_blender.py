@@ -1432,13 +1432,31 @@ def city_center_and_extent(buildings):
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
-    dist = ext * 1.35 + 55
-    pol_deg, fstop = 58, 3.2
-    if cam == "overhead":  # high establishing shot
-        pol_deg, dist = 16, ext * 1.5 + 85
+    # 2026-07-10 cinematography pass (day 9, park district pushed the bounding
+    # box way out -- ext jumped to ~258 -- and the old padding multipliers
+    # were tuned for a much smaller town): both the default/hero shot and the
+    # overhead shot were framing with way too much empty grass/sky padding
+    # around the actual buildings, and the old 9-degree total orbit sweep
+    # read as nearly static across an 11-12s clip -- neither felt "cinematic"
+    # per Zach's feedback. Tightened the distance padding so buildings fill
+    # more of the portrait frame, and widened the orbit sweep so the shot
+    # visibly moves and reveals more of the town (including the park ring)
+    # over the course of the clip instead of holding one static-feeling view.
+    dist = ext * 1.05 + 45
+    pol_deg, fstop = 55, 3.2
+    orbit_deg = 46
+    if cam == "overhead":
+        # was a near-vertical 16-degree top-down angle -- read as flat/
+        # orthographic with no sense of depth. 36 degrees still shows the
+        # whole grid+park layout from above (the "sees everything" ask) but
+        # keeps real perspective/parallax so it looks like a drone shot, not
+        # a map.
+        pol_deg, dist = 36, ext * 1.15 + 60
+        orbit_deg = 55
     if hero:  # close-up on a special building / batch
         cx, cy, hdist = hero
         dist, pol_deg, fstop = hdist, 64, 2.0
+        orbit_deg = 9
 
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
@@ -1542,10 +1560,14 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         world_col.objects.link(cam_obj)
         bpy.context.scene.camera = cam_obj
 
-        # slow orbit across the whole shot
+        # orbit across the whole shot -- sweep amount set above per shot type
+        # (orbit_deg): wide for the establishing/overhead shots so they
+        # visibly reveal the town instead of holding a near-static frame,
+        # narrow for hero close-ups where a big sweep would swing off the
+        # subject.
         rig.rotation_euler = (0, 0, 0)
         rig.keyframe_insert("rotation_euler", frame=1)
-        rig.rotation_euler = (0, 0, math.radians(9))
+        rig.rotation_euler = (0, 0, math.radians(orbit_deg))
         rig.keyframe_insert("rotation_euler", frame=frame_end)
         for fc in obj_fcurves(rig):
             for kp in fc.keyframe_points:

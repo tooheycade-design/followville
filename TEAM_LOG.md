@@ -15,6 +15,43 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — grew the town to day 9, population 134 (+64 houses), per
+  Cade's go-ahead to build from the day-8/pop-70 state rather than a broken concurrent
+  day-9 attempt on Cade's end (he'd added a road that looked terrible and told Zach to
+  ignore it — a one-time call, not a standing policy). Filled the empty grid, kept every
+  founder/claimed house untouched, and mixed in random house variety (skyscraper/castle/
+  toilet excluded from the random pool per Cade's request). While pushing this to `wip`,
+  found and fixed a real bug in the new conflict-aware sync scripts themselves (see the
+  two entries below dated 2026-07-10) that had briefly reverted several tracked docs/
+  scripts — restored them from `main` before re-sharing. Video renders: hero shot
+  succeeded; the overhead shot failed and needs a re-render — in progress.
+
+2026-07-10 — Zach (via Claude) — found and fixed the actual cause of Cade's profile-picture
+  feature vanishing: share_progress/deploy_website were blindly overwriting whole tracked
+  files with whatever was in the iCloud folder, with zero awareness of whether the OTHER
+  side had changed that file since last sync. Confirmed via full git history search that
+  the feature was never committed anywhere — it was local-only on Cade's end and got
+  clobbered before it was ever captured. Rewrote the copy step (sync_lib.sh on Mac,
+  sync_push.ps1 on Windows) to do a real 3-way merge per file, same idea as `git merge`:
+  auto-combine non-overlapping changes from both sides, and refuse to guess (leave the file
+  out, flag it loudly) when both sides changed the same spot. Also found and fixed a fresh
+  case of the numbered-conflict-copy bug, this time inside `.git` itself
+  (`refs/remotes/origin/main 2`). Windows side is unverified on a real PC — treat next use
+  as a test, and if Cade's profile-picture code is still sitting in `.pull_backups/` on his
+  machine, it should be recoverable from there.
+
+2026-07-10 — Zach (via Claude) — the merge-detection fix above had its own bug, caught the
+  same night before it did lasting damage: the "prior known state" used for the 3-way
+  comparison was captured right after cloning, which lands on the repo's default branch
+  (main) rather than whichever branch was actually being pushed (wip) — so the first real
+  run compared local files against the wrong branch's history and concluded upstream had
+  changed things it hadn't, silently reverting grow.sh, deploy_website.bat/.command,
+  .gitignore, CLAUDE.md, and TEAM_LOG.md back to older content. Fixed by capturing that
+  reference point from the branch actually being worked on, after fetching but before
+  checking it out. Restored all the reverted files from main (which was never touched by
+  the bug). Also gave deploy_website.command the same explicit "checkout main first" safety
+  net deploy_website.bat already had.
+
 2026-07-10 — Zach (via Claude) — fixed a road gap in the park district Zach spotted in the
   web preview ("a road belongs there to get into the circle"): build_district_roads() in
   neighborhood_blender.py builds a connector from the grid to the OUTER ring road, and

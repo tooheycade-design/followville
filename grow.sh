@@ -93,3 +93,22 @@ if [ -f "$DIR/supabase_sync.env" ]; then
 else
   echo "HOUSES_SYNC_SKIPPED (no supabase_sync.env -- claimable-homes sync not configured)"
 fi
+
+# 2026-07-10: auto-share progress to wip after every successful growth run, so
+# Cade (or his AI) can pull_latest.command wip and see it without a second
+# manual step -- reuses share_progress.command's own push-to-wip logic (never
+# main; deploying stays a deliberate, separate step via deploy_website.command).
+# Best-effort: a failure here does NOT fail this grow run, since the town
+# itself already grew and saved successfully above -- only the "share it" step
+# is at risk. Check share_progress_log.txt if you see AUTO_SHARE_FAILED.
+# NOTE: if NEIGHBORHOOD_REPO_DIR is ever adopted here (see the top of this
+# file), share_progress.command will need the same world_state.json/town.glb
+# exclusion share_progress.bat got on 2026-07-10 -- today it still copies both
+# files straight from this iCloud folder, which is correct ONLY because Mac
+# growth (without NEIGHBORHOOD_REPO_DIR) writes them here directly.
+if [ -x "$DIR/share_progress.command" ]; then
+  echo "-- auto-sharing progress to wip --"
+  "$DIR/share_progress.command" || echo "AUTO_SHARE_FAILED -- growth itself succeeded and was saved; see share_progress_log.txt"
+else
+  echo "AUTO_SHARE_SKIPPED (share_progress.command not found/executable)"
+fi

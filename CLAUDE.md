@@ -21,15 +21,25 @@ you go looking for it here.**
   * `--cam park`: slow low orbit inside the park (min 12s), for showcase shots.
   * `--celebrate` now centers fireworks on TODAY'S new batch when there is one
     (falls back to the founders' custom homes otherwise).
-  * Lighting upgrade (all time-of-day moods): softer sun shadow edges (angle 4->6.5 deg),
+  * Lighting upgrade (all time-of-day moods): softer sun shadow edges,
     a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
-    setup_render (all best-effort try/except). NOTE: the first cut also boosted sun
-    +12%/sky +15% -- Zach reviewed the videos and it washed the town out, so the
-    boosts were removed same day (sun now 0.95x, sky 1.0x, fill 0.15x). Final day-8
-    videos: hero = houses+park rising; overhead + park shots reshot as 12s static
-    showcases of the finished town (`+0 --cam overhead|park`), fireworks in all three
-    (--celebrate now also falls back to "today's buildings" so +0 showcase runs still
-    center fireworks on the new district).
+    setup_render (all best-effort try/except). LIGHTING SAGA, final numbers (set on
+    Cade's PC the same night, after the Mac-rendered videos still looked washed out):
+    sun 1.0x @ 4.5 deg, fill 0.07x, sky 1.0x -- i.e. back to the approved day-7 look
+    plus a subtle shaded-side lift. Don't re-boost any of these without comparing a
+    frame against day_007_hero on the same machine first.
+  * CORRECTION to the para above (Cade's Windows Claude, same night): Zach's Mac run
+    never actually produced the reshoot -- all three videos on his Desktop were replay
+    (everything rising) + bright lighting, and his --cam park path orbited at r~29.5,
+    straight THROUGH the inner ring houses (r=30.5) -- that was the "camera clipping"
+    Cade reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
+    houses). Fireworks made daylight-visible (emission 9->30, bigger particles). The
+    real final videos (hero rising+fireworks, park + overhead calm +0 showcases) were
+    rendered on Cade's PC via day8_shots.bat. His day-8 state itself was great and was
+    published through the git-backed flow (his Mac had run without NEIGHBORHOOD_REPO_DIR,
+    so day 8 initially existed only in iCloud). Claiming-side follow-ups: parkdistrict
+    set non-claimable (both sync scripts' type lists updated), and town.html claiming
+    understands off-grid px/py/rot buildings now.
   * day8_grow_and_render.command = the double-clickable one-shot that ran it all
     (backup -> _refresh_text -> grow +41 --parkring -> 3 renders, logs to render_log.txt).
   * _refresh_text.py fixed: derives the project folder from the opened .blend instead of
@@ -267,20 +277,114 @@ the Action outright, so there is no F-curve left that could ever reassert a stal
 regardless of depsgraph evaluation order. Verified fixed by re-running export_web.py and
 checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the fix, 0 after.
 
-## Collaboration (Cade + Zach)
-This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
-each has it synced locally via iCloud Drive, and each points their own
-Cowork/Claude session at their own local copy. They take turns (never edit at the same
-time); check that iCloud Drive shows fully synced to the other's machine automatically,
-so it's just there next time either person (or their AI) opens the folder — no git pull
-needed for this part. GitHub + Vercel (see "Deploying the live site" section below) are
-separate and only used for deploying the live website; Zach doesn't need GitHub/Vercel
-access unless he wants to deploy himself.
+## Collaboration (Cade + Zach) — READ THIS FIRST, EVERY SESSION
 
-Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing off (plain-
-English, not technical) — that's the whole "who changed what" tracking mechanism. Check
-TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
-and check that Google Drive shows fully synced before starting your own turn.
+**As of 2026-07-10, GitHub is the real sync mechanism between Cade and Zach, not iCloud
+Drive's file sync.** This folder still lives in an iCloud Drive synced folder shared
+between them, and iCloud still syncs it as before — but relying on that sync alone to
+hand work between machines is exactly what caused the repeated "numbered conflict copy"
+bugs documented throughout this file (world_state.json, CLAUDE.md, neighborhood_blender.py
+all hit this), plus a worse one on 2026-07-09: a corrupted `.git` lock file got synced by
+iCloud from one machine to the other and blocked git entirely on both sides. GitHub doesn't
+have this failure mode — a `git pull` either gets you the real latest state or fails
+loudly, it never silently hands you stale or half-written files.
+
+**The routine, every session, both people (or whichever AI is helping them):**
+1. **Start of session:** double-click `pull_latest.command` (Mac) / `pull_latest.bat`
+   (Windows). Pulls `main` by default; pass `wip` as an argument to pull work that isn't
+   deployed yet instead (e.g. `./pull_latest.command wip`).
+2. **Do your work** in this folder as always — grow the town, edit code/docs, whatever.
+3. **End of session**, depending on whether it's ready to go live:
+   - Ready to deploy → double-click `deploy_website.command` / `deploy_website.bat`
+     (pushes to `main`, Vercel redeploys automatically).
+   - Not ready yet, but want the other person able to pull it and keep building →
+     double-click `share_progress.command` / `share_progress.bat` (pushes to `wip`,
+     does NOT touch the live site).
+4. Add ONE line to TEAM_LOG.md before handing off (plain-English, not technical) — still
+   the "who changed what" narrative record. Check TEAM_LOG.md at the start of a session
+   too, same as always.
+
+**2026-07-10: growing the town now auto-shares to `wip` — step 3 above became partly
+automatic.** `grow.sh` (Mac) and `grow_windows.bat`/`.ps1` (Windows) each call
+`share_progress.command`/`.bat` themselves right after a successful growth run, so a plain
+`./grow.sh +5 --render` (or the Windows equivalent) both grows the town AND pushes it to
+`wip` in one step — you don't have to remember the manual double-click just to let the
+other person see today's growth. This is best-effort: if the push fails (e.g. a network
+hiccup, or `origin/wip` moved since you last pulled), the growth run still succeeds and
+is saved locally — you'll see `AUTO_SHARE_FAILED` in the log, and can re-run
+`share_progress.command`/`.bat` by hand once fixed. **You still need to `deploy_website`
+yourself when it's ready to go live** — auto-share only ever pushes to `wip`, on purpose,
+so a day you're not happy with yet never accidentally reaches the live site. On Windows,
+auto-share only pushes the OTHER tracked files (docs/code) — `world_state.json`/`town.glb`
+are already pushed straight to `main` by the existing `NEIGHBORHOOD_STATE_DIR` mechanism a
+few steps earlier in the same run, and `share_progress.bat` was fixed the same day to skip
+those two files so it can't undo that push with a stale iCloud copy (see its own comments).
+**Not yet verified on Cade's actual Windows PC** — built and reasoned through the same way
+the rest of the Windows tooling was, but the first real `+N`/`-N` growth day after this
+change should be treated as a test of the auto-share step specifically.
+
+**2026-07-10, later the same day: share_progress/deploy_website stopped blind-copying files.**
+Both scripts used to just `cp` every tracked file from this iCloud folder over the repo
+clone and commit whatever resulted — no check for whether the OTHER person had changed
+that same file since this machine last synced. That's exactly how Cade's profile-picture
+feature got silently dropped: it only ever existed as a local, uncommitted edit to
+`town.html` on his end, and a later push from Zach's side (based on an older pull) blindly
+overwrote it — no conflict, no warning, it just vanished. Checked the full git history
+(all commits, reflog, dangling objects) to confirm it was never captured anywhere; likely
+recoverable from `.pull_backups/` on Cade's PC if he ran `pull_latest.bat` after making
+that edit. Fix: `sync_lib.sh` (Mac, sourced by share_progress.command/deploy_website.command)
+and `sync_push.ps1` (Windows, called by share_progress.bat/deploy_website.bat, which are now
+thin wrappers around it — same reasoning as `grow_windows.bat` wrapping `grow_windows.ps1`)
+now do a real 3-way comparison per tracked file against this clone's own prior HEAD (captured
+before that run's fetch), same principle as `git merge`: if only you changed a file, push it;
+if only upstream changed it, keep upstream's version and refresh your local copy instead of
+overwriting upstream; if BOTH changed it, attempt `git merge-file` (works cleanly when the
+edits don't overlap — e.g. one person's feature added at the top, another's at the bottom);
+if that fails or the file is binary (`.glb`/`.png`/etc.), leave it OUT of the push entirely
+and print which file(s) need a human to look at, rather than guessing. Validated the core
+merge/conflict mechanism in a scratch repo before wiring it in. **Windows side
+(`sync_push.ps1`) is unverified on an actual PC**, same caveat as the rest of this project's
+Windows tooling — first real run is the test. Also found and fixed, while investigating:
+this iCloud folder's own `.git` had a numbered-conflict-copy of `refs/remotes/origin/main`
+(the same corruption bug that's hit `world_state.json`/`CLAUDE.md` all week, this time on a
+git internal file) — deleted the stale duplicate.
+
+**2026-07-10, still later the same night: the fix above had its own bug, and it fired for
+real.** `PREV_COMMIT` (the 3-way merge base) was captured right after clone/before checkout
+— but a fresh clone's HEAD lands on the DEFAULT branch (`main`), not necessarily the branch
+being pushed to (`wip`). The first time `share_progress.command` ran against a brand new
+`~/followville_repo` clone, it captured `PREV_COMMIT` from `main` (which had all of that
+night's fixes) but then compared it against `wip`'s much older tip — concluded "upstream
+changed, you didn't" for `grow.sh`, `deploy_website.bat`/`.command`, `.gitignore`, `CLAUDE.md`,
+and `TEAM_LOG.md`, and silently overwrote all of them with old `wip`-branch content. Exactly
+the class of bug this whole fix was built to prevent, just relocated. Fixed in `sync_lib.sh`'s
+callers and `sync_push.ps1`: `PREV_COMMIT` now comes from `git rev-parse "$BRANCH"` (the
+clone's own local ref for the branch actually being worked on), captured after fetch but
+before the reset — empty (safe fallback to plain copy) on a branch this clone has never
+checked out before. Restored the reverted files from `main` (which was never touched, since
+the bug only affected the separate clone + this iCloud folder's copies). Also gave
+`deploy_website.command` the same explicit `git checkout main` safety net
+`deploy_website.bat` already had, since it never got that fix on the Mac side.
+
+None of these scripts need you to know or type any git commands — that's the whole point.
+They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,
+`C:\Users\cadet\followville_repo` on Windows — the same one `deploy_website.*` already
+used) as the actual git workspace, and just copy files in and out of it. If a script's log
+ends `ALL_FAILED`, that's real and worth reading — don't just re-run it and hope.
+
+**IMPORTANT — pull_latest/share_progress only ever move already-committed, already-pushed
+content.** They will happily overwrite whatever's in this folder with whatever's on GitHub
+(after backing up anything that differs, to `.pull_backups/`) — so if you've made local
+edits you haven't shared yet, run `share_progress.command`/`.bat` BEFORE running
+`pull_latest`, or you'll be pulling your own older work back on top of your newer work.
+(Learned this one the hard way while building these scripts — a same-session test pull of
+`wip` briefly clobbered a `main`-only merge fix that hadn't been pushed to `wip` yet. No
+data was actually lost since it all still existed on GitHub's `main`, but it's a real sharp
+edge worth knowing about.)
+
+Take turns as before (don't both have neighborhood.blend open at the same time), but the
+"did I actually get the other person's latest work" question is now answered by step 1
+above, not by eyeballing whether iCloud's sync icon looks done.
 
 ### Third AI: "Cade Claude on Windows" (Cowork)
 As of 2026-07-07, Cade also works this project from a Windows PC, via Claude in Cowork mode.

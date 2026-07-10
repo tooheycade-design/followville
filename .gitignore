@@ -11,7 +11,6 @@ world_state_*_hold.json
 
 # Supabase service-role key for the houses-table sync — SECRET, never commit/deploy
 supabase_sync.env
-
 # macOS + Python cruft
 .DS_Store
 __pycache__/
@@ -60,3 +59,9 @@ world_state_day*_backup_*.json
 # Local-only admin tool — reads the secret service-role key at runtime, must
 # never be deployed (see CLAIMING_SETUP.md)
 admin.bat
+
+# Safety backups made by pull_latest.command/.bat before overwriting a locally-
+# modified tracked file — local-only, never meant to be committed/pushed (they
+# got swept in by an early "git add -A" during testing on 2026-07-09; cleaned
+# up in the same commit that added this line).
+.pull_backups/
