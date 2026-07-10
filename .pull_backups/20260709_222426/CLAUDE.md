@@ -21,25 +21,15 @@ you go looking for it here.**
   * `--cam park`: slow low orbit inside the park (min 12s), for showcase shots.
   * `--celebrate` now centers fireworks on TODAY'S new batch when there is one
     (falls back to the founders' custom homes otherwise).
-  * Lighting upgrade (all time-of-day moods): softer sun shadow edges,
+  * Lighting upgrade (all time-of-day moods): softer sun shadow edges (angle 4->6.5 deg),
     a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
-    setup_render (all best-effort try/except). LIGHTING SAGA, final numbers (set on
-    Cade's PC the same night, after the Mac-rendered videos still looked washed out):
-    sun 1.0x @ 4.5 deg, fill 0.07x, sky 1.0x -- i.e. back to the approved day-7 look
-    plus a subtle shaded-side lift. Don't re-boost any of these without comparing a
-    frame against day_007_hero on the same machine first.
-  * CORRECTION to the para above (Cade's Windows Claude, same night): Zach's Mac run
-    never actually produced the reshoot -- all three videos on his Desktop were replay
-    (everything rising) + bright lighting, and his --cam park path orbited at r~29.5,
-    straight THROUGH the inner ring houses (r=30.5) -- that was the "camera clipping"
-    Cade reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
-    houses). Fireworks made daylight-visible (emission 9->30, bigger particles). The
-    real final videos (hero rising+fireworks, park + overhead calm +0 showcases) were
-    rendered on Cade's PC via day8_shots.bat. His day-8 state itself was great and was
-    published through the git-backed flow (his Mac had run without NEIGHBORHOOD_REPO_DIR,
-    so day 8 initially existed only in iCloud). Claiming-side follow-ups: parkdistrict
-    set non-claimable (both sync scripts' type lists updated), and town.html claiming
-    understands off-grid px/py/rot buildings now.
+    setup_render (all best-effort try/except). NOTE: the first cut also boosted sun
+    +12%/sky +15% -- Zach reviewed the videos and it washed the town out, so the
+    boosts were removed same day (sun now 0.95x, sky 1.0x, fill 0.15x). Final day-8
+    videos: hero = houses+park rising; overhead + park shots reshot as 12s static
+    showcases of the finished town (`+0 --cam overhead|park`), fireworks in all three
+    (--celebrate now also falls back to "today's buildings" so +0 showcase runs still
+    center fireworks on the new district).
   * day8_grow_and_render.command = the double-clickable one-shot that ran it all
     (backup -> _refresh_text -> grow +41 --parkring -> 3 renders, logs to render_log.txt).
   * _refresh_text.py fixed: derives the project folder from the opened .blend instead of
@@ -277,52 +267,20 @@ the Action outright, so there is no F-curve left that could ever reassert a stal
 regardless of depsgraph evaluation order. Verified fixed by re-running export_web.py and
 checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the fix, 0 after.
 
-## Collaboration (Cade + Zach) — READ THIS FIRST, EVERY SESSION
+## Collaboration (Cade + Zach)
+This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
+each has it synced locally via iCloud Drive, and each points their own
+Cowork/Claude session at their own local copy. They take turns (never edit at the same
+time); check that iCloud Drive shows fully synced to the other's machine automatically,
+so it's just there next time either person (or their AI) opens the folder — no git pull
+needed for this part. GitHub + Vercel (see "Deploying the live site" section below) are
+separate and only used for deploying the live website; Zach doesn't need GitHub/Vercel
+access unless he wants to deploy himself.
 
-**As of 2026-07-10, GitHub is the real sync mechanism between Cade and Zach, not iCloud
-Drive's file sync.** This folder still lives in an iCloud Drive synced folder shared
-between them, and iCloud still syncs it as before — but relying on that sync alone to
-hand work between machines is exactly what caused the repeated "numbered conflict copy"
-bugs documented throughout this file (world_state.json, CLAUDE.md, neighborhood_blender.py
-all hit this), plus a worse one on 2026-07-09: a corrupted `.git` lock file got synced by
-iCloud from one machine to the other and blocked git entirely on both sides. GitHub doesn't
-have this failure mode — a `git pull` either gets you the real latest state or fails
-loudly, it never silently hands you stale or half-written files.
-
-**The routine, every session, both people (or whichever AI is helping them):**
-1. **Start of session:** double-click `pull_latest.command` (Mac) / `pull_latest.bat`
-   (Windows). Pulls `main` by default; pass `wip` as an argument to pull work that isn't
-   deployed yet instead (e.g. `./pull_latest.command wip`).
-2. **Do your work** in this folder as always — grow the town, edit code/docs, whatever.
-3. **End of session**, depending on whether it's ready to go live:
-   - Ready to deploy → double-click `deploy_website.command` / `deploy_website.bat`
-     (pushes to `main`, Vercel redeploys automatically).
-   - Not ready yet, but want the other person able to pull it and keep building →
-     double-click `share_progress.command` / `share_progress.bat` (pushes to `wip`,
-     does NOT touch the live site).
-4. Add ONE line to TEAM_LOG.md before handing off (plain-English, not technical) — still
-   the "who changed what" narrative record. Check TEAM_LOG.md at the start of a session
-   too, same as always.
-
-None of these scripts need you to know or type any git commands — that's the whole point.
-They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,
-`C:\Users\cadet\followville_repo` on Windows — the same one `deploy_website.*` already
-used) as the actual git workspace, and just copy files in and out of it. If a script's log
-ends `ALL_FAILED`, that's real and worth reading — don't just re-run it and hope.
-
-**IMPORTANT — pull_latest/share_progress only ever move already-committed, already-pushed
-content.** They will happily overwrite whatever's in this folder with whatever's on GitHub
-(after backing up anything that differs, to `.pull_backups/`) — so if you've made local
-edits you haven't shared yet, run `share_progress.command`/`.bat` BEFORE running
-`pull_latest`, or you'll be pulling your own older work back on top of your newer work.
-(Learned this one the hard way while building these scripts — a same-session test pull of
-`wip` briefly clobbered a `main`-only merge fix that hadn't been pushed to `wip` yet. No
-data was actually lost since it all still existed on GitHub's `main`, but it's a real sharp
-edge worth knowing about.)
-
-Take turns as before (don't both have neighborhood.blend open at the same time), but the
-"did I actually get the other person's latest work" question is now answered by step 1
-above, not by eyeballing whether iCloud's sync icon looks done.
+Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing off (plain-
+English, not technical) — that's the whole "who changed what" tracking mechanism. Check
+TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
+and check that Google Drive shows fully synced before starting your own turn.
 
 ### Third AI: "Cade Claude on Windows" (Cowork)
 As of 2026-07-07, Cade also works this project from a Windows PC, via Claude in Cowork mode.

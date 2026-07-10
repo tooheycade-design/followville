@@ -47,6 +47,12 @@ echo -- git pull -- >> "%LOG%"
 git pull origin main >> "%LOG%" 2>&1
 
 echo -- copying tracked files (world_state.json/town.glb excluded, see note above) -- >> "%LOG%"
+REM 2026-07-09: added the claimable-homes files (CLAIMING_SETUP.md,
+REM supabase_schema.sql, sync_houses.py). supabase_sync.env is deliberately
+REM NOT here -- it holds the secret service-role key and must never be pushed.
+REM 2026-07-09b: admin.html added -- safe to deploy since the web admin
+REM migration: it holds no secrets and every admin action is gated by
+REM profiles.is_admin inside the database itself. admin.bat stays local-only.
 REM 2026-07-10: switched from a hand-maintained file list (which had already
 REM gone stale -- AGENTS.md, grow_windows.bat/ps1, preview_website.bat/ps1,
 REM check_town_glb.py/.yml, deploy_website.bat itself, MASTER_PROMPT_ZACH.md,

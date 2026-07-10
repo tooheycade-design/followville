@@ -15,44 +15,6 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-07-10 — Zach (via Claude) — built real infrastructure so this stops happening: three
-  double-clickable scripts (Mac: pull_latest.command / share_progress.command, alongside
-  the existing deploy_website.command; Windows equivalents pull_latest.bat /
-  share_progress.bat added too, mirroring deploy_website.bat) that make GitHub the actual
-  sync mechanism between Cade and Zach instead of iCloud's file sync. Backstory: today
-  alone hit the numbered-conflict-copy bug repeatedly, a stale .git lock file that iCloud
-  synced from one machine to the other and blocked git on BOTH sides, and a merge where
-  origin/main had diverged from what either of us realized (Cade had pushed a real day-8
-  snapshot hours earlier that neither Zach's session nor TEAM_LOG reflected). Root cause:
-  editing files straight in this iCloud folder and hoping iCloud hands them to the other
-  person correctly. Fix: pull_latest pulls whichever branch you want (main or wip) through
-  a plain, non-iCloud-synced clone (~/followville_repo / C:\Users\cadet\followville_repo)
-  and copies the result into this folder, backing up anything it's about to overwrite to
-  .pull_backups/ first; share_progress does the same thing in reverse but to the wip
-  branch (won't touch the live site); deploy_website is unchanged except it now also
-  explicitly checks out main first (the three scripts now share one clone, so that matters)
-  and Windows' version reads its file list from `git ls-files` instead of a hand-maintained
-  list that had already gone stale. New rule, written into CLAUDE.md's Collaboration
-  section: pull_latest at the start of every session, share_progress or deploy_website at
-  the end. Learned one sharp edge the hard way while testing this (documented in CLAUDE.md
-  too): pulling overwrites local uncommitted work with whatever's on GitHub, so push your
-  own changes before pulling, not after -- caught it mid-test (a `wip` pull briefly
-  clobbered a `main`-only fix), nothing was actually lost since everything's real state
-  lives on GitHub now, but redid the affected doc edits to be safe.
-  Also, while resolving the merge from Cade's parallel push: kept Cade's corrected account
-  of the day-8 lighting/camera saga in CLAUDE.md (his research superseded Zach's own
-  now-outdated paragraph on the same topic) and interleaved both TEAM_LOG histories in
-  chronological order. Not yet pushed -- see the commands below.
-  ```
-  cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/neighborhood"
-  git add -A
-  git commit -m "Add pull_latest/share_progress scripts, fix deploy_website.bat's stale file list"
-  git push origin main
-  ```
-  After pushing, tell Cade (via TEAM_LOG, already done above) that pull_latest.bat /
-  share_progress.bat exist on his side now too -- next time his AI session starts, it
-  should read this entry and start using them.
-
 2026-07-10 — Zach (via Claude) — fixed a road gap in the park district Zach spotted in the
   web preview ("a road belongs there to get into the circle"): build_district_roads() in
   neighborhood_blender.py builds a connector from the grid to the OUTER ring road, and
@@ -115,24 +77,6 @@ AI is helping each of them) can see what the other did on their turn.
 2026-07-09 — Zach (via Codex) — made a local same-camera before/after comparison of the original and upgraded website graphics so the material and sky changes can be reviewed clearly; nothing deployed.
 
 2026-07-09 — Zach (via Codex) — locally upgraded the walkable website's materials, lighting, and sky for a richer painted low-poly look, plus added a founder-district screenshot view; previewed successfully and did not deploy anything.
-
-2026-07-09 -- Cade (via Windows Claude) -- picked up Zach's day-8 handoff and finished it.
-  Found: the growth itself was good (day 8, pop 70, park district + 41 ring houses,
-  exactly what Cade wanted) but it lived only in the iCloud folder (his Mac ran grow.sh
-  without NEIGHBORHOOD_REPO_DIR), so GitHub/live site were stuck at day 7; all three
-  videos were rendered with `replay` (so every one showed the houses rising) and with
-  the pre-fix bright lighting; the in-park camera orbited at radius ~29.5 -- straight
-  through the inner ring houses (the "clipping through buildings" Cade saw). Done here:
-  reconciled all of Zach's work from the iCloud conflict copies, published day-8 state +
-  town.glb through the git-backed Windows flow (live site now day 8/pop 70), restored
-  the approved lighting (full sun, near-original shadow sharpness, sky fill kept but cut
-  to 0.07x), fixed the park cam path (r=20, h=8.5 -- between the trees and the houses),
-  made fireworks daylight-visible (bigger + emission 9->30), re-rendered the three shots
-  correctly (hero = rising + fireworks; park + overhead = calm +0 showcases of the
-  finished town), marked the parkdistrict non-claimable in Supabase (it had synced as
-  claimable -- type list updated in both sync scripts), and taught town.html's claiming
-  UI about off-grid buildings (ringhouses carry px/py/rot -- name tags, claim targeting
-  and go-home now use the exact position/rotation instead of grid math).
 
 2026-07-09 -- Zach (via Claude) -- grew the town to day 8, population 70 (+41 houses).
   Built a whole new circular park district east of town: central park with a gazebo,

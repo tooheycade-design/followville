@@ -310,16 +310,6 @@ They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac
 used) as the actual git workspace, and just copy files in and out of it. If a script's log
 ends `ALL_FAILED`, that's real and worth reading — don't just re-run it and hope.
 
-**IMPORTANT — pull_latest/share_progress only ever move already-committed, already-pushed
-content.** They will happily overwrite whatever's in this folder with whatever's on GitHub
-(after backing up anything that differs, to `.pull_backups/`) — so if you've made local
-edits you haven't shared yet, run `share_progress.command`/`.bat` BEFORE running
-`pull_latest`, or you'll be pulling your own older work back on top of your newer work.
-(Learned this one the hard way while building these scripts — a same-session test pull of
-`wip` briefly clobbered a `main`-only merge fix that hadn't been pushed to `wip` yet. No
-data was actually lost since it all still existed on GitHub's `main`, but it's a real sharp
-edge worth knowing about.)
-
 Take turns as before (don't both have neighborhood.blend open at the same time), but the
 "did I actually get the other person's latest work" question is now answered by step 1
 above, not by eyeballing whether iCloud's sync icon looks done.
