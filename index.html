@@ -94,10 +94,18 @@
   .enter-btn:active { transform: scale(0.97); }
   .enter-btn .arrow { transition: transform 0.15s ease; }
   .enter-btn:hover .arrow { transform: translateX(3px); }
+  .enter-btn.claim {
+    margin-top:12px; background:transparent; color:var(--navy);
+    border:2px solid var(--navy); box-shadow:none;
+  }
 
   .hint {
     margin-top:14px; font-size:12.5px; opacity:0.55; text-align:center;
   }
+  .account-line {
+    margin-top:10px; font-size:12.5px; opacity:0.7; text-align:center;
+  }
+  .account-line a { color: var(--accent); }
 
   .founders-note {
     margin-top:38px; font-size:12.5px; opacity:0.55; text-align:center; line-height:1.6;
@@ -144,7 +152,16 @@
   <a class="enter-btn" href="town.html">
     Walk the town <span class="arrow">→</span>
   </a>
+  <a class="enter-btn claim" id="claimBtn" href="town.html#claim">
+    Claim your home <span class="arrow">→</span>
+  </a>
+  <a class="enter-btn claim" id="adminBtn" href="admin.html" style="display:none;">
+    Admin <span class="arrow">→</span>
+  </a>
   <p class="hint">first-person · WASD or touch controls · desktop &amp; mobile</p>
+  <p class="account-line" id="accountLine" style="display:none;">
+    logged in as <b id="accountHandle"></b> · <a href="#" id="logoutLink">log out</a>
+  </p>
 </div>
 
 <script>
@@ -179,6 +196,44 @@
 
   refreshStats();
   setInterval(refreshStats, 45000); // just re-checks the same file; harmless if nothing changed
+</script>
+
+<script type="module">
+  // Session-aware landing: if you're already logged in (and have a house),
+  // the claim button becomes "Go to my home" and a logged-in line appears.
+  // Fails silently to the plain static page if anything here can't load.
+  const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
+  try {
+    const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data } = await sb.auth.getSession();
+    if (data?.session){
+      const { data: status } = await sb.rpc("my_status");
+      const handle = status?.profile?.instagram_handle;
+      if (handle){
+        document.getElementById("accountHandle").textContent = "@" + handle;
+        document.getElementById("accountLine").style.display = "block";
+        document.getElementById("logoutLink").onclick = async (e) => {
+          e.preventDefault();
+          await sb.auth.signOut();
+          location.reload();
+        };
+      }
+      if (status?.claim){
+        const btn = document.getElementById("claimBtn");
+        btn.href = "town.html#home";
+        btn.innerHTML = 'Go to my home <span class="arrow">→</span>';
+      }
+      // admins-only button; the admin page itself is also server-side gated,
+      // so hiding this is cosmetic, not the security boundary
+      if (status?.profile?.is_admin){
+        document.getElementById("adminBtn").style.display = "flex";
+      }
+    }
+  } catch (e) {
+    console.warn("account check skipped:", e);
+  }
 </script>
 </body>
 </html>

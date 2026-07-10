@@ -1,16 +1,35 @@
-=== HERO+FIREWORKS ===
-RESULT {"day": 4, "population": 14, "buildings": 15, "added": 4, "removed": 0, "time": "sunset", "season": "summer", "milestones": [], "state_file": "/Users/cadetoohey/Documents/neighborhood/world_state.json"}
-VIDEO /Users/cadetoohey/Documents/neighborhood/renders/day_004_hero_
-DESKTOP /Users/cadetoohey/Desktop/day_004_hero_0001-0160.mp4
-=== OVERHEAD FINAL ===
-RESULT {"day": 4, "population": 14, "buildings": 15, "added": 0, "removed": 0, "time": "sunset", "season": "summer", "milestones": [], "state_file": "/Users/cadetoohey/Documents/neighborhood/world_state.json"}
-VIDEO /Users/cadetoohey/Documents/neighborhood/renders/day_004_overhead_
-DESKTOP /Users/cadetoohey/Desktop/day_004_overhead_0001-0142.mp4
-00:00.589  blend            | Read blend: "/Users/cadetoohey/Documents/neighborhood/neighborhood.blend"
+=== DAY 8 RUN started Thu Jul  9 16:40:30 EDT 2026 ===
+backed up world_state.json (day 7)
+00:00.247  blend            | Read blend: "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/neighborhood.blend"
 Info: Saved "neighborhood.blend"
 TEXT REFRESHED
 Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:30:33)
-scripts disabled for "/Users/cadetoohey/Documents/neighborhood/neighborhood.blend", skipping 'neighborhood_blender.py'
+scripts disabled for "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/neighborhood.blend", skipping 'neighborhood_blender.py'
 
 Blender quit
+embedded script refreshed
+--- GROWTH: +41 ring houses around new circular park (day 8, pop 70) ---
+RESULT {"day": 8, "population": 70, "buildings": 72, "added": 42, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/world_state.json"}
+WEB /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/town.glb
+-- houses table sync (claimable homes) --
+HOUSES_SYNC_OK (inserted 42, 72 total buildings in world_state)
+--- SHOT 1/3: hero rise + fireworks ---
+RESULT {"day": 8, "population": 70, "buildings": 72, "added": 42, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/world_state.json"}
+VIDEO /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/renders/day_008_hero_
+WEB_EXPORT_FAILED
+-- houses table sync (claimable homes) --
+HOUSES_SYNC_OK (inserted 0 — table already up to date, 72 buildings)
+--- SHOT 2/3: overhead drone, whole town ---
+RESULT {"day": 8, "population": 70, "buildings": 72, "added": 42, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/world_state.json"}
+VIDEO /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/renders/day_008_overhead_
+WEB /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/town.glb
+-- houses table sync (claimable homes) --
+HOUSES_SYNC_OK (inserted 0 — table already up to date, 72 buildings)
+--- SHOT 3/3: in-park showcase ---
+RESULT {"day": 8, "population": 70, "buildings": 72, "added": 42, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "/Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/world_state.json"}
+VIDEO /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/renders/day_008_park_
+WEB /Users/stellarkehler/Library/Mobile Documents/com~apple~CloudDocs/neighborhood/town.glb
+-- houses table sync (claimable homes) --
+HOUSES_SYNC_OK (inserted 0 — table already up to date, 72 buildings)
+=== finished Thu Jul  9 17:35:02 EDT 2026 ===
 ALL_DONE

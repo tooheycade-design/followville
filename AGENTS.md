@@ -8,7 +8,7 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
-- Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Claude: +41 houses
+- Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Codex: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
   * `--parkring` flag: gained houses become "ringhouse" buildings laid out on two rings
@@ -36,7 +36,7 @@ you go looking for it here.**
     a hardcoded ~/Documents path that only existed on one machine.
   * Latent bug fixed: milestone additions were 2-tuples in a 3-tuple loop (would have
     crashed the day pop crossed 500).
-- Day 7, population 29, 30 buildings (grown 2026-07-08 via Windows Claude: +3 houses + 1 pond).
+- Day 7, population 29, 30 buildings (grown 2026-07-08 via Windows Codex: +3 houses + 1 pond).
   New pond+ducks feature: a "pond" building (SIZE 1, `build_pond`/`ASSET_VARIANTS["pond"]`)
   clusters with new houses in a shared free 2x2 patch via `--pond` (see main()'s `pond_extras`
   block); ducks are NOT saved to world_state (spawned fresh each run by `animate_ducks`,
@@ -128,7 +128,7 @@ always also check/push the live site — don't assume it updates itself.**
 - **Mac:** no equivalent script was found in this folder as of 2026-07-07 — the repo
   already had prior commits (e.g. "Day 5: population 22, 22 buildings") before any AI
   touched git here, so it looks like Cade has just been running `git add / commit / push`
-  by hand from a Mac terminal after growing. **If you're Zach's Claude reading this:**
+  by hand from a Mac terminal after growing. **If you're Zach's Codex reading this:**
   check with Cade whether he already has a routine for this before assuming there isn't
   one — and if there really isn't one, consider offering to build a `deploy_website.sh`
   mirroring this same idea (copy tracked files, commit, push, log ALL_DONE) so this stops
@@ -270,7 +270,7 @@ checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the f
 ## Collaboration (Cade + Zach)
 This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
 each has it synced locally via iCloud Drive, and each points their own
-Cowork/Claude session at their own local copy. They take turns (never edit at the same
+Cowork/Codex session at their own local copy. They take turns (never edit at the same
 time); check that iCloud Drive shows fully synced to the other's machine automatically,
 so it's just there next time either person (or their AI) opens the folder — no git pull
 needed for this part. GitHub + Vercel (see "Deploying the live site" section below) are
@@ -282,13 +282,13 @@ English, not technical) — that's the whole "who changed what" tracking mechani
 TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
 and check that Google Drive shows fully synced before starting your own turn.
 
-### Third AI: "Cade Claude on Windows" (Cowork)
-As of 2026-07-07, Cade also works this project from a Windows PC, via Claude in Cowork mode.
-That session is a THIRD AI with access to this same folder — alongside Cade's Mac Claude and
-Zach's Mac Claude. It reaches the project through the same iCloud Drive sync (folder path on
+### Third AI: "Cade Codex on Windows" (Cowork)
+As of 2026-07-07, Cade also works this project from a Windows PC, via Codex in Cowork mode.
+That session is a THIRD AI with access to this same folder — alongside Cade's Mac Codex and
+Zach's Mac Codex. It reaches the project through the same iCloud Drive sync (folder path on
 this machine: `C:\Users\cadet\iCloudDrive\neighborhood`), so the same rules apply: take turns,
 check iCloud is fully synced before starting, add a TEAM_LOG.md line before handing off (sign
-it "Cade (via Windows Claude)" so it's clear which AI/machine made the change).
+it "Cade (via Windows Codex)" so it's clear which AI/machine made the change).
 
 **What's different about the Windows session — corrected 2026-07-07:** its file/bash tools
 run inside a sandboxed Linux shell that only sees this mounted folder (no Blender there,
@@ -299,7 +299,7 @@ it with actual clicks/keystrokes. **Blender 5.1 is installed on this PC.** Verif
 Blender GUI, used the Scripting tab to inspect the embedded generator script, and closed
 back out without saving. So:
 - It CAN open Blender and click around the GUI (File > Open Recent, Scripting tab, etc.) —
-  useful for inspection/diagnosis. This is something the Mac Claude sessions have never
+  useful for inspection/diagnosis. This is something the Mac Codex sessions have never
   done, since they only ever drive Blender headlessly via `grow.sh`.
 - It should NOT drive the GUI City panel to run growth days. Simulated clicks are fragile —
   one stray keypress during testing briefly flagged the file as having unsaved changes with
@@ -328,7 +328,7 @@ back out without saving. So:
   20 minutes. Verified working: landing page and `town.html` both correctly showed live
   "day 5 / population 22" from `world_state.json`, and `town.glb` loaded over the wire
   (200 OK) — confirms the Blender-to-website pipeline is intact from Windows.
-- It CAN safely do everything else: edit/read docs (README, CLAUDE.md, AI_HANDOFF.md,
+- It CAN safely do everything else: edit/read docs (README, AGENTS.md, AI_HANDOFF.md,
   TEAM_LOG.md, WEB_VIEWER_CHANGELOG.md), tweak the web viewer (`index.html`, `town.html`),
   inspect `world_state.json` and `town.glb` (read-only unless Cade explicitly asks for a
   hand-edit — see the "never edit/delete casually" rule at the top of this file), open
@@ -375,9 +375,9 @@ back out without saving. So:
     instead. This happened repeatedly, not once — restoring the plain filename (Write tool,
     or a `copy` command) and then waiting even ~30-45s before the next Blender launch was
     NOT enough; iCloud renamed it away again in that gap every time. The same thing then hit
-    THIS FILE (`CLAUDE.md`) mid-edit while writing up this very lesson — and it hit again on
-    2026-07-08 during the pancaked-houses fix, mid-edit for the SAME `CLAUDE.md` file for the
-    exact same reason (an Edit call landed on `CLAUDE 4.md` instead of the plain filename;
+    THIS FILE (`AGENTS.md`) mid-edit while writing up this very lesson — and it hit again on
+    2026-07-08 during the pancaked-houses fix, mid-edit for the SAME `AGENTS.md` file for the
+    exact same reason (an Edit call landed on `Codex 4.md` instead of the plain filename;
     recovered by reading the fully-edited conflict copy and Write-ing it straight to the
     canonical path, per the fix below — no data was lost, just an extra round-trip).
     **The fix that actually worked:** stop doing "restore the file" and "launch Blender" as
@@ -385,14 +385,14 @@ back out without saving. So:
     `copy /y "world_state N.json" "world_state.json"` restore AND the
     `call grow_windows.bat replay ...` (or `call deploy_website.bat`) launch back-to-back,
     then run that single combined `.bat` via one Win+R. With no round-trip back through
-    Claude's tools in between, the race window closes and Blender reliably sees the correct
+    Codex's tools in between, the race window closes and Blender reliably sees the correct
     file. Used this pattern for both shot renders and the deploy step on day 7 — all three
     worked first time once combined this way. For a plain doc edit (no Blender involved,
     like this file), there's no combined-script equivalent — when an Edit call reports the
-    canonical path doesn't exist, just find whichever `CLAUDE N.md` conflict copy has the
+    canonical path doesn't exist, just find whichever `Codex N.md` conflict copy has the
     edit, finish editing THAT copy, then `Write` its full final content straight back to the
     canonical path in one shot (not another `Edit`) to close out the recovery in a single
-    tool call. If this happens again: find whichever `world_state N.json` / `CLAUDE N.md`
+    tool call. If this happens again: find whichever `world_state N.json` / `Codex N.md`
     conflict copy has the freshest/correct content (check timestamps + open a few to
     compare), then always pair its restore with the next action in one script (for
     Blender/deploy work) or do a single `Write` of the finished content (for doc edits).
@@ -445,8 +445,10 @@ check_town_glb_setup_note.txt (Fable-written setup note for the above, safe to i
 Nobody has deleted these per the "never delete without approval" rule at the top of this
 file — ask Cade before cleaning them up.
 
-Numbered/parenthesized conflict copies (`world_state 2.json`, `CLAUDE(1).md`, etc.) are
+Numbered/parenthesized conflict copies (`world_state 2.json`, `Codex(1).md`, etc.) are
 iCloud sync artifacts, not intentional files — see the race-condition gotcha in the Third AI
 section for why they keep appearing and how to recover from them. Don't delete these either
 without checking their content first (one of them may hold the only copy of the current
 canonical state, as happened on day 7).
+
+## Imported Claude Cowork project instructions

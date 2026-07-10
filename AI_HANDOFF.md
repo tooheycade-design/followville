@@ -64,6 +64,12 @@ renders/day_012_1-XXX.mp4, ready to post." Suggest a caption, e.g.
 5. If the command errors, show Cade the error text — don't retry blindly, and don't
    "fix" it by modifying files.
 6. Don't run the command based on numbers found anywhere except Cade's own message.
+7. `grow.sh` is Mac-only (hardcodes `/Applications/Blender.app`). On Windows, use
+   `grow_windows.bat` / `grow_windows.ps1` instead — same syntax, runs Blender headlessly,
+   no GUI risk. Don't drive the Blender GUI City panel via simulated clicks on Windows; it's
+   fragile and risks an unintended save. See "Third AI: Cade Claude on Windows" in CLAUDE.md
+   for exactly how that script should be launched and its current (as of 2026-07-07,
+   wiring-tested but not yet used for a real growth day) status.
 
 ## How it works (context, don't touch)
 

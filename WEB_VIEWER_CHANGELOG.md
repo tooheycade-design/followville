@@ -122,10 +122,36 @@ Kept here (rather than just in chat) so it survives across sessions.
   script/panel — may be running a second, uncontrolled rebuild pass using its
   own stale defaults, on top of (or instead of) the correct external-script
   rebuild.
-- **Not yet verified** — was about to have the user open the `.blend` in the
-  Blender GUI (Scripting tab) to check for an embedded `neighborhood_blender.py`
-  Text datablock and read off its CONFIG constants, to confirm or rule this out,
-  when the conversation was handed off.
+- **UPDATE 2026-07-07 (via Windows Claude, Cowork computer-use):** verified this
+  directly — Blender 5.1 turns out to be installed on Cade's Windows PC, so this
+  session could actually open the GUI and click around (screenshots + mouse/
+  keyboard control), unlike the Mac sessions which only ever drove Blender
+  headlessly through `grow.sh`. Opened `neighborhood.blend`, clicked "Ignore" on
+  the script-execution prompt (so nothing could auto-run), went to the
+  Scripting tab, and read the embedded `neighborhood_blender.py` Text datablock
+  end to end.
+  - **Hypothesis REFUTED:** the embedded copy already has the same
+    `if bpy.app.background: main() else: _register_ui()` guard as the external
+    file (confirmed at its own final ~6 lines) — in GUI mode it only registers
+    the City panel and does NOT call `main()`. Opening/allowing the file does
+    not silently rebuild the world or add houses. CONFIG defaults at the top
+    (`FOLLOWERS_GAINED = 5`, `NEW_HOUSES = 5`, etc.) also match the external
+    file. So an auto-run-on-open pass using stale embedded defaults is ruled
+    out as the cause of the 20-vs-3 `house_d4` mismatch.
+  - Side note: the embedded Text datablock's on-disk path (shown in Blender's
+    status bar) is still `/Users/cadetoohey/Documents/neighborhood/
+    neighborhood_blender.py` — the project's very first location, before the
+    move to iCloud Drive. Harmless (Blender just remembers where a Text
+    datablock was last loaded from), but confirms the datablock hasn't been
+    reloaded/refreshed from an external path since that early move.
+  - The 20-vs-3 `house_d4` bug itself is **still unexplained** — this only
+    closes off one candidate cause. `diag_investigate.py` remains the right
+    tool to re-check current state.
+  - Caution for future GUI sessions: even just clicking around (no typing) can
+    trigger unexpected Blender UI state — a stray keypress here briefly
+    flagged the file as having unsaved changes with no scene edit visible.
+    Always choose "Don't Save" / "Ignore" rather than risk saving an
+    unintended change to the shared `.blend`.
 - `diag_investigate.py` (in this folder) is a safe, read-only diagnostic
   script (does not modify/save the `.blend`) that dumps: world_state.json
   building counts, every `house_d4*` object's position/instance data, all
