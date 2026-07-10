@@ -1466,7 +1466,12 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     if hero:  # close-up on a special building / batch
         cx, cy, hdist = hero
         dist, pol_deg, fstop = hdist, 64, 2.0
-        orbit_deg = 9
+        # 2026-07-10: was a flat 9 degrees regardless of subject size -- fine
+        # for a tight 2-3 house close-up, but on a big batch (day 9's +64,
+        # tracked across a wide area) it read as nearly static. Scale the
+        # sweep with how far back the camera already sits, capped so a small
+        # close-up still doesn't swing wildly off its subject.
+        orbit_deg = min(38, 9 + hdist / 12)
 
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
@@ -1914,7 +1919,12 @@ def main(cfg=None):
         hy = sum(p[1] for p in pts) / len(pts)
         span = max(max(p[0] for p in pts) - min(p[0] for p in pts),
                    max(p[1] for p in pts) - min(p[1] for p in pts))
-        hero = (hx, hy, max(42.0, span * 2.1 + 44))
+        # 2026-07-10: was span*2.1+44 -- fine for a small batch (a handful of
+        # houses) but on a big growth day (day 9's +64, span~128) that padding
+        # put the camera almost as far back as the whole-town shot, same
+        # "mostly empty grass/sky" problem as the other two camera modes.
+        # Tightened the same way.
+        hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
     if cfg.get("celebrate"):
         # fireworks over today's new batch if there is one (e.g. the day-8
