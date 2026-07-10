@@ -25,6 +25,11 @@ if [ ! -d "$REPO/.git" ]; then
   git clone https://github.com/tooheycade-design/followville "$REPO"
 fi
 cd "$REPO"
+# 2026-07-10: captured BEFORE fetch/reset below -- this is "what this clone
+# last knew" and becomes the 3-way merge base for safe_copy_tracked_files
+# (see sync_lib.sh). Empty on a brand new clone, which is fine -- the
+# function falls back to plain copying when there's no meaningful history yet.
+PREV_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo "")"
 git fetch origin
 
 STEP="git identity"
@@ -41,16 +46,25 @@ else
   git checkout -b "$BRANCH"
 fi
 
-STEP="copy tracked files from iCloud folder"
-COPIED=0
-for f in $(git ls-files); do
-  if [ -f "$SRC/$f" ]; then
-    mkdir -p "$REPO/$(dirname "$f")"
-    cp "$SRC/$f" "$REPO/$f"
-    COPIED=$((COPIED + 1))
-  fi
-done
+STEP="copy tracked files from iCloud folder (conflict-aware, see sync_lib.sh)"
+source "$SRC/sync_lib.sh"
+safe_copy_tracked_files "$SRC" "$REPO" "$PREV_COMMIT"
 echo "copied $COPIED tracked files"
+[ -n "$MERGED_FILES" ]    && echo "AUTO_MERGED:$MERGED_FILES (both sides had changed these since your last sync, but in non-overlapping places -- merged cleanly, nothing lost)"
+[ -n "$REFRESHED_FILES" ] && echo "REFRESHED_FROM_UPSTREAM:$REFRESHED_FILES (your local copy was stale and unchanged by you -- updated it from the newer shared version instead of overwriting the shared version with your stale copy)"
+if [ -n "$CONFLICT_FILES" ]; then
+  echo "CONFLICTS_DETECTED:$CONFLICT_FILES"
+  echo "The file(s) above were changed on BOTH sides since your last sync and could not be auto-merged (either they're binary, or the edits genuinely overlap). They were left OUT of this push so nobody's work gets silently overwritten -- exactly what happened to Cade's profile-picture feature before this fix. Compare $SRC/<file> against $REPO/<file>, decide what the merged result should be, save it to both, then re-run this script."
+fi
+
+# 2026-07-10: sync_lib.sh itself isn't tracked yet on a machine's first run
+# after this fix, so the loop above (which only walks already-tracked files)
+# can't pick it up on its own -- force it in explicitly, same pattern
+# deploy_website.command already uses for new Mac tooling.
+if [ -f "$SRC/sync_lib.sh" ]; then
+  cp "$SRC/sync_lib.sh" "$REPO/sync_lib.sh"
+  git add sync_lib.sh
+fi
 
 STEP="commit"
 git add -A

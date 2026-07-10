@@ -21,25 +21,28 @@ if [ ! -d "$REPO/.git" ]; then
   git clone https://github.com/tooheycade-design/followville "$REPO"
 fi
 cd "$REPO"
+# 2026-07-10: captured BEFORE the pull below -- see sync_lib.sh for why.
+PREV_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo "")"
 git pull origin main
 
 STEP="git identity"
 git config user.name  >/dev/null 2>&1 || git config user.name  "Zach Kehler"
 git config user.email >/dev/null 2>&1 || git config user.email "zachkehler@gmail.com"
 
-STEP="copy tracked files from iCloud folder"
-COPIED=0
-for f in $(git ls-files); do
-  if [ -f "$SRC/$f" ]; then
-    cp "$SRC/$f" "$REPO/$f"
-    COPIED=$((COPIED + 1))
-  fi
-done
+STEP="copy tracked files from iCloud folder (conflict-aware, see sync_lib.sh)"
+source "$SRC/sync_lib.sh"
+safe_copy_tracked_files "$SRC" "$REPO" "$PREV_COMMIT"
 # new Mac tooling worth tracking alongside grow.sh
-for extra in day8_grow_and_render.command deploy_website.command; do
+for extra in day8_grow_and_render.command deploy_website.command sync_lib.sh; do
   [ -f "$SRC/$extra" ] && cp "$SRC/$extra" "$REPO/$extra" && git add "$extra"
 done
 echo "copied $COPIED tracked files"
+[ -n "$MERGED_FILES" ]    && echo "AUTO_MERGED:$MERGED_FILES (both sides had changed these since your last sync, but in non-overlapping places -- merged cleanly, nothing lost)"
+[ -n "$REFRESHED_FILES" ] && echo "REFRESHED_FROM_UPSTREAM:$REFRESHED_FILES (your local copy was stale and unchanged by you -- updated it from the newer shared version instead of overwriting the shared version with your stale copy)"
+if [ -n "$CONFLICT_FILES" ]; then
+  echo "CONFLICTS_DETECTED:$CONFLICT_FILES"
+  echo "The file(s) above were changed on BOTH sides since your last sync and could not be auto-merged. They were left OUT of this deploy so nobody's work gets silently overwritten -- exactly what happened to Cade's profile-picture feature before this fix. Compare $SRC/<file> against $REPO/<file>, decide what the merged result should be, save it to both, then re-run this script. Check the log for CONFLICTS_DETECTED before assuming ALL_DONE means everything went out."
+fi
 
 STEP="commit"
 git add -A

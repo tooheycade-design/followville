@@ -323,6 +323,32 @@ those two files so it can't undo that push with a stale iCloud copy (see its own
 the rest of the Windows tooling was, but the first real `+N`/`-N` growth day after this
 change should be treated as a test of the auto-share step specifically.
 
+**2026-07-10, later the same day: share_progress/deploy_website stopped blind-copying files.**
+Both scripts used to just `cp` every tracked file from this iCloud folder over the repo
+clone and commit whatever resulted — no check for whether the OTHER person had changed
+that same file since this machine last synced. That's exactly how Cade's profile-picture
+feature got silently dropped: it only ever existed as a local, uncommitted edit to
+`town.html` on his end, and a later push from Zach's side (based on an older pull) blindly
+overwrote it — no conflict, no warning, it just vanished. Checked the full git history
+(all commits, reflog, dangling objects) to confirm it was never captured anywhere; likely
+recoverable from `.pull_backups/` on Cade's PC if he ran `pull_latest.bat` after making
+that edit. Fix: `sync_lib.sh` (Mac, sourced by share_progress.command/deploy_website.command)
+and `sync_push.ps1` (Windows, called by share_progress.bat/deploy_website.bat, which are now
+thin wrappers around it — same reasoning as `grow_windows.bat` wrapping `grow_windows.ps1`)
+now do a real 3-way comparison per tracked file against this clone's own prior HEAD (captured
+before that run's fetch), same principle as `git merge`: if only you changed a file, push it;
+if only upstream changed it, keep upstream's version and refresh your local copy instead of
+overwriting upstream; if BOTH changed it, attempt `git merge-file` (works cleanly when the
+edits don't overlap — e.g. one person's feature added at the top, another's at the bottom);
+if that fails or the file is binary (`.glb`/`.png`/etc.), leave it OUT of the push entirely
+and print which file(s) need a human to look at, rather than guessing. Validated the core
+merge/conflict mechanism in a scratch repo before wiring it in. **Windows side
+(`sync_push.ps1`) is unverified on an actual PC**, same caveat as the rest of this project's
+Windows tooling — first real run is the test. Also found and fixed, while investigating:
+this iCloud folder's own `.git` had a numbered-conflict-copy of `refs/remotes/origin/main`
+(the same corruption bug that's hit `world_state.json`/`CLAUDE.md` all week, this time on a
+git internal file) — deleted the stale duplicate.
+
 None of these scripts need you to know or type any git commands — that's the whole point.
 They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,
 `C:\Users\cadet\followville_repo` on Windows — the same one `deploy_website.*` already

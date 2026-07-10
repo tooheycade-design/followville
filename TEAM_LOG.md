@@ -15,6 +15,20 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — found and fixed the actual cause of Cade's profile-picture
+  feature vanishing: share_progress/deploy_website were blindly overwriting whole tracked
+  files with whatever was in the iCloud folder, with zero awareness of whether the OTHER
+  side had changed that file since last sync. Confirmed via full git history search that
+  the feature was never committed anywhere — it was local-only on Cade's end and got
+  clobbered before it was ever captured. Rewrote the copy step (sync_lib.sh on Mac,
+  sync_push.ps1 on Windows) to do a real 3-way merge per file, same idea as `git merge`:
+  auto-combine non-overlapping changes from both sides, and refuse to guess (leave the file
+  out, flag it loudly) when both sides changed the same spot. Also found and fixed a fresh
+  case of the numbered-conflict-copy bug, this time inside `.git` itself
+  (`refs/remotes/origin/main 2`). Windows side is unverified on a real PC — treat next use
+  as a test, and if Cade's profile-picture code is still sitting in `.pull_backups/` on his
+  machine, it should be recoverable from there.
+
 2026-07-10 — Zach (via Claude) — made growing the town auto-share to `wip`, so the routine
   below is one step shorter in practice: `grow.sh` (Mac) and `grow_windows.bat`/`.ps1`
   (Windows) now call the share_progress push themselves right after a successful growth
