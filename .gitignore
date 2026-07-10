@@ -59,3 +59,9 @@ world_state_day*_backup_*.json
 # Local-only admin tool — reads the secret service-role key at runtime, must
 # never be deployed (see CLAIMING_SETUP.md)
 admin.bat
+
+# Safety backups made by pull_latest.command/.bat before overwriting a locally-
+# modified tracked file — local-only, never meant to be committed/pushed (they
+# got swept in by an early "git add -A" during testing on 2026-07-09; cleaned
+# up in the same commit that added this line).
+.pull_backups/
