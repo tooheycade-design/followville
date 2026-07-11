@@ -66,6 +66,32 @@ you go looking for it here.**
     (calm overhead showcase of the finished, condensed town -- rendered with `+0`, not
     `replay`, specifically so the houses-rising animation does NOT play: Zach is cutting
     this into a longer video and didn't want a "growth reveal" moment in this shot).
+- **2026-07-10, later still (Cade's Windows Claude Cowork session) -- a THIRD, independent
+  instance of the git-internal-file iCloud race, complementary to the `refs/remotes/origin/main`
+  one Zach's session already found and fixed the same day (see Collaboration section):** this
+  iCloud folder's own `.git` was completely non-functional from this session's sandboxed bash
+  ("not a git repository") because its plain `HEAD` and `config` files, `refs/heads/main`, the
+  `index`, and `FETCH_HEAD` had ALL been hit by the same rename-to-numbered-copy race that hits
+  `world_state.json`/`CLAUDE.md`, plus a stale `index.lock` and one loose git object that read as
+  corrupt. Restored `HEAD`/`config`/`refs/heads/main` and cleared the locks (Read the broken file
+  with the file tool, Write it straight back -- bash's own `cat`/`git`/Python `open()` all failed
+  on these specific files with `Invalid argument`, but the file tools worked fine, going through
+  a different, real-materializing path). This got `git status` working again from the sandbox but
+  NOT `git fetch`/`push` (a couple of objects still read as corrupt from inside that sandbox
+  specifically -- looks like a limitation of how that particular session's Linux mount handles
+  some of iCloud's binary placeholders, not real data loss). Actually pushed this session's fixes
+  by using computer-use to run a `.bat` (via Win+R) through the clean `C:\Users\cadet\followville_repo`
+  clone instead -- confirmed working end to end. Also found and restored: the plain `CLAUDE.md`,
+  `TEAM_LOG.md`, and `world_state.json` filenames in this iCloud folder had themselves been renamed
+  away (again) at the very start of that session, before any of the above. **Near-miss worth
+  knowing about:** a first attempt to push a LOCAL, STALE copy of `CLAUDE.md`/`TEAM_LOG.md` (from
+  before Zach's day-9 doc updates existed) almost overwrote everything in this Day 9 canon entry
+  and the Collaboration section below -- avoided only because the copy step happened to fail
+  ("system cannot find the file specified", the SAME iCloud race striking a third time, on the
+  real Windows machine this time, not just the sandbox). Lesson for any future doc-repair session:
+  always refresh your local copy from the repo clone (`copy /y C:\Users\cadet\followville_repo\CLAUDE.md ...`)
+  immediately before editing, not just once at the start -- don't trust that a local copy made
+  even a few minutes earlier is still the latest, on either side of this project.
 - Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Claude: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
@@ -430,6 +456,35 @@ checked out before. Restored the reverted files from `main` (which was never tou
 the bug only affected the separate clone + this iCloud folder's copies). Also gave
 `deploy_website.command` the same explicit `git checkout main` safety net
 `deploy_website.bat` already had, since it never got that fix on the Mac side.
+
+**Tag every TEAM_LOG entry with what it touched — added 2026-07-10 (Cade's Windows Claude
+Cowork session).** Start each entry with `[WORLD]`, `[WEB]`, or `[BOTH]`: `[WORLD]` = changed
+something Blender-authoritative (world_state.json, neighborhood_blender.py, anything that
+should show up identically in both the rendered videos and town.glb); `[WEB]` = website-only
+presentation (UI, controls, decorative additions made directly in index.html/town.html that
+were never added to Blender, e.g. the backdrop mountains/clouds Zach's Codex session added
+2026-07-09 -- purely visual on the site, don't expect to find them in a render or in
+neighborhood_blender.py); `[BOTH]` = touched both. This exists because of exactly that
+mountains/clouds case: a website-only change shipped with no way for the next AI to know it
+wasn't also in Blender, so it looked "missing" instead of "on purpose." If you're adding new
+scenery/geography that should look the same in videos and on the web, prefer building it in
+Blender (WORLD collection) so export_web.py carries it over automatically -- reserve pure
+`[WEB]` changes for things that could never make sense in a rendered video anyway (name tags,
+claim UI, touch controls, session-aware buttons).
+
+**Clarified by Cade, 2026-07-10: "same world" means same geometry, NOT same visual quality.**
+The Blender-rendered videos are allowed -- expected -- to look noticeably better than the
+website: richer materials, real lighting/shadows/AO, depth of field, post-processing, all the
+things EEVEE/Cycles can afford that a real-time in-browser Three.js scene can't. What must stay
+identical between the two is the WORLD ITSELF -- which buildings exist, where they are, what
+shape they are (i.e. town.glb's geometry, exported straight from Blender's WORLD collection,
+same as always). So: any new geography (mountains, terrain, whatever) still goes into Blender
+first so it's real, shared, single-source-of-truth geometry -- but once it's in both places,
+the website's Three.js materials/lighting for that same geometry are free to be simpler/faster
+than what the Blender render uses, on purpose. That's not drift, that's two different renderers
+doing their best with the same underlying model -- same city, different image quality. Don't
+chase "make the website graphics as good as the video" -- chase "make sure the website has the
+same buildings in the same places as the video."
 
 None of these scripts need you to know or type any git commands — that's the whole point.
 They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,

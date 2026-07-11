@@ -6,7 +6,14 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## How to use this
 - Whoever finishes a turn (Cade or Zach) adds ONE line before handing off, in this format:
-  `YYYY-MM-DD — Name — what changed (one line)`
+  `YYYY-MM-DD — Name — [TAG] what changed (one line)`
+- **Start every entry with a tag — added 2026-07-10:** `[WORLD]` (changed Blender-authoritative
+  stuff: world_state.json, neighborhood_blender.py, anything that should look the same in the
+  rendered videos and on the website), `[WEB]` (website-only presentation -- UI, controls,
+  decorative additions made straight in index.html/town.html that were never added to Blender),
+  or `[BOTH]`. This exists because a `[WEB]`-only change (backdrop mountains/clouds, added
+  2026-07-09) shipped with no way for the next AI to know it wasn't also in Blender -- see
+  CLAUDE.md's Collaboration section for the full reasoning.
 - If an AI made the change, say so, e.g. "via his Claude" or "via Cade's Claude" —
   that's the whole "tracking" mechanism, no git needed.
 - Newest entries at the top.
@@ -14,6 +21,36 @@ AI is helping each of them) can see what the other did on their turn.
   from both sides at the same time. Check Drive's synced before you start your turn.
 
 ## Log
+
+2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Confirmed day 9 (pop 134, 136
+  buildings) live on followville-kappa.vercel.app, matching world_state.json exactly. At
+  Cade's request, diagnosed the recurring "AI builds on a stale/backup copy" problem and
+  wrote up a fix plan in a new file, SYNC_AND_ZONING_PLAN.md (root cause: the iCloud folder
+  is used as a live shared working directory for files multiple machines/AI sessions edit
+  concurrently; iCloud resolves collisions by silently renaming the loser to a numbered
+  copy instead of merging or erroring, so the next session has to guess which copy is
+  real -- a wrong guess is exactly "building on a backup"). Corrected a misunderstanding on
+  my part along the way: Cade uses Claude (Cowork, Windows); Zach (Mac) uses Claude too
+  (Sonnet/Opus/Fable) AND sometimes OpenAI's Codex/GPT models. Also clarified: the day-9
+  "curving lane" attempt with the overlapping roads (world_state 5.json/grow_day9_growth.txt,
+  never shipped) was Cade using Claude Fable directly to preview that day's growth, not a
+  separate AI experimenting on its own -- Fable's road math was just wrong.
+  Then found and fixed what this sandboxed session actually could reach: this iCloud
+  folder's own `.git` was completely broken (`HEAD`/`config`/`refs/heads/main` had all been
+  renamed away by the same race, plus a stale `index.lock`) -- restored those, which is a
+  DIFFERENT git-internal-file instance of the race than the `refs/remotes/origin/main`
+  duplicate Zach's session found and fixed the same day (see both writeups in CLAUDE.md's
+  Day 9 canon / Collaboration section). Could not get `git fetch`/`push` fully working from
+  inside that sandbox (a couple of objects read as corrupt -- looks like a sandbox-only
+  limitation, not real data loss), so used computer-use (Win+R -> a `.bat` script) to push
+  through the real `C:\Users\cadet\followville_repo` clone instead once Cade said "you have
+  access to the terminal and whatever you need" -- confirmed pushed to `main`. Along the
+  way, nearly clobbered Zach's much-more-current CLAUDE.md/TEAM_LOG.md with a stale local
+  copy (the push script's file-copy step happened to fail first, by luck, catching it) --
+  refreshed from the real repo before finishing. Added the `[WORLD]`/`[WEB]`/`[BOTH]` TEAM_LOG
+  tag convention above and in CLAUDE.md, plus Cade's clarification there that "same world"
+  means same geometry, not same visual quality -- the Blender videos are supposed to keep
+  looking better than the website; only what's built and where has to match via town.glb.
 
 2026-07-10 — Zach (via Claude) — fixed a typo'd Supabase account handle at Zach's request:
   instagram_handle was "stellarkehler", corrected to "stellar.kehler". The normal signup
