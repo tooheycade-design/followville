@@ -8,6 +8,13 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-11 structural reserve (Cade via Codex): `neighborhood_plan.py`
+  deterministically plans the next 366 ordinary houses (population 135-500)
+  across six curved-road districts with 18 cul-de-sacs. Undeveloped hills,
+  meadows, and ponds are visible now; planned roads and houses create no object
+  until ordinary +N growth consumes their exact addresses. Existing geometry
+  never moves. See `NEIGHBORHOOD_EXPANSION_PLAN.md`. The legacy pop-500 plaza
+  is intentionally suppressed when this houses-only reserve completes.
 - Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Codex: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:

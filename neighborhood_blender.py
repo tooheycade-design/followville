@@ -22,6 +22,13 @@ import os
 import random
 import sys
 
+# Pure-data reserve for populations 135..500.  Importing this module creates
+# nothing; future houses/roads remain invisible until main() consumes them.
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else ""
+if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+
 # ═══════════════════════════ CONFIG — EDIT THIS DAILY ═══════════════════════════
 
 FOLLOWERS_GAINED = 5     # today's follower gain (drives population counter)
@@ -953,6 +960,10 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 
 def footprint(b):
+    # Planned suburban houses use exact world positions on curving roads, not
+    # grid lots.  They therefore reserve no legacy 3x3-grid cell.
+    if b.get("plan_id"):
+        return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
         cells, rr = [], b.get("r", 57) + LOT
@@ -1059,8 +1070,8 @@ def place_instance(world_col, b, name):
     empty.instance_collection = asset
     x, y = build_pos(b)
     s = SIZE.get(b["type"], 1)
-    if "px" in b:  # exact world placement (park district / ring houses)
-        empty.location = (x, y, 0.1 if b["type"] == "ringhouse" else 0)
+    if "px" in b:  # exact world placement (district / suburban houses)
+        empty.location = (x, y, b.get("pz", 0.1 if b["type"] == "ringhouse" else 0))
     else:
         empty.location = (x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2, 0)
     rng = random.Random(b["seed"])
@@ -1091,7 +1102,8 @@ def block_extent(buildings):
     """The town always has at least a 3x3-block starter road grid, so day 0
     shows the exact streets that houses will later appear on. Off-grid park
     districts (and their ring houses) don't extend the grid."""
-    buildings = [b for b in buildings if b["type"] not in ("parkdistrict", "ringhouse")]
+    buildings = [b for b in buildings if b["type"] not in ("parkdistrict", "ringhouse")
+                 and not b.get("plan_id")]
     if not buildings:
         return -1, 1, -1, 1
     bxs = [b["gx"] // BLOCK_N for b in buildings]
@@ -1170,6 +1182,89 @@ def build_district_roads(world_col, buildings, m):
         radial_w = (cx - 22.0) - x_in
         if radial_w > 0:
             add_box(world_col, "radial", radial_w, ROAD, 0.18, x_in + radial_w / 2, cy, 0, m["road"])
+
+
+def _add_ellipse_disc(col, name, x, y, sx, sy, z, material, sides=24):
+    verts = [(0, 0, 0)]
+    for i in range(sides):
+        a = math.tau * i / sides
+        verts.append((math.cos(a) * sx, math.sin(a) * sy, 0))
+    faces = [(0, i + 1, (i + 1) % sides + 1) for i in range(sides)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces); mesh.materials.append(material); mesh.update()
+    obj = bpy.data.objects.new(name, mesh); obj.location = (x, y, z); col.objects.link(obj)
+    return obj
+
+
+def _add_mound(col, name, x, y, sx, sy, height, material, sides=20):
+    """Broad low-poly mound with a rounded crown, not a sharp cone."""
+    verts = []
+    rings = ((1.0, 0.0), (.72, height * .55), (.34, height * .90), (0.0, height))
+    for radius, z in rings[:-1]:
+        for i in range(sides):
+            a = math.tau * i / sides
+            wobble = 1.0 + .035 * math.sin(i * 2.17 + x * .01)
+            verts.append((math.cos(a) * sx * radius * wobble,
+                          math.sin(a) * sy * radius * wobble, z))
+    verts.append((0, 0, rings[-1][1]))
+    top = len(verts) - 1
+    faces = []
+    for ring in range(2):
+        a0, b0 = ring * sides, (ring + 1) * sides
+        for i in range(sides):
+            j = (i + 1) % sides
+            faces.append((a0 + i, a0 + j, b0 + j, b0 + i))
+    for i in range(sides):
+        faces.append((2 * sides + i, 2 * sides + (i + 1) % sides, top))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces); mesh.materials.append(material); mesh.update()
+    obj = bpy.data.objects.new(name, mesh); obj.location = (x, y, 0.02); col.objects.link(obj)
+    return obj
+
+
+def build_suburban_terrain(world_col, m):
+    """Visible landform reserve.  Terrain is allowed to precede development;
+    future roads/houses are deliberately handled by build_suburban_roads()."""
+    if not SUBURBAN_PLAN:
+        return
+    hill_mat = mat("NB_suburban_hill", (0.37, 0.57, 0.29), 1.0)
+    meadow_mat = mat("NB_suburban_meadow", (0.48, 0.66, 0.31), 1.0)
+    for feature in SUBURBAN_PLAN["terrain"]:
+        if feature["kind"] == "hill":
+            _add_mound(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
+                       feature["sx"], feature["sy"], feature["height"], hill_mat)
+        elif feature["kind"] == "pond":
+            _add_ellipse_disc(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
+                              feature["sx"], feature["sy"], feature.get("z", .02), m["water"])
+        elif feature["kind"] == "meadow":
+            _add_ellipse_disc(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
+                              feature["sx"], feature["sy"], .025, meadow_mat)
+
+
+def _add_road_segment(world_col, a, b, material):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy)
+    if length < .05:
+        return
+    obj = add_box(world_col, "suburban_road", length + .15, ROAD, .18,
+                  (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, .01, material)
+    obj.rotation_euler.z = math.atan2(dy, dx)
+
+
+def build_suburban_roads(world_col, buildings, m):
+    """Reveal only the road pieces needed by houses already constructed."""
+    if not SUBURBAN_PLAN:
+        return
+    active = max([b.get("plan_id", 0) for b in buildings] or [0])
+    if not active:
+        return
+    for segment in SUBURBAN_PLAN["roads"]:
+        if segment["reveal_at"] <= active:
+            _add_road_segment(world_col, segment["a"], segment["b"], m["road"])
+    for bulb in SUBURBAN_PLAN["turnarounds"]:
+        if bulb["reveal_at"] <= active:
+            _add_ellipse_disc(world_col, "culdesac", bulb["center"][0], bulb["center"][1],
+                              8.2, 8.2, .015, m["road"], 24)
 
 def animate_ring_traffic(world_col, buildings, frame_end):
     """A couple of cars slowly loop each park district's ring roads."""
@@ -1804,6 +1899,7 @@ def main(cfg=None):
     # opt back into the old pure-radial scatter order (sorted_lots()) if a
     # future day ever wants that messier look on purpose.
     fill_mode = "scatter" if cfg.get("scatter") else "block"
+    planned_before = len([b for b in state["buildings"] if b.get("plan_id")])
 
     new_batch, removed, unlocked = [], [], []
     if replay:
@@ -1854,6 +1950,12 @@ def main(cfg=None):
             for thr, btype in MILESTONES:
                 if state["pop"] >= thr and thr not in done:
                     done.append(thr)
+                    # Cade's approved 135..500 reserve is ordinary houses
+                    # only. Reaching 500 completes that neighborhood plan;
+                    # it must not silently insert the legacy plaza.
+                    if thr == 500 and planned_before < SUBURBAN_CAPACITY and house_gained > 0:
+                        unlocked.append("500-house suburban reserve complete")
+                        continue
                     additions.append((btype, 1, None))
                     unlocked.append("%s (pop %d)" % (btype, thr))
         if parkring_n:
@@ -1910,6 +2012,24 @@ def main(cfg=None):
                     raise RuntimeError("Lot %s is already taken" % (target,))
                 lots = [target]
             elif btype == "house":
+                # Consume exact addresses from the hidden 366-house suburban
+                # reserve before falling back to the legacy grid.  The plan
+                # lives outside world_state and creates no future objects.
+                already = len([b for b in state["buildings"] if b.get("plan_id")])
+                take = min(n, max(0, SUBURBAN_CAPACITY - already))
+                if take and SUBURBAN_PLAN:
+                    for slot in SUBURBAN_PLAN["houses"][already:already + take]:
+                        b = {"type": "house", "gx": 0, "gy": 0,
+                             "px": slot["x"], "py": slot["y"], "rot": slot["rot"],
+                             "plan_id": slot["plan_id"], "district": slot["district"],
+                             "street": slot["street"], "seed": state["seed_counter"],
+                             "day": state["day"]}
+                        state["seed_counter"] += 1
+                        state["buildings"].append(b)
+                        new_batch.append(b)
+                    n -= take
+                    if n <= 0:
+                        continue
                 # regular houses stay out of blocks that hold custom homes
                 custom_blocks = set()
                 for b in state["buildings"]:
@@ -1942,6 +2062,8 @@ def main(cfg=None):
     keep = [b for b in state["buildings"] if id(b) not in rem_ids]
     build_roads(world_col, keep or state["buildings"], m)
     build_district_roads(world_col, keep or state["buildings"], m)
+    build_suburban_terrain(world_col, m)
+    build_suburban_roads(world_col, keep or state["buildings"], m)
     scatter_nature(world_col, occupied, keep or state["buildings"])
 
     # animation timing: sinks first, then rises

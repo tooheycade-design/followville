@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-11 - Cade (via Codex) - [WORLD] Planned and built the hidden next-366-house suburban reserve: six terrain-shaped neighborhoods, winding staged roads, and 18 cul-de-sacs; terrain is visible now, while each future road segment and ordinary house appears only when its growth address is reached, without moving anything already built.
+
 2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Added the ability for a
   follower to give up (unclaim) their house, at Cade's request ("people need the
   option to unclaim, one house per user still"). New `unclaim_house()` Postgres
