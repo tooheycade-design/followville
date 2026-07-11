@@ -50,6 +50,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --render         render the day's video after building
 #   --still          render one preview PNG after building
 #   --replay         re-animate the last day, change nothing
+#   --scatter        use the old pure-radial lot order instead of the
+#                     default block-fill order (2026-07-10) -- scatters new
+#                     buildings across many blocks instead of filling one
+#                     solid before starting the next
 # When any CLI args are given, the CONFIG constants above are ignored.
 
 def _cli():
@@ -58,7 +62,7 @@ def _cli():
     args = sys.argv[sys.argv.index("--") + 1:]
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
              "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
-             "--parkring": "parkring"}
+             "--parkring": "parkring", "--scatter": "scatter"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -962,6 +966,13 @@ def footprint(b):
     return [(b["gx"] + dx, b["gy"] + dy) for dx in range(s) for dy in range(s)]
 
 def sorted_lots(radius):
+    """Pure per-lot radial-distance order (with jitter) -- scatters new
+    buildings across many blocks instead of filling any one solid. This was
+    the only ordering before 2026-07-10 and is why blocks kept ending up
+    sparse (one house + trees) after several growth days. Kept as an
+    explicit opt-out: pass --scatter on the CLI (see fill_mode below) if you
+    ever want that old scattered look back. sorted_lots_filling() is the
+    default now."""
     rng = random.Random(1234)
     lots = []
     for gx in range(-radius, radius + 1):
@@ -971,13 +982,42 @@ def sorted_lots(radius):
     lots.sort()
     return lots
 
-def find_free_lots(count, size, occupied, blocked_blocks=None):
+def sorted_lots_filling(radius):
+    """Block-fill order (2026-07-10): blocks in spiral order by distance
+    from the city center, and within each block, its 9 lots in a fixed
+    reading order -- fills one block solid before starting the next,
+    instead of scattering new buildings across many blocks at once (the
+    dead-center lot of each block gets skipped downstream in
+    find_free_lots, same as before, so it doesn't need special-casing
+    here). Promoted from the one-off condense_day9.py script (which still
+    exists for reference) to the real pipeline as the DEFAULT ordering for
+    all new growth, per Zach's request to keep the town looking dense
+    without needing a manual condense pass every few days. Pass --scatter
+    on the CLI to fall back to the old sorted_lots() ordering instead."""
+    block_radius = max(1, radius // BLOCK_N + 1)
+    blocks = []
+    for bx in range(-block_radius, block_radius + 1):
+        for by in range(-block_radius, block_radius + 1):
+            cx, cy = bx * PITCH + PITCH / 2, by * PITCH + PITCH / 2
+            blocks.append((math.hypot(cx, cy), bx, by))
+    blocks.sort()
+    lots = []
+    priority = 0
+    for _, bx, by in blocks:
+        for iy in range(BLOCK_N):
+            for ix in range(BLOCK_N):
+                lots.append((priority, bx * BLOCK_N + ix, by * BLOCK_N + iy))
+                priority += 1
+    return lots
+
+def find_free_lots(count, size, occupied, blocked_blocks=None, fill_mode="block"):
     # start near the city's current edge so huge cities don't rescan from zero
     radius = max(3, int(math.sqrt(len(occupied) + count * size * size)))
+    lot_order_fn = sorted_lots if fill_mode == "scatter" else sorted_lots_filling
     while radius < 400:  # ~640k lots — enough for hundreds of thousands
         found = []
         taken = set(occupied)
-        for _, gx, gy in sorted_lots(radius):
+        for _, gx, gy in lot_order_fn(radius):
             if blocked_blocks and (gx // BLOCK_N, gy // BLOCK_N) in blocked_blocks:
                 continue
             if len(found) >= count:
@@ -1758,6 +1798,13 @@ def main(cfg=None):
     for b in state["buildings"]:
         occupied.update(footprint(b))
 
+    # 2026-07-10: block-fill lot order is the default for every new growth
+    # day now (fills sparse blocks solid instead of scattering across many
+    # at once -- see sorted_lots_filling()'s docstring). Pass --scatter to
+    # opt back into the old pure-radial scatter order (sorted_lots()) if a
+    # future day ever wants that messier look on purpose.
+    fill_mode = "scatter" if cfg.get("scatter") else "block"
+
     new_batch, removed, unlocked = [], [], []
     if replay:
         new_batch = [b for b in state["buildings"] if b.get("day") == state["day"]]
@@ -1783,7 +1830,7 @@ def main(cfg=None):
             # cluster the pond + up to 3 new houses around it in one free 2x2
             # patch, so the growth video reads as "these houses + this pond
             # arrived together" rather than scattering them across town
-            (px, py), = find_free_lots(1, 2, occupied)
+            (px, py), = find_free_lots(1, 2, occupied, fill_mode=fill_mode)
             cluster_cells = [(px, py), (px + 1, py), (px, py + 1), (px + 1, py + 1)]
             pond_extras.append(("pond", 1, cluster_cells[0]))
             house_cells = cluster_cells[1:1 + min(gained, 3)]
@@ -1869,9 +1916,9 @@ def main(cfg=None):
                     if b["type"].endswith("house") and b["type"] != "house":
                         for cgx, cgy in footprint(b):
                             custom_blocks.add((cgx // BLOCK_N, cgy // BLOCK_N))
-                lots = find_free_lots(n, size, occupied, custom_blocks)
+                lots = find_free_lots(n, size, occupied, custom_blocks, fill_mode=fill_mode)
             else:
-                lots = find_free_lots(n, size, occupied)
+                lots = find_free_lots(n, size, occupied, fill_mode=fill_mode)
             for gx, gy in lots:
                 b = {"type": btype, "gx": gx, "gy": gy,
                      "seed": state["seed_counter"], "day": state["day"]}

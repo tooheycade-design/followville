@@ -32,21 +32,30 @@ you go looking for it here.**
     going forward -- nothing else needs to change them again. If you DO retune any of
     these, compare a frame against `day_009_hero_fixed`/`day_009_overhead_condensed` on
     the same machine first, not `day_007`/`day_008` (those used the old looser numbers).
-  * **Layout condensed -- ONE-TIME, NOT a pipeline change:** by day 9 several older blocks
-    had gone sparse (one house plus some trees, lots of empty grass) because
-    `find_free_lots()`'s lot order is pure radial distance from the city center, which
-    scatters rather than fills block-by-block. Zach asked for this cleaned up, but ONLY
-    for that day's 64 new houses -- no founder home, no pre-day-9 house, no pond/park/
-    ringhouse was allowed to move (his explicit call: "if you own that house, it doesn't
-    change"). Done via a standalone one-off script, `condense_day9.py` (kept in this
-    folder for reference; NOT part of `grow.sh` or run automatically), which re-lays-out
-    just that day's batch in block-filling spiral order into free lots, skipping the
-    dead-center lot and every occupied/protected footprint. **This does NOT self-repeat**
-    -- day 10's regular growth goes back to `find_free_lots()`'s plain radial order,
-    which CAN scatter again over many days. If sparse blocks reappear and it matters,
-    the real fix is changing `find_free_lots()`'s own ordering to fill blocks solid
-    (mirror `sorted_block_fill_order()` inside `condense_day9.py`) rather than re-running
-    a one-off script each time.
+  * **Layout condensed for day 9's batch** -- by day 9 several older blocks had gone
+    sparse (one house plus some trees, lots of empty grass) because `find_free_lots()`'s
+    lot order used to be pure radial distance from the city center, which scatters
+    rather than fills block-by-block. Zach asked for this cleaned up, but ONLY for that
+    day's 64 new houses -- no founder home, no pre-day-9 house, no pond/park/ringhouse
+    was allowed to move (his explicit call: "if you own that house, it doesn't change").
+    Done via a standalone one-off script, `condense_day9.py` (kept in this folder for
+    reference), which re-laid-out just that day's batch in block-filling spiral order
+    into free lots, skipping the dead-center lot and every occupied/protected footprint.
+  * **UPDATE, later the same day (2026-07-10):** block-fill is now the PERMANENT default
+    lot order, not a one-off -- Zach asked for the condensed look to happen automatically
+    from now on instead of needing a manual script each time. `find_free_lots()` gained a
+    `fill_mode` param; the new `sorted_lots_filling()` (blocks in spiral order from the
+    city center, filling each block's lots before moving to the next -- basically
+    `condense_day9.py`'s logic promoted into the real pipeline) is now used by default
+    for every growth day, houses/parks/apartments/pond-clusters alike. The OLD scattered
+    look (`sorted_lots()`, pure per-lot radial distance) is still there and still works --
+    pass `--scatter` on the CLI to opt into it for a specific run if that messier look is
+    ever wanted on purpose. Verified in isolation against the live day-9 state (no
+    Blender needed, pure lot-math): a simulated +40 houses landed in 6 blocks under the
+    new default vs. 13 blocks under the old scatter order for the same input -- no
+    collisions, no dead-center placements, custom-home blocks still respected. condense_day9.py
+    itself is now mostly historical (kept for reference) since the pipeline does this
+    automatically going forward.
   * Fireworks deliberately left OUT of the final day-9 videos (Zach: "you still have
     fireworks going off..."); `--celebrate` itself is unchanged and still works if a
     future day wants fireworks again.
@@ -122,6 +131,9 @@ Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
        (--cam street: added 2026-07-07 — eye-level flythrough down the town's oldest
        street past the founder blocks, instead of the default overhead orbit; runs at
        least 12s so it reads as "slow". See build_stage() in neighborhood_blender.py.)
+       (--scatter: added 2026-07-10 — new houses/buildings default to filling sparse
+       blocks solid before starting the next one (see Day 9 canon above); pass --scatter
+       to opt into the old scattered-across-many-blocks look for a specific run instead.)
 Videos auto-copy to Desktop. Multi-shot days: hero shot (replay --hero --render --tag hero)
 + overhead/final (+0 --cam overhead --render --tag overhead).
 
@@ -582,13 +594,15 @@ exports and world_state.json/town.glb mismatches). Runs as part of export_web.py
 and again independently via the `.github/workflows/check_town_glb.yml` GitHub Action on every
 push to main. See "Where world_state.json + town.glb actually live now" above.
 
-condense_day9.py (2026-07-10, kept for reference -- NOT part of the regular pipeline, not
-auto-run by grow.sh): the one-off layout fix that repositioned day-9's 64 new houses into
-a denser block-filling order without touching any older or founder building. See Day 9
-canon above for why it exists. Worth reading again if a future "town looks sparse"
-complaint comes up -- it's the template for what a permanent fix inside `find_free_lots()`
-would need to do (its `sorted_block_fill_order()` helper is the block-filling logic that
-`find_free_lots()` itself still doesn't have).
+condense_day9.py (2026-07-10, now mostly historical -- kept for reference, NOT part of the
+regular pipeline, not auto-run by grow.sh): the one-off layout fix that repositioned
+day-9's 64 new houses into a denser block-filling order without touching any older or
+founder building. Its `sorted_block_fill_order()` logic was promoted the same day into
+`neighborhood_blender.py` itself as `sorted_lots_filling()`, which is now the permanent
+DEFAULT lot order for every growth day going forward (see Day 9 canon's "UPDATE" bullet
+above and `--scatter` in the Daily workflow flags list) -- so a manual condense pass
+should no longer be needed. Still worth keeping around as a reference/fallback in case
+`sorted_lots_filling()` ever needs re-deriving.
 
 Day-9 one-off render scripts (safe to ignore/delete, same category as the other one-off
 .command scripts below -- all superseded, kept only as a paper trail): render_day9_cinecheck.command,

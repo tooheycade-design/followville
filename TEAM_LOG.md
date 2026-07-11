@@ -15,6 +15,28 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — made the day-9 layout condense automatic going forward,
+  per Zach's request ("make the condensed automatic unless otherwise specified"). Until
+  today, dense block-filling only happened via the one-off condense_day9.py script (see
+  the entry right below this one) — regular growth still used the old pure-radial lot
+  order, which scatters new buildings across many blocks instead of filling any one
+  solid, and would have gone back to looking sparse again after a few more growth days.
+  Promoted that script's block-filling logic into neighborhood_blender.py itself as a new
+  sorted_lots_filling() function, and made find_free_lots() use it by default for every
+  building type (houses, apartments, parks, pond clusters, all of it) — no code
+  invocation is required anymore, it just happens. Kept the old scattered look available
+  on purpose, opt-in only: pass --scatter on the CLI for a specific run if that messier
+  spread-out look is ever wanted again. Verified the new lot-picker's behavior directly
+  against the real world_state.json (pure Python, no Blender needed): simulated adding 40
+  houses to the current town landed them in 6 blocks under the new default vs. 13 blocks
+  under the old scatter order for the exact same input, with zero collisions, zero
+  dead-center placements, and custom/founder blocks still correctly avoided. Not yet
+  exercised on a real growth day (that needs Blender, which only runs via a real machine)
+  — next real +N day is the live test; if anything looks off compared to how day 9 turned
+  out, --scatter is the immediate fallback while it gets sorted out. Pushed to main
+  (docs) — condense_day9.py itself is now mostly historical/reference, no longer needed
+  for routine growth.
+
 2026-07-10 — Zach (via Claude) — finished and shipped day 9 (population 134, 136
   buildings), picking up from the in-progress entry below. Three real code fixes, all
   permanent (full writeup in CLAUDE.md's Day 9 canon entry and the "House-facing rules"
