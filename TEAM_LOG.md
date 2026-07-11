@@ -15,6 +15,19 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Cade (via Codex) — made a standalone transparent 70-to-134 follower counter animation and matching 134 hold image for the next reel.
+
+2026-07-10 — Zach (via Claude) — grew the town to day 9, population 134 (+64 houses), per
+  Cade's go-ahead to build from the day-8/pop-70 state rather than a broken concurrent
+  day-9 attempt on Cade's end (he'd added a road that looked terrible and told Zach to
+  ignore it — a one-time call, not a standing policy). Filled the empty grid, kept every
+  founder/claimed house untouched, and mixed in random house variety (skyscraper/castle/
+  toilet excluded from the random pool per Cade's request). While pushing this to `wip`,
+  found and fixed a real bug in the new conflict-aware sync scripts themselves (see the
+  two entries below dated 2026-07-10) that had briefly reverted several tracked docs/
+  scripts — restored them from `main` before re-sharing. Video renders: hero shot
+  succeeded; the overhead shot failed and needs a re-render — in progress.
+
 2026-07-10 — Zach (via Claude) — found and fixed the actual cause of Cade's profile-picture
   feature vanishing: share_progress/deploy_website were blindly overwriting whole tracked
   files with whatever was in the iCloud folder, with zero awareness of whether the OTHER
@@ -29,55 +42,17 @@ AI is helping each of them) can see what the other did on their turn.
   as a test, and if Cade's profile-picture code is still sitting in `.pull_backups/` on his
   machine, it should be recoverable from there.
 
-2026-07-10 — Zach (via Claude) — made growing the town auto-share to `wip`, so the routine
-  below is one step shorter in practice: `grow.sh` (Mac) and `grow_windows.bat`/`.ps1`
-  (Windows) now call the share_progress push themselves right after a successful growth
-  run, best-effort (a failed auto-share doesn't fail the growth itself). Deploying to the
-  live site is still a separate, deliberate step (deploy_website), on purpose. Also fixed a
-  latent bug this surfaced: share_progress.bat was copying world_state.json/town.glb from
-  the iCloud folder, which is stale-by-design on Windows since grow_windows.ps1 already
-  pushes those two files straight to main — would have silently reverted them on wip every
-  single auto-share run. Fixed to skip those two files, matching deploy_website.bat's
-  existing 2026-07-08 fix. Not yet verified on Cade's actual PC — next real growth day
-  there is the real test.
-
-2026-07-10 — Zach (via Claude) — built real infrastructure so this stops happening: three
-  double-clickable scripts (Mac: pull_latest.command / share_progress.command, alongside
-  the existing deploy_website.command; Windows equivalents pull_latest.bat /
-  share_progress.bat added too, mirroring deploy_website.bat) that make GitHub the actual
-  sync mechanism between Cade and Zach instead of iCloud's file sync. Backstory: today
-  alone hit the numbered-conflict-copy bug repeatedly, a stale .git lock file that iCloud
-  synced from one machine to the other and blocked git on BOTH sides, and a merge where
-  origin/main had diverged from what either of us realized (Cade had pushed a real day-8
-  snapshot hours earlier that neither Zach's session nor TEAM_LOG reflected). Root cause:
-  editing files straight in this iCloud folder and hoping iCloud hands them to the other
-  person correctly. Fix: pull_latest pulls whichever branch you want (main or wip) through
-  a plain, non-iCloud-synced clone (~/followville_repo / C:\Users\cadet\followville_repo)
-  and copies the result into this folder, backing up anything it's about to overwrite to
-  .pull_backups/ first; share_progress does the same thing in reverse but to the wip
-  branch (won't touch the live site); deploy_website is unchanged except it now also
-  explicitly checks out main first (the three scripts now share one clone, so that matters)
-  and Windows' version reads its file list from `git ls-files` instead of a hand-maintained
-  list that had already gone stale. New rule, written into CLAUDE.md's Collaboration
-  section: pull_latest at the start of every session, share_progress or deploy_website at
-  the end. Learned one sharp edge the hard way while testing this (documented in CLAUDE.md
-  too): pulling overwrites local uncommitted work with whatever's on GitHub, so push your
-  own changes before pulling, not after -- caught it mid-test (a `wip` pull briefly
-  clobbered a `main`-only fix), nothing was actually lost since everything's real state
-  lives on GitHub now, but redid the affected doc edits to be safe.
-  Also, while resolving the merge from Cade's parallel push: kept Cade's corrected account
-  of the day-8 lighting/camera saga in CLAUDE.md (his research superseded Zach's own
-  now-outdated paragraph on the same topic) and interleaved both TEAM_LOG histories in
-  chronological order. Not yet pushed -- see the commands below.
-  ```
-  cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/neighborhood"
-  git add -A
-  git commit -m "Add pull_latest/share_progress scripts, fix deploy_website.bat's stale file list"
-  git push origin main
-  ```
-  After pushing, tell Cade (via TEAM_LOG, already done above) that pull_latest.bat /
-  share_progress.bat exist on his side now too -- next time his AI session starts, it
-  should read this entry and start using them.
+2026-07-10 — Zach (via Claude) — the merge-detection fix above had its own bug, caught the
+  same night before it did lasting damage: the "prior known state" used for the 3-way
+  comparison was captured right after cloning, which lands on the repo's default branch
+  (main) rather than whichever branch was actually being pushed (wip) — so the first real
+  run compared local files against the wrong branch's history and concluded upstream had
+  changed things it hadn't, silently reverting grow.sh, deploy_website.bat/.command,
+  .gitignore, CLAUDE.md, and TEAM_LOG.md back to older content. Fixed by capturing that
+  reference point from the branch actually being worked on, after fetching but before
+  checking it out. Restored all the reverted files from main (which was never touched by
+  the bug). Also gave deploy_website.command the same explicit "checkout main first" safety
+  net deploy_website.bat already had.
 
 2026-07-10 — Zach (via Claude) — fixed a road gap in the park district Zach spotted in the
   web preview ("a road belongs there to get into the circle"): build_district_roads() in
@@ -141,24 +116,6 @@ AI is helping each of them) can see what the other did on their turn.
 2026-07-09 — Zach (via Codex) — made a local same-camera before/after comparison of the original and upgraded website graphics so the material and sky changes can be reviewed clearly; nothing deployed.
 
 2026-07-09 — Zach (via Codex) — locally upgraded the walkable website's materials, lighting, and sky for a richer painted low-poly look, plus added a founder-district screenshot view; previewed successfully and did not deploy anything.
-
-2026-07-09 -- Cade (via Windows Claude) -- picked up Zach's day-8 handoff and finished it.
-  Found: the growth itself was good (day 8, pop 70, park district + 41 ring houses,
-  exactly what Cade wanted) but it lived only in the iCloud folder (his Mac ran grow.sh
-  without NEIGHBORHOOD_REPO_DIR), so GitHub/live site were stuck at day 7; all three
-  videos were rendered with `replay` (so every one showed the houses rising) and with
-  the pre-fix bright lighting; the in-park camera orbited at radius ~29.5 -- straight
-  through the inner ring houses (the "clipping through buildings" Cade saw). Done here:
-  reconciled all of Zach's work from the iCloud conflict copies, published day-8 state +
-  town.glb through the git-backed Windows flow (live site now day 8/pop 70), restored
-  the approved lighting (full sun, near-original shadow sharpness, sky fill kept but cut
-  to 0.07x), fixed the park cam path (r=20, h=8.5 -- between the trees and the houses),
-  made fireworks daylight-visible (bigger + emission 9->30), re-rendered the three shots
-  correctly (hero = rising + fireworks; park + overhead = calm +0 showcases of the
-  finished town), marked the parkdistrict non-claimable in Supabase (it had synced as
-  claimable -- type list updated in both sync scripts), and taught town.html's claiming
-  UI about off-grid buildings (ringhouses carry px/py/rot -- name tags, claim targeting
-  and go-home now use the exact position/rotation instead of grid math).
 
 2026-07-09 -- Zach (via Claude) -- grew the town to day 8, population 70 (+41 houses).
   Built a whole new circular park district east of town: central park with a gazebo,

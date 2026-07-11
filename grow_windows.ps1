@@ -130,7 +130,7 @@ function Sync-Houses {
         $ExistingIds = @{}
         foreach ($row in @($Existing)) { $ExistingIds[[int64]$row.id] = $true }
         # keep in sync with NON_CLAIMABLE_TYPES in sync_houses.py
-        $NonClaimable = @('pond', 'park', 'parkdistrict', 'plaza', 'streetlight', 'car')
+        $NonClaimable = @('pond', 'park', 'parkdistrict', 'lanestreet', 'plaza', 'streetlight', 'car')
         $NewRows = @()
         foreach ($b in $State.buildings) {
             if ($ExistingIds.ContainsKey([int64]$b.seed)) { continue }
@@ -294,33 +294,27 @@ try {
     Sync-Houses
 
     # 2026-07-10: auto-share progress to wip after every successful growth run,
-    # so Zach (or his AI) can pull_latest.command wip and see it without Cade
-    # remembering a second manual step. world_state.json/town.glb were already
-    # pushed straight to "main" above -- this only covers the OTHER tracked
-    # files (docs, code, the web viewer HTML), via share_progress.bat, which
-    # was fixed today to skip those two files (see its own comments) so it
-    # can't undo the main push that just happened a few lines up. Best-effort:
-    # a failure here does NOT fail this grow run -- the town itself already
-    # grew and saved successfully. Check share_progress_log.txt if you see
-    # AUTO_SHARE_FAILED. Only runs when $UseGit is true (--no-git means there's
-    # no repo clone relationship to push docs/code into either).
-    if ($UseGit) {
-        Log-Line "-- auto-sharing other tracked files (docs/code) to wip --"
-        try {
-            $ShareBat = Join-Path $Dir 'share_progress.bat'
-            if (Test-Path -LiteralPath $ShareBat) {
-                $env:NEIGHBORHOOD_NO_PAUSE = "1"
-                & cmd /c "`"$ShareBat`""
-                Remove-Item Env:\NEIGHBORHOOD_NO_PAUSE -ErrorAction SilentlyContinue
-                Log-Line "AUTO_SHARE_INVOKED -- see share_progress_log.txt for the result"
-            }
-            else {
-                Log-Line "AUTO_SHARE_SKIPPED (share_progress.bat not found next to this script)"
-            }
+    # mirroring grow.sh's matching block (see CLAUDE.md's Collaboration
+    # section). world_state.json/town.glb are already pushed straight to main
+    # above via NEIGHBORHOOD_STATE_DIR, so share_progress.bat only needs to
+    # carry the OTHER tracked files (docs/code) -- it was fixed on 2026-07-10
+    # to skip those two files for exactly that reason. Best-effort: a failure
+    # here does NOT fail this growth run, since the town itself already grew
+    # and (if -UseGit) pushed successfully above.
+    $ShareScript = Join-Path $Dir 'share_progress.bat'
+    if (Test-Path -LiteralPath $ShareScript) {
+        Log-Line "-- auto-sharing progress to wip --"
+        $PrevEAP = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        & cmd.exe /c "`"$ShareScript`"" 2>&1 | Out-File -FilePath $LogFile -Append -Encoding utf8
+        $ShareExit = $LASTEXITCODE
+        $ErrorActionPreference = $PrevEAP
+        if ($ShareExit -ne 0) {
+            Log-Line "AUTO_SHARE_FAILED -- growth itself succeeded and was saved; see share_progress_log.txt"
         }
-        catch {
-            Log-Line ("AUTO_SHARE_FAILED " + $_.Exception.Message + " -- growth itself succeeded and was saved; only sharing docs/code to wip failed")
-        }
+    }
+    else {
+        Log-Line "AUTO_SHARE_SKIPPED (share_progress.bat not found)"
     }
 
     Log-Line "ALL_DONE"

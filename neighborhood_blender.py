@@ -993,6 +993,16 @@ def find_free_lots(count, size, occupied, blocked_blocks=None):
             else:
                 if (gx, gy) in taken:
                     continue
+                # 2026-07-10: skip the lot dead-center of its 3x3 block --
+                # it's fully boxed in by the other 8 lots with no road
+                # frontage on any side, so a house placed there is
+                # unreachable from the street (Zach spotted several of these
+                # "encapsulated" houses in the day-9 video). Leaving it
+                # unbuilt turns it into a little green square instead, via
+                # the existing scatter_nature() pass over unoccupied lots.
+                center = BLOCK_N // 2
+                if gx % BLOCK_N == center and gy % BLOCK_N == center:
+                    continue
                 taken.add((gx, gy))
                 found.append((gx, gy))
         if len(found) >= count:
@@ -1432,13 +1442,36 @@ def city_center_and_extent(buildings):
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
-    dist = ext * 1.35 + 55
-    pol_deg, fstop = 58, 3.2
-    if cam == "overhead":  # high establishing shot
-        pol_deg, dist = 16, ext * 1.5 + 85
+    # 2026-07-10 cinematography pass (day 9, park district pushed the bounding
+    # box way out -- ext jumped to ~258 -- and the old padding multipliers
+    # were tuned for a much smaller town): both the default/hero shot and the
+    # overhead shot were framing with way too much empty grass/sky padding
+    # around the actual buildings, and the old 9-degree total orbit sweep
+    # read as nearly static across an 11-12s clip -- neither felt "cinematic"
+    # per Zach's feedback. Tightened the distance padding so buildings fill
+    # more of the portrait frame, and widened the orbit sweep so the shot
+    # visibly moves and reveals more of the town (including the park ring)
+    # over the course of the clip instead of holding one static-feeling view.
+    dist = ext * 1.05 + 45
+    pol_deg, fstop = 55, 3.2
+    orbit_deg = 46
+    if cam == "overhead":
+        # was a near-vertical 16-degree top-down angle -- read as flat/
+        # orthographic with no sense of depth. 36 degrees still shows the
+        # whole grid+park layout from above (the "sees everything" ask) but
+        # keeps real perspective/parallax so it looks like a drone shot, not
+        # a map.
+        pol_deg, dist = 36, ext * 1.15 + 60
+        orbit_deg = 55
     if hero:  # close-up on a special building / batch
         cx, cy, hdist = hero
         dist, pol_deg, fstop = hdist, 64, 2.0
+        # 2026-07-10: was a flat 9 degrees regardless of subject size -- fine
+        # for a tight 2-3 house close-up, but on a big batch (day 9's +64,
+        # tracked across a wide area) it read as nearly static. Scale the
+        # sweep with how far back the camera already sits, capped so a small
+        # close-up still doesn't swing wildly off its subject.
+        orbit_deg = min(38, 9 + hdist / 12)
 
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
@@ -1447,8 +1480,23 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # eye-level flythrough down the town's oldest street (the by=0 road,
         # which runs past whichever buildings sit at gy 0-2 -- the founder
         # blocks from day 1) instead of orbiting a fixed point overhead.
+        #
+        # 2026-07-10: was min_bx*PITCH-ROAD to (max_bx+1)*PITCH -- the FULL
+        # grid width. That was fine when the town was small, but now (day 9,
+        # grid spans x -78..72) covering the whole width in the fixed 12s
+        # floor works out to ~12.5 m/s -- more like a car than "walking into
+        # town," and most of that distance is plain grid houses, not the
+        # founders' custom landmarks Zach actually wants visible. Fixed to a
+        # town-size-independent window centered on the founder cluster
+        # (measured x -21..25): a little approach room before it, straight
+        # through it, a little continuation after -- at a brisk-but-human
+        # ~7.5 m/s (a fast walk/light jog, not a crawl and not a drive-by).
+        # Clipped to whatever's actually built so this can't run off into
+        # blank grass on a tiny town either.
         min_bx, max_bx, min_by, max_by = block_extent(buildings)
-        x0, x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
+        full_x0, full_x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
+        x0 = max(full_x0, -40.0)
+        x1 = min(full_x1, 50.0)
         street_y = -ROAD / 2
         street_z = 1.75  # roughly eye/walking height
 
@@ -1542,10 +1590,14 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         world_col.objects.link(cam_obj)
         bpy.context.scene.camera = cam_obj
 
-        # slow orbit across the whole shot
+        # orbit across the whole shot -- sweep amount set above per shot type
+        # (orbit_deg): wide for the establishing/overhead shots so they
+        # visibly reveal the town instead of holding a near-static frame,
+        # narrow for hero close-ups where a big sweep would swing off the
+        # subject.
         rig.rotation_euler = (0, 0, 0)
         rig.keyframe_insert("rotation_euler", frame=1)
-        rig.rotation_euler = (0, 0, math.radians(9))
+        rig.rotation_euler = (0, 0, math.radians(orbit_deg))
         rig.keyframe_insert("rotation_euler", frame=frame_end)
         for fc in obj_fcurves(rig):
             for kp in fc.keyframe_points:
@@ -1882,7 +1934,12 @@ def main(cfg=None):
         hy = sum(p[1] for p in pts) / len(pts)
         span = max(max(p[0] for p in pts) - min(p[0] for p in pts),
                    max(p[1] for p in pts) - min(p[1] for p in pts))
-        hero = (hx, hy, max(42.0, span * 2.1 + 44))
+        # 2026-07-10: was span*2.1+44 -- fine for a small batch (a handful of
+        # houses) but on a big growth day (day 9's +64, span~128) that padding
+        # put the camera almost as far back as the whole-town shot, same
+        # "mostly empty grass/sky" problem as the other two camera modes.
+        # Tightened the same way.
+        hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
     if cfg.get("celebrate"):
         # fireworks over today's new batch if there is one (e.g. the day-8

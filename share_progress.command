@@ -25,16 +25,26 @@ if [ ! -d "$REPO/.git" ]; then
   git clone https://github.com/tooheycade-design/followville "$REPO"
 fi
 cd "$REPO"
-# 2026-07-10: captured BEFORE fetch/reset below -- this is "what this clone
-# last knew" and becomes the 3-way merge base for safe_copy_tracked_files
-# (see sync_lib.sh). Empty on a brand new clone, which is fine -- the
-# function falls back to plain copying when there's no meaningful history yet.
-PREV_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo "")"
 git fetch origin
 
 STEP="git identity"
 git config user.name  >/dev/null 2>&1 || git config user.name  "Zach Kehler"
 git config user.email >/dev/null 2>&1 || git config user.email "zachkehler@gmail.com"
+
+# 2026-07-10 BUGFIX: this used to capture HEAD right after clone/before
+# checkout -- but a fresh clone's HEAD lands on the DEFAULT branch ("main"),
+# not "$BRANCH" ("wip"). Comparing SRC against a base taken from main while
+# the actual upstream side of the comparison is wip's (older, divergent) tip
+# is comparing two different branches' history -- that's exactly what
+# reverted grow.sh/deploy_website.*/.gitignore/CLAUDE.md/TEAM_LOG.md back to
+# an old wip-branch snapshot on 2026-07-10 the first time this ran against a
+# fresh clone. Fix: use this clone's own LOCAL "$BRANCH" ref specifically,
+# captured after fetch (fetch only touches remote-tracking refs, not local
+# branches) but before the checkout/reset below overwrites it. Empty if this
+# clone has never checked out "$BRANCH" before (fresh clone, or first-ever
+# push of this branch from this machine) -- safe_copy_tracked_files treats
+# that as "no known history, trust the local folder" (see sync_lib.sh).
+PREV_COMMIT="$(git rev-parse "$BRANCH" 2>/dev/null || echo "")"
 
 STEP="checkout wip (branching from origin/main if wip doesn't exist yet)"
 if git rev-parse --verify "origin/$BRANCH" >/dev/null 2>&1; then

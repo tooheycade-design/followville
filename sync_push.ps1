@@ -55,11 +55,22 @@ if (-not (Test-Path -LiteralPath (Join-Path $Repo '.git'))) {
 
 Push-Location $Repo
 try {
-    $PrevCommit = (Invoke-Git @('rev-parse', 'HEAD')).Trim()
-    if ($script:LastGitExit -ne 0) { $PrevCommit = "" }
-
     Write-Host "-- git fetch --"
     Invoke-Git @('fetch', 'origin') | Out-Null
+
+    # 2026-07-10 BUGFIX (see sync_lib.sh's matching note -- this hit Zach's
+    # Mac the same day this script was written): must be this clone's own
+    # LOCAL $Branch ref, captured after fetch but before the checkout/reset
+    # below -- NOT `git rev-parse HEAD` taken right after clone, which lands
+    # on the DEFAULT branch ("main"), not necessarily $Branch ("wip" or
+    # "main"). Comparing local files against a base taken from the wrong
+    # branch's history is exactly what silently reverted several files back
+    # to an old wip-branch snapshot the first time this ran against a fresh
+    # clone. Empty if this clone has never checked out $Branch before (fresh
+    # clone, or first-ever push of this branch from this machine) --
+    # the copy loop below then just trusts the local folder.
+    $PrevCommit = (Invoke-Git @('rev-parse', $Branch)).Trim()
+    if ($script:LastGitExit -ne 0) { $PrevCommit = "" }
 
     Write-Host "-- checkout $Branch --"
     $HasRemoteBranch = $true

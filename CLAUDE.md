@@ -349,6 +349,23 @@ this iCloud folder's own `.git` had a numbered-conflict-copy of `refs/remotes/or
 (the same corruption bug that's hit `world_state.json`/`CLAUDE.md` all week, this time on a
 git internal file) — deleted the stale duplicate.
 
+**2026-07-10, still later the same night: the fix above had its own bug, and it fired for
+real.** `PREV_COMMIT` (the 3-way merge base) was captured right after clone/before checkout
+— but a fresh clone's HEAD lands on the DEFAULT branch (`main`), not necessarily the branch
+being pushed to (`wip`). The first time `share_progress.command` ran against a brand new
+`~/followville_repo` clone, it captured `PREV_COMMIT` from `main` (which had all of that
+night's fixes) but then compared it against `wip`'s much older tip — concluded "upstream
+changed, you didn't" for `grow.sh`, `deploy_website.bat`/`.command`, `.gitignore`, `CLAUDE.md`,
+and `TEAM_LOG.md`, and silently overwrote all of them with old `wip`-branch content. Exactly
+the class of bug this whole fix was built to prevent, just relocated. Fixed in `sync_lib.sh`'s
+callers and `sync_push.ps1`: `PREV_COMMIT` now comes from `git rev-parse "$BRANCH"` (the
+clone's own local ref for the branch actually being worked on), captured after fetch but
+before the reset — empty (safe fallback to plain copy) on a branch this clone has never
+checked out before. Restored the reverted files from `main` (which was never touched, since
+the bug only affected the separate clone + this iCloud folder's copies). Also gave
+`deploy_website.command` the same explicit `git checkout main` safety net
+`deploy_website.bat` already had, since it never got that fix on the Mac side.
+
 None of these scripts need you to know or type any git commands — that's the whole point.
 They all use a plain, non-iCloud-synced local clone (`~/followville_repo` on Mac,
 `C:\Users\cadet\followville_repo` on Windows — the same one `deploy_website.*` already
