@@ -15,6 +15,18 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — fixed a typo'd Supabase account handle at Zach's request:
+  instagram_handle was "stellarkehler", corrected to "stellar.kehler". The normal signup
+  RPC refuses handle changes once an account is verified, so this went straight to the
+  profiles table with the service-role key (fix_stellarkehler_handle.command, kept for
+  reference). Only instagram_handle changed — verification_status, is_admin, and the
+  claimed house are untouched. Confirmed live via public_claims (what the floating name
+  tag actually reads). Worth flagging: this account's claimed house (house_id 2) is the
+  Burj Khalifa founder house, not an actual "skyscraper" building — the skyscraper
+  milestone building doesn't exist in the town yet (unlocks at 2,000 population; we're at
+  134). If a real skyscraper is wanted sooner, that'd need a deliberate special-placement
+  decision from Cade, not something to do quietly as a side effect of a handle fix.
+
 2026-07-10 — Zach (via Claude) — made the day-9 layout condense automatic going forward,
   per Zach's request ("make the condensed automatic unless otherwise specified"). Until
   today, dense block-filling only happened via the one-off condense_day9.py script (see
