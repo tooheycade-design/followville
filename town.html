@@ -1444,6 +1444,7 @@ let worldBuildings = [];        // from world_state.json (geometry truth)
 let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
+let unclaiming = false, confirmingUnclaim = false;
 const nameTags = new THREE.Group();
 scene.add(nameTags);
 
@@ -1501,7 +1502,7 @@ function showToast(msg, ms = 4200){
 }
 function modalOpen(){ return authModal.style.display === "flex"; }
 function openModal(){ authModal.style.display = "flex"; renderAuthCard(); }
-function closeModal(){ authModal.style.display = "none"; }
+function closeModal(){ authModal.style.display = "none"; confirmingUnclaim = false; }
 authModal.addEventListener("mousedown", e => { if (e.target === authModal) closeModal(); });
 
 /* ── data refresh ── */
@@ -1608,6 +1609,24 @@ async function attemptClaim(){
   }
 }
 claimPrompt.addEventListener("click", attemptClaim);
+
+/* ── give up your house (one house per account still enforced server-side —
+   unclaiming just frees the row so you, or someone else, can claim again) ── */
+async function attemptUnclaim(){
+  if (!sb || !session || !myClaim || unclaiming) return;
+  unclaiming = true;
+  const { error } = await sb.rpc("unclaim_house");
+  unclaiming = false;
+  confirmingUnclaim = false;
+  if (error){
+    showToast("Couldn't unclaim: " + (error.message || "try again"));
+  } else {
+    await Promise.all([refreshClaims(), refreshMyStatus()]);
+    updateAccountUI();
+    showToast("You've given up your house — walk up to any open one to claim a new one.");
+  }
+  if (modalOpen()) renderAuthCard();
+}
 
 /* ── spawn at your own house ── */
 function goHome(){
@@ -1725,12 +1744,27 @@ function renderAuthCard(){
     wireSignout();
     return;
   }
+  if (confirmingUnclaim){
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+      <p class="muted">Give up your house? It goes back up for anyone to claim, including
+      you — but if you want it back, someone else might get there first.</p>
+      <button class="primary" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
+        ${unclaiming ? "unclaiming…" : "yes, unclaim my house"}</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doCancelUnclaim">never mind</button>`;
+    document.getElementById("doConfirmUnclaim").onclick = attemptUnclaim;
+    document.getElementById("doCancelUnclaim").onclick = () => { confirmingUnclaim = false; renderAuthCard(); };
+    return;
+  }
   authCard.innerHTML = `
     <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
     <button class="primary" id="doGoHome">go to my home</button>
+    <button class="linkish" id="doUnclaim">unclaim this house</button>
     <div class="err" id="authErr"></div>
     <button class="linkish" id="doSignout">log out</button>`;
   document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
+  document.getElementById("doUnclaim").onclick = () => { confirmingUnclaim = true; renderAuthCard(); };
   wireSignout();
 }
 

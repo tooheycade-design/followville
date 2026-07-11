@@ -22,6 +22,27 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Added the ability for a
+  follower to give up (unclaim) their house, at Cade's request ("people need the
+  option to unclaim, one house per user still"). New `unclaim_house()` Postgres
+  RPC in supabase_schema.sql -- deletes the caller's own `claims` row, which
+  frees the house for anyone (including them) to claim again; the existing
+  `claims.user_id` UNIQUE constraint that already enforces one-house-per-account
+  keeps enforcing it afterward, so no new concurrency logic was needed, this is
+  just claim_house() in reverse. town.html: the account panel (click your
+  `@handle ✓` button once you have a house) now shows an "unclaim this house"
+  option behind a one-step "are you sure" confirm card (new `attemptUnclaim()`,
+  `confirmingUnclaim` state, wired into the existing `renderAuthCard()` flow --
+  no new top-level UI, reuses the existing modal). Also documented in
+  CLAIMING_SETUP.md (a migration note: existing installs just need to re-run
+  the whole `supabase_schema.sql` in the Supabase SQL Editor once, safe since
+  everything in it is `IF NOT EXISTS`/`CREATE OR REPLACE`). **Cade: one thing
+  still needed from you** -- this session can't reach the Supabase SQL Editor
+  itself, so `unclaim_house()` exists in the pushed schema file but hasn't
+  actually been created in the live database yet. Paste all of
+  `supabase_schema.sql` into the SQL Editor and hit Run (same one-time step as
+  the original setup, safe to re-run) before the button will work live.
+
 2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Confirmed day 9 (pop 134, 136
   buildings) live on followville-kappa.vercel.app, matching world_state.json exactly. At
   Cade's request, diagnosed the recurring "AI builds on a stale/backup copy" problem and

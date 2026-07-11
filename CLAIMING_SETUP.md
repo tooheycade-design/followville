@@ -14,6 +14,18 @@ one house per account and one account per house (`claims.house_id` primary key +
 function — first commit wins, the loser gets a clean "house_taken" error, and
 Supabase Realtime pushes the change to every open browser instantly.
 
+**Unclaiming (added 2026-07-10):** followers can also give up their house — the
+`unclaim_house()` Postgres function deletes their `claims` row, which frees the
+house for anyone (including them) to claim again. The rule above still holds:
+you can never have more than one house at a time, unclaiming is just the
+reverse of claiming, enforced by the exact same constraint.
+
+**Migration note for this iteration:** `supabase_schema.sql` is safe to
+re-run in full (everything is `IF NOT EXISTS`/`CREATE OR REPLACE`) — if the
+live database doesn't have `unclaim_house` yet, paste the whole file into the
+SQL Editor and run it again, same as step 2 below. No data is touched; it only
+adds/replaces functions and grants.
+
 ---
 
 ## 1. One-time setup (~15 minutes, Cade)
@@ -156,3 +168,7 @@ Claim UX in town.html: sign up (email+password+handle) → DM the code → admin
 verifies → "claim a home" button → walk up to an open house → press E (or tap)
 → `claim_house` RPC → name tag appears for everyone in real time. `Go to my
 home` spawns you at your own house. Not signed in = exact old free-roam.
+Once you have a house, the account panel (click your `@handle ✓` button) also
+shows an `unclaim this house` option, behind a one-step "are you sure" confirm
+card — `unclaim_house` RPC, frees the house, no re-login needed to claim a
+different one afterward.

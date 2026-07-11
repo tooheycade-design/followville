@@ -162,6 +162,26 @@ exception
     end if;
 end $$;
 
+-- Give up your own house (added 2026-07-10). Frees the row for anyone (including
+-- the caller) to claim again; the same claims.user_id UNIQUE constraint that
+-- enforces one-house-per-account keeps enforcing it afterward -- this is just
+-- the reverse of claim_house(), nothing new to enforce.
+create or replace function public.unclaim_house()
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'not_authenticated';
+  end if;
+  delete from public.claims where user_id = v_uid;
+  if not found then
+    raise exception 'no_claim';
+  end if;
+end $$;
+
 -- Own-status readback for the UI (avoids exposing profiles more broadly).
 create or replace function public.my_status()
 returns json
@@ -175,8 +195,9 @@ $$;
 
 grant execute on function public.setup_profile(text)  to authenticated;
 grant execute on function public.claim_house(bigint)  to authenticated;
+grant execute on function public.unclaim_house()      to authenticated;
 grant execute on function public.my_status()          to authenticated;
-revoke execute on function public.setup_profile(text), public.claim_house(bigint), public.my_status() from anon;
+revoke execute on function public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status() from anon;
 
 -- ───────────────────────────── REALTIME ─────────────────────────────
 -- Broadcast claim inserts/deletes to every connected town.html.
@@ -352,7 +373,7 @@ revoke execute on function
   public.admin_revoke_claim(bigint), public.caller_is_admin(),
   public.admin_list_pending(), public.admin_list_claims(),
   public.admin_list_verified_unclaimed(),
-  public.setup_profile(text), public.claim_house(bigint), public.my_status()
+  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status()
 from public, anon, authenticated;
 
 grant execute on function
@@ -360,7 +381,7 @@ grant execute on function
   public.admin_revoke_claim(bigint), public.caller_is_admin(),
   public.admin_list_pending(), public.admin_list_claims(),
   public.admin_list_verified_unclaimed(),
-  public.setup_profile(text), public.claim_house(bigint), public.my_status()
+  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status()
 to authenticated, service_role;
 
 -- ───────────────────────────── NOTES ─────────────────────────────
