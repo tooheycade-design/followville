@@ -15,6 +15,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Cade (via Codex) — made a standalone three-second transparent 70-to-134 follower counter animation for the next reel.
+
 2026-07-10 — Zach (via Claude) — grew the town to day 9, population 134 (+64 houses), per
   Cade's go-ahead to build from the day-8/pop-70 state rather than a broken concurrent
   day-9 attempt on Cade's end (he'd added a road that looked terrible and told Zach to
