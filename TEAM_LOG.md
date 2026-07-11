@@ -15,6 +15,32 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-10 — Zach (via Claude) — finished and shipped day 9 (population 134, 136
+  buildings), picking up from the in-progress entry below. Three real code fixes, all
+  permanent (full writeup in CLAUDE.md's Day 9 canon entry and the "House-facing rules"
+  section — read those before touching growth/camera code again):
+  (1) fixed a real bug where every block's dead-center lot (no road frontage on any side)
+  was still being handed to regular houses, stranding them — Cade's screenshots of a
+  "house in the middle of the square" were this bug, not a one-off. find_free_lots() now
+  skips that lot for good.
+  (2) retuned the render cameras (default/overhead orbit, the --hero close-up, and --cam
+  street) for a more cinematic look per Zach's feedback — these are the new defaults, no
+  need to touch them again unless something looks off compared to today's videos.
+  (3) condensed day 9's 64 new houses only (never touching founders, claimed houses, or
+  anything from an earlier day — Zach's explicit call) into the sparse/half-empty blocks
+  left over from earlier growth days, via a one-off script (condense_day9.py, kept in the
+  folder for reference). This was a ONE-TIME cleanup, not automatic — day 10 will scatter
+  again over time unless find_free_lots() itself gets the same block-filling logic later.
+  Rendered and Zach-approved three final videos with fireworks left out on purpose:
+  day_009_hero_fixed, day_009_street_walkin, day_009_overhead_condensed (this last one
+  uses +0 instead of replay so the houses-rising animation doesn't play — Zach's cutting
+  it into a longer video). Deployed live via deploy_website.command (commit c2ab97e on
+  main) and confirmed the live site's world_state.json shows day 9/pop 134/136 buildings.
+  **Heads up for Cade before his next growth day:** the town looking dense right now is
+  from the one-time condense script, not a permanent behavior — if blocks start looking
+  sparse again after a few more growth days, that's expected until someone gives
+  find_free_lots() the same block-fill-first ordering permanently.
+
 2026-07-10 — Cade (via Codex) — made a standalone transparent 70-to-134 follower counter animation and matching 134 hold image for the next reel.
 
 2026-07-10 — Zach (via Claude) — grew the town to day 9, population 134 (+64 houses), per

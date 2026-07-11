@@ -8,6 +8,55 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 9, population 134, 136 buildings (grown 2026-07-10 via Zach's Mac Claude: +64 houses,
+  regular grid only -- no new custom house type or feature flag this time). LIVE on the
+  website as of 2026-07-10 (deploy_website.command, commit `c2ab97e` on `main`, confirmed
+  by reading world_state.json straight off followville-kappa.vercel.app). Three things
+  changed in the CODE itself (permanent -- apply to every future growth day, not just
+  this one):
+  * **Landlocked-house bug fixed** in `find_free_lots()`: every 3x3 block's dead-center
+    lot (`ix==1, iy==1` within the block) has zero road frontage on any side, but the
+    lot-picker was still handing it to regular houses, stranding them with no street
+    access -- Cade flagged this with screenshots ("house in the middle of the square, you
+    can't get access to it from the street"). Fixed by skipping that lot in the `size==1`
+    branch. One PRE-EXISTING landlocked building was deliberately left alone (the day-7
+    pond, built before this fix existed) -- don't "fix" it later without checking with
+    Cade first, since moving it could disturb its neighboring day-7 houses too. Also:
+    never hand-place a building on a dead-center lot via `--special TYPE@gx,gy` either.
+  * **Camera framing retuned** in `build_stage()` -- the default/overhead orbit distance
+    and angle, the separate `--hero` close-up formula (`hdist`), and the `--cam street`
+    window (now a FIXED founder-centered span instead of the whole grid width, so it
+    doesn't slow down as the town keeps growing) were all tightened for a more cinematic
+    look, at Zach's request ("make sure you see everything... make it look cinematic",
+    "don't go absurdly slow, make sure you see cool stuff"). These are the new defaults
+    going forward -- nothing else needs to change them again. If you DO retune any of
+    these, compare a frame against `day_009_hero_fixed`/`day_009_overhead_condensed` on
+    the same machine first, not `day_007`/`day_008` (those used the old looser numbers).
+  * **Layout condensed -- ONE-TIME, NOT a pipeline change:** by day 9 several older blocks
+    had gone sparse (one house plus some trees, lots of empty grass) because
+    `find_free_lots()`'s lot order is pure radial distance from the city center, which
+    scatters rather than fills block-by-block. Zach asked for this cleaned up, but ONLY
+    for that day's 64 new houses -- no founder home, no pre-day-9 house, no pond/park/
+    ringhouse was allowed to move (his explicit call: "if you own that house, it doesn't
+    change"). Done via a standalone one-off script, `condense_day9.py` (kept in this
+    folder for reference; NOT part of `grow.sh` or run automatically), which re-lays-out
+    just that day's batch in block-filling spiral order into free lots, skipping the
+    dead-center lot and every occupied/protected footprint. **This does NOT self-repeat**
+    -- day 10's regular growth goes back to `find_free_lots()`'s plain radial order,
+    which CAN scatter again over many days. If sparse blocks reappear and it matters,
+    the real fix is changing `find_free_lots()`'s own ordering to fill blocks solid
+    (mirror `sorted_block_fill_order()` inside `condense_day9.py`) rather than re-running
+    a one-off script each time.
+  * Fireworks deliberately left OUT of the final day-9 videos (Zach: "you still have
+    fireworks going off..."); `--celebrate` itself is unchanged and still works if a
+    future day wants fireworks again.
+  * Three final videos rendered and approved by Zach, each with its own `--tag` so they
+    sit on the Desktop alongside earlier days' videos instead of overwriting them:
+    `day_009_hero_fixed` (angled establishing shot), `day_009_street_walkin` (first-person
+    walk down the founder-district street, `--cam street`), `day_009_overhead_condensed`
+    (calm overhead showcase of the finished, condensed town -- rendered with `+0`, not
+    `replay`, specifically so the houses-rising animation does NOT play: Zach is cutting
+    this into a longer video and didn't want a "growth reveal" moment in this shot).
 - Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Claude: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
@@ -79,6 +128,10 @@ Videos auto-copy to Desktop. Multi-shot days: hero shot (replay --hero --render 
 ## House-facing rules
 - Houses auto-face their nearest road. Override: set "face": "s|e|n|w" on the building
   in world_state.json (camera looks from the SOUTH-EAST: s and e faces are visible).
+- Every block's dead-center lot (the middle of its 3x3 grid) has zero road frontage and
+  is never buildable -- `find_free_lots()` skips it as of 2026-07-10 (see Day 9 canon
+  above for the story). Don't hand-place a building there via `--special TYPE@gx,gy`
+  either -- it'll be just as landlocked as the ones this fix removed.
 
 ## Adding custom house models (Fable-level work)
 Edit neighborhood_blender.py: write build_X_house() using add_box/add_ngon_cone/
@@ -528,6 +581,21 @@ check_town_glb.py (permanent, keep, cross-platform — no Blender needed, just
 exports and world_state.json/town.glb mismatches). Runs as part of export_web.py automatically,
 and again independently via the `.github/workflows/check_town_glb.yml` GitHub Action on every
 push to main. See "Where world_state.json + town.glb actually live now" above.
+
+condense_day9.py (2026-07-10, kept for reference -- NOT part of the regular pipeline, not
+auto-run by grow.sh): the one-off layout fix that repositioned day-9's 64 new houses into
+a denser block-filling order without touching any older or founder building. See Day 9
+canon above for why it exists. Worth reading again if a future "town looks sparse"
+complaint comes up -- it's the template for what a permanent fix inside `find_free_lots()`
+would need to do (its `sorted_block_fill_order()` helper is the block-filling logic that
+`find_free_lots()` itself still doesn't have).
+
+Day-9 one-off render scripts (safe to ignore/delete, same category as the other one-off
+.command scripts below -- all superseded, kept only as a paper trail): render_day9_cinecheck.command,
+redo_day9_fixed.command, render_day9_final.command, render_day9_street.command,
+render_day9_overhead_condensed.command, plus their matching *_log.txt outputs. The
+world_state.json/town.glb/videos they produced are already live/on the Desktop; nothing
+needs to be re-run.
 
 Windows-only scratch files (safe to ignore, not tracked by git, not part of the deploy
 whitelist — leftover from building/debugging the above on 2026-07-07): clone_repo.bat,
