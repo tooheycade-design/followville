@@ -8,6 +8,11 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
+  +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
+  curving entrance road and first cul-de-sac appeared only as required by the
+  new houses. Growth/loading and finished overhead videos were rendered and
+  approved; town.glb validated clean; all 21 houses synced to Supabase.
 - 2026-07-11 structural reserve (Cade via Codex): `neighborhood_plan.py`
   deterministically plans the next 366 ordinary houses (population 135-500)
   across six curved-road districts with 18 cul-de-sacs. Undeveloped hills,
