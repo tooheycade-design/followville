@@ -13,6 +13,9 @@ you go looking for it here.**
   street extended only as far as today's houses. Growth/loading and finished
   overhead videos rendered and passed visual review; town.glb validated clean;
   all 14 new houses synced to Supabase.
+  Post-render correction: cul-de-sac bulbs now wait until their connecting road
+  is complete, and pond/bulb surfaces use shallow solid geometry to prevent
+  depth flicker. Corrected growth and overhead videos were rerendered and reviewed.
 - Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
   +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
   curving entrance road and first cul-de-sac appeared only as required by the

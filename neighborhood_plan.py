@@ -189,7 +189,9 @@ def build_plan():
             local = min(street["count"] - 1, max(0, int((fraction - .08) / .84 * street["count"])))
             roads.append(dict(a=a, b=b, reveal_at=first_sequence + local,
                               district=street["district"], street=street["name"]))
-        turnarounds.append(dict(center=path[-1], reveal_at=max(first_sequence, last_sequence - 3),
+        # The bulb must not appear until the final road segment reaches it.
+        # Revealing it early creates a detached gray disc in growth videos.
+        turnarounds.append(dict(center=path[-1], reveal_at=last_sequence,
                                 district=street["district"], street=street["name"]))
     assert len(houses) == HOUSE_CAPACITY
     return dict(houses=houses, roads=roads, turnarounds=turnarounds,

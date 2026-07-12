@@ -1196,6 +1196,14 @@ def _add_ellipse_disc(col, name, x, y, sx, sy, z, material, sides=24):
     return obj
 
 
+def _add_ellipse_pad(col, name, x, y, sx, sy, z, height, material, sides=32):
+    """A shallow elliptical solid. Unlike a single face, this cannot flicker
+    against the ground/road when the camera moves at a shallow angle."""
+    obj = add_ngon_cone(col, name, 1.0, 1.0, height, sides, x, y, z, material)
+    obj.scale = (sx, sy, 1.0)
+    return obj
+
+
 def _add_mound(col, name, x, y, sx, sy, height, material, sides=20):
     """Broad low-poly mound with a rounded crown, not a sharp cone."""
     verts = []
@@ -1234,8 +1242,8 @@ def build_suburban_terrain(world_col, m):
             _add_mound(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
                        feature["sx"], feature["sy"], feature["height"], hill_mat)
         elif feature["kind"] == "pond":
-            _add_ellipse_disc(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
-                              feature["sx"], feature["sy"], feature.get("z", .02), m["water"])
+            _add_ellipse_pad(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
+                             feature["sx"], feature["sy"], .015, .065, m["water"])
         elif feature["kind"] == "meadow":
             _add_ellipse_disc(world_col, "terrain_" + feature["name"], feature["x"], feature["y"],
                               feature["sx"], feature["sy"], .025, meadow_mat)
@@ -1263,8 +1271,10 @@ def build_suburban_roads(world_col, buildings, m):
             _add_road_segment(world_col, segment["a"], segment["b"], m["road"])
     for bulb in SUBURBAN_PLAN["turnarounds"]:
         if bulb["reveal_at"] <= active:
-            _add_ellipse_disc(world_col, "culdesac", bulb["center"][0], bulb["center"][1],
-                              8.2, 8.2, .015, m["road"], 24)
+            # Road boxes top out at z=.19. Put the solid turnaround just above
+            # that surface so overlapping faces never depth-fight.
+            _add_ellipse_pad(world_col, "culdesac", bulb["center"][0], bulb["center"][1],
+                             8.2, 8.2, .012, .186, m["road"], 32)
 
 def animate_ring_traffic(world_col, buildings, frame_end):
     """A couple of cars slowly loop each park district's ring roads."""
