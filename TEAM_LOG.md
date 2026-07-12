@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-12 - Cade (via Codex) - [WORLD] Grew Followville from 155 to 169 followers with 14 new Creekside Bend houses and only their required winding-road extension, rendered and reviewed a house-loading video plus finished overhead video, validated the web model, and synced every new home to claiming.
+
 2026-07-11 - Cade (via Codex) - [WORLD] Grew Followville from 134 to 155 followers with 21 new Creekside Bend houses and only their required winding road/cul-de-sac pieces, rendered a house-loading video plus a finished overhead video, validated the web model, and synced all new homes to claiming.
 
 2026-07-11 - Cade (via Codex) - [WORLD] Planned and built the hidden next-366-house suburban reserve: six terrain-shaped neighborhoods, winding staged roads, and 18 cul-de-sacs; terrain is visible now, while each future road segment and ordinary house appears only when its growth address is reached, without moving anything already built.
