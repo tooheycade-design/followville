@@ -761,12 +761,21 @@ def build_car(col, seed):
     rng = random.Random(seed)
     body = mat("NB_car%d" % seed, ROOFS[rng.randrange(len(ROOFS))], 0.4)
     m = std_mats()
+    tire = mat("NB_car_tire", (0.055, 0.065, 0.075), 0.38)
+    hub = mat("NB_car_hub", (0.58, 0.62, 0.66), 0.62)
     add_box(col, "body", 3.6, 1.7, 0.85, 0, 0, 0.35, body)
     add_box(col, "cab", 1.9, 1.5, 0.7, -0.2, 0, 1.2, m["windark"])
     for dx in (-1.15, 1.15):
         for dy in (-0.85, 0.85):
-            # upright stubby cylinders read as wheels at this scale
-            add_ngon_cone(col, "wheel", 0.36, 0.36, 0.3, 10, dx, dy, 0.0, m["metal"])
+            # Cylinders are authored along local Z. Rotate them onto local Y so
+            # the tire faces sit on the car's sides and the wheels stand upright
+            # instead of reading as flat pucks lying on the road.
+            wheel = add_ngon_cone(col, "wheel", .39, .39, .28, 12,
+                                  dx, dy + (.14 if dy < 0 else -.14), .39, tire)
+            wheel.rotation_euler.x = math.pi / 2
+            cap = add_ngon_cone(col, "wheel_hub", .19, .19, .305, 12,
+                                dx, dy + (.152 if dy < 0 else -.152), .39, hub)
+            cap.rotation_euler.x = math.pi / 2
 
 
 def add_ring(col, name, r_in, r_out, segs, x, y, z, material):
@@ -876,29 +885,91 @@ def build_elementary_school(col, seed):
     for x in (-10.5, -8.7, -6.9, 6.9, 8.7, 10.5):
         add_ngon_cone(col, "school_shrub", .62, .30, .85, 10, x, -5.8, .25, m["lawn"])
 
-    # Rear playground: safety surfacing, roofed play tower, slide and swings.
-    add_box(col, "school_play_mat", 15.0, 6.8, .16, 3.3, 10.0, .24, rubber)
-    for x in (-1.0, 1.0):
-        for y in (8.7, 11.2):
-            add_box(col, "school_play_post", .24, .24, 3.2, x, y, .40, red)
-    add_box(col, "school_play_deck", 3.0, 3.3, .28, 0, 10.0, 2.45, cream)
-    add_ngon_cone(col, "school_play_roof", 2.6, 0, 1.7, 4, 0, 10.0, 3.55, blue,
-                  rot=math.pi / 4)
-    slide = add_box(col, "school_slide", 1.15, 4.8, .20, 0, 13.0, 1.35, yellow)
-    slide.rotation_euler.x = math.radians(22)
-    for x in (5.0, 10.0):
-        for y in (8.0, 12.0):
-            pole = add_box(col, "school_swing_leg", .22, .22, 3.8, x, y, .35, navy)
-            pole.rotation_euler.y = math.radians(8 if x < 7 else -8)
-    add_box(col, "school_swing_beam", 5.5, .28, .28, 7.5, 10.0, 4.0, navy)
-    for x in (6.4, 8.6):
-        for yy in (9.72, 10.28):
-            add_box(col, "school_swing_chain", .07, .07, 2.25, x, yy, 1.75, m["metal"])
-        add_box(col, "school_swing_seat", 1.0, .55, .14, x, 10.0, 1.68, red)
+    # Rear playground: a broad, fully fenced safety surface with a coherent
+    # play structure, a slide that actually joins its deck, swings, climbing
+    # bars and painted ground games.  Keep everything beyond the classroom
+    # footprint (which ends at y=7.75) so no equipment clips through the school.
+    add_box(col, "school_play_border", 25.2, 6.0, .13, 0, 10.75, .23, cream)
+    add_box(col, "school_play_mat", 24.4, 5.35, .16, 0, 10.75, .36, rubber)
+
+    # Two connected roofed towers make the equipment read as a real playset.
+    for tx in (-7.3, -3.7):
+        for px in (tx - 1.0, tx + 1.0):
+            for py in (9.6, 11.5):
+                add_box(col, "school_play_post", .24, .24, 3.25,
+                        px, py, .52, red)
+        add_box(col, "school_play_deck", 2.45, 2.35, .28,
+                tx, 10.55, 2.45, cream)
+        add_ngon_cone(col, "school_play_roof", 2.15, 0, 1.55, 4,
+                      tx, 10.55, 3.72, blue, rot=math.pi / 4)
+    add_box(col, "school_play_bridge", 2.0, 1.05, .22,
+            -5.5, 10.55, 2.48, yellow)
+    for by in (10.06, 11.04):
+        add_box(col, "school_bridge_rail", 2.0, .10, .75,
+                -5.5, by, 2.68, cream)
+
+    # Purpose-built inclined slide mesh: top meets the left tower deck at
+    # z=2.55 and the run-out finishes just above the safety surface.
+    slide_mesh = bpy.data.meshes.new("school_slide_mesh")
+    slide_mesh.from_pydata([
+        (-8.05, 11.55, 2.55), (-6.55, 11.55, 2.55),
+        (-8.05, 13.15, .62), (-6.55, 13.15, .62),
+        (-8.05, 11.55, 2.35), (-6.55, 11.55, 2.35),
+        (-8.05, 13.15, .48), (-6.55, 13.15, .48),
+    ], [], [(0, 2, 3, 1), (4, 5, 7, 6), (0, 4, 6, 2),
+            (1, 3, 7, 5), (0, 1, 5, 4), (2, 6, 7, 3)])
+    slide_mesh.materials.append(yellow); slide_mesh.update()
+    col.objects.link(bpy.data.objects.new("school_slide", slide_mesh))
+    for sx in (-8.12, -6.48):
+        rail = add_box(col, "school_slide_rail", .10, 2.35, .18,
+                       sx, 12.28, 1.48, cream)
+        rail.rotation_euler.x = math.radians(50)
+
+    # Stable swing set with visible top beam, chains and seats.
+    for x in (1.2, 8.8):
+        for y in (9.1, 12.35):
+            add_box(col, "school_swing_leg", .25, .25, 3.65,
+                    x, y, .52, navy)
+    add_box(col, "school_swing_beam", 7.85, .30, .30,
+            5.0, 10.72, 4.05, navy)
+    for x in (3.25, 6.75):
+        for yy in (10.43, 11.01):
+            add_box(col, "school_swing_chain", .065, .065, 2.32,
+                    x, yy, 1.83, m["metal"])
+        add_box(col, "school_swing_seat", 1.05, .68, .16,
+                x, 10.72, 1.72, red)
+
+    # Climbing dome, stepping pods and hopscotch fill the yard without clutter.
+    for i in range(8):
+        a = i / 8 * math.tau
+        add_box(col, "school_climber_bar", .12, .12, 1.65,
+                11.0 + math.cos(a) * 1.25, 10.55 + math.sin(a) * 1.25,
+                .52, yellow if i % 2 else red)
+    add_ngon_cone(col, "school_climber_top", .42, .30, .45, 10,
+                  11.0, 10.55, 2.10, blue)
+    for i, (px, py) in enumerate(((-1.2, 9.1), (-.2, 9.7), (.8, 9.1))):
+        add_ngon_cone(col, "school_step_pod", .34, .30, .26 + i * .12,
+                      10, px, py, .52, (yellow, red, cream)[i])
+    for i in range(5):
+        add_box(col, "school_hopscotch", .62, .62, .025,
+                -1.8 + (i % 2) * .68, 11.1 + i * .52, .54,
+                (cream, yellow, red)[i % 3])
+
+    # Continuous rear and side fencing, with a clear gate at the left corner.
     for x in range(-13, 14, 2):
-        add_box(col, "school_fence_post", .10, .10, 1.35, x, 13.5, .28, m["metal"])
-    add_box(col, "school_fence_rail", 26.0, .08, .10, 0, 13.5, .75, m["metal"])
-    add_box(col, "school_fence_rail", 26.0, .08, .10, 0, 13.5, 1.42, m["metal"])
+        add_box(col, "school_fence_post", .11, .11, 1.45,
+                x, 13.78, .38, m["metal"])
+    for y in (8.0, 10.0, 12.0):
+        for x in (-12.85, 12.85):
+            add_box(col, "school_fence_post", .11, .11, 1.45,
+                    x, y, .38, m["metal"])
+    for z in (.88, 1.55):
+        add_box(col, "school_fence_rail", 25.8, .09, .10,
+                0, 13.78, z, m["metal"])
+        add_box(col, "school_fence_side", .09, 5.85, .10,
+                -12.85, 10.85, z, m["metal"])
+        add_box(col, "school_fence_side", .09, 5.85, .10,
+                12.85, 10.85, z, m["metal"])
 
     # Finished low-poly school bus at the curb: windows, wheels and stop arm.
     add_box(col, "school_bus_body", 6.8, 2.2, 2.0, 6.8, -11.2, .52, yellow)
