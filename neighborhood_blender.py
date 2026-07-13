@@ -74,7 +74,8 @@ def _cli():
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
             "--mushrooms": "mushrooms"}
-    skeys = {"--time": "time", "--season": "season", "--cam": "cam", "--tag": "tag"}
+    skeys = {"--time": "time", "--season": "season", "--cam": "cam", "--tag": "tag",
+             "--focus-type": "focus_type"}
     out, i = {}, 0
     while i < len(args):
         a = args[i]
@@ -787,6 +788,131 @@ def add_ring(col, name, r_in, r_out, segs, x, y, z, material):
     col.objects.link(obj)
     return obj
 
+def build_elementary_school(col, seed):
+    """Detailed full-block Followville Elementary campus, front facing -Y."""
+    rng = random.Random(seed)
+    m = std_mats()
+    brick = mat("NB_school_brick", (0.68, 0.31, 0.22), .92)
+    brick2 = mat("NB_school_brick_accent", (0.78, 0.43, 0.27), .9)
+    cream = mat("NB_school_cream", (0.94, 0.88, 0.72), .82)
+    navy = mat("NB_school_roof", (0.20, 0.31, 0.42), .78)
+    blue = mat("NB_school_blue", (0.26, 0.52, 0.72), .55)
+    yellow = mat("NB_school_bus_yellow", (0.95, 0.67, 0.10), .7)
+    rubber = mat("NB_school_playground", (0.31, 0.55, 0.63), .95)
+    red = mat("NB_school_play_red", (0.83, 0.25, 0.23), .78)
+    white = mat("NB_school_white", (0.96, 0.95, 0.90), .75)
+    dark = mat("NB_school_dark", (0.12, 0.15, 0.18), .55)
+
+    # Campus ground, front drop-off loop, sidewalks and crosswalk.
+    add_box(col, "school_lawn", 28.4, 28.4, .22, 0, 0, 0, m["lawn"])
+    add_box(col, "school_bus_loop", 25.5, 4.0, .16, 0, -11.3, .22, m["road"])
+    add_box(col, "school_front_walk", 17.0, 3.2, .18, 0, -7.7, .23, cream)
+    add_box(col, "school_entry_walk", 4.0, 3.5, .19, 0, -8.4, .24, cream)
+    for x in (-1.5, -.75, 0, .75, 1.5):
+        add_box(col, "school_crosswalk", .42, 2.9, .025, x, -11.3, .39, white)
+
+    # Symmetrical classroom wings and a taller civic-looking center hall.
+    for x in (-7.2, 7.2):
+        add_box(col, "school_classroom_wing", 8.8, 12.5, 5.7, x, 1.1, .25, brick)
+        add_prism_roof(col, "school_wing_roof", 9.6, 13.3, 2.2, x, 1.1, 5.95, navy)
+        add_box(col, "school_wing_belt", 9.0, 12.7, .28, x, 1.1, 3.0, cream)
+    add_box(col, "school_center_hall", 6.8, 13.8, 7.3, 0, .45, .25, brick2)
+    add_prism_roof(col, "school_center_roof", 7.6, 14.6, 2.7, 0, .45, 7.55, navy)
+    add_box(col, "school_center_cornice", 7.15, 14.1, .35, 0, .45, 6.85, cream)
+
+    # Repeated classroom windows with deep frames, mullions and sills.
+    for x in (-10.0, -7.2, -4.4, 4.4, 7.2, 10.0):
+        add_box(col, "school_window_frame", 2.05, .28, 1.85, x, -5.22, 1.45, cream)
+        add_box(col, "school_window", 1.68, .18, 1.48, x, -5.39, 1.63, m["window"])
+        add_box(col, "school_window_mullion", .10, .12, 1.48, x, -5.51, 1.63, navy)
+        add_box(col, "school_window_sill", 2.15, .42, .18, x, -5.34, 1.35, cream)
+    for side in (-1, 1):
+        sx = side * 11.64
+        for y in (-1.8, 1.0, 3.8, 6.1):
+            add_box(col, "school_side_frame", .28, 2.0, 1.8, sx, y, 1.5, cream)
+            add_box(col, "school_side_window", .18, 1.62, 1.44,
+                    sx + side * .16, y, 1.68, m["window"])
+
+    # Glass entrance pavilion, double doors, canopy, columns and broad steps.
+    add_box(col, "school_entry", 5.5, 2.5, 4.35, 0, -7.55, .28, cream)
+    add_box(col, "school_entry_glass", 4.75, .18, 3.15, 0, -8.88, 1.05, m["windark"])
+    add_box(col, "school_door_left", 1.45, .16, 2.65, -.82, -9.0, .42, blue)
+    add_box(col, "school_door_right", 1.45, .16, 2.65, .82, -9.0, .42, blue)
+    add_box(col, "school_door_split", .13, .18, 2.75, 0, -9.10, .38, cream)
+    for x in (-1.58, 1.58):
+        add_ngon_cone(col, "school_canopy_column", .16, .16, 3.25, 10,
+                      x, -9.25, .32, cream)
+    add_box(col, "school_canopy", 6.4, 2.7, .32, 0, -8.9, 3.55, navy)
+    for y, width in ((-9.55, 6.2), (-9.9, 6.8), (-10.2, 7.4)):
+        add_box(col, "school_step", width, .48, .16, 0, y, .28, cream)
+
+    # Round clock/emblem above the entrance, with visible hands.
+    clock = add_ngon_cone(col, "school_clock", 1.0, 1.0, .18, 24,
+                          0, -6.58, 5.35, cream)
+    clock.rotation_euler.x = math.pi / 2
+    add_box(col, "school_clock_hand_v", .10, .12, .65, 0, -6.79, 5.55, navy)
+    hand = add_box(col, "school_clock_hand_h", .55, .12, .10, .18, -6.80, 5.67, navy)
+    hand.rotation_euler.z = math.radians(18)
+
+    # Monument sign, flag court, benches, planters and composed landscaping.
+    add_box(col, "school_sign_base", 5.2, 1.15, .45, -7.4, -8.15, .30, cream)
+    add_box(col, "school_sign_face", 4.55, .65, 1.55, -7.4, -8.15, .72, brick2)
+    for i, color in enumerate((blue, yellow, red, cream)):
+        add_box(col, "school_sign_mark", .55, .14, .55,
+                -8.45 + i * .7, -8.55, 1.2 + (i % 2) * .18, color)
+    add_ngon_cone(col, "school_flagpole", .10, .07, 10.5, 10,
+                  8.7, -8.3, .30, m["metal"])
+    flag_mesh = bpy.data.meshes.new("school_flag_mesh")
+    flag_mesh.from_pydata([(8.78, -8.30, 9.0), (12.0, -8.30, 8.35),
+                           (8.78, -8.30, 7.75)], [], [(0, 1, 2)])
+    flag_mesh.materials.append(blue); flag_mesh.update()
+    flag_obj = bpy.data.objects.new("school_flag", flag_mesh); col.objects.link(flag_obj)
+    for x in (-10.2, -5.0, 5.0, 10.2):
+        add_box(col, "school_bench", 2.0, .55, .48, x, -7.1, .38, m["trunk"])
+        for sx in (-.82, .82):
+            add_box(col, "school_bench_leg", .16, .42, .55, x + sx, -7.1, .28, dark)
+    for x in (-12.0, -9.2, 9.2, 12.0):
+        build_tree(col, rng, .72 + rng.random() * .18, x, -3.8)
+    for x in (-10.5, -8.7, -6.9, 6.9, 8.7, 10.5):
+        add_ngon_cone(col, "school_shrub", .62, .30, .85, 10, x, -5.8, .25, m["lawn"])
+
+    # Rear playground: safety surfacing, roofed play tower, slide and swings.
+    add_box(col, "school_play_mat", 15.0, 6.8, .16, 3.3, 10.0, .24, rubber)
+    for x in (-1.0, 1.0):
+        for y in (8.7, 11.2):
+            add_box(col, "school_play_post", .24, .24, 3.2, x, y, .40, red)
+    add_box(col, "school_play_deck", 3.0, 3.3, .28, 0, 10.0, 2.45, cream)
+    add_ngon_cone(col, "school_play_roof", 2.6, 0, 1.7, 4, 0, 10.0, 3.55, blue,
+                  rot=math.pi / 4)
+    slide = add_box(col, "school_slide", 1.15, 4.8, .20, 0, 13.0, 1.35, yellow)
+    slide.rotation_euler.x = math.radians(22)
+    for x in (5.0, 10.0):
+        for y in (8.0, 12.0):
+            pole = add_box(col, "school_swing_leg", .22, .22, 3.8, x, y, .35, navy)
+            pole.rotation_euler.y = math.radians(8 if x < 7 else -8)
+    add_box(col, "school_swing_beam", 5.5, .28, .28, 7.5, 10.0, 4.0, navy)
+    for x in (6.4, 8.6):
+        for yy in (9.72, 10.28):
+            add_box(col, "school_swing_chain", .07, .07, 2.25, x, yy, 1.75, m["metal"])
+        add_box(col, "school_swing_seat", 1.0, .55, .14, x, 10.0, 1.68, red)
+    for x in range(-13, 14, 2):
+        add_box(col, "school_fence_post", .10, .10, 1.35, x, 13.5, .28, m["metal"])
+    add_box(col, "school_fence_rail", 26.0, .08, .10, 0, 13.5, .75, m["metal"])
+    add_box(col, "school_fence_rail", 26.0, .08, .10, 0, 13.5, 1.42, m["metal"])
+
+    # Finished low-poly school bus at the curb: windows, wheels and stop arm.
+    add_box(col, "school_bus_body", 6.8, 2.2, 2.0, 6.8, -11.2, .52, yellow)
+    add_box(col, "school_bus_roof", 6.3, 2.25, .35, 6.55, -11.2, 2.50, cream)
+    add_box(col, "school_bus_windshield", 1.15, 2.05, .85, 9.72, -11.2, 1.42, m["windark"])
+    for x in (4.2, 5.35, 6.5, 7.65, 8.8):
+        for y in (-12.33, -10.07):
+            add_box(col, "school_bus_window", .82, .10, .70, x, y, 1.65, m["windark"])
+    for x in (4.6, 8.9):
+        for y in (-12.25, -10.15):
+            add_box(col, "school_bus_wheel", .75, .32, .75, x, y, .34, dark)
+    add_box(col, "school_bus_stop_arm", .12, .95, .95, 7.7, -12.65, 1.25, red)
+
+
 def build_ring_house(col, seed):
     """Park-ring homes (day 8+): same cute pastel style, more variety --
     cottages, two-story family homes and skinny townhouses."""
@@ -929,6 +1055,7 @@ ASSET_VARIANTS = {
     "skyscraper":  [("AST_sky_%d" % i, lambda c, i=i: build_skyscraper(c, 800 + i)) for i in range(2)],
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
+    "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     "ringhouse":   [("AST_ring_%d" % i, lambda c, i=i: build_ring_house(c, 2300 + i)) for i in range(10)],
     "parkdistrict": [("AST_parkdist_0", lambda c: build_park_district(c, 2400))],
@@ -954,7 +1081,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
-        "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3}
+        "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
+        "elementaryschool": 3}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -1077,6 +1205,10 @@ def place_instance(world_col, b, name):
     rng = random.Random(b["seed"])
     if b.get("rot") is not None:  # exact facing (ring houses face their park)
         empty.rotation_euler = (0, 0, b["rot"])
+    elif b["type"] == "elementaryschool":
+        # The campus asset is authored with its main doors facing local -Y;
+        # keep that deliberate frontage instead of applying lot-house rotation.
+        empty.rotation_euler = (0, 0, 0)
     elif b.get("face"):  # explicit facing override stored in the state file
         empty.rotation_euler = (0, 0, {"s": 0.0, "e": math.pi / 2,
                                        "n": math.pi, "w": -math.pi / 2}[b["face"]])
@@ -1689,6 +1821,10 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # sweep with how far back the camera already sits, capped so a small
         # close-up still doesn't swing wildly off its subject.
         orbit_deg = min(38, 9 + hdist / 12)
+        if cam == "school":
+            # Higher, front-left campus reveal avoids neighboring rooftops and
+            # lets the orbit uncover the playground behind the classroom wings.
+            pol_deg, fstop, orbit_deg = 52, 4.0, 34
 
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
@@ -1796,7 +1932,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         cam_data.dof.aperture_fstop = fstop
         cam_obj = bpy.data.objects.new("Camera", cam_data)
         cam_obj.parent = rig
-        az, pol = math.radians(38), math.radians(pol_deg)
+        az = math.radians(135 if cam == "school" else 38)
+        pol = math.radians(pol_deg)
         cam_obj.location = (dist * math.sin(pol) * math.cos(az),
                         -dist * math.sin(pol) * math.sin(az),
                         dist * math.cos(pol))
@@ -2132,7 +2269,10 @@ def main(cfg=None):
     # rebuild world (removed houses still placed so they can sink on camera)
     world_col = clear_world()
     m = std_mats()
-    new_ids = {id(b) for b in new_batch}
+    focus_type = cfg.get("focus_type")
+    animation_batch = ([b for b in new_batch if b["type"] == focus_type]
+                       if focus_type else new_batch)
+    new_ids = {id(b) for b in animation_batch}
     rem_ids = {id(b) for b in removed}
     rise, sink = [], []
     for b in state["buildings"]:
@@ -2156,6 +2296,8 @@ def main(cfg=None):
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
     if cfg.get("cam") in ("street", "park", "overhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
+    elif cfg.get("cam") == "school":
+        frame_end = max(frame_end, FPS * 8)
     f = prehold
     for e in sink:
         animate_sink(e, f)
@@ -2171,14 +2313,21 @@ def main(cfg=None):
     animate_ducks(world_col, keep or state["buildings"], frame_end)
     animate_ring_traffic(world_col, keep or state["buildings"], frame_end)
     hero = None
-    if cfg.get("hero") and new_batch:
+    hero_batch = animation_batch if focus_type else new_batch
+    if cfg.get("hero") and hero_batch:
         pts = []
-        for b in new_batch:
+        for b in hero_batch:
             x, y = build_pos(b)
             s = SIZE.get(b["type"], 1)
             r = b.get("r", 0)
             if r:
                 pts += [(x - r, y - r), (x + r, y + r)]
+            elif s > 1:
+                center_x = x + (s - 1) * LOT / 2
+                center_y = y + (s - 1) * LOT / 2
+                half = s * LOT / 2
+                pts += [(center_x - half, center_y - half),
+                        (center_x + half, center_y + half)]
             else:
                 pts.append((x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2))
         hx = sum(p[0] for p in pts) / len(pts)

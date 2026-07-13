@@ -8,6 +8,15 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
+  +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
+  non-population Followville Elementary School). Heron Court completed and
+  Pebble Court began with only their required continuous road ribbons. The
+  school is a detailed full-block campus with classroom wings, clocked glass
+  entrance, bus loop and bus, crosswalk, landscaping, flag court, and fenced
+  playground. Separate house-rise, school-rise, and finished overhead videos
+  rendered and passed sampled-frame review; GLB validated and all 18 new DB
+  records synced, with the school explicitly non-claimable.
 - Day 11, population 169, 171 buildings (grown 2026-07-12 via Cade's Codex:
   +14 ordinary houses, planned addresses 22-35 in Creekside Bend). The winding
   street extended only as far as today's houses. Growth/loading and finished
@@ -234,7 +243,7 @@ sync new world_state.json buildings into the Supabase `houses` table after each
 growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored,
 NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
-incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas.
+incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas/schools.
 Admin (verify/reject/revoke) = the "Admin" button on the LIVE homepage (visible
 only to accounts with profiles.is_admin = true — currently cade.toohey and
 stellarkehler; every action is re-checked server-side inside the SQL functions,

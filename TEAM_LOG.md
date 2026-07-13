@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Codex) - [WORLD] Grew Day 12 from 169 to 186 followers with 17 validated Creekside Bend houses (addresses 36-52), completed Heron Court, began Pebble Court, and added a detailed non-claimable full-block elementary school campus; rendered and reviewed separate house-rise, school-rise, and finished overhead videos, validated Blender/GLB, and synced all 18 new records to claiming.
+
 2026-07-13 - Cade (via Codex) - [WORLD] Rebuilt staged suburban roads as continuous shared-vertex meshes so turns cannot gap, and matched established roads with the same width, asphalt, height, and yellow center-dash rhythm; rebuilt and visually reviewed Blender/GLB without changing Day 11 or population 169.
 
 2026-07-13 - Cade (via Codex) - [WORLD] Corrected the suburban placement system: realigned all 35 built planned houses to face their roads, moved the house intersecting Heron Court, sealed curved-road joints, and added permanent facing/road/cul-de-sac/state-drift validation for all 366 planned addresses; Day 11 and population 169 stayed unchanged.
