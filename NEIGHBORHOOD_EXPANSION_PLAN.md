@@ -15,7 +15,10 @@ Current progress: addresses 1-35 were built through Day 11 (population 169).
 - Cul-de-sac bulbs appear only when the final connecting road segment exists.
 - Every planned house is checked against all 18 streets and turnarounds, faces
   its own road, and keeps a safe setback from every other road.
-- Circular joint geometry seals every curved-road bend and T-junction.
+- Each visible street is generated as one continuous shared-vertex road ribbon,
+  so bends and T-junctions cannot develop gaps between separate road pieces.
+- New-neighborhood roads use the established town's width, asphalt material,
+  height, and eight-metre yellow center-dash rhythm.
 - Terrain is visible immediately. It consists of undeveloped hills, meadows,
   and ponds outside the Day-9 footprint.
 - Existing houses, founder buildings, the Day-7 pond, the Day-8 circular park,

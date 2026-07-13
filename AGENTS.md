@@ -20,6 +20,9 @@ you go looking for it here.**
   face their roads, the house in the Heron Court branch was relocated, and
   road-bend joints were sealed. Permanent full-plan collision/facing/state-drift
   validation now protects all 366 addresses. Population and day were unchanged.
+  Road upgrade on 2026-07-13: staged suburban streets now build as continuous
+  mitered meshes instead of separate rotated boxes, eliminating turn gaps, and
+  use the same width/material/center-dash rhythm as established town roads.
 - Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
   +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
   curving entrance road and first cul-de-sac appeared only as required by the

@@ -1249,14 +1249,71 @@ def build_suburban_terrain(world_col, m):
                               feature["sx"], feature["sy"], .025, meadow_mat)
 
 
-def _add_road_segment(world_col, a, b, material):
-    dx, dy = b[0] - a[0], b[1] - a[1]
-    length = math.hypot(dx, dy)
-    if length < .05:
-        return
-    obj = add_box(world_col, "suburban_road", length + .15, ROAD, .18,
-                  (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, .01, material)
-    obj.rotation_euler.z = math.atan2(dy, dx)
+def _add_road_strip(world_col, name, points, material):
+    """One continuous, shallow road mesh with mitered bends.
+
+    The previous implementation rotated a separate rectangle for every five
+    metres of curve. Even with cover discs, the exposed rectangle ends could
+    read as cracks. A single ribbon has shared vertices and therefore no gaps.
+    """
+    if len(points) < 2:
+        return None
+    half = ROAD / 2
+    edges = []
+    for a, b in zip(points, points[1:]):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dy)
+        if length < .001:
+            edges.append((1.0, 0.0))
+        else:
+            edges.append((dx / length, dy / length))
+    offsets = []
+    for i in range(len(points)):
+        before = edges[max(0, i - 1)]
+        after = edges[min(len(edges) - 1, i)]
+        n0, n1 = (-before[1], before[0]), (-after[1], after[0])
+        mx, my = n0[0] + n1[0], n0[1] + n1[1]
+        ml = math.hypot(mx, my)
+        if ml < .001:
+            mx, my, scale = n1[0], n1[1], half
+        else:
+            mx, my = mx / ml, my / ml
+            scale = min(half * 1.6, half / max(.35, mx * n1[0] + my * n1[1]))
+        offsets.append((mx * scale, my * scale))
+    verts = []
+    for z in (0.01, 0.19):
+        for point, offset in zip(points, offsets):
+            verts.extend(((point[0] + offset[0], point[1] + offset[1], z),
+                          (point[0] - offset[0], point[1] - offset[1], z)))
+    n = len(points)
+    faces = []
+    for i in range(n - 1):
+        # bottom, top, left wall, right wall
+        faces.extend(((2*i, 2*i+1, 2*i+3, 2*i+2),
+                      (2*n+2*i, 2*n+2*i+2, 2*n+2*i+3, 2*n+2*i+1),
+                      (2*i, 2*i+2, 2*n+2*i+2, 2*n+2*i),
+                      (2*i+1, 2*n+2*i+1, 2*n+2*i+3, 2*i+3)))
+    faces.extend(((0, 2*n, 2*n+1, 1),
+                  (2*n-2, 2*n-1, 4*n-1, 4*n-2)))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    world_col.objects.link(obj)
+    return obj
+
+
+def _polyline_sample(points, distance):
+    for a, b in zip(points, points[1:]):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dy)
+        if distance <= length:
+            t = distance / max(length, .001)
+            return a[0] + dx * t, a[1] + dy * t, math.atan2(dy, dx)
+        distance -= length
+    a, b = points[-2], points[-1]
+    return b[0], b[1], math.atan2(b[1] - a[1], b[0] - a[0])
 
 
 def build_suburban_roads(world_col, buildings, m):
@@ -1266,14 +1323,24 @@ def build_suburban_roads(world_col, buildings, m):
     active = max([b.get("plan_id", 0) for b in buildings] or [0])
     if not active:
         return
+    by_street = {}
     for segment in SUBURBAN_PLAN["roads"]:
         if segment["reveal_at"] <= active:
-            _add_road_segment(world_col, segment["a"], segment["b"], m["road"])
-            # Cover every polyline bend with a matching road joint. This keeps
-            # rotated rectangular segments from leaving triangular grass gaps.
-            _add_ellipse_pad(world_col, "suburban_road_joint",
-                             segment["b"][0], segment["b"][1],
-                             ROAD / 2, ROAD / 2, .012, .181, m["road"], 20)
+            by_street.setdefault(segment["street_index"], []).append(segment)
+    for street_index, segments in by_street.items():
+        points = [segments[0]["a"]] + [segment["b"] for segment in segments]
+        _add_road_strip(world_col, "suburban_road_%02d" % street_index, points, m["road"])
+        # Match the established grid/ring roads: centered pale lane dashes at
+        # the same eight-metre rhythm, following the curve tangent.
+        total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                    for a, b in zip(points, points[1:]))
+        distance = 4.0
+        while distance < total - 2.0:
+            x, y, angle = _polyline_sample(points, distance)
+            dash = add_box(world_col, "suburban_dash", 2.6, .45, .04,
+                           x, y, .195, m["dash"])
+            dash.rotation_euler.z = angle
+            distance += 8.0
     for bulb in SUBURBAN_PLAN["turnarounds"]:
         if bulb["reveal_at"] <= active:
             # Road boxes top out at z=.19. Put the solid turnaround just above
