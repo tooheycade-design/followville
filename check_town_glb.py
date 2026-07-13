@@ -29,6 +29,9 @@ message on stdout) if it finds a problem. Requires: pip install pygltflib
 import sys
 import os
 import json
+import math
+
+from neighborhood_plan import PLAN as SUBURBAN_PLAN
 
 try:
     from pygltflib import GLTF2
@@ -96,6 +99,21 @@ def check(glb_path, state_path):
                 "world_state.json lists %d building(s) but town.glb only has %d node(s) "
                 "total -- export looks incomplete" % (len(buildings), len(gltf.nodes))
             )
+        planned_slots = {slot["plan_id"]: slot for slot in SUBURBAN_PLAN["houses"]}
+        for building in buildings:
+            plan_id = building.get("plan_id")
+            if not plan_id:
+                continue
+            slot = planned_slots.get(plan_id)
+            if slot is None:
+                problems.append("building has unknown suburban plan_id %r" % plan_id)
+                continue
+            if math.hypot(building.get("px", 0) - slot["x"],
+                          building.get("py", 0) - slot["y"]) > 0.01:
+                problems.append("planned house %d has drifted off its validated frontage" % plan_id)
+            angle_delta = (building.get("rot", 0) - slot["rot"] + math.pi) % (2 * math.pi) - math.pi
+            if abs(angle_delta) > 0.001:
+                problems.append("planned house %d no longer faces its road" % plan_id)
     else:
         problems.append("world_state.json not found at %s (skipping day/pop cross-check)" % state_path)
 

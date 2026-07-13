@@ -1269,6 +1269,11 @@ def build_suburban_roads(world_col, buildings, m):
     for segment in SUBURBAN_PLAN["roads"]:
         if segment["reveal_at"] <= active:
             _add_road_segment(world_col, segment["a"], segment["b"], m["road"])
+            # Cover every polyline bend with a matching road joint. This keeps
+            # rotated rectangular segments from leaving triangular grass gaps.
+            _add_ellipse_pad(world_col, "suburban_road_joint",
+                             segment["b"][0], segment["b"][1],
+                             ROAD / 2, ROAD / 2, .012, .181, m["road"], 20)
     for bulb in SUBURBAN_PLAN["turnarounds"]:
         if bulb["reveal_at"] <= active:
             # Road boxes top out at z=.19. Put the solid turnaround just above

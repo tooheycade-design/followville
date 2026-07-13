@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Codex) - [WORLD] Corrected the suburban placement system: realigned all 35 built planned houses to face their roads, moved the house intersecting Heron Court, sealed curved-road joints, and added permanent facing/road/cul-de-sac/state-drift validation for all 366 planned addresses; Day 11 and population 169 stayed unchanged.
+
 2026-07-12 - Cade (via Codex) - [WORLD] Fixed Day 11 cul-de-sac and pond video flicker by delaying each turnaround until its connecting road is complete and replacing overlapping flat surfaces with shallow solid geometry; rerendered and reviewed both corrected videos.
 
 2026-07-12 - Cade (via Codex) - [WORLD] Grew Followville from 155 to 169 followers with 14 new Creekside Bend houses and only their required winding-road extension, rendered and reviewed a house-loading video plus finished overhead video, validated the web model, and synced every new home to claiming.

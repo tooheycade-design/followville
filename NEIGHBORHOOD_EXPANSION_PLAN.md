@@ -12,7 +12,10 @@ Current progress: addresses 1-35 were built through Day 11 (population 169).
 - Future plan data creates no Blender object by itself.
 - Ordinary `+N` growth consumes the next N addresses in sequence.
 - A short road segment appears only when its dependent house exists.
-- Cul-de-sac bulbs appear only near the end of their street's buildout.
+- Cul-de-sac bulbs appear only when the final connecting road segment exists.
+- Every planned house is checked against all 18 streets and turnarounds, faces
+  its own road, and keeps a safe setback from every other road.
+- Circular joint geometry seals every curved-road bend and T-junction.
 - Terrain is visible immediately. It consists of undeveloped hills, meadows,
   and ponds outside the Day-9 footprint.
 - Existing houses, founder buildings, the Day-7 pond, the Day-8 circular park,
@@ -49,8 +52,12 @@ or the website.
 ## Validation
 
 Run `python neighborhood_plan.py`. It verifies continuous IDs, the exact
-366-house total, district totals, and minimum spacing between planned houses.
+366-house total, district totals, minimum spacing, road setbacks, cul-de-sac
+clearance, and that every front door faces its assigned street.
 The GitHub Action runs the same validation on pushes to `main`.
+
+`check_town_glb.py` also verifies that every built planned house still matches
+its validated address and rotation, preventing state drift after future edits.
 
 Before changing the plan, also simulate small, boundary, and complete batches
 (for example +10, +54, +60, and +366) against a copy of `world_state.json`.

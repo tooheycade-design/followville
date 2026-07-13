@@ -12,6 +12,8 @@ BASE_POPULATION = 134
 HOUSE_CAPACITY = 366
 ROAD_HALF_WIDTH = 3.0
 HOUSE_SETBACK = 8.5
+HOUSE_ROAD_CLEARANCE = 6.75
+CULDESAC_CLEARANCE = 12.0
 
 DISTRICTS = (
     ("Creekside Bend", 54),
@@ -133,10 +135,24 @@ def _point_at(points, fraction):
     raise AssertionError("unreachable")
 
 
+def _distance_to_segment(point, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length_sq = dx * dx + dy * dy
+    if not length_sq:
+        return math.hypot(point[0] - a[0], point[1] - a[1])
+    t = max(0.0, min(1.0, ((point[0] - a[0]) * dx +
+                           (point[1] - a[1]) * dy) / length_sq))
+    return math.hypot(point[0] - (a[0] + t * dx),
+                      point[1] - (a[1] + t * dy))
+
+
 def build_plan():
     houses, roads, turnarounds = [], [], []
     sequence = 1
     district_paths = {}
+    street_paths = []
+    # Resolve every path first. House placement must know about later branch
+    # roads too, otherwise an early house can land in a future intersection.
     for street_index, street in enumerate(STREETS):
         path = _resample(street["points"])
         # Snap branch entrances onto an already-defined road in the same
@@ -148,6 +164,14 @@ def build_plan():
             if math.hypot(nearest[0] - path[0][0], nearest[1] - path[0][1]) <= 24.0:
                 path[0] = nearest
         district_paths.setdefault(street["district"], []).append(path)
+        street_paths.append(path)
+
+    all_segments = [(a, b, i) for i, path in enumerate(street_paths)
+                    for a, b in zip(path, path[1:])]
+    all_bulbs = [(path[-1], i) for i, path in enumerate(street_paths)]
+
+    for street_index, street in enumerate(STREETS):
+        path = street_paths[street_index]
         first_sequence = sequence
         # House fractions avoid shared entrances and leave room for the bulb.
         # Candidate oversampling lets junctions shared by two streets remain
@@ -155,26 +179,42 @@ def build_plan():
         placed = 0
         for address_index in range(street["count"]):
             base = .06 + .88 * (address_index + .5) / street["count"]
-            step = .88 / (street["count"] * 6)
-            candidates = [base]
-            for retry in range(1, 7):
-                candidates.extend((base + retry * step, base - retry * step))
+            # Search the whole usable frontage, nearest to the address's ideal
+            # fraction first. Branch junction exclusion can require moving a
+            # slot farther than a small local retry window.
+            samples = street["count"] * 8
+            candidates = sorted((.04 + (i + .5) * .92 / samples for i in range(samples)),
+                                key=lambda fraction: abs(fraction - base))
             chosen = None
-            side = -1 if address_index % 2 == 0 else 1
+            preferred_side = -1 if address_index % 2 == 0 else 1
             for fraction in candidates:
                 cx, cy, angle = _point_at(path, max(.04, min(.96, fraction)))
                 nx, ny = -math.sin(angle), math.cos(angle)
-                hx, hy = cx + nx * HOUSE_SETBACK * side, cy + ny * HOUSE_SETBACK * side
-                if not any(math.hypot(hx - h["x"], hy - h["y"]) < 5.5 for h in houses):
-                    chosen = (hx, hy, angle)
+                for side in (preferred_side, -preferred_side):
+                    hx, hy = cx + nx * HOUSE_SETBACK * side, cy + ny * HOUSE_SETBACK * side
+                    point = (hx, hy)
+                    if any(math.hypot(hx - h["x"], hy - h["y"]) < 5.5 for h in houses):
+                        continue
+                    if any(other != street_index and
+                           _distance_to_segment(point, a, b) < HOUSE_ROAD_CLEARANCE
+                           for a, b, other in all_segments):
+                        continue
+                    if any(math.hypot(hx - center[0], hy - center[1]) < CULDESAC_CLEARANCE
+                           for center, _ in all_bulbs):
+                        continue
+                    chosen = (hx, hy, angle, side)
+                    break
+                if chosen is not None:
                     break
             if chosen is None:
                 continue
-            hx, hy, angle = chosen
+            hx, hy, angle, side = chosen
             houses.append(dict(
                 plan_id=sequence, district=street["district"], street=street["name"],
                 x=round(hx, 3), y=round(hy, 3),
-                rot=round(angle + (-math.pi / 2 if side > 0 else math.pi / 2), 5),
+                # House assets face local -Y. Rotate that front toward the
+                # sampled road centerline, never sideways along the street.
+                rot=round(angle if side > 0 else angle + math.pi, 5),
                 street_index=street_index,
             ))
             sequence += 1
@@ -188,11 +228,13 @@ def build_plan():
             fraction = (i + 1) / max(1, len(path) - 1)
             local = min(street["count"] - 1, max(0, int((fraction - .08) / .84 * street["count"])))
             roads.append(dict(a=a, b=b, reveal_at=first_sequence + local,
-                              district=street["district"], street=street["name"]))
+                              district=street["district"], street=street["name"],
+                              street_index=street_index))
         # The bulb must not appear until the final road segment reaches it.
         # Revealing it early creates a detached gray disc in growth videos.
         turnarounds.append(dict(center=path[-1], reveal_at=last_sequence,
-                                district=street["district"], street=street["name"]))
+                                district=street["district"], street=street["name"],
+                                street_index=street_index))
     assert len(houses) == HOUSE_CAPACITY
     return dict(houses=houses, roads=roads, turnarounds=turnarounds,
                 terrain=list(TERRAIN), districts=list(DISTRICTS))
@@ -215,6 +257,30 @@ def validate_plan(min_house_spacing=5.5):
                 errors.append("house spacing collision: %d and %d" % (a["plan_id"], b["plan_id"]))
                 if len(errors) > 20:
                     return errors
+        own_roads = [r for r in PLAN["roads"] if r["street_index"] == a["street_index"]]
+        nearest = min(_distance_to_segment((a["x"], a["y"]), r["a"], r["b"])
+                      for r in own_roads)
+        if abs(nearest - HOUSE_SETBACK) > 0.15:
+            errors.append("house %d is not on its street frontage" % a["plan_id"])
+        front = (math.sin(a["rot"]), -math.cos(a["rot"]))
+        road_vector = min(
+            ((r, _distance_to_segment((a["x"], a["y"]), r["a"], r["b"])) for r in own_roads),
+            key=lambda item: item[1])[0]
+        # Closest point direction is tested against the door's local -Y axis.
+        ra, rb = road_vector["a"], road_vector["b"]
+        dx, dy = rb[0] - ra[0], rb[1] - ra[1]
+        ll = dx * dx + dy * dy
+        t = max(0.0, min(1.0, ((a["x"] - ra[0]) * dx + (a["y"] - ra[1]) * dy) / ll))
+        toward = (ra[0] + t * dx - a["x"], ra[1] + t * dy - a["y"])
+        if front[0] * toward[0] + front[1] * toward[1] <= 0:
+            errors.append("house %d does not face its road" % a["plan_id"])
+        for r in PLAN["roads"]:
+            if r["street_index"] != a["street_index"] and _distance_to_segment(
+                    (a["x"], a["y"]), r["a"], r["b"]) < HOUSE_ROAD_CLEARANCE:
+                errors.append("house %d overlaps road %s" % (a["plan_id"], r["street"]))
+        for bulb in PLAN["turnarounds"]:
+            if math.hypot(a["x"] - bulb["center"][0], a["y"] - bulb["center"][1]) < CULDESAC_CLEARANCE:
+                errors.append("house %d overlaps cul-de-sac %s" % (a["plan_id"], bulb["street"]))
     return errors
 
 
