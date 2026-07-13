@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Codex) - [WORLD] Corrected the school-equipment/car follow-up after Cade caught remaining geometry errors: rebuilt the swings with endpoint-aligned connected A-frames and chains, rebuilt the slide rails and exit to follow the chute exactly, and gave the two sides of every car opposite inward tire rotations so all four wheels sit at the front/rear axles and protrude outside the body; verified the playground from above and the side plus both sides of an isolated car before publishing.
+
 2026-07-13 - Cade (via Codex) - [WORLD] Rebuilt the elementary school's rear playground as a finished fenced safety-surface yard with connected roofed towers, a correctly joined deck-to-ground slide, swings, climbing equipment, stepping pods, and ground games; also rotated every ordinary car tire upright, added visible hubs, regenerated the Blender/GLB world, and visually checked close views of both fixes without changing Day 12 or population 186.
 
 2026-07-13 - Cade (via Codex) - [WORLD] Grew Day 12 from 169 to 186 followers with 17 validated Creekside Bend houses (addresses 36-52), completed Heron Court, began Pebble Court, and added a detailed non-claimable full-block elementary school campus; rendered and reviewed separate house-rise, school-rise, and finished overhead videos, validated Blender/GLB, and synced all 18 new records to claiming.

@@ -21,6 +21,7 @@ import math
 import os
 import random
 import sys
+from mathutils import Vector
 
 # Pure-data reserve for populations 135..500.  Importing this module creates
 # nothing; future houses/roads remain invisible until main() consumes them.
@@ -194,6 +195,18 @@ def add_box(col, name, w, d, h, x, y, z, material):
     obj.location = (x, y, z)
     obj.data.materials.append(material)
     col.objects.link(obj)
+    return obj
+
+def add_beam_between(col, name, start, end, thickness, material):
+    """Square-section beam whose ends land exactly on start and end."""
+    p0, p1 = Vector(start), Vector(end)
+    delta = p1 - p0
+    if delta.length <= 1e-6:
+        raise ValueError("Beam endpoints must be different")
+    obj = add_box(col, name, thickness, thickness, delta.length,
+                  p0.x, p0.y, p0.z, material)
+    obj.rotation_mode = "QUATERNION"
+    obj.rotation_quaternion = delta.to_track_quat("Z", "Y")
     return obj
 
 def add_ngon_cone(col, name, r_bot, r_top, h, sides, x, y, z, material, rot=0.0):
@@ -765,17 +778,21 @@ def build_car(col, seed):
     hub = mat("NB_car_hub", (0.58, 0.62, 0.66), 0.62)
     add_box(col, "body", 3.6, 1.7, 0.85, 0, 0, 0.35, body)
     add_box(col, "cab", 1.9, 1.5, 0.7, -0.2, 0, 1.2, m["windark"])
-    for dx in (-1.15, 1.15):
-        for dy in (-0.85, 0.85):
-            # Cylinders are authored along local Z. Rotate them onto local Y so
-            # the tire faces sit on the car's sides and the wheels stand upright
-            # instead of reading as flat pucks lying on the road.
-            wheel = add_ngon_cone(col, "wheel", .39, .39, .28, 12,
-                                  dx, dy + (.14 if dy < 0 else -.14), .39, tire)
-            wheel.rotation_euler.x = math.pi / 2
-            cap = add_ngon_cone(col, "wheel_hub", .19, .19, .305, 12,
-                                dx, dy + (.152 if dy < 0 else -.152), .39, hub)
-            cap.rotation_euler.x = math.pi / 2
+    for dx in (-1.18, 1.18):
+        for side in (-1, 1):
+            # add_ngon_cone grows along local +Z.  Start each tire at its OUTER
+            # face and rotate it toward the center of the car.  The two sides
+            # therefore need opposite X rotations; using one rotation for both
+            # sides was what buried a pair of tires inside the body.
+            outer_y = side * 1.04
+            inward_rot = side * math.pi / 2
+            wheel = add_ngon_cone(col, "wheel", .40, .40, .34, 12,
+                                  dx, outer_y, .40, tire)
+            wheel.rotation_euler.x = inward_rot
+            # Thin hubcaps sit on the exposed outer faces, not through the tire.
+            cap = add_ngon_cone(col, "wheel_hub", .19, .19, .055, 12,
+                                dx, side * 1.055, .40, hub)
+            cap.rotation_euler.x = inward_rot
 
 
 def add_ring(col, name, r_in, r_out, segs, x, y, z, material):
@@ -908,36 +925,47 @@ def build_elementary_school(col, seed):
         add_box(col, "school_bridge_rail", 2.0, .10, .75,
                 -5.5, by, 2.68, cream)
 
-    # Purpose-built inclined slide mesh: top meets the left tower deck at
-    # z=2.55 and the run-out finishes just above the safety surface.
+    # Purpose-built inclined slide mesh: top meets the left tower deck and the
+    # run-out finishes just above the safety surface.  Its side rails use exact
+    # endpoint beams so they follow the chute instead of rotating around a box
+    # corner and floating away from it.
     slide_mesh = bpy.data.meshes.new("school_slide_mesh")
     slide_mesh.from_pydata([
-        (-8.05, 11.55, 2.55), (-6.55, 11.55, 2.55),
-        (-8.05, 13.15, .62), (-6.55, 13.15, .62),
-        (-8.05, 11.55, 2.35), (-6.55, 11.55, 2.35),
-        (-8.05, 13.15, .48), (-6.55, 13.15, .48),
+        (-8.05, 11.55, 2.58), (-6.55, 11.55, 2.58),
+        (-8.05, 13.22, .68), (-6.55, 13.22, .68),
+        (-8.05, 11.55, 2.40), (-6.55, 11.55, 2.40),
+        (-8.05, 13.22, .52), (-6.55, 13.22, .52),
     ], [], [(0, 2, 3, 1), (4, 5, 7, 6), (0, 4, 6, 2),
             (1, 3, 7, 5), (0, 1, 5, 4), (2, 6, 7, 3)])
     slide_mesh.materials.append(yellow); slide_mesh.update()
     col.objects.link(bpy.data.objects.new("school_slide", slide_mesh))
     for sx in (-8.12, -6.48):
-        rail = add_box(col, "school_slide_rail", .10, 2.35, .18,
-                       sx, 12.28, 1.48, cream)
-        rail.rotation_euler.x = math.radians(50)
+        add_beam_between(col, "school_slide_rail",
+                         (sx, 11.55, 2.88), (sx, 13.22, .98), .12, cream)
+    # Short flat exit lip makes the bottom visibly meet the play surface.
+    add_box(col, "school_slide_exit", 1.50, .48, .14,
+            -7.30, 13.40, .54, yellow)
 
-    # Stable swing set with visible top beam, chains and seats.
+    # Connected A-frame swing set.  Each leg terminates at the top beam; none
+    # of the supports are detached vertical posts beside it.
+    beam_z = 4.02
     for x in (1.2, 8.8):
-        for y in (9.1, 12.35):
-            add_box(col, "school_swing_leg", .25, .25, 3.65,
-                    x, y, .52, navy)
-    add_box(col, "school_swing_beam", 7.85, .30, .30,
-            5.0, 10.72, 4.05, navy)
+        add_beam_between(col, "school_swing_leg",
+                         (x, 9.05, .52), (x, 10.72, beam_z), .25, navy)
+        add_beam_between(col, "school_swing_leg",
+                         (x, 12.39, .52), (x, 10.72, beam_z), .25, navy)
+        add_box(col, "school_swing_foot", .55, .55, .12,
+                x, 9.05, .48, cream)
+        add_box(col, "school_swing_foot", .55, .55, .12,
+                x, 12.39, .48, cream)
+    add_box(col, "school_swing_beam", 8.05, .30, .30,
+            5.0, 10.72, beam_z - .05, navy)
     for x in (3.25, 6.75):
         for yy in (10.43, 11.01):
-            add_box(col, "school_swing_chain", .065, .065, 2.32,
-                    x, yy, 1.83, m["metal"])
+            add_beam_between(col, "school_swing_chain",
+                             (x, yy, 1.82), (x, yy, beam_z), .065, m["metal"])
         add_box(col, "school_swing_seat", 1.05, .68, .16,
-                x, 10.72, 1.72, red)
+                x, 10.72, 1.68, red)
 
     # Climbing dome, stepping pods and hopscotch fill the yard without clutter.
     for i in range(8):
