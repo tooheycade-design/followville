@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Codex) - [WORLD] Rerendered and visually reviewed the complete Day 12 delivery set after the final playground/wheel corrections (houses appearing, elementary school appearing, and finished town overhead), copied the replacement MP4s to Cade's Codex outputs folder, and emailed all three corrected videos to tooheycade@gmail.com.
+
 2026-07-13 - Cade (via Codex) - [WORLD] Corrected the school-equipment/car follow-up after Cade caught remaining geometry errors: rebuilt the swings with endpoint-aligned connected A-frames and chains, rebuilt the slide rails and exit to follow the chute exactly, and gave the two sides of every car opposite inward tire rotations so all four wheels sit at the front/rear axles and protrude outside the body; verified the playground from above and the side plus both sides of an isolated car before publishing.
 
 2026-07-13 - Cade (via Codex) - [WORLD] Rebuilt the elementary school's rear playground as a finished fenced safety-surface yard with connected roofed towers, a correctly joined deck-to-ground slide, swings, climbing equipment, stepping pods, and ground games; also rotated every ordinary car tire upright, added visible hubs, regenerated the Blender/GLB world, and visually checked close views of both fixes without changing Day 12 or population 186.
