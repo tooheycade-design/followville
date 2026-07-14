@@ -17,6 +17,10 @@ you go looking for it here.**
   RPCs with RLS and narrow public-read columns; guests cannot forge them. This
   is website/backend-only: Blender, `town.glb`, population, buildings, and all
   existing house claims are unchanged.
+  Follow-up controls/UI: desktop chat opens with `T`, `/`, or Enter without
+  showing the start screen; Enter sends and immediately restores walking.
+  Remote markers have a forward-facing 3D smiley, and the admin page is split
+  into Accounts/Claims and Multiplayer/Chat tabs with compact scrolling lists.
 - 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
   `house` and `ringhouse` now draws from one optimized library of 15
   distinct suburban designs and six coordinated color palettes (90 stable

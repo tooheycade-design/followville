@@ -31,7 +31,7 @@
     background: linear-gradient(180deg, var(--cream) 0%, var(--cream-deep) 100%);
     color: var(--navy); margin:0; min-height:100vh; padding:36px 18px;
   }
-  .wrap { max-width:760px; margin:0 auto; }
+  .wrap { max-width:1080px; margin:0 auto; }
   h1 { font-size:26px; margin:0 0 4px; }
   .sub { opacity:0.65; font-size:13.5px; margin:0 0 26px; }
   h2 { font-size:16px; margin:30px 0 10px; }
@@ -74,36 +74,76 @@
     background:#45b94f; margin-right:7px; box-shadow:0 0 6px rgba(69,185,79,.65); }
   .logtext { flex:1 1 100%; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
   .chatlog .who { color:#2b6a94; }
+  .admin-tabs { display:flex; gap:8px; margin:18px 0; padding:5px;
+    background:rgba(28,43,69,.08); border-radius:13px; width:max-content; max-width:100%; }
+  .admin-tab { color:var(--navy); background:transparent; white-space:nowrap; }
+  .admin-tab.active { color:#fff; background:var(--navy); box-shadow:0 4px 12px rgba(28,43,69,.18); }
+  .admin-panel { display:none; }
+  .admin-panel.active { display:block; }
+  .section-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .admin-section { min-width:0; padding:16px; border:1px solid rgba(28,43,69,.1);
+    border-radius:16px; background:rgba(255,255,255,.32); }
+  .admin-section.wide { grid-column:1 / -1; }
+  .admin-section h2 { margin:0 0 11px; }
+  .admin-list { max-height:390px; overflow-y:auto; padding-right:4px; scrollbar-gutter:stable; }
+  .admin-list .card:last-child { margin-bottom:0; }
+  @media (max-width:720px){
+    body { padding:22px 12px; }
+    .section-grid { grid-template-columns:1fr; }
+    .admin-section.wide { grid-column:auto; }
+    .admin-tabs { width:100%; }
+    .admin-tab { flex:1; padding-inline:10px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Followville admin</h1>
-  <p class="sub">Approve Instagram verifications and manage claims.
+  <p class="sub">Manage follower approvals, claims, multiplayer activity, and chat.
   Check the DM really came from the listed handle before approving.</p>
   <p class="modebar" id="modebar"></p>
 
   <div id="err"></div>
   <div id="main" style="display:none;">
     <button class="refresh" onclick="loadAll()">↻ refresh</button>
+    <div class="admin-tabs" role="tablist" aria-label="Admin sections">
+      <button type="button" class="admin-tab active" data-tab="accounts" role="tab" aria-selected="true">Accounts &amp; claims</button>
+      <button type="button" class="admin-tab" data-tab="multiplayer" role="tab" aria-selected="false">Multiplayer &amp; chat</button>
+    </div>
 
-    <h2>Waiting for approval <span id="pendingCount"></span></h2>
-    <div id="pending"><div class="empty">loading…</div></div>
+    <div id="accountsPanel" class="admin-panel active" role="tabpanel">
+      <div class="section-grid">
+        <section class="admin-section wide">
+          <h2>Waiting for approval <span id="pendingCount"></span></h2>
+          <div id="pending" class="admin-list"><div class="empty">loading…</div></div>
+        </section>
+        <section class="admin-section">
+          <h2>Claimed houses <span id="claimCount"></span></h2>
+          <div id="claims" class="admin-list"><div class="empty">loading…</div></div>
+        </section>
+        <section class="admin-section">
+          <h2>Verified, no house yet</h2>
+          <div id="verified" class="admin-list"><div class="empty">loading…</div></div>
+        </section>
+      </div>
+    </div>
 
-    <h2>Claimed houses <span id="claimCount"></span></h2>
-    <div id="claims"><div class="empty">loading…</div></div>
-
-    <h2>Verified, no house yet</h2>
-    <div id="verified"><div class="empty">loading…</div></div>
-
-    <h2><span class="online-dot"></span>Online now <span id="onlineAdminCount"></span></h2>
-    <div id="onlinePlayers"><div class="empty">loading...</div></div>
-
-    <h2>Player session history</h2>
-    <div id="playerSessions"><div class="empty">loading...</div></div>
-
-    <h2>In-game chat log</h2>
-    <div id="chatLog"><div class="empty">loading...</div></div>
+    <div id="multiplayerPanel" class="admin-panel" role="tabpanel">
+      <div class="section-grid">
+        <section class="admin-section">
+          <h2><span class="online-dot"></span>Online now <span id="onlineAdminCount"></span></h2>
+          <div id="onlinePlayers" class="admin-list"><div class="empty">loading...</div></div>
+        </section>
+        <section class="admin-section">
+          <h2>Player session history</h2>
+          <div id="playerSessions" class="admin-list"><div class="empty">loading...</div></div>
+        </section>
+        <section class="admin-section wide">
+          <h2>In-game chat log</h2>
+          <div id="chatLog" class="admin-list"><div class="empty">loading...</div></div>
+        </section>
+      </div>
+    </div>
   </div>
 
   <p class="backlink"><a href="index.html">← back to Followville</a></p>
@@ -115,6 +155,23 @@ const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
 
 let mode = null, serviceKey = null, sb = null;
+
+function selectAdminTab(tab){
+  const selected = tab === "multiplayer" ? "multiplayer" : "accounts";
+  document.querySelectorAll(".admin-tab").forEach(button => {
+    const active = button.dataset.tab === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.getElementById("accountsPanel").classList.toggle("active", selected === "accounts");
+  document.getElementById("multiplayerPanel").classList.toggle("active", selected === "multiplayer");
+  try { sessionStorage.setItem("followville_admin_tab", selected); } catch (_) {}
+}
+document.querySelectorAll(".admin-tab").forEach(button =>
+  button.addEventListener("click", () => selectAdminTab(button.dataset.tab))
+);
+try { selectAdminTab(sessionStorage.getItem("followville_admin_tab")); }
+catch (_) { selectAdminTab("accounts"); }
 
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 function toast(msg){

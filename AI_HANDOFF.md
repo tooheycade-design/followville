@@ -14,6 +14,9 @@ loads signed-in online players, session history/duration, and chat history throu
 `admin_list_multiplayer()`. Never expose `player_sessions.user_id` or
 `chat_messages.user_id`, trust handles supplied by clients, or allow direct table
 writes; identity must continue to come from `auth.uid()` inside the RPCs.
+Desktop chat opens with `T`, `/`, or Enter and Enter sends/returns to walking.
+The marker smiley is on local +Z, matching the broadcast yaw convention, so it
+must stay on that side if the placeholder player mesh is redesigned.
 
 ## Current suburban house system (2026-07-13)
 

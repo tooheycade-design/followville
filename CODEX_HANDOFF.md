@@ -19,6 +19,10 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   visitors, Broadcast carries movement, and the town renders lightweight remote
   markers/name labels. Signed-in users can send persistent chat; guests can read
   it. Admins have online-player, session-duration, and chat-history logs.
+- Desktop chat opens with `T`, `/`, or Enter while keeping the town visible;
+  Enter sends and restores pointer-lock walking. Remote markers use a 3D smiley
+  to show facing direction. Admin data is split into two tabs with bounded,
+  scrollable sections rather than one long page.
 - Multiplayer database writes go only through authenticated, identity-derived
   RPCs. RLS and column grants expose only safe public identity/chat fields.
   Guests cannot create sessions, identities, or messages. Blender state and

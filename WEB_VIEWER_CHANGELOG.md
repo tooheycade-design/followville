@@ -261,6 +261,17 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Multiplayer is website/backend-only. It does not alter Blender geometry,
   `world_state.json`, `town.glb`, population, or existing house claims.
 
+## 15. Multiplayer chat controls, directional faces, and admin layout
+
+- Desktop `T`, `/`, and Enter open town chat without showing the start screen.
+  Movement input clears while typing; Enter sends and restores pointer lock in
+  the same user action, so walking resumes without another click.
+- Added eyes and a smile to the forward side of every placeholder player marker,
+  making each remote player's facing direction visually obvious.
+- Split the admin page into Accounts/Claims and Multiplayer/Chat tabs. Related
+  datasets sit in responsive card grids with bounded scrolling instead of one
+  continuously growing page.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

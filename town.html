@@ -247,7 +247,7 @@
 <div id="startScreen" style="display:none;">
   <h1>Followville</h1>
   <p id="startSub">a town where every follower is a house</p>
-  <p id="startHint">WASD or arrows to walk · mouse to look · shift to run</p>
+  <p id="startHint">WASD or arrows to walk · T or / to chat · shift to run</p>
   <div id="startBtns">
     <div class="btn" id="enterBtn">click to enter</div>
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
@@ -1225,6 +1225,7 @@ const chatSend = document.getElementById("chatSend");
 const chatNote = document.getElementById("chatNote");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
+let resumeWalkingAfterChat = false;
 
 function beginWalking(){
   gameRunning = true;
@@ -1248,15 +1249,30 @@ function stopWalking(){
 }
 
 function chatOpen(){ return chatPanel.classList.contains("open"); }
+function clearMovementInput(){
+  move.x = 0;
+  move.z = 0;
+  move.run = false;
+}
 function openChat(){
-  if (controls.isLocked) controls.unlock();
-  else if (gameRunning) stopWalking();
+  if (chatOpen()){
+    if (!chatInput.disabled) chatInput.focus();
+    return;
+  }
+  resumeWalkingAfterChat = gameRunning || controls.isLocked;
   chatPanel.classList.add("open");
+  clearMovementInput();
+  if (!isTouch && controls.isLocked) controls.unlock();
   setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
 }
-function closeChat(){
+function closeChat(resumeWalking = true){
   chatPanel.classList.remove("open");
   chatInput.blur();
+  const shouldResume = resumeWalking && resumeWalkingAfterChat;
+  resumeWalkingAfterChat = false;
+  if (!shouldResume) return;
+  if (isTouch) beginWalking();
+  else controls.lock();
 }
 chatToggle.addEventListener("click", openChat);
 chatClose.addEventListener("click", closeChat);
@@ -1272,17 +1288,24 @@ if (isTouch){
 } else {
   startScreen.addEventListener("click", () => controls.lock());
   controls.addEventListener("lock", beginWalking);
-  controls.addEventListener("unlock", stopWalking);
+  controls.addEventListener("unlock", () => { if (!chatOpen()) stopWalking(); });
 }
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
-  if (e.code === "Enter" && !modalOpen() && !chatOpen()){
+  if (chatOpen()){
+    if (e.code === "Escape"){
+      e.preventDefault();
+      closeChat();
+    }
+    return;
+  }
+  if (!modalOpen() && (e.code === "KeyT" || e.code === "Slash" || e.key === "/" || e.code === "Enter")){
     e.preventDefault(); openChat(); return;
   }
-  if (modalOpen() || chatOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+  if (modalOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
   // don't walk around while typing in a modal or town chat
   switch(e.code){
     case "KeyW": case "ArrowUp": move.z = 1; break;
@@ -2011,11 +2034,22 @@ function createRemotePlayer(presence){
   const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 7), material);
   head.position.y = 1.58;
   head.castShadow = true;
-  group.add(body, head);
+  const faceMaterial = new THREE.MeshBasicMaterial({ color:0x1c2b45 });
+  const eyeGeometry = new THREE.SphereGeometry(.038, 7, 5);
+  const leftEye = new THREE.Mesh(eyeGeometry, faceMaterial);
+  leftEye.position.set(-.105, 1.65, .286);
+  const rightEye = new THREE.Mesh(eyeGeometry.clone(), faceMaterial);
+  rightEye.position.set(.105, 1.65, .286);
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(.105, .019, 6, 16, Math.PI), faceMaterial
+  );
+  smile.position.set(0, 1.55, .292);
+  smile.rotation.z = Math.PI;
+  group.add(body, head, leftEye, rightEye, smile);
   group.position.set(presence.x, 0, presence.z);
   multiplayerLayer.add(group);
   const player = {
-    group, material, label:null, bubble:null, bubbleTimer:null,
+    group, material, faceMaterial, label:null, bubble:null, bubbleTimer:null,
     target:new THREE.Vector3(presence.x, 0, presence.z),
     targetYaw:presence.yaw, handle:"", logged_in:false
   };
@@ -2043,6 +2077,7 @@ function removeRemotePlayer(clientId){
   disposeSprite(player.bubble);
   player.group.traverse(obj => obj.geometry?.dispose?.());
   player.material.dispose();
+  player.faceMaterial.dispose();
   multiplayerLayer.remove(player.group);
   multiplayerPlayers.delete(clientId);
 }
@@ -2141,7 +2176,7 @@ function updateChatAuthState(){
   chatSend.disabled = !canChat;
   chatInput.placeholder = canChat ? "Say something..." : "Sign in to chat";
   chatNote.textContent = canChat
-    ? "Enter sends · messages are saved for moderation"
+    ? "Enter sends and returns to the game · messages are saved"
     : "You can see chat now. Sign in to send messages.";
 }
 
@@ -2154,18 +2189,22 @@ async function sendTownChat(){
   const body = chatInput.value.trim();
   if (!body) return;
   chatSend.disabled = true;
+  chatInput.value = "";
+  closeChat();
   const { data, error } = await sb.rpc("send_chat_message", {
     p_body:body, p_client_id:multiplayerClientId
   });
   chatSend.disabled = false;
   if (error){
+    chatInput.value = body;
+    openChat();
     chatNote.textContent = (error.message || "").includes("chat_rate_limited")
       ? "Slow down — wait a second between messages."
       : "Message failed. Please try again.";
     return;
   }
   chatInput.value = "";
-  chatNote.textContent = "Enter sends · messages are saved for moderation";
+  chatNote.textContent = "Enter sends and returns to the game · messages are saved";
   addChatMessage(data, true);
 }
 

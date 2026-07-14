@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-14 - Cade (via Windows Codex) - [WEB] Improved multiplayer usability: T, /, or Enter now opens focused desktop chat without the Escape/start-screen interruption, Enter sends and restores walking, player markers have forward-facing 3D smiley faces, and admin data is organized into Accounts/Claims and Multiplayer/Chat tabs with compact scrollable sections.
+
 2026-07-14 - Cade (via Windows Codex) - [WEB] Added secure live website multiplayer: online count, visible moving visitor markers and names, signed-in persistent town chat with speech bubbles, plus admin online/session-duration/chat logs; migrated RLS-protected Supabase tables and authenticated RPCs without changing Blender, population, buildings, or existing house claims.
 
 2026-07-13 - Cade (via Windows Codex) - [BOTH] Fixed the three-upper-window `side_garage_two` design that looked half-loaded: its main two-story wall and roof now span the complete facade instead of an offset 70% section; visually checked the corrected real-world house and every other two-story type, reran the zero-overlap 366-address audit, and rebuilt/validated the web model without changing state or claims.
