@@ -2287,12 +2287,15 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         if not road_segments:
             raise RuntimeError("newstreet camera found no revealed road for %s" % street_name)
         road_points = [road_segments[0]["a"]] + [seg["b"] for seg in road_segments]
-        start_i = min(2, max(0, len(road_points) - 2))
-        end_i = max(start_i + 1, len(road_points) - 4)
+        start_i = 0
+        # Stop before the final turnaround. Keeping five road samples ahead
+        # gives the portrait camera enough depth to see facades on both sides
+        # instead of ending on a close-up of empty asphalt.
+        end_i = max(start_i + 1, len(road_points) - 10)
         key_count = min(9, max(5, end_i - start_i + 1))
 
         cam_data = bpy.data.cameras.new("Cam")
-        cam_data.lens = 32
+        cam_data.lens = 20
         cam_data.dof.use_dof = False
         cam_obj = bpy.data.objects.new("Camera", cam_data)
         aim = bpy.data.objects.new("NewStreetAim", None)
@@ -2307,12 +2310,12 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for k in range(key_count):
             frac = k / float(key_count - 1)
             idx = int(round(start_i + (end_i - start_i) * frac))
-            aim_idx = min(len(road_points) - 1, idx + 3)
+            aim_idx = min(len(road_points) - 1, idx + 5)
             frame = 1 + int(round((frame_end - 1) * frac))
             px, py = road_points[idx]
             ax, ay = road_points[aim_idx]
-            cam_obj.location = (px, py, 2.2)
-            aim.location = (ax, ay, 1.8)
+            cam_obj.location = (px, py, 3.0)
+            aim.location = (ax, ay, 2.3)
             cam_obj.keyframe_insert("location", frame=frame)
             aim.keyframe_insert("location", frame=frame)
         for obj in (cam_obj, aim):
