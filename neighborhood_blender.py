@@ -496,11 +496,14 @@ def build_suburban_house(col, variant):
                                    w * .31, -d * .13, foundation_z + body_h + .35, roof)
         wing_roof.rotation_euler.z = math.pi / 2
     elif feature == "sidewing":
-        add_box(col, "main_body", w * .70, d, body_h, -w * .14, 0, foundation_z, wall)
+        # The main two-story volume must span the full facade. The original
+        # partial-width/offset body left the third upper window floating over
+        # empty space, which looked like half of this house failed to load.
+        add_box(col, "main_body", w, d, body_h, 0, 0, foundation_z, wall)
         add_box(col, "garage_wing", w * .34, d * .82, 3.50,
                 garage_side * w * .34, -d * .09, foundation_z, wall)
-        add_prism_roof(col, "main_roof", w * .76, d + .58, roof_h,
-                       -w * .14, 0, foundation_z + body_h, roof)
+        add_prism_roof(col, "main_roof", w + .62, d + .58, roof_h,
+                       0, 0, foundation_z + body_h, roof)
         add_prism_roof(col, "wing_roof", w * .38, d * .88, roof_h * .80,
                        garage_side * w * .34, -d * .09, foundation_z + 3.50, roof)
     else:

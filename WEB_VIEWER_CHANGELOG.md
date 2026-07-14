@@ -239,6 +239,9 @@ Kept here (rather than just in chat) so it survives across sessions.
   to full size during GLB export.
 - Raised `house` and `ringhouse` name-tag heights to 9.2 so labels remain
   above the new two-story roofs.
+- Corrected `side_garage_two`, whose full-width windows/foundation had been
+  paired with an offset partial-width wall and roof. Its three upper windows
+  now sit on a complete two-story facade in Blender and the exported GLB.
 
 ## Files touched
 - `index.html` — the web viewer itself

@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Windows Codex) - [BOTH] Fixed the three-upper-window `side_garage_two` design that looked half-loaded: its main two-story wall and roof now span the complete facade instead of an offset 70% section; visually checked the corrected real-world house and every other two-story type, reran the zero-overlap 366-address audit, and rebuilt/validated the web model without changing state or claims.
+
 2026-07-13 - Cade (via Windows Codex) - [BOTH] Replaced all 176 ordinary and park-ring home visuals with an optimized 15-design suburban library and six stable color palettes, including complete lots with clear driveways and landscaping; preserved every seed/claim and all world-state values, collision-checked all current homes plus the full 366-address reserve, rebuilt/validated the 6.0 MB web model, and raised website name tags above taller roofs.
 
 2026-07-13 - Cade (via Codex) - [WORLD] Rerendered and visually reviewed the complete Day 12 delivery set after the final playground/wheel corrections (houses appearing, elementary school appearing, and finished town overhead), copied the replacement MP4s to Cade's Codex outputs folder, and emailed all three corrected videos to tooheycade@gmail.com.

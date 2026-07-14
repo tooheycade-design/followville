@@ -22,6 +22,8 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   clear driveway, walk, mailbox, porch/stoop, garage, and safe landscaping.
 - Planned-house compact scales are preserved by `nb_rest_scale`; the oriented
   collision audit passes all current homes and all 366 reserved addresses.
+- The `side_garage_two` partial-body bug is fixed: all three upstairs windows
+  now sit on a complete full-width two-story facade and roof.
 - Day 12 added 17 ordinary Creekside Bend houses at plan IDs 36-52 and one
   non-population, non-claimable Followville Elementary School.
 - The hidden 366-house suburban reserve remains deterministic and staged;

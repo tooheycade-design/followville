@@ -18,6 +18,9 @@ you go looking for it here.**
   where needed; oriented-box validation reports zero overlaps across all 176
   current ordinary/ring homes and all 366 reserved future addresses. Each
   variant is batched to one mesh to keep the website smooth.
+  Follow-up fix: `side_garage_two` now has a full-width two-story body and
+  main roof; its former offset 70% body left the third upstairs window over
+  empty space and looked like half the house had failed to load.
 - Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
   +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
   non-population Followville Elementary School). Heron Court completed and
