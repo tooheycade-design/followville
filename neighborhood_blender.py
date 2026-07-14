@@ -58,6 +58,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --render         render the day's video after building
 #   --still          render one preview PNG after building
 #   --replay         re-animate the last day, change nothing
+#   --cam newgrowth  frame the largest cluster of today's rising houses
+#   --cam newstreet  finished eye-level glide through today's busiest street
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
 #                     buildings across many blocks instead of filling one
@@ -2259,7 +2261,65 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
 
-    if cam == "street":
+    if cam == "newstreet":
+        # Finished street-level showcase of the newest ordinary homes. Pick
+        # the latest day's busiest planned street, then animate both camera
+        # and look target along its revealed road centerline. This follows
+        # winding roads naturally and cannot drift back to the founder grid.
+        latest_day = max((b.get("day", 0) for b in buildings
+                          if b.get("type") == "house" and b.get("street")), default=0)
+        latest_houses = [b for b in buildings
+                         if b.get("type") == "house" and b.get("street")
+                         and b.get("day", 0) == latest_day]
+        street_groups = {}
+        for b in latest_houses:
+            key = (b.get("district"), b.get("street"))
+            street_groups.setdefault(key, []).append(b)
+        if not street_groups:
+            raise RuntimeError("newstreet camera needs planned houses with street metadata")
+        (district_name, street_name), street_houses = max(
+            street_groups.items(), key=lambda item: (len(item[1]), item[0][1] or ""))
+        built_plan_id = max((b.get("plan_id", 0) for b in buildings), default=0)
+        road_segments = [seg for seg in SUBURBAN_PLAN.get("roads", [])
+                         if seg.get("district") == district_name
+                         and seg.get("street") == street_name
+                         and seg.get("reveal_at", 10**9) <= built_plan_id]
+        if not road_segments:
+            raise RuntimeError("newstreet camera found no revealed road for %s" % street_name)
+        road_points = [road_segments[0]["a"]] + [seg["b"] for seg in road_segments]
+        start_i = min(2, max(0, len(road_points) - 2))
+        end_i = max(start_i + 1, len(road_points) - 4)
+        key_count = min(9, max(5, end_i - start_i + 1))
+
+        cam_data = bpy.data.cameras.new("Cam")
+        cam_data.lens = 32
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        aim = bpy.data.objects.new("NewStreetAim", None)
+        world_col.objects.link(cam_obj)
+        world_col.objects.link(aim)
+        bpy.context.scene.camera = cam_obj
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        for k in range(key_count):
+            frac = k / float(key_count - 1)
+            idx = int(round(start_i + (end_i - start_i) * frac))
+            aim_idx = min(len(road_points) - 1, idx + 3)
+            frame = 1 + int(round((frame_end - 1) * frac))
+            px, py = road_points[idx]
+            ax, ay = road_points[aim_idx]
+            cam_obj.location = (px, py, 2.2)
+            aim.location = (ax, ay, 1.8)
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+    elif cam == "street":
         # eye-level flythrough down the town's oldest street (the by=0 road,
         # which runs past whichever buildings sit at gy 0-2 -- the founder
         # blocks from day 1) instead of orbiting a fixed point overhead.
@@ -2724,7 +2784,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "park", "overhead"):
+    if cfg.get("cam") in ("street", "newstreet", "park", "overhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "school":
         frame_end = max(frame_end, FPS * 8)
@@ -2744,7 +2804,15 @@ def main(cfg=None):
     animate_ring_traffic(world_col, keep or state["buildings"], frame_end)
     hero = None
     hero_batch = animation_batch if focus_type else new_batch
-    if cfg.get("hero") and hero_batch:
+    if cfg.get("cam") == "newgrowth" and hero_batch:
+        # A daily total can finish one cul-de-sac and start a distant district.
+        # Frame the largest new district so the rise shot stays close enough to
+        # read as houses appearing instead of shrinking the entire town to fit.
+        district_groups = {}
+        for b in hero_batch:
+            district_groups.setdefault(b.get("district") or "", []).append(b)
+        hero_batch = max(district_groups.values(), key=len)
+    if (cfg.get("hero") or cfg.get("cam") == "newgrowth") and hero_batch:
         pts = []
         for b in hero_batch:
             x, y = build_pos(b)
