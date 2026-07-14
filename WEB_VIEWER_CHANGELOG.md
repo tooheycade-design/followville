@@ -273,6 +273,20 @@ Kept here (rather than just in chat) so it survives across sessions.
   datasets sit in responsive card grids with bounded scrolling instead of one
   continuously growing page.
 
+## 16. Day 13 staged growth and corrected suburban scenery
+
+- Grew the canonical state from 186 to 226 followers with planned suburban
+  addresses 53-92, then rebuilt `town.glb` from the corrected completed scene.
+- Added `newgrowth` framing for the largest district in the latest batch and a
+  `newstreet` camera that follows the latest day's busiest revealed street.
+  The street camera keys every road sample and looks along the local tangent,
+  preventing interpolation chords and wide-angle roof clipping on tight bends.
+- Updated procedural nature scattering so trees, bushes, and rocks clear from
+  active suburban roads, cul-de-sac bulbs, and occupied planned-house lots as
+  each section develops. Unrevealed future areas remain untouched.
+- `check_town_glb.py` confirms the final model is not squashed and still matches
+  `world_state.json` at Day 13 / population 226 / 229 buildings.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

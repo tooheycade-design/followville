@@ -8,6 +8,18 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 13, population 226, 229 buildings (grown 2026-07-14 via Cade's
+  Codex: +40 ordinary houses at planned addresses 53-92). Creekside Bend
+  completed with the final two Pebble Court homes; Willow Hills began with
+  20 homes on Willow Rise and 18 on Foxglove Court. Only the road sections
+  required by those homes are revealed. Separate finished-street,
+  house-appearance, and finished-overhead videos were rendered and reviewed;
+  only the house-appearance video animates buildings. The new `newgrowth` and
+  `newstreet` cameras keep future daily shots centered on the newest planned
+  district/street. Nature scatter now clears automatically from revealed
+  suburban roads, cul-de-sacs, and occupied planned lots. The final GLB passed
+  validation, all 40 database rows matched Supabase, and the three videos were
+  emailed to `zachkehler@gmail.com`.
 - 2026-07-14 website multiplayer (Cade via Codex): `town.html` now uses
   Supabase Realtime Presence for online players and Broadcast for live movement.
   Visitors see lightweight player markers and name labels; signed-in followers

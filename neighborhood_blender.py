@@ -1940,11 +1940,44 @@ def animate_ring_traffic(world_col, buildings, frame_end):
 def scatter_nature(world_col, occupied, buildings):
     """Trees, bushes and rocks on empty lots + a wild ring around town.
     Seeded per lot, so the scenery is identical between videos until
-    someone builds on that lot."""
+    someone builds on that lot. Nature also clears automatically as planned
+    suburban roads and house lots become active."""
     min_bx, max_bx, min_by, max_by = block_extent(buildings)
+    active_plan_id = max((b.get("plan_id", 0) for b in buildings), default=0)
+    active_segments = [(seg["a"], seg["b"])
+                       for seg in SUBURBAN_PLAN.get("roads", [])
+                       if seg.get("reveal_at", 10**9) <= active_plan_id]
+    active_bulbs = [bulb["center"] for bulb in SUBURBAN_PLAN.get("turnarounds", [])
+                    if bulb.get("reveal_at", 10**9) <= active_plan_id]
+    active_house_points = [(b["px"], b["py"]) for b in buildings
+                           if b.get("plan_id") and "px" in b and "py" in b]
+
+    def distance_to_segment(point, a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        denom = dx * dx + dy * dy
+        if denom <= .000001:
+            return math.hypot(point[0] - a[0], point[1] - a[1])
+        t = max(0.0, min(1.0,
+                ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / denom))
+        return math.hypot(point[0] - (a[0] + t * dx),
+                          point[1] - (a[1] + t * dy))
+
     for gx in range((min_bx - 1) * BLOCK_N, (max_bx + 2) * BLOCK_N):
         for gy in range((min_by - 1) * BLOCK_N, (max_by + 2) * BLOCK_N):
             if (gx, gy) in occupied:
+                continue
+            point = lot_to_world(gx, gy)
+            # The scatter operates on the legacy grid, which can overlap the
+            # exact-coordinate suburban reserve. Clear a canopy-sized buffer
+            # only when that planned road/lot is actually developed.
+            if any(distance_to_segment(point, a, b) < ROAD / 2 + 2.5
+                   for a, b in active_segments):
+                continue
+            if any(math.hypot(point[0] - x, point[1] - y) < 7.5
+                   for x, y in active_house_points):
+                continue
+            if any(math.hypot(point[0] - x, point[1] - y) < 10.5
+                   for x, y in active_bulbs):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()
@@ -2292,10 +2325,16 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # gives the portrait camera enough depth to see facades on both sides
         # instead of ending on a close-up of empty asphalt.
         end_i = max(start_i + 1, len(road_points) - 10)
-        key_count = min(9, max(5, end_i - start_i + 1))
+        # Key every road sample. Sparse chords cut across the inside of tight
+        # curves and can pass through a house even though both endpoints sit
+        # on the road centerline.
+        key_count = end_i - start_i + 1
 
         cam_data = bpy.data.cameras.new("Cam")
-        cam_data.lens = 20
+        # A moderately wide street lens keeps both rows of houses visible
+        # without catching the dark undersides of roofs on the inside of
+        # Willow Rise's tighter bends.
+        cam_data.lens = 28
         cam_data.dof.use_dof = False
         cam_obj = bpy.data.objects.new("Camera", cam_data)
         aim = bpy.data.objects.new("NewStreetAim", None)
@@ -2310,7 +2349,10 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for k in range(key_count):
             frac = k / float(key_count - 1)
             idx = int(round(start_i + (end_i - start_i) * frac))
-            aim_idx = min(len(road_points) - 1, idx + 5)
+            # Look just far enough ahead to follow the local tangent. A long
+            # look-ahead cuts across bends and points the wide frame directly
+            # under the nearest inside-corner roof.
+            aim_idx = min(len(road_points) - 1, idx + 3)
             frame = 1 + int(round((frame_end - 1) * frac))
             px, py = road_points[idx]
             ax, ay = road_points[aim_idx]

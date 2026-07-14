@@ -4,6 +4,16 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
+## Current town (Day 13, 2026-07-14)
+
+Population is 226 with 229 buildings. Day 13 added 40 ordinary suburban houses
+at plan IDs 53-92: two finished Creekside Bend, then 38 began Willow Hills.
+Use `--cam newgrowth` for the one video where today's houses rise and
+`--cam newstreet` for a completed-state glide along today's busiest street.
+Nature scatter automatically clears from road/cul-de-sac geometry and occupied
+planned lots as development reveals them; do not remove that clearance logic.
+The Day 13 GLB and all 40 Supabase rows were validated.
+
 ## Website multiplayer (2026-07-14)
 
 `town.html` has Supabase Realtime multiplayer independent of daily Blender

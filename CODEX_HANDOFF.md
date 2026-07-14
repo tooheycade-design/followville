@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 12
+# Codex handoff -- current through Day 13
 
 Updated 2026-07-14 for Cade's next Claude/Codex session.
 
@@ -15,6 +15,17 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Day 13 is complete: population/followers 226, 229 buildings, with 40 new
+  ordinary houses at suburban plan IDs 53-92. The batch finished Creekside
+  Bend (2 Pebble Court homes) and started Willow Hills (20 Willow Rise and 18
+  Foxglove Court homes). Supabase has all 229 rows and the 40 Day 13 IDs match.
+- `--cam newgrowth` frames the newest day's largest district for rise videos;
+  `--cam newstreet` follows the newest day's busiest curved street. The street
+  path keys every road sample, uses local tangent aiming, and avoids roof/house
+  clipping on bends.
+- Procedural nature now clears from active suburban road ribbons, cul-de-sac
+  bulbs, and occupied planned lots, preventing trees or rocks from remaining
+  in newly developed roads. Future unrevealed areas keep their terrain/nature.
 - Website multiplayer is implemented: Supabase Realtime Presence tracks online
   visitors, Broadcast carries movement, and the town renders lightweight remote
   markers/name labels. Signed-in users can send persistent chat; guests can read
@@ -27,7 +38,7 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   RPCs. RLS and column grants expose only safe public identity/chat fields.
   Guests cannot create sessions, identities, or messages. Blender state and
   existing claims are not modified by multiplayer.
-- Day 12, population/followers 186, 189 buildings.
+- Day 12 finished at population/followers 186 and 189 buildings.
 - All 176 ordinary and park-ring homes now use a deterministic optimized
   library of 15 suburban designs and six coordinated palettes. Existing seeds,
   positions, claims, day, and population are unchanged. Each lot includes a
@@ -53,15 +64,18 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Latest delivery
 
-The corrected Day 12 house-rise, school-rise, and town-overhead MP4s are in:
+The Day 13 finished-street, house-appearance, and finished-overhead MP4s are in:
 
 `C:\Users\cadet\Documents\Codex\2026-07-11\th\outputs`
 
-They were visually reviewed and emailed to `tooheycade@gmail.com` with subject
-`Followville Day 12 -- corrected videos`.
+They were visually reviewed and emailed to `zachkehler@gmail.com` with subject
+`Followville Day 13 videos -- 226 followers`. Only the house-appearance MP4
+contains building-rise animation.
 
 ## Git checkpoints
 
+- Day 13 state/model/log commit: read the newest `origin/main` commit after
+  this handoff entry; it includes population 226 and the final corrected GLB.
 - `408ddab` -- final connected playground equipment and correct wheel placement.
 - `8984740` -- logged the corrected Day 12 video delivery.
 

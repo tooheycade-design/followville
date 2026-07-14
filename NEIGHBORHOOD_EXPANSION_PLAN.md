@@ -3,7 +3,7 @@
 Implemented 2026-07-11 for Cade. This is a permanent deterministic plan for
 the next 366 ordinary houses. It changes no existing building or road.
 
-Current progress: addresses 1-52 were built through Day 12 (population 186).
+Current progress: addresses 1-92 were built through Day 13 (population 226).
 
 ## Behavior
 
@@ -32,8 +32,8 @@ Current progress: addresses 1-52 were built through Day 12 (population 186).
 
 | Sequence | District | Houses |
 |---|---|---:|
-| 1-54 | Creekside Bend | 54 (52 built) |
-| 55-116 | Willow Hills | 62 |
+| 1-54 | Creekside Bend | 54 (complete) |
+| 55-116 | Willow Hills | 62 (38 built) |
 | 117-184 | Twin Oaks | 68 |
 | 185-260 | Meadow Run | 76 |
 | 261-318 | Pine Hollow | 58 |
