@@ -2034,22 +2034,25 @@ function createRemotePlayer(presence){
   const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 7), material);
   head.position.y = 1.58;
   head.castShadow = true;
+  const facePanelMaterial = new THREE.MeshBasicMaterial({ color:0xffedb0, side:THREE.DoubleSide });
+  const facePanel = new THREE.Mesh(new THREE.CircleGeometry(.235, 18), facePanelMaterial);
+  facePanel.position.set(0, 1.58, .318);
   const faceMaterial = new THREE.MeshBasicMaterial({ color:0x1c2b45 });
-  const eyeGeometry = new THREE.SphereGeometry(.038, 7, 5);
+  const eyeGeometry = new THREE.SphereGeometry(.047, 8, 6);
   const leftEye = new THREE.Mesh(eyeGeometry, faceMaterial);
-  leftEye.position.set(-.105, 1.65, .286);
+  leftEye.position.set(-.09, 1.65, .328);
   const rightEye = new THREE.Mesh(eyeGeometry.clone(), faceMaterial);
-  rightEye.position.set(.105, 1.65, .286);
+  rightEye.position.set(.09, 1.65, .328);
   const smile = new THREE.Mesh(
-    new THREE.TorusGeometry(.105, .019, 6, 16, Math.PI), faceMaterial
+    new THREE.TorusGeometry(.11, .025, 7, 18, Math.PI), faceMaterial
   );
-  smile.position.set(0, 1.55, .292);
+  smile.position.set(0, 1.54, .331);
   smile.rotation.z = Math.PI;
-  group.add(body, head, leftEye, rightEye, smile);
+  group.add(body, head, facePanel, leftEye, rightEye, smile);
   group.position.set(presence.x, 0, presence.z);
   multiplayerLayer.add(group);
   const player = {
-    group, material, faceMaterial, label:null, bubble:null, bubbleTimer:null,
+    group, material, facePanelMaterial, faceMaterial, label:null, bubble:null, bubbleTimer:null,
     target:new THREE.Vector3(presence.x, 0, presence.z),
     targetYaw:presence.yaw, handle:"", logged_in:false
   };
@@ -2077,6 +2080,7 @@ function removeRemotePlayer(clientId){
   disposeSprite(player.bubble);
   player.group.traverse(obj => obj.geometry?.dispose?.());
   player.material.dispose();
+  player.facePanelMaterial.dispose();
   player.faceMaterial.dispose();
   multiplayerLayer.remove(player.group);
   multiplayerPlayers.delete(clientId);

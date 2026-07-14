@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-14 - Cade (via Windows Codex) - [WEB] Made the temporary multiplayer smiley faces unmistakable at gameplay distance by adding a light circular face panel, larger dark eyes, and a thicker forward-facing smile to every player marker.
+
 2026-07-14 - Cade (via Windows Codex) - [WEB] Improved multiplayer usability: T, /, or Enter now opens focused desktop chat without the Escape/start-screen interruption, Enter sends and restores walking, player markers have forward-facing 3D smiley faces, and admin data is organized into Accounts/Claims and Multiplayer/Chat tabs with compact scrollable sections.
 
 2026-07-14 - Cade (via Windows Codex) - [WEB] Added secure live website multiplayer: online count, visible moving visitor markers and names, signed-in persistent town chat with speech bubbles, plus admin online/session-duration/chat logs; migrated RLS-protected Supabase tables and authenticated RPCs without changing Blender, population, buildings, or existing house claims.

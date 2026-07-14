@@ -266,8 +266,9 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Desktop `T`, `/`, and Enter open town chat without showing the start screen.
   Movement input clears while typing; Enter sends and restores pointer lock in
   the same user action, so walking resumes without another click.
-- Added eyes and a smile to the forward side of every placeholder player marker,
-  making each remote player's facing direction visually obvious.
+- Added a light circular face panel, large dark eyes, and a thick smile to the
+  forward side of every placeholder player marker, making each remote player's
+  facing direction obvious at normal gameplay distance.
 - Split the admin page into Accounts/Claims and Multiplayer/Chat tabs. Related
   datasets sit in responsive card grids with bounded scrolling instead of one
   continuously growing page.
