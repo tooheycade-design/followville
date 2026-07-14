@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-13 - Cade (via Windows Codex) - [BOTH] Replaced all 176 ordinary and park-ring home visuals with an optimized 15-design suburban library and six stable color palettes, including complete lots with clear driveways and landscaping; preserved every seed/claim and all world-state values, collision-checked all current homes plus the full 366-address reserve, rebuilt/validated the 6.0 MB web model, and raised website name tags above taller roofs.
+
 2026-07-13 - Cade (via Codex) - [WORLD] Rerendered and visually reviewed the complete Day 12 delivery set after the final playground/wheel corrections (houses appearing, elementary school appearing, and finished town overhead), copied the replacement MP4s to Cade's Codex outputs folder, and emailed all three corrected videos to tooheycade@gmail.com.
 
 2026-07-13 - Cade (via Codex) - [WORLD] Corrected the school-equipment/car follow-up after Cade caught remaining geometry errors: rebuilt the swings with endpoint-aligned connected A-frames and chains, rebuilt the slide rails and exit to follow the chute exactly, and gave the two sides of every car opposite inward tire rotations so all four wheels sit at the front/rear axles and protrude outside the body; verified the playground from above and the side plus both sides of an isolated car before publishing.

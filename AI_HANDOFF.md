@@ -4,6 +4,18 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
+## Current suburban house system (2026-07-13)
+
+Ordinary `house` and park `ringhouse` buildings share 15 detailed suburban
+designs in six coordinated palettes. The saved `seed` deterministically chooses
+the design/color, and that same seed is the Supabase claim identity: never rewrite
+seeds when changing visuals. Each asset owns its driveway, walk, mailbox, porch,
+garage, and landscaping; shrubs must stay outside the driveway. Planned addresses
+use compact per-instance rest scales where spacing requires it, so
+`export_web.py` must preserve `nb_rest_scale`. Do not replace the instances with
+unit scale during export or animation. The permanent plan audit covers all 366
+future addresses and must remain at zero house-to-house overlaps.
+
 ## The one command
 
 ```bash

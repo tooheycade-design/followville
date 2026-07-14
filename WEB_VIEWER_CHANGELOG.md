@@ -227,6 +227,19 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Verified both files' inline `<script>` blocks still parse cleanly
   (`node --check`) after these changes.
 
+## 13. Suburban library replacement and compact planned lots
+
+- Replaced the normal/ring-house GLB visuals with 15 suburban designs across
+  six deterministic color palettes while keeping `building.seed` unchanged,
+  so the website's Supabase claim mapping remains stable.
+- Batches every reusable house variant into one material-aware mesh. The final
+  `town.glb` is about 6.0 MB and passes `check_town_glb.py`.
+- `export_web.py` now preserves each instance's `nb_rest_scale`; this keeps
+  compact lots clear at tight curves and cul-de-sacs instead of resetting them
+  to full size during GLB export.
+- Raised `house` and `ringhouse` name-tag heights to 9.2 so labels remain
+  above the new two-story roofs.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

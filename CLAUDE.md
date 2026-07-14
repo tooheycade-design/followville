@@ -8,6 +8,16 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
+  `house` and `ringhouse` now draws from one optimized library of 15
+  distinct suburban designs and six coordinated color palettes (90 stable
+  variants). Houses include their own driveway, walk, mailbox, porch/stoop,
+  garage, windows, trim, and driveway-safe landscaping. Existing building
+  seeds, positions, types, population, and day are unchanged, so all claims
+  remain attached to the same homes. Planned lots use audited compact scales
+  where needed; oriented-box validation reports zero overlaps across all 176
+  current ordinary/ring homes and all 366 reserved future addresses. Each
+  variant is batched to one mesh to keep the website smooth.
 - Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
   +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
   non-population Followville Elementary School). Heron Court completed and

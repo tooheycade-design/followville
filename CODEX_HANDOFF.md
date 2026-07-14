@@ -16,6 +16,12 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 ## Current canon
 
 - Day 12, population/followers 186, 189 buildings.
+- All 176 ordinary and park-ring homes now use a deterministic optimized
+  library of 15 suburban designs and six coordinated palettes. Existing seeds,
+  positions, claims, day, and population are unchanged. Each lot includes a
+  clear driveway, walk, mailbox, porch/stoop, garage, and safe landscaping.
+- Planned-house compact scales are preserved by `nb_rest_scale`; the oriented
+  collision audit passes all current homes and all 366 reserved addresses.
 - Day 12 added 17 ordinary Creekside Bend houses at plan IDs 36-52 and one
   non-population, non-claimable Followville Elementary School.
 - The hidden 366-house suburban reserve remains deterministic and staged;

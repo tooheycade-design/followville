@@ -21,7 +21,7 @@ import math
 import os
 import random
 import sys
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 # Pure-data reserve for populations 135..500.  Importing this module creates
 # nothing; future houses/roads remain invisible until main() consumes them.
@@ -278,25 +278,339 @@ def build_tree(col, rng, scale=1.0, px=0.0, py=0.0):
         blob = add_ngon_cone(col, "blob", 1.9 * s, 0.7 * s, 2.8 * s, 7, px, py, 1.8 * s, green)
         add_ngon_cone(col, "blobtop", 0.7 * s, 0, 0.9 * s, 7, px, py, 4.6 * s, green)
 
-def build_house(col, seed):
-    rng = random.Random(seed)
+SUBURBAN_PALETTES = [
+    # wall, roof, door, shutter -- restrained colors keep whole streets cohesive
+    ((0.88, 0.80, 0.66), (0.32, 0.23, 0.18), (0.18, 0.37, 0.24), (0.22, 0.40, 0.48)),
+    ((0.47, 0.64, 0.71), (0.20, 0.22, 0.24), (0.52, 0.15, 0.12), (0.32, 0.49, 0.61)),
+    ((0.58, 0.68, 0.55), (0.22, 0.31, 0.38), (0.16, 0.34, 0.47), (0.18, 0.35, 0.25)),
+    ((0.83, 0.61, 0.49), (0.37, 0.24, 0.18), (0.24, 0.31, 0.42), (0.49, 0.28, 0.22)),
+    ((0.78, 0.79, 0.74), (0.27, 0.29, 0.30), (0.46, 0.22, 0.15), (0.31, 0.42, 0.44)),
+    ((0.79, 0.73, 0.82), (0.34, 0.27, 0.38), (0.20, 0.38, 0.35), (0.43, 0.31, 0.48)),
+]
+
+# Fifteen normal suburban silhouettes. Every entry fits a single 10m lot and
+# faces local -Y. Existing/future building seeds select both style and color,
+# so rerenders stay stable and claims never move to a different building ID.
+SUBURBAN_STYLES = [
+    # name, width, depth, floors, garage side, porch, roof height, feature
+    ("classic_ranch",       7.9, 5.7, 1,  1, "small", 1.75, "brick"),
+    ("wide_ranch",          8.5, 5.4, 1, -1, "small", 1.55, "stone"),
+    ("raised_ranch",        7.7, 5.8, 1,  1, "stoop", 1.85, "raised"),
+    ("split_level",         8.3, 5.7, 2,  1, "stoop", 1.55, "split"),
+    ("center_colonial",     7.1, 5.7, 2, -1, "portico", 2.05, "colonial"),
+    ("garage_colonial",     7.8, 5.8, 2,  1, "portico", 1.90, "belt"),
+    ("craftsman",           7.5, 5.9, 1, -1, "wide", 2.20, "craftsman"),
+    ("cape_cod",            7.2, 5.5, 1,  1, "small", 2.45, "dormers"),
+    ("suburban_farmhouse",  7.4, 5.8, 2, -1, "wide", 2.15, "farmhouse"),
+    ("modern_suburban",     7.8, 5.6, 2,  1, "stoop", 1.25, "modern"),
+    ("front_gable",         7.0, 5.9, 2, -1, "portico", 2.00, "frontgable"),
+    ("l_shaped_ranch",      8.4, 5.8, 1,  1, "small", 1.70, "wing"),
+    ("side_garage_two",     8.2, 5.9, 2, -1, "small", 1.85, "sidewing"),
+    ("starter_suburban",    6.7, 5.3, 1,  1, "stoop", 1.75, "simplegable"),
+    ("double_garage",       8.6, 5.9, 2, -1, "portico", 1.85, "doublegarage"),
+]
+
+# Lots at branch merges and adjacent cul-de-sac arcs are intentionally tighter
+# than the main road frontage. These plan IDs use the compact lot footprint;
+# every other planned address uses the standard .78 footprint. The set was
+# audited against all 366 reserved addresses with oriented bounding boxes.
+SUBURBAN_TIGHT_PLAN_IDS = {
+    7, 19, 39, 40, 61, 62, 63, 93, 94, 95, 115, 116, 124, 125, 126, 128,
+    134, 135, 136, 158, 160, 162, 163, 164, 165, 180, 182, 193, 194, 195,
+    196, 197, 205, 206, 207, 208, 211, 212, 255, 256, 257, 258, 259, 260,
+    271, 280, 291, 292, 293, 294, 295, 296, 297, 298, 308, 310, 312, 313,
+    314, 315, 316, 317, 318, 326, 327, 349, 350,
+}
+
+
+def _sub_window(col, name, x, y, z, trim, glass, shutter=None,
+                width=1.12, height=1.18):
+    """Layered street-facing window with frame, glass, mullions and sill."""
+    add_box(col, name + "_frame", width + .24, .12, height + .24,
+            x, y, z, trim)
+    add_box(col, name + "_glass", width, .08, height,
+            x, y - .08, z + .12, glass)
+    add_box(col, name + "_mv", .07, .06, height,
+            x, y - .14, z + .12, trim)
+    add_box(col, name + "_mh", width, .06, .07,
+            x, y - .14, z + .12 + height * .49, trim)
+    add_box(col, name + "_sill", width + .34, .24, .10,
+            x, y - .08, z - .09, trim)
+    if shutter:
+        for side in (-1, 1):
+            sx = x + side * (width / 2 + .18)
+            add_box(col, name + "_shutter", .22, .10, height + .10,
+                    sx, y - .08, z + .07, shutter)
+            for iz in range(3):
+                add_box(col, name + "_slat", .15, .05, .035,
+                        sx, y - .15, z + .30 + iz * .33, trim)
+
+
+def _sub_side_window(col, name, x, y, z, side, trim, glass):
+    add_box(col, name + "_frame", .12, 1.28, 1.40, x, y, z, trim)
+    add_box(col, name + "_glass", .08, 1.06, 1.18,
+            x + side * .08, y, z + .11, glass)
+    add_box(col, name + "_mullion", .06, .07, 1.18,
+            x + side * .14, y, z + .11, trim)
+    add_box(col, name + "_cross", .06, 1.06, .07,
+            x + side * .14, y, z + .68, trim)
+
+
+def _sub_door(col, name, x, front_y, z0, trim, door, glass, m):
+    add_box(col, name + "_frame", 1.42, .24, 2.42,
+            x, front_y - .10, z0, trim)
+    add_box(col, name + "_slab", 1.10, .11, 2.14,
+            x, front_y - .23, z0 + .13, door)
+    for iz in range(3):
+        add_box(col, name + "_panel", .70, .055, .35,
+                x, front_y - .31, z0 + .34 + iz * .57, trim)
+    add_box(col, name + "_knob", .10, .07, .10,
+            x + .36, front_y - .36, z0 + 1.00, m["metal"])
+    add_box(col, name + "_porchlight", .16, .18, .30,
+            x + .90, front_y - .15, z0 + 1.76, glass)
+
+
+def _sub_garage(col, name, x, front_y, z0, width, trim, garage, glass, m):
+    add_box(col, name + "_frame", width + .34, .22, 2.35,
+            x, front_y - .10, z0, trim)
+    add_box(col, name + "_door", width, .10, 2.05,
+            x, front_y - .23, z0 + .14, garage)
+    for iz in range(4):
+        add_box(col, name + "_seam", width - .15, .05, .035,
+                x, front_y - .31, z0 + .43 + iz * .41, m["cap"])
+    for ix in (-.72, 0, .72):
+        if abs(ix) < width / 2 - .20:
+            add_box(col, name + "_topglass", .45, .05, .28,
+                    x + ix, front_y - .32, z0 + 1.68, glass)
+
+
+def _sub_porch(col, name, x, front_y, z0, kind, trim, roof, m):
+    widths = {"stoop": 1.75, "small": 2.45, "portico": 2.75, "wide": 3.65}
+    width = widths[kind]
+    depth = .72 if kind == "stoop" else 1.12
+    add_box(col, name + "_deck", width, depth, .22,
+            x, front_y - depth / 2, z0 - .03, m["trunk"])
+    for iz in range(3):
+        sw = 1.75 - iz * .18
+        add_box(col, name + "_step", sw, .34, .16,
+                x, front_y - depth - .10 - iz * .25, z0 - .10 - iz * .14,
+                m["cap"])
+    if kind != "stoop":
+        for px in (x - width / 2 + .22, x + width / 2 - .22):
+            add_box(col, name + "_post", .18, .18, 2.18,
+                    px, front_y - depth + .18, z0 + .20, trim)
+            add_box(col, name + "_postbase", .31, .31, .20,
+                    px, front_y - depth + .18, z0 + .12, trim)
+        add_box(col, name + "_beam", width, .22, .24,
+                x, front_y - depth + .18, z0 + 2.28, trim)
+        add_prism_roof(col, name + "_roof", width + .35, depth + .35, .62,
+                       x, front_y - depth / 2, z0 + 2.48, roof)
+    else:
+        add_box(col, name + "_canopy", width + .20, 1.00, .18,
+                x, front_y - .46, z0 + 2.38, roof)
+
+
+def _sub_shrub(col, name, x, y, green, green2):
+    add_ngon_cone(col, name + "_base", .34, .40, .48, 8, x, y, .04, green)
+    add_ngon_cone(col, name + "_top", .25, .20, .24, 8, x, y, .52, green2)
+
+
+def _merge_asset_meshes(col, name):
+    """Combine one detailed house into one object while retaining materials.
+
+    One collection instance per house is much cheaper in Three.js than 60-90
+    tiny trim/window objects. Material slots still create a handful of draw
+    groups, but geometry and transforms remain identical in Blender and GLB.
+    """
+    objects = [obj for obj in list(col.objects) if obj.type == "MESH"]
+    if len(objects) < 2:
+        return
+    vertices, faces, face_mats, materials = [], [], [], []
+    mat_index = {}
+    for obj in objects:
+        # Asset collections are intentionally unlinked from the scene until
+        # instanced. Blender does not always evaluate matrix_local for those
+        # objects, so build the transform explicitly; otherwise every roof,
+        # window and porch collapses toward the collection origin when merged.
+        matrix = Matrix.LocRotScale(obj.location, obj.rotation_euler.to_quaternion(), obj.scale)
+        base = len(vertices)
+        vertices.extend(tuple(matrix @ v.co) for v in obj.data.vertices)
+        for poly in obj.data.polygons:
+            faces.append(tuple(base + i for i in poly.vertices))
+            source_mat = (obj.data.materials[poly.material_index]
+                          if len(obj.data.materials) else None)
+            if source_mat not in mat_index:
+                mat_index[source_mat] = len(materials)
+                materials.append(source_mat)
+            face_mats.append(mat_index[source_mat])
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    merged = bpy.data.objects.new(name, mesh)
+    col.objects.link(merged)
+    for material in materials:
+        if material:
+            mesh.materials.append(material)
+    for poly, index in zip(mesh.polygons, face_mats):
+        poly.material_index = index
+    for obj in objects:
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+
+def build_suburban_house(col, variant):
+    style_index = variant % len(SUBURBAN_STYLES)
+    palette_index = (variant // len(SUBURBAN_STYLES)) % len(SUBURBAN_PALETTES)
+    name, w, d, floors, garage_side, porch_kind, roof_h, feature = SUBURBAN_STYLES[style_index]
+    wall_c, roof_c, door_c, shutter_c = SUBURBAN_PALETTES[palette_index]
+    rng = random.Random(9100 + variant)
     m = std_mats()
-    wall = mat("NB_wall%d" % seed, WALLS[rng.randrange(len(WALLS))])
-    roof = mat("NB_roof%d" % seed, ROOFS[rng.randrange(len(ROOFS))])
-    w = 5.5 + rng.random() * 1.5
-    d = 5.0 + rng.random() * 1.2
-    h = 3.4 + rng.random() * 1.2
-    add_box(col, "base", w, d, h, 0, 0, 0, wall)
-    add_prism_roof(col, "roof", w + 0.7, d + 0.7, 1.9 + rng.random(), 0, 0, h, roof)
-    add_box(col, "door", 1.1, 0.25, 1.9, (rng.random() - 0.5) * w * 0.35, -d / 2 - 0.1, 0, m["door"])
-    add_box(col, "winL", 1.0, 0.2, 0.9, -w * 0.28, -d / 2 - 0.08, 1.6, m["window"])
-    add_box(col, "winR", 1.0, 0.2, 0.9,  w * 0.28, -d / 2 - 0.08, 1.6, m["window"])
-    if rng.random() < 0.6:   # chimney
-        add_box(col, "chim", 0.7, 0.7, 1.3, w * 0.25, d * 0.15, h + 0.8, m["cap"])
-    if rng.random() < 0.65:  # yard tree
-        build_tree(col, rng, 0.6 + rng.random() * 0.4,
-                   (1 if rng.random() < 0.5 else -1) * (w / 2 + 1.5),
-                   (rng.random() - 0.5) * 3)
+    wall = mat("NB_sub_wall_%d" % palette_index, wall_c, .82)
+    roof = mat("NB_sub_roof_%d" % palette_index, roof_c, .88)
+    door = mat("NB_sub_door_%d" % palette_index, door_c, .72)
+    shutter = mat("NB_sub_shutter_%d" % palette_index, shutter_c, .78)
+    trim = mat("NB_sub_trim", (.94, .92, .84), .76)
+    glass = mat("NB_sub_glass", (.10, .23, .32), .25)
+    garage = mat("NB_sub_garage", (.84, .83, .76), .84)
+    brick = mat("NB_sub_brick", (.49, .20, .14), .90)
+    stone = mat("NB_sub_stone", (.45, .43, .38), .95)
+    green = mat("NB_sub_green", (.25, .48, .21), .95)
+    green2 = mat("NB_sub_green_light", (.39, .57, .24), .95)
+
+    foundation_z = .12 if feature != "raised" else .38
+    body_h = 3.40 if floors == 1 else 5.85
+    if feature == "split":
+        # Two offset heights give the actual split-level silhouette.
+        add_box(col, "left_body", w * .54, d, 4.90, -w * .23, 0, foundation_z, wall)
+        add_box(col, "right_body", w * .48, d, 3.48, w * .27, 0, foundation_z, wall)
+        add_prism_roof(col, "left_roof", w * .58, d + .58, roof_h,
+                       -w * .23, 0, foundation_z + 4.90, roof)
+        add_prism_roof(col, "right_roof", w * .52, d + .58, roof_h * .88,
+                       w * .27, 0, foundation_z + 3.48, roof)
+    elif feature == "wing":
+        add_box(col, "main_body", w * .62, d, body_h, -w * .18, 0, foundation_z, wall)
+        add_box(col, "front_wing", w * .40, d * .72, body_h + .35,
+                w * .31, -d * .13, foundation_z, wall)
+        add_prism_roof(col, "main_roof", w * .68, d + .58, roof_h,
+                       -w * .18, 0, foundation_z + body_h, roof)
+        wing_roof = add_prism_roof(col, "wing_roof", d * .80, w * .44, roof_h * .88,
+                                   w * .31, -d * .13, foundation_z + body_h + .35, roof)
+        wing_roof.rotation_euler.z = math.pi / 2
+    elif feature == "sidewing":
+        add_box(col, "main_body", w * .70, d, body_h, -w * .14, 0, foundation_z, wall)
+        add_box(col, "garage_wing", w * .34, d * .82, 3.50,
+                garage_side * w * .34, -d * .09, foundation_z, wall)
+        add_prism_roof(col, "main_roof", w * .76, d + .58, roof_h,
+                       -w * .14, 0, foundation_z + body_h, roof)
+        add_prism_roof(col, "wing_roof", w * .38, d * .88, roof_h * .80,
+                       garage_side * w * .34, -d * .09, foundation_z + 3.50, roof)
+    else:
+        add_box(col, "body", w, d, body_h, 0, 0, foundation_z, wall)
+        if feature == "frontgable":
+            main_roof = add_prism_roof(col, "roof", d + .65, w + .62, roof_h,
+                                       0, 0, foundation_z + body_h, roof)
+            main_roof.rotation_euler.z = math.pi / 2
+        elif feature == "modern":
+            add_box(col, "roof_low", w + .42, d + .42, .34,
+                    0, 0, foundation_z + body_h, roof)
+            add_box(col, "roof_high", w * .47, d + .62, .42,
+                    -w * .23, 0, foundation_z + body_h + .34, roof)
+        else:
+            add_prism_roof(col, "roof", w + .62, d + .62, roof_h,
+                           0, 0, foundation_z + body_h, roof)
+
+    add_box(col, "foundation", w + .22, d + .20, .36, 0, 0, 0, m["cap"])
+    front_y = -d / 2 - .08
+    garage_w = 4.05 if feature == "doublegarage" else 2.58
+    garage_x = garage_side * (w / 2 - garage_w / 2 - .20)
+    door_x = -garage_side * (w * .19)
+    _sub_garage(col, "garage", garage_x, front_y, foundation_z + .04,
+                garage_w, trim, garage, glass, m)
+    _sub_door(col, "entry", door_x, front_y, foundation_z + .04,
+              trim, door, glass, m)
+    _sub_porch(col, "porch", door_x, front_y - .10, foundation_z + .04,
+               porch_kind, trim, roof, m)
+
+    # Lower windows always stay out of the garage opening.
+    open_side_x = -garage_side * (w * .34)
+    _sub_window(col, "lower_outer", open_side_x, front_y - .04,
+                foundation_z + 1.40, trim, glass, shutter, 1.12, 1.16)
+    if abs(open_side_x - door_x) > 1.65:
+        _sub_window(col, "lower_inner", (open_side_x + door_x) / 2,
+                    front_y - .04, foundation_z + 1.42, trim, glass,
+                    None, .94, 1.12)
+
+    if floors == 2 and feature != "split":
+        upper_z = foundation_z + 4.18
+        for i, ux in enumerate((-w * .33, 0, w * .33)):
+            _sub_window(col, "upper_%d" % i, ux, front_y - .04, upper_z,
+                        trim, glass, shutter if i != 1 else None, 1.02, 1.18)
+        add_box(col, "story_belt", w + .18, .20, .16,
+                0, front_y - .01, foundation_z + 3.18, trim)
+    if feature == "split":
+        # Keep both upper windows inside the tall half. The earlier generic
+        # three-window row overlapped an extra split window and looked broken.
+        for i, sx in enumerate((-w * .34, -w * .13)):
+            _sub_window(col, "split_upper_%d" % i, sx, front_y - .04,
+                        foundation_z + 3.48, trim, glass,
+                        shutter if i == 0 else None, 1.08, 1.18)
+    if feature == "dormers":
+        for dx in (-1.65, 1.65):
+            add_box(col, "dormer", 1.28, .78, 1.02,
+                    dx, -.88, foundation_z + body_h + 1.88, wall)
+            add_prism_roof(col, "dormer_roof", 1.55, 1.12, .62,
+                           dx, -.88, foundation_z + body_h + 2.88, roof)
+            _sub_window(col, "dormer_window", dx, -1.31,
+                        foundation_z + body_h + 2.02, trim, glass, None, .68, .65)
+    if feature in ("colonial", "farmhouse", "frontgable"):
+        add_box(col, "entry_gable_face", 2.65, .70, .88,
+                door_x, front_y - .40, foundation_z + body_h - .20, wall)
+        add_prism_roof(col, "entry_gable", 2.95, 1.55, .95,
+                       door_x, front_y - .45, foundation_z + body_h + .62, roof)
+    if feature in ("brick", "raised", "belt"):
+        add_box(col, "brick_skirt", w - .10, .14, .66,
+                0, front_y - .01, foundation_z, brick)
+    elif feature in ("stone", "craftsman", "split"):
+        add_box(col, "stone_skirt", w - .10, .14, .72,
+                0, front_y - .01, foundation_z, stone)
+
+    _sub_side_window(col, "side_window", garage_side * (w / 2 + .02), .45,
+                     foundation_z + 1.46, garage_side, trim, glass)
+    if floors == 2:
+        _sub_side_window(col, "side_upper", garage_side * (w / 2 + .02), .45,
+                         foundation_z + 4.16, garage_side, trim, glass)
+
+    # Driveway extends toward the street from the garage. Landscaping is
+    # deliberately restricted to the opposite planting bed, never this x-zone.
+    drive_front = -4.90
+    drive_back = front_y - .02
+    drive_depth = max(.80, drive_back - drive_front)
+    add_box(col, "driveway", garage_w + .48, drive_depth, .09,
+            garage_x, (drive_front + drive_back) / 2, .02, m["cap"])
+    add_box(col, "front_walk", 1.08, max(.65, -4.82 - (front_y - 1.0)), .10,
+            door_x, -4.05, .03, m["cap"])
+    bed_center = -garage_side * (w * .34)
+    for i, bx in enumerate((bed_center - .42, bed_center + .42)):
+        # Extra exclusion check is cheap insurance if future style dimensions change.
+        if abs(bx - garage_x) > garage_w / 2 + .38:
+            _sub_shrub(col, "shrub_%d" % i, bx, front_y - .34, green, green2)
+    mailbox_x = -garage_side * (w / 2 - .38)
+    add_box(col, "mailpost", .13, .13, 1.02, mailbox_x, -4.62, .02, m["trunk"])
+    add_box(col, "mailbox", .42, .66, .34, mailbox_x, -4.66, .98, m["metal"])
+    add_box(col, "mailflag", .06, .07, .46,
+            mailbox_x + .25, -4.66, 1.08, door)
+
+    if feature in ("classic_ranch", "colonial", "farmhouse") or rng.random() < .24:
+        add_box(col, "chimney", .64, .68, 1.45,
+                -garage_side * w * .30, .72, foundation_z + body_h + .72, brick)
+        add_box(col, "chimney_cap", .82, .86, .16,
+                -garage_side * w * .30, .72, foundation_z + body_h + 2.13, m["cap"])
+
+    _merge_asset_meshes(col, "suburban_%02d_%s" % (variant, name))
+
+
+def build_house(col, seed):
+    # Backward-compatible entry point used by docs/custom callers.
+    build_suburban_house(col, seed % (len(SUBURBAN_STYLES) * len(SUBURBAN_PALETTES)))
 
 def build_apartment(col, seed):
     rng = random.Random(seed)
@@ -1130,8 +1444,13 @@ def build_park_district(col, seed):
             add_ngon_cone(col, "lpole", 0.13, 0.09, 4.2, 6, px, py, 0.1, m["metal"])
             add_box(col, "llamp", 0.45, 0.35, 0.2, px, py, 4.3, m["bulb"])
 
+SUBURBAN_ASSET_VARIANTS = [
+    ("AST_suburban_%02d" % i, lambda c, i=i: build_suburban_house(c, i))
+    for i in range(len(SUBURBAN_STYLES) * len(SUBURBAN_PALETTES))
+]
+
 ASSET_VARIANTS = {
-    "house":       [("AST_house_%d" % i, lambda c, i=i: build_house(c, 100 + i)) for i in range(6)],
+    "house":       SUBURBAN_ASSET_VARIANTS,
     "apartment":   [("AST_apart_%d" % i, lambda c, i=i: build_apartment(c, 200 + i)) for i in range(3)],
     "shop":        [("AST_shop_%d" % i, lambda c, i=i: build_shop(c, 300 + i)) for i in range(3)],
     "park":        [("AST_park_%d" % i, lambda c, i=i: build_park(c, 400 + i)) for i in range(3)],
@@ -1156,7 +1475,9 @@ ASSET_VARIANTS = {
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
-    "ringhouse":   [("AST_ring_%d" % i, lambda c, i=i: build_ring_house(c, 2300 + i)) for i in range(10)],
+    # Park-ring residents keep their exact seed/claim/position/rotation, but
+    # now draw from the same normal suburban library as every other resident.
+    "ringhouse":   SUBURBAN_ASSET_VARIANTS,
     "parkdistrict": [("AST_parkdist_0", lambda c: build_park_district(c, 2400))],
 }
 
@@ -1324,6 +1645,11 @@ def place_instance(world_col, b, name):
         best = min(dists.values())
         opts = sorted(k for k, v in dists.items() if v == best)
         empty.rotation_euler = (0, 0, opts[rng.randrange(len(opts))])
+    if b["type"] == "house" and b.get("plan_id"):
+        lot_scale = .55 if b["plan_id"] in SUBURBAN_TIGHT_PLAN_IDS else .78
+        empty.scale = (lot_scale, lot_scale, max(.75, lot_scale + .20))
+    # Animation/export must return to this authored scale, not blindly to 1.
+    empty["nb_rest_scale"] = tuple(empty.scale)
     world_col.objects.link(empty)
     return empty
 
@@ -1855,22 +2181,24 @@ def _keyframe_hidden(empty, frame, hidden):
     empty.keyframe_insert("hide_render", frame=frame)
 
 def animate_rise(empty, f_start, dur=22):
+    rest = tuple(empty.get("nb_rest_scale", empty.scale))
     # invisible until its turn — no flattened houses lying on the ground
     _keyframe_hidden(empty, 1, True)
     _keyframe_hidden(empty, f_start, False)
-    empty.scale = (1, 1, 0.001)
+    empty.scale = (rest[0], rest[1], max(.001, rest[2] * .001))
     empty.keyframe_insert("scale", frame=f_start)
-    empty.scale = (1, 1, 1)
+    empty.scale = rest
     empty.keyframe_insert("scale", frame=f_start + dur)
     _ease_scale(empty, "EASE_OUT")
 
 def animate_sink(empty, f_start, dur=20):
     """Follower lost: the house sinks back into the ground, then vanishes."""
+    rest = tuple(empty.get("nb_rest_scale", empty.scale))
     _keyframe_hidden(empty, 1, False)
     _keyframe_hidden(empty, f_start + dur, True)
-    empty.scale = (1, 1, 1)
+    empty.scale = rest
     empty.keyframe_insert("scale", frame=f_start)
-    empty.scale = (1, 1, 0.001)
+    empty.scale = (rest[0], rest[1], max(.001, rest[2] * .001))
     empty.keyframe_insert("scale", frame=f_start + dur)
     _ease_scale(empty, "EASE_IN")
 

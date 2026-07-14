@@ -82,7 +82,10 @@ def export_web_glb():
         obj.hide_select = False
         obj.hide_viewport = False
         obj.animation_data_clear()   # remove any Action so nothing can reassert scale/visibility
-        obj.scale = (1.0, 1.0, 1.0)  # belt-and-braces against any residual mid-animation scale
+        # Most objects rest at unit scale. Planned suburban lots may carry a
+        # deliberate compact footprint in nb_rest_scale; preserve it while
+        # still defeating any residual mid-rise animation scale.
+        obj.scale = tuple(obj.get("nb_rest_scale", (1.0, 1.0, 1.0)))
         obj.select_set(True)
     bpy.context.view_layer.objects.active = col.objects[0] if col.objects else None
 
