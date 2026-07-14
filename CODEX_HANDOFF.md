@@ -1,6 +1,6 @@
 # Codex handoff -- current through Day 12
 
-Updated 2026-07-13 for Cade's next Claude/Codex session.
+Updated 2026-07-14 for Cade's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -15,6 +15,14 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Website multiplayer is implemented: Supabase Realtime Presence tracks online
+  visitors, Broadcast carries movement, and the town renders lightweight remote
+  markers/name labels. Signed-in users can send persistent chat; guests can read
+  it. Admins have online-player, session-duration, and chat-history logs.
+- Multiplayer database writes go only through authenticated, identity-derived
+  RPCs. RLS and column grants expose only safe public identity/chat fields.
+  Guests cannot create sessions, identities, or messages. Blender state and
+  existing claims are not modified by multiplayer.
 - Day 12, population/followers 186, 189 buildings.
 - All 176 ordinary and park-ring homes now use a deterministic optimized
   library of 15 suburban designs and six coordinated palettes. Existing seeds,

@@ -243,6 +243,24 @@ Kept here (rather than just in chat) so it survives across sessions.
   paired with an offset partial-width wall and roof. Its three upper windows
   now sit on a complete two-story facade in Blender and the exported GLB.
 
+## 14. Live multiplayer, town chat, and admin activity logs
+
+- Added Supabase Realtime Presence for the online roster and Broadcast for
+  low-latency visitor movement. The town renders minimal remote player markers
+  with name labels and interpolates their movement between updates.
+- Added town chat: everyone can read recent messages; signed-in followers can
+  send. Messages persist in Postgres and briefly appear as speech bubbles over
+  the sender's marker.
+- Added authenticated session tracking and a safe active-identity registry.
+  Identity comes from `auth.uid()` inside database RPCs, not client-supplied
+  handles. RLS and column-level grants keep account UUIDs private and block
+  anonymous/direct writes.
+- Added admin panels for currently online signed-in players, join/end/duration
+  history, and persistent chat history through the guarded
+  `admin_list_multiplayer()` RPC.
+- Multiplayer is website/backend-only. It does not alter Blender geometry,
+  `world_state.json`, `town.glb`, population, or existing house claims.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

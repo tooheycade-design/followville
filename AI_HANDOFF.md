@@ -4,6 +4,17 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
+## Website multiplayer (2026-07-14)
+
+`town.html` has Supabase Realtime multiplayer independent of daily Blender
+growth. Presence supplies the online roster, Broadcast carries transient player
+movement, and `chat_messages` persists signed-in town chat. The browser displays
+minimal remote markers, name labels, and short-lived speech bubbles. `admin.html`
+loads signed-in online players, session history/duration, and chat history through
+`admin_list_multiplayer()`. Never expose `player_sessions.user_id` or
+`chat_messages.user_id`, trust handles supplied by clients, or allow direct table
+writes; identity must continue to come from `auth.uid()` inside the RPCs.
+
 ## Current suburban house system (2026-07-13)
 
 Ordinary `house` and park `ringhouse` buildings share 15 detailed suburban

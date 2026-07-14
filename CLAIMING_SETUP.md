@@ -26,6 +26,15 @@ live database doesn't have `unclaim_house` yet, paste the whole file into the
 SQL Editor and run it again, same as step 2 below. No data is touched; it only
 adds/replaces functions and grants.
 
+**Multiplayer (added 2026-07-14):** the same Supabase project now backs website
+Presence/movement, persistent town chat, and admin activity logs. Signed-in
+sessions are stored in `player_sessions`; safe public handle/client mappings in
+`active_player_identities`; chat in `chat_messages`. Clients write only through
+`start_player_session`, `heartbeat_player_session`, `end_player_session`, and
+`send_chat_message`. These functions derive identity from `auth.uid()`, while
+RLS and column grants keep account UUIDs private. `admin_list_multiplayer()`
+checks the existing admin flag before returning online/session/chat logs.
+
 ---
 
 ## 1. One-time setup (~15 minutes, Cade)

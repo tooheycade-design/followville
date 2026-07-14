@@ -385,6 +385,233 @@ grant execute on function
 to authenticated, service_role;
 
 -- ───────────────────────────── NOTES ─────────────────────────────
+-- MULTIPLAYER (added 2026-07-13)
+-- Live position data stays in Realtime Broadcast/Presence and is never written
+-- to Postgres. Only authenticated chat and authenticated visit durations are
+-- persisted. Guests may appear in Presence as anonymous visitors.
+
+create table if not exists public.player_sessions (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references public.profiles(user_id) on delete cascade,
+  client_id       uuid not null,
+  handle_snapshot text not null,
+  started_at      timestamptz not null default now(),
+  last_seen_at    timestamptz not null default now(),
+  ended_at        timestamptz,
+  constraint player_session_handle_format
+    check (handle_snapshot ~ '^[a-z0-9._]{1,30}$'),
+  constraint player_session_time_order
+    check (ended_at is null or ended_at >= started_at)
+);
+
+create index if not exists player_sessions_user_started_idx
+  on public.player_sessions (user_id, started_at desc);
+create index if not exists player_sessions_online_idx
+  on public.player_sessions (last_seen_at desc) where ended_at is null;
+
+create table if not exists public.active_player_identities (
+  client_id        uuid primary key,
+  instagram_handle text not null,
+  last_seen_at     timestamptz not null default now(),
+  constraint active_player_handle_format
+    check (instagram_handle ~ '^[a-z0-9._]{1,30}$')
+);
+
+create table if not exists public.chat_messages (
+  id            bigint generated always as identity primary key,
+  user_id       uuid not null references public.profiles(user_id) on delete cascade,
+  sender_handle text not null,
+  client_id     uuid not null,
+  body          text not null,
+  created_at    timestamptz not null default now(),
+  constraint chat_sender_handle_format
+    check (sender_handle ~ '^[a-z0-9._]{1,30}$'),
+  constraint chat_body_length
+    check (char_length(body) between 1 and 240)
+);
+
+create index if not exists chat_messages_created_idx
+  on public.chat_messages (created_at desc);
+create index if not exists chat_messages_user_created_idx
+  on public.chat_messages (user_id, created_at desc);
+
+alter table public.player_sessions enable row level security;
+alter table public.active_player_identities enable row level security;
+alter table public.chat_messages enable row level security;
+
+drop policy if exists player_sessions_own_read on public.player_sessions;
+create policy player_sessions_own_read on public.player_sessions
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists active_player_identities_public_read on public.active_player_identities;
+create policy active_player_identities_public_read on public.active_player_identities
+  for select to anon, authenticated using (true);
+
+-- Guests and signed-in players may read only the safe chat fields. The auth
+-- user UUID remains private even though the chat stream is public in-game.
+drop policy if exists chat_public_read on public.chat_messages;
+create policy chat_public_read on public.chat_messages
+  for select to anon, authenticated using (true);
+
+revoke all on table public.player_sessions from public, anon, authenticated;
+revoke all on table public.active_player_identities from public, anon, authenticated;
+revoke all on table public.chat_messages from public, anon, authenticated;
+grant select (client_id, instagram_handle, last_seen_at)
+  on public.active_player_identities to anon, authenticated;
+grant select (id, sender_handle, client_id, body, created_at)
+  on public.chat_messages to anon, authenticated;
+
+create or replace function public.start_player_session(p_client_id uuid)
+returns uuid
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_handle text;
+  v_id uuid;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  select instagram_handle into v_handle
+    from public.profiles where user_id = v_uid;
+  if v_handle is null then raise exception 'profile_missing'; end if;
+
+  -- A reload reuses the tab client id. Close its prior record cleanly before
+  -- starting a new one instead of leaving two apparently-online sessions.
+  update public.player_sessions
+     set last_seen_at = now(), ended_at = now()
+   where user_id = v_uid and client_id = p_client_id and ended_at is null;
+
+  insert into public.player_sessions (user_id, client_id, handle_snapshot)
+  values (v_uid, p_client_id, v_handle)
+  returning id into v_id;
+  insert into public.active_player_identities (client_id, instagram_handle, last_seen_at)
+  values (p_client_id, v_handle, now())
+  on conflict (client_id) do update
+    set instagram_handle = excluded.instagram_handle,
+        last_seen_at = excluded.last_seen_at;
+  return v_id;
+end $$;
+
+create or replace function public.heartbeat_player_session(p_session_id uuid)
+returns void
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_client_id uuid; v_handle text;
+begin
+  if auth.uid() is null then raise exception 'not_authenticated'; end if;
+  update public.player_sessions set last_seen_at = now()
+   where id = p_session_id and user_id = auth.uid() and ended_at is null
+  returning client_id, handle_snapshot into v_client_id, v_handle;
+  if not found then raise exception 'session_not_found'; end if;
+  insert into public.active_player_identities (client_id, instagram_handle, last_seen_at)
+  values (v_client_id, v_handle, now())
+  on conflict (client_id) do update
+    set instagram_handle = excluded.instagram_handle,
+        last_seen_at = excluded.last_seen_at;
+end $$;
+
+create or replace function public.end_player_session(p_session_id uuid)
+returns void
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_client_id uuid;
+begin
+  if auth.uid() is null then raise exception 'not_authenticated'; end if;
+  update public.player_sessions
+     set last_seen_at = now(), ended_at = now()
+   where id = p_session_id and user_id = auth.uid() and ended_at is null
+   returning client_id into v_client_id;
+  if v_client_id is not null then
+    delete from public.active_player_identities where client_id = v_client_id;
+  end if;
+end $$;
+
+create or replace function public.send_chat_message(p_body text, p_client_id uuid)
+returns json
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_handle text;
+  v_body text := trim(coalesce(p_body, ''));
+  v_row public.chat_messages;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  if char_length(v_body) < 1 or char_length(v_body) > 240 then
+    raise exception 'bad_chat_length';
+  end if;
+  select instagram_handle into v_handle
+    from public.profiles where user_id = v_uid;
+  if v_handle is null then raise exception 'profile_missing'; end if;
+  if exists (select 1 from public.chat_messages
+             where user_id = v_uid and created_at > now() - interval '1 second') then
+    raise exception 'chat_rate_limited';
+  end if;
+  insert into public.chat_messages (user_id, sender_handle, client_id, body)
+  values (v_uid, v_handle, p_client_id, v_body)
+  returning * into v_row;
+  return json_build_object(
+    'id', v_row.id, 'sender_handle', v_row.sender_handle,
+    'client_id', v_row.client_id, 'body', v_row.body,
+    'created_at', v_row.created_at);
+end $$;
+
+create or replace function public.admin_list_multiplayer(p_limit integer default 200)
+returns json
+language plpgsql stable security definer set search_path = public, pg_temp
+as $$
+declare v_limit integer := greatest(1, least(coalesce(p_limit, 200), 500));
+begin
+  if coalesce(auth.jwt()->>'role', '') <> 'service_role'
+     and not public.caller_is_admin() then
+    raise exception 'not_admin';
+  end if;
+  return json_build_object(
+    'online', coalesce((select json_agg(row_to_json(x)) from (
+      select id, handle_snapshot as instagram_handle, started_at, last_seen_at,
+             greatest(0, extract(epoch from (now() - started_at))::integer) as duration_seconds
+      from public.player_sessions
+      where ended_at is null and last_seen_at > now() - interval '90 seconds'
+      order by started_at desc
+    ) x), '[]'::json),
+    'sessions', coalesce((select json_agg(row_to_json(x)) from (
+      select id, handle_snapshot as instagram_handle, started_at, last_seen_at,
+             case when ended_at is null and last_seen_at > now() - interval '90 seconds'
+                  then null else coalesce(ended_at, last_seen_at) end as ended_at,
+             (ended_at is null and last_seen_at > now() - interval '90 seconds') as is_online,
+             greatest(0, extract(epoch from
+               (case when ended_at is null and last_seen_at > now() - interval '90 seconds'
+                     then now() else coalesce(ended_at, last_seen_at) end - started_at))::integer)
+               as duration_seconds
+      from public.player_sessions order by started_at desc limit v_limit
+    ) x), '[]'::json),
+    'chat', coalesce((select json_agg(row_to_json(x)) from (
+      select id, sender_handle as instagram_handle, body, created_at
+      from public.chat_messages order by created_at desc limit v_limit
+    ) x), '[]'::json)
+  );
+end $$;
+
+revoke execute on function
+  public.start_player_session(uuid), public.heartbeat_player_session(uuid),
+  public.end_player_session(uuid), public.send_chat_message(text, uuid),
+  public.admin_list_multiplayer(integer)
+from public, anon, authenticated;
+
+grant execute on function
+  public.start_player_session(uuid), public.heartbeat_player_session(uuid),
+  public.end_player_session(uuid), public.send_chat_message(text, uuid)
+to authenticated;
+grant execute on function public.admin_list_multiplayer(integer)
+to authenticated, service_role;
+drop function if exists public.active_player_identities();
+
+do $$
+begin
+  alter publication supabase_realtime add table public.chat_messages;
+exception when duplicate_object then null;
+end $$;
+
 -- Abuse safety net (no schema needed):
 --  * Enable CAPTCHA (Cloudflare Turnstile) in Supabase Dashboard →
 --    Auth → Settings → Bot and Abuse Protection.

@@ -8,6 +8,15 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-14 website multiplayer (Cade via Codex): `town.html` now uses
+  Supabase Realtime Presence for online players and Broadcast for live movement.
+  Visitors see lightweight player markers and name labels; signed-in followers
+  can send persistent town chat with speech bubbles. Admins can review current
+  signed-in players, session start/end/duration history, and chat history in
+  `admin.html`. Database identity, session, and chat writes are authenticated
+  RPCs with RLS and narrow public-read columns; guests cannot forge them. This
+  is website/backend-only: Blender, `town.glb`, population, buildings, and all
+  existing house claims are unchanged.
 - 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
   `house` and `ringhouse` now draws from one optimized library of 15
   distinct suburban designs and six coordinated color palettes (90 stable

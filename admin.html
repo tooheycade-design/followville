@@ -70,6 +70,10 @@
   .modebar { font-size:12px; opacity:0.6; margin:0 0 16px; }
   .backlink { font-size:13px; margin-top:34px; }
   .backlink a { color: var(--accent); }
+  .online-dot { display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:#45b94f; margin-right:7px; box-shadow:0 0 6px rgba(69,185,79,.65); }
+  .logtext { flex:1 1 100%; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+  .chatlog .who { color:#2b6a94; }
 </style>
 </head>
 <body>
@@ -91,6 +95,15 @@
 
     <h2>Verified, no house yet</h2>
     <div id="verified"><div class="empty">loading…</div></div>
+
+    <h2><span class="online-dot"></span>Online now <span id="onlineAdminCount"></span></h2>
+    <div id="onlinePlayers"><div class="empty">loading...</div></div>
+
+    <h2>Player session history</h2>
+    <div id="playerSessions"><div class="empty">loading...</div></div>
+
+    <h2>In-game chat log</h2>
+    <div id="chatLog"><div class="empty">loading...</div></div>
   </div>
 
   <p class="backlink"><a href="index.html">← back to Followville</a></p>
@@ -177,9 +190,20 @@ async function init(){
   }
 }
 
+function formatDuration(totalSeconds){
+  const seconds = Math.max(0, Number(totalSeconds) || 0);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  if (hours) return hours + "h " + minutes + "m";
+  if (minutes) return minutes + "m " + secs + "s";
+  return secs + "s";
+}
+
 async function loadAll(){
-  const [pending, claims, verified] = await Promise.all([
+  const [pending, claims, verified, multiplayer] = await Promise.all([
     rpc("admin_list_pending"), rpc("admin_list_claims"), rpc("admin_list_verified_unclaimed"),
+    rpc("admin_list_multiplayer", { p_limit:200 }),
   ]);
 
   const p = document.getElementById("pending");
@@ -230,6 +254,45 @@ async function loadAll(){
     d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
       <span class="meta">verified ${new Date(row.verified_at).toLocaleString()} — hasn't claimed yet</span>`;
     v.appendChild(d);
+  }
+
+  const online = multiplayer?.online || [];
+  const onlineWrap = document.getElementById("onlinePlayers");
+  document.getElementById("onlineAdminCount").textContent = "(" + online.length + ")";
+  onlineWrap.innerHTML = online.length ? "" : '<div class="empty">no signed-in players online</div>';
+  for (const row of online){
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="meta">online for ${esc(formatDuration(row.duration_seconds))} ·
+      last heartbeat ${new Date(row.last_seen_at).toLocaleTimeString()}</span>`;
+    onlineWrap.appendChild(d);
+  }
+
+  const sessionWrap = document.getElementById("playerSessions");
+  const sessions = multiplayer?.sessions || [];
+  sessionWrap.innerHTML = sessions.length ? "" : '<div class="empty">no player sessions recorded yet</div>';
+  for (const row of sessions){
+    const d = document.createElement("div");
+    d.className = "card";
+    const ended = row.is_online ? "online now" :
+      "left " + new Date(row.ended_at || row.last_seen_at).toLocaleString();
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="meta">joined ${new Date(row.started_at).toLocaleString()} · ${esc(ended)} ·
+      ${esc(formatDuration(row.duration_seconds))}</span>`;
+    sessionWrap.appendChild(d);
+  }
+
+  const chatWrap = document.getElementById("chatLog");
+  const chats = multiplayer?.chat || [];
+  chatWrap.innerHTML = chats.length ? "" : '<div class="empty">no in-game chat yet</div>';
+  for (const row of chats){
+    const d = document.createElement("div");
+    d.className = "card chatlog";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      <span class="meta">${new Date(row.created_at).toLocaleString()}</span>
+      <span class="logtext">${esc(row.body)}</span>`;
+    chatWrap.appendChild(d);
   }
 }
 

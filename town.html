@@ -22,7 +22,10 @@
   body.preview-mode #lookZone,
   body.preview-mode #joystickZone,
   body.preview-mode #runBtn,
-  body.preview-mode #claimPrompt { display:none !important; }
+  body.preview-mode #claimPrompt,
+  body.preview-mode #multiplayerStatus,
+  body.preview-mode #chatToggle,
+  body.preview-mode #chatPanel { display:none !important; }
 
   #cinematicGrade {
     position:fixed; inset:0; z-index:3; display:none; pointer-events:none;
@@ -183,6 +186,56 @@
   }
   #authCard .badge.pending { background:#f6e3b4; color:#7a5b12; }
   #authCard .badge.verified { background:#cdeccc; color:#20621f; }
+
+  /* lightweight multiplayer + town chat */
+  #multiplayerStatus {
+    position:fixed; top:94px; right:14px; z-index:6; pointer-events:none;
+    color:#fff; background:rgba(0,0,0,0.25); border-radius:20px;
+    padding:7px 13px; font-size:12px; font-weight:700;
+    text-shadow:0 1px 4px rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+  }
+  #multiplayerStatus .dot {
+    display:inline-block; width:8px; height:8px; margin-right:6px;
+    background:#70df7a; border-radius:50%; box-shadow:0 0 7px rgba(112,223,122,.85);
+  }
+  #chatToggle {
+    position:fixed; right:14px; bottom:18px; z-index:8; border:0; cursor:pointer;
+    padding:10px 16px; border-radius:22px; background:rgba(20,30,48,.88);
+    color:#fff; font-family:inherit; font-size:13px; font-weight:700;
+    box-shadow:0 5px 20px rgba(0,0,0,.25);
+  }
+  #chatPanel {
+    position:fixed; right:14px; bottom:62px; z-index:16; display:none;
+    width:min(360px, calc(100vw - 28px)); height:min(430px, 62vh);
+    background:rgba(247,243,234,.97); color:#1c2b45; border-radius:16px;
+    box-shadow:0 14px 42px rgba(0,0,0,.36); overflow:hidden;
+    flex-direction:column; touch-action:auto;
+  }
+  #chatPanel.open { display:flex; }
+  #chatHeader {
+    display:flex; align-items:center; padding:12px 14px; font-size:14px;
+    font-weight:800; border-bottom:1px solid rgba(28,43,69,.10);
+  }
+  #chatHeader span { flex:1; }
+  #chatClose { border:0; background:none; color:#1c2b45; font-size:20px; cursor:pointer; }
+  #chatMessages { flex:1; overflow:auto; padding:10px 12px; overscroll-behavior:contain; }
+  .chat-message { margin:0 0 9px; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
+  .chat-message .chat-who { font-weight:800; color:#2b6a94; margin-right:6px; }
+  .chat-message .chat-time { font-size:10px; opacity:.46; margin-left:6px; white-space:nowrap; }
+  #chatForm { display:flex; gap:7px; padding:10px; border-top:1px solid rgba(28,43,69,.10); }
+  #chatInput {
+    flex:1; min-width:0; border:1px solid #c9d1dc; border-radius:10px;
+    padding:10px 11px; font-family:inherit; font-size:13px; background:#fff; touch-action:auto;
+  }
+  #chatSend { border:0; border-radius:10px; padding:0 13px; background:#1c2b45;
+    color:#fff; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+  #chatSend:disabled, #chatInput:disabled { opacity:.52; cursor:default; }
+  #chatNote { min-height:16px; padding:0 12px 9px; font-size:11px; opacity:.62; }
+  @media (max-width: 600px){
+    #multiplayerStatus { top:92px; font-size:11px; }
+    #chatToggle { right:18px; bottom:122px; }
+    #chatPanel { right:10px; bottom:172px; width:calc(100vw - 20px); height:min(360px, 54vh); }
+  }
 </style>
 </head>
 <body>
@@ -213,6 +266,17 @@
 <div id="authModal"><div id="authCard"></div></div>
 <div id="crosshair"></div>
 <div id="hint">ESC to release mouse</div>
+<div id="multiplayerStatus"><span class="dot"></span><span id="onlineCount">connecting...</span></div>
+<button id="chatToggle" type="button">town chat</button>
+<section id="chatPanel" aria-label="Followville town chat">
+  <div id="chatHeader"><span>Town chat</span><button id="chatClose" type="button" aria-label="Close chat">&times;</button></div>
+  <div id="chatMessages"></div>
+  <form id="chatForm">
+    <input id="chatInput" maxlength="240" autocomplete="off" placeholder="Sign in to chat" />
+    <button id="chatSend" type="submit">send</button>
+  </form>
+  <div id="chatNote"></div>
+</section>
 
 <div id="lookZone"></div>
 <div id="joystickZone">
@@ -1150,6 +1214,15 @@ const lookZone = document.getElementById("lookZone");
 const joystickZone = document.getElementById("joystickZone");
 const joystickNub = document.getElementById("joystickNub");
 const runBtn = document.getElementById("runBtn");
+const onlineCount = document.getElementById("onlineCount");
+const chatToggle = document.getElementById("chatToggle");
+const chatPanel = document.getElementById("chatPanel");
+const chatClose = document.getElementById("chatClose");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatSend = document.getElementById("chatSend");
+const chatNote = document.getElementById("chatNote");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 
@@ -1174,6 +1247,23 @@ function stopWalking(){
   runBtn.style.display = "none";
 }
 
+function chatOpen(){ return chatPanel.classList.contains("open"); }
+function openChat(){
+  if (controls.isLocked) controls.unlock();
+  else if (gameRunning) stopWalking();
+  chatPanel.classList.add("open");
+  setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
+}
+function closeChat(){
+  chatPanel.classList.remove("open");
+  chatInput.blur();
+}
+chatToggle.addEventListener("click", openChat);
+chatClose.addEventListener("click", closeChat);
+chatPanel.addEventListener("mousedown", e => e.stopPropagation());
+chatPanel.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); });
+
 if (isTouch){
   enterBtn.textContent = "tap to enter";
   startHint.textContent = "drag to look · joystick to walk · RUN to sprint";
@@ -1189,7 +1279,11 @@ if (isTouch){
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
-  if (modalOpen()) return;  // don't walk around while typing in the account modal
+  if (e.code === "Enter" && !modalOpen() && !chatOpen()){
+    e.preventDefault(); openChat(); return;
+  }
+  if (modalOpen() || chatOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+  // don't walk around while typing in a modal or town chat
   switch(e.code){
     case "KeyW": case "ArrowUp": move.z = 1; break;
     case "KeyS": case "ArrowDown": move.z = -1; break;
@@ -1200,7 +1294,7 @@ document.addEventListener("keydown", e => {
   }
 });
 document.addEventListener("keyup", e => {
-  if (modalOpen()) return;
+  if (modalOpen() || chatOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
   switch(e.code){
     case "KeyW": case "ArrowUp": if (move.z > 0) move.z = 0; break;
     case "KeyS": case "ArrowDown": if (move.z < 0) move.z = 0; break;
@@ -1777,7 +1871,11 @@ function setErr(msg){
 }
 function wireSignout(){
   const el = document.getElementById("doSignout");
-  if (el) el.onclick = async () => { await sb.auth.signOut(); closeModal(); };
+  if (el) el.onclick = async () => {
+    await endLoggedPlayerSession();
+    await sb.auth.signOut();
+    closeModal();
+  };
 }
 
 function renderAuthForms(mode){
@@ -1833,25 +1931,398 @@ function renderAuthForms(mode){
   }
 }
 
+/* ── lightweight multiplayer, presence and town chat ── */
+const MULTIPLAYER_TOPIC = "followville-town-v1";
+let multiplayerChannel = null, multiplayerSubscribed = false;
+let multiplayerSessionId = null, multiplayerHeartbeat = null;
+let multiplayerGeneration = 0, lastPositionBroadcast = 0;
+const multiplayerPlayers = new Map();
+const multiplayerPresenceIds = new Set();
+const multiplayerTrustedHandles = new Map();
+const seenChatIds = new Set();
+const multiplayerLayer = new THREE.Group();
+multiplayerLayer.name = "WEB_multiplayer_players";
+scene.add(multiplayerLayer);
+const multiplayerDirection = new THREE.Vector3();
+
+function getMultiplayerClientId(){
+  const makeId = () => crypto.randomUUID ? crypto.randomUUID() :
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+      return (c === "x" ? r : (r & 3) | 8).toString(16);
+    });
+  try {
+    let id = sessionStorage.getItem("followville_multiplayer_client");
+    if (!id){
+      id = makeId();
+      sessionStorage.setItem("followville_multiplayer_client", id);
+    }
+    return id;
+  } catch (_) {
+    return makeId();
+  }
+}
+const multiplayerClientId = getMultiplayerClientId();
+
+function cleanPresence(raw){
+  if (!raw || typeof raw.client_id !== "string") return null;
+  const x = Number(raw.x), z = Number(raw.z), yaw = Number(raw.yaw || 0);
+  if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 5000 || Math.abs(z) > 5000) return null;
+  const trusted = multiplayerTrustedHandles.get(raw.client_id);
+  const loggedIn = typeof trusted === "string";
+  const handle = loggedIn ? trusted : "visitor-" + raw.client_id.slice(0, 4);
+  return { client_id: raw.client_id, x, z, yaw, logged_in: loggedIn, handle };
+}
+
+function playerColor(id){
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  return new THREE.Color().setHSL(Math.abs(hash % 360) / 360, .52, .58);
+}
+
+function disposeSprite(sprite){
+  if (!sprite) return;
+  sprite.material?.map?.dispose();
+  sprite.material?.dispose();
+}
+
+function setPlayerLabel(player, presence){
+  if (player.label) {
+    player.group.remove(player.label);
+    disposeSprite(player.label);
+  }
+  const label = makeTagSprite(presence.logged_in ? "@" + presence.handle : presence.handle);
+  label.scale.set(4.8, 1.2, 1);
+  label.position.y = 2.38;
+  player.group.add(label);
+  player.label = label;
+  player.handle = presence.handle;
+  player.logged_in = presence.logged_in;
+}
+
+function createRemotePlayer(presence){
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({
+    color:playerColor(presence.client_id), roughness:.74, metalness:0
+  });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.34, .42, 1.22, 10), material);
+  body.position.y = .72;
+  body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 7), material);
+  head.position.y = 1.58;
+  head.castShadow = true;
+  group.add(body, head);
+  group.position.set(presence.x, 0, presence.z);
+  multiplayerLayer.add(group);
+  const player = {
+    group, material, label:null, bubble:null, bubbleTimer:null,
+    target:new THREE.Vector3(presence.x, 0, presence.z),
+    targetYaw:presence.yaw, handle:"", logged_in:false
+  };
+  setPlayerLabel(player, presence);
+  multiplayerPlayers.set(presence.client_id, player);
+  return player;
+}
+
+function upsertRemotePlayer(raw){
+  const presence = cleanPresence(raw);
+  if (!presence || presence.client_id === multiplayerClientId) return;
+  let player = multiplayerPlayers.get(presence.client_id);
+  if (!player) player = createRemotePlayer(presence);
+  if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
+    setPlayerLabel(player, presence);
+  player.target.set(presence.x, 0, presence.z);
+  player.targetYaw = presence.yaw;
+}
+
+function removeRemotePlayer(clientId){
+  const player = multiplayerPlayers.get(clientId);
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  disposeSprite(player.label);
+  disposeSprite(player.bubble);
+  player.group.traverse(obj => obj.geometry?.dispose?.());
+  player.material.dispose();
+  multiplayerLayer.remove(player.group);
+  multiplayerPlayers.delete(clientId);
+}
+
+async function refreshTrustedPlayerHandles(){
+  if (!sb) return;
+  const cutoff = new Date(Date.now() - 90000).toISOString();
+  const { data, error } = await sb.from("active_player_identities")
+    .select("client_id,instagram_handle,last_seen_at")
+    .gt("last_seen_at", cutoff);
+  if (error || !Array.isArray(data)) return;
+  multiplayerTrustedHandles.clear();
+  for (const row of data){
+    const id = String(row.client_id || "");
+    const handle = String(row.instagram_handle || "").toLowerCase();
+    if (id && /^[a-z0-9._]{1,30}$/.test(handle))
+      multiplayerTrustedHandles.set(id, handle);
+  }
+}
+
+async function syncMultiplayerPresence(){
+  if (!multiplayerChannel) return;
+  await refreshTrustedPlayerHandles();
+  const state = multiplayerChannel.presenceState();
+  const active = new Set();
+  for (const entries of Object.values(state)){
+    for (const raw of (Array.isArray(entries) ? entries : [entries])){
+      const presence = cleanPresence(raw);
+      if (!presence) continue;
+      active.add(presence.client_id);
+      upsertRemotePlayer(presence);
+    }
+  }
+  multiplayerPresenceIds.clear();
+  for (const id of active) multiplayerPresenceIds.add(id);
+  for (const id of Array.from(multiplayerPlayers.keys()))
+    if (!active.has(id)) removeRemotePlayer(id);
+  onlineCount.textContent = active.size + (active.size === 1 ? " player online" : " players online");
+}
+
+function showPlayerChatBubble(row){
+  const player = multiplayerPlayers.get(String(row.client_id || ""));
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  if (player.bubble){
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+  }
+  const body = String(row.body || "");
+  const shortBody = body.length > 58 ? body.slice(0, 55) + "..." : body;
+  player.bubble = makeTagSprite(shortBody);
+  player.bubble.scale.set(6.2, 1.55, 1);
+  player.bubble.position.y = 3.72;
+  player.group.add(player.bubble);
+  player.bubbleTimer = setTimeout(() => {
+    if (!player.bubble) return;
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+    player.bubble = null;
+  }, 6500);
+}
+
+function addChatMessage(row, showBubble){
+  if (!row || row.id == null || seenChatIds.has(String(row.id))) return;
+  seenChatIds.add(String(row.id));
+  const item = document.createElement("div");
+  item.className = "chat-message";
+  const who = document.createElement("span");
+  who.className = "chat-who";
+  who.textContent = "@" + String(row.sender_handle || "unknown");
+  const body = document.createElement("span");
+  body.textContent = String(row.body || "");
+  const time = document.createElement("span");
+  time.className = "chat-time";
+  const parsed = new Date(row.created_at);
+  time.textContent = Number.isNaN(parsed.getTime()) ? "" :
+    parsed.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
+  item.append(who, body, time);
+  chatMessages.appendChild(item);
+  while (chatMessages.children.length > 80) chatMessages.firstElementChild.remove();
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (showBubble) showPlayerChatBubble(row);
+}
+
+async function loadChatHistory(){
+  if (!sb) return;
+  const { data, error } = await sb.from("chat_messages")
+    .select("id,sender_handle,client_id,body,created_at")
+    .order("created_at", { ascending:false }).limit(50);
+  if (!error && data) for (const row of data.reverse()) addChatMessage(row, false);
+}
+
+function updateChatAuthState(){
+  const canChat = !!(session && myProfile);
+  chatInput.disabled = !canChat;
+  chatSend.disabled = !canChat;
+  chatInput.placeholder = canChat ? "Say something..." : "Sign in to chat";
+  chatNote.textContent = canChat
+    ? "Enter sends · messages are saved for moderation"
+    : "You can see chat now. Sign in to send messages.";
+}
+
+async function sendTownChat(){
+  if (!sb || !session || !myProfile){
+    chatNote.textContent = "Sign in before sending a message.";
+    openModal();
+    return;
+  }
+  const body = chatInput.value.trim();
+  if (!body) return;
+  chatSend.disabled = true;
+  const { data, error } = await sb.rpc("send_chat_message", {
+    p_body:body, p_client_id:multiplayerClientId
+  });
+  chatSend.disabled = false;
+  if (error){
+    chatNote.textContent = (error.message || "").includes("chat_rate_limited")
+      ? "Slow down — wait a second between messages."
+      : "Message failed. Please try again.";
+    return;
+  }
+  chatInput.value = "";
+  chatNote.textContent = "Enter sends · messages are saved for moderation";
+  addChatMessage(data, true);
+}
+
+async function startLoggedPlayerSession(){
+  if (!sb || !session || !myProfile) return;
+  const { data, error } = await sb.rpc("start_player_session", { p_client_id:multiplayerClientId });
+  if (error || !data){
+    console.warn("multiplayer session log did not start", error);
+    return;
+  }
+  multiplayerSessionId = data;
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = setInterval(async () => {
+    if (!multiplayerSessionId || !session) return;
+    const { error: heartbeatError } = await sb.rpc("heartbeat_player_session", {
+      p_session_id:multiplayerSessionId
+    });
+    if (heartbeatError) console.warn("multiplayer heartbeat failed", heartbeatError);
+  }, 30000);
+}
+
+async function endLoggedPlayerSession(){
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = null;
+  const id = multiplayerSessionId;
+  multiplayerSessionId = null;
+  if (id && sb && session) await sb.rpc("end_player_session", { p_session_id:id });
+}
+
+async function shutdownMultiplayer(endSession){
+  if (endSession) await endLoggedPlayerSession();
+  else {
+    clearInterval(multiplayerHeartbeat);
+    multiplayerHeartbeat = null;
+    multiplayerSessionId = null;
+  }
+  multiplayerSubscribed = false;
+  if (multiplayerChannel && sb) await sb.removeChannel(multiplayerChannel);
+  multiplayerChannel = null;
+  multiplayerPresenceIds.clear();
+  multiplayerTrustedHandles.clear();
+  for (const id of Array.from(multiplayerPlayers.keys())) removeRemotePlayer(id);
+}
+
+async function restartMultiplayer(){
+  const generation = ++multiplayerGeneration;
+  await shutdownMultiplayer(true);
+  if (!sb || previewMode || generation !== multiplayerGeneration) return;
+  updateChatAuthState();
+  await loadChatHistory();
+  if (generation !== multiplayerGeneration) return;
+  await startLoggedPlayerSession();
+  await refreshTrustedPlayerHandles();
+  if (generation !== multiplayerGeneration) return;
+
+  multiplayerChannel = sb.channel(MULTIPLAYER_TOPIC, {
+    config:{
+      presence:{ key:multiplayerClientId },
+      broadcast:{ self:false, ack:false }
+    }
+  });
+  multiplayerChannel
+    .on("presence", { event:"sync" }, syncMultiplayerPresence)
+    .on("broadcast", { event:"player_move" }, ({ payload }) => {
+      if (!payload || !multiplayerPresenceIds.has(payload.client_id)) return;
+      const current = multiplayerPlayers.get(payload.client_id);
+      upsertRemotePlayer({
+        client_id:payload.client_id, x:payload.x, z:payload.z, yaw:payload.yaw,
+        logged_in:current?.logged_in, handle:current?.handle
+      });
+    })
+    .on("postgres_changes", {
+      event:"INSERT", schema:"public", table:"chat_messages"
+    }, payload => addChatMessage(payload.new, true))
+    .subscribe(async status => {
+      if (status !== "SUBSCRIBED" || generation !== multiplayerGeneration) return;
+      multiplayerSubscribed = true;
+      camera.getWorldDirection(multiplayerDirection);
+      await multiplayerChannel.track({
+        client_id:multiplayerClientId,
+        handle:myProfile?.instagram_handle || "",
+        logged_in:!!myProfile,
+        x:camera.position.x, z:camera.position.z,
+        yaw:Math.atan2(multiplayerDirection.x, multiplayerDirection.z),
+        joined_at:new Date().toISOString()
+      });
+      syncMultiplayerPresence();
+    });
+}
+
+function updateMultiplayer(dt){
+  for (const player of multiplayerPlayers.values()){
+    player.group.position.lerp(player.target, Math.min(1, dt * 9));
+    let delta = player.targetYaw - player.group.rotation.y;
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+    player.group.rotation.y += delta * Math.min(1, dt * 9);
+  }
+  const now = performance.now();
+  const interval = gameRunning ? 120 : 1500;
+  if (!multiplayerSubscribed || !multiplayerChannel || now - lastPositionBroadcast < interval) return;
+  lastPositionBroadcast = now;
+  camera.getWorldDirection(multiplayerDirection);
+  multiplayerChannel.send({
+    type:"broadcast", event:"player_move",
+    payload:{
+      client_id:multiplayerClientId,
+      x:Number(camera.position.x.toFixed(3)),
+      z:Number(camera.position.z.toFixed(3)),
+      yaw:Number(Math.atan2(multiplayerDirection.x, multiplayerDirection.z).toFixed(4))
+    }
+  });
+}
+
+window.addEventListener("pagehide", () => {
+  if (!multiplayerSessionId || !session?.access_token) return;
+  fetch(SUPABASE_URL + "/rest/v1/rpc/end_player_session", {
+    method:"POST", keepalive:true,
+    headers:{
+      apikey:SUPABASE_ANON_KEY,
+      Authorization:"Bearer " + session.access_token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ p_session_id:multiplayerSessionId })
+  }).catch(() => {});
+});
+
 /* ── boot ── */
 async function initSupabase(){
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;   // feature off — page unchanged
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    onlineCount.textContent = "multiplayer unavailable";
+    return;
+  }
   try {
     const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
     sb = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e){
     console.warn("supabase-js failed to load — claiming disabled this visit", e);
     sb = null;
+    onlineCount.textContent = "multiplayer unavailable";
     return;
   }
   const { data } = await sb.auth.getSession();
   session = data?.session ?? null;
   sb.auth.onAuthStateChange((_evt, s) => {
+    const priorUser = session?.user?.id ?? null;
+    const nextUser = s?.user?.id ?? null;
     session = s;
-    refreshMyStatus().then(updateAccountUI);
+    setTimeout(async () => {
+      await refreshMyStatus();
+      updateAccountUI();
+      updateChatAuthState();
+      if (priorUser !== nextUser) await restartMultiplayer();
+    }, 0);
   });
   await Promise.all([refreshHouses(), refreshClaims(), refreshMyStatus()]);
   updateAccountUI();
+  updateChatAuthState();
   // live updates: any claim anywhere refreshes every visitor's map instantly
   sb.channel("claims-live")
     .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => {
@@ -1859,6 +2330,7 @@ async function initSupabase(){
       refreshMyStatus().then(updateAccountUI);
     })
     .subscribe();
+  await restartMultiplayer();
   if (location.hash === "#home" && myClaim){
     goHome();               // arriving from the landing page's "Go to my home"
   } else if (location.hash === "#claim"){
@@ -2060,6 +2532,8 @@ function animate(){
       targetTag.visible = false;
     }
   }
+
+  updateMultiplayer(dt);
 
   renderer.render(scene, camera);
 }
