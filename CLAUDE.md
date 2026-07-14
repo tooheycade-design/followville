@@ -17,6 +17,12 @@ you go looking for it here.**
   playground. Separate house-rise, school-rise, and finished overhead videos
   rendered and passed sampled-frame review; GLB validated and all 18 new DB
   records synced, with the school explicitly non-claimable.
+  Final 2026-07-13 corrections: the playground now uses connected A-frame
+  swings with attached chains/seats and an endpoint-aligned slide/rails/exit;
+  ordinary cars have four upright tires placed at the front/rear axles and
+  protruding outside the body. Both sides of an isolated car and two playground
+  angles passed visual review. The full Day 12 video set was rerendered from
+  this corrected world and emailed to tooheycade@gmail.com.
 - Day 11, population 169, 171 buildings (grown 2026-07-12 via Cade's Codex:
   +14 ordinary houses, planned addresses 22-35 in Creekside Bend). The winding
   street extended only as far as today's houses. Growth/loading and finished
