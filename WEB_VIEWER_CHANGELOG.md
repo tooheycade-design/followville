@@ -410,6 +410,19 @@ Kept here (rather than just in chat) so it survives across sessions.
   GLB integrity and current/full-366 suburban collision audits passed. Day 13,
   population 226, 229 buildings, world state, seeds, and claims are unchanged.
 
+## 23. Yard decorations temporarily disabled
+
+- Added the `YARD_DECORATIONS_ENABLED` feature gate and set it to false at
+  Cade's request. Saved flowers, trees, benches, and flags no longer render,
+  including previously saved homeowner pieces.
+- Removed the yard-piece section from Homeowner Mode and updated its copy to
+  describe color customization only. Exterior, roof/accent, and door previews
+  and saves are unchanged.
+- Kept the normalized `yard` field and approved values in the data model/RPC.
+  Existing Supabase choices are preserved for a future redesign rather than
+  destructively clearing claim data. No Blender, GLB, world-state, population,
+  building, seed, or claim changes.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

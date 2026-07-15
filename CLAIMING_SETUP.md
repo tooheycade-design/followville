@@ -37,13 +37,20 @@ checks the existing admin flag before returning online/session/chat logs.
 
 **Homeowner Mode (added 2026-07-15):** once a follower has a claim, the account
 panel and start screen expose `customize my home`. Owners can preview and save
-approved exterior, roof/accent, and door colors plus one yard piece. The data
-uses the existing `claims.customization` JSONB column. Browser code never gets
+approved exterior, roof/accent, and door colors. The data model also retains the
+previously offered yard choice in the existing `claims.customization` JSONB
+column. Browser code never gets
 direct UPDATE access: `update_my_customization(bigint,jsonb)` requires a house
 ID owned by `auth.uid()`, rejects unknown values, normalizes the payload, and
 updates only that row. Yard pieces are placed inward from every road-facing lot
 edge (diagonally inward on corner lots). The existing `claims` Realtime
 subscription makes saved looks appear for every open visitor.
+
+**Temporary yard pause (2026-07-15):** Cade disabled the yard-piece presentation
+pending a better redesign. `YARD_DECORATIONS_ENABLED` is false in `town.html`,
+so saved pieces do not render and the chooser is hidden. Existing normalized
+`customization.yard` values remain stored; do not delete them or run a database
+migration. Exterior, roof/accent, and door customization remains live.
 
 ---
 

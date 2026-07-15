@@ -1872,6 +1872,9 @@ const HOME_OPTIONS = {
     ["flag", "flag", "&#128681;"]
   ]
 };
+// Paused 2026-07-15 at Cade's request. Keep normalized saved choices intact so
+// a future redesign can restore them without deleting homeowner data.
+const YARD_DECORATIONS_ENABLED = false;
 const HOME_DEFAULTS = { version:1, wall:"original", roof:"original", door:"original", yard:"none" };
 const HOME_COLORS = Object.fromEntries(
   ["wall", "roof", "door"].flatMap(key => HOME_OPTIONS[key].map(([id, , color]) => [`${key}:${id}`, color]))
@@ -2150,7 +2153,7 @@ function applyCustomizationToHouse(houseId, value){
     if (color && material.color){ material.color.set(color); material.needsUpdate = true; }
   }
   clearYardDecoration(Number(houseId));
-  if (custom.yard !== "none"){
+  if (YARD_DECORATIONS_ENABLED && custom.yard !== "none"){
     const decor = makeYardDecoration(custom.yard, entry);
     customizationLayer.add(decor);
     yardDecorations.set(Number(houseId), decor);
@@ -2508,7 +2511,7 @@ function renderHomeCustomizer(){
     <div class="customizer-head">
       <div class="customizer-home-icon">&#127969;</div>
       <div><h2>Customize home #${Number(myClaim.house_id)}</h2>
-      <p class="muted">Make it yours. Your saved colors and one yard piece appear for every visitor.</p></div>
+      <p class="muted">Make it yours. Your saved house colors appear for every visitor.</p></div>
     </div>
     <div class="custom-section"><div class="custom-section-title">Exterior <span>wall or main body</span></div>
       <div class="custom-options">${customOptionMarkup("wall", customizationDraft.wall)}</div></div>
@@ -2516,8 +2519,6 @@ function renderHomeCustomizer(){
       <div class="custom-options">${customOptionMarkup("roof", customizationDraft.roof)}</div></div>
     <div class="custom-section"><div class="custom-section-title">Door <span>front-door color</span></div>
       <div class="custom-options">${customOptionMarkup("door", customizationDraft.door)}</div></div>
-    <div class="custom-section"><div class="custom-section-title">Yard piece <span>choose one</span></div>
-      <div class="custom-options yard-options">${customOptionMarkup("yard", customizationDraft.yard)}</div></div>
     <div class="customizer-actions">
       <button class="secondary" id="doCancelCustomize" ${savingCustomization ? "disabled" : ""}>cancel</button>
       <button class="primary" id="doSaveCustomize" ${savingCustomization ? "disabled" : ""}>

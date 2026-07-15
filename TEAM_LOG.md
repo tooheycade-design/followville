@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Temporarily removed homeowner yard decorations from the town and customizer while preserving every saved yard choice in Supabase for a future redesign; house colors, claims, Blender/GLB, state, population, and buildings remain unchanged.
+
 2026-07-15 - Cade (via Windows Codex) - [BOTH] Rebuilt founder house #29 with its structure set back 1.3m and its drive/walk still curb-connected; fixed multi-material facade measurement so driveway/mailbox triangles cannot squeeze decorations, fitted the saved full-depth two-person bench between path and mailbox, kept custom trees round in X/Z, and passed all 904 house/decor placements plus current/full-plan collision audits without changing state, population, buildings, seeds, or claims.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed house #29's decorations intersecting its double-garage porch/door by measuring each home's full exported structural silhouette and prioritizing the side opposite the actual door material; visually checked #29's tree, bench, and flag and revalidated all 904 placements with zero house/curb intersections.

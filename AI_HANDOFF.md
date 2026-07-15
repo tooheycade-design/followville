@@ -30,8 +30,11 @@ must stay on that side if the placeholder player mesh is redesigned.
 
 ## Homeowner Mode (2026-07-15)
 
-Claimed-house owners can customize exterior, roof/accent, and door colors plus
-one yard piece from the account modal or start screen. `town.html` reads the
+Claimed-house owners can customize exterior, roof/accent, and door colors. The
+data model still retains the previously offered yard choice, but **yard rendering
+and its chooser are temporarily paused by Cade:** keep
+`YARD_DECORATIONS_ENABLED = false` until a new design is approved. Existing yard
+values remain stored but invisible; do not erase or migrate them. `town.html` reads the
 existing `claims.customization` JSONB through `public_claims`; the normal
 `claims` Realtime channel applies saves to every visitor. Saves must continue
 to use `update_my_customization(bigint,jsonb)`, which requires an explicit

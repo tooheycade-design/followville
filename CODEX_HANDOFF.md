@@ -15,6 +15,11 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Homeowner yard decorations are temporarily disabled. `town.html` does not
+  render flowers/trees/benches/flags and does not show their chooser. Keep
+  `YARD_DECORATIONS_ENABLED = false` until Cade approves a redesign. Existing
+  stored `customization.yard` values remain normalized and preserved so this
+  pause does not destroy homeowner data; exterior/roof/door colors still work.
 - Founder house #29's structure is now authored 1.3m farther back, with its
   driveway and walk extended to remain connected to the curb. Yard clearance
   reads the selected structural material triangles inside the merged GLB mesh,

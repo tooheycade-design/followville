@@ -8,6 +8,12 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,
+  trees, benches, and flags are not rendered and the yard-piece chooser is
+  hidden. Existing normalized `claims.customization.yard` values are preserved
+  in Supabase for a future redesign; house colors, claims, Blender, GLB, state,
+  day, population, and buildings are unchanged. `YARD_DECORATIONS_ENABLED` in
+  `town.html` is the single intentional feature gate.
 - 2026-07-15 final house #29 lot correction (Cade via Codex): founder house 29's
   structure is authored 1.3m farther back while its driveway and walk remain
   connected to the curb. The web clearance pass now measures only the actual
