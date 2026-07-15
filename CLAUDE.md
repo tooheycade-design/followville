@@ -16,7 +16,8 @@ you go looking for it here.**
   overhead, temporary England v Argentina supporter scene, and combined
   30.13-second Reel cut were rendered and reviewed. The supporter set is
   Blender-video-only and is not in `neighborhood.blend`, `town.glb`, or the
-  website. Repo-launched Windows growth now skips the legacy iCloud `wip`
+  website. All four videos were emailed to `tooheycade@gmail.com` in two
+  messages to stay below Gmail's attachment limit. Repo-launched Windows growth now skips the legacy iCloud `wip`
   auto-share step so a successful `main` growth cannot leave the clone on a
   stale branch.
 - 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,

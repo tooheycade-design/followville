@@ -123,7 +123,8 @@ Reel MP4s are in:
 They were visually reviewed and copied to Cade's Desktop. Only
 `day_014_houses_appearing_overhead_0001-0244.mp4` contains house-rise animation;
 `day_014_reel_cut.mp4` joins rise, football scene, then static town overhead.
-No Day 14 email was requested or sent.
+All four were emailed to `tooheycade@gmail.com` in two messages with subjects
+`Followville Day 14 videos -- 244 followers (1 of 2)` and `(2 of 2)`.
 
 ## Git checkpoints
 
