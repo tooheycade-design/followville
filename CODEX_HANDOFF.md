@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 13
+# Codex handoff -- current through Day 14
 
 Updated 2026-07-15 for Cade's next Claude/Codex session.
 
@@ -15,6 +15,20 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Day 14 is complete: population/followers 244, 247 buildings, and 18 new
+  ordinary homes at plan IDs 93-110. IDs 93-95 completed Foxglove Court;
+  IDs 96-110 began Overlook Circle. Its road is revealed only as far as those
+  homes and its future turnaround remains hidden. The 18 new claimable rows
+  were inserted into Supabase.
+- `--cam newgrowthoverhead` is the preferred tight top-down daily rise shot.
+  `--cam football` builds the temporary England v Argentina fan vignette used
+  on Day 14. That set must remain render-only: do not export or save it into the
+  permanent blend/GLB. The final saved `neighborhood.blend` was rebuilt without
+  the set, and the validated `town.glb` contains no fan-scene object names.
+- When `grow_windows.ps1` is run from the authoritative repo, it now skips the
+  old iCloud-to-`wip` auto-share hook. The hook switched the working clone to
+  stale `wip` after the Day 14 `main` push; the state/model push itself was
+  unaffected. Keep repo-based daily work on `main`.
 - Homeowner yard decorations are temporarily disabled. `town.html` does not
   render flowers/trees/benches/flags and does not show their chooser. Keep
   `YARD_DECORATIONS_ENABLED = false` until Cade approves a redesign. Existing
@@ -101,18 +115,22 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Latest delivery
 
-The Day 13 finished-street, house-appearance, and finished-overhead MP4s are in:
+The Day 14 rise-overhead, completed-town overhead, football scene, and combined
+Reel MP4s are in:
 
 `C:\Users\cadet\Documents\Codex\2026-07-11\th\outputs`
 
-They were visually reviewed and emailed to `zachkehler@gmail.com` with subject
-`Followville Day 13 videos -- 226 followers`. Only the house-appearance MP4
-contains building-rise animation.
+They were visually reviewed and copied to Cade's Desktop. Only
+`day_014_houses_appearing_overhead_0001-0244.mp4` contains house-rise animation;
+`day_014_reel_cut.mp4` joins rise, football scene, then static town overhead.
+No Day 14 email was requested or sent.
 
 ## Git checkpoints
 
-- Day 13 state/model/log commit: read the newest `origin/main` commit after
-  this handoff entry; it includes population 226 and the final corrected GLB.
+- `df0c971` -- Day 14 population 244 state and permanent GLB.
+- `44e2449` -- top-down growth camera and temporary supporter-scene generator.
+- The final handoff commit after `df0c971` includes the saved Day 14 blend,
+  final GLB rebuild, documentation, and Windows growth guard.
 - `408ddab` -- final connected playground equipment and correct wheel placement.
 - `8984740` -- logged the corrected Day 12 video delivery.
 

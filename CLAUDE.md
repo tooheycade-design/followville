@@ -8,6 +8,17 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 14, population 244, 247 buildings (grown 2026-07-15 via Cade's
+  Codex: +18 ordinary houses at planned addresses 93-110). The final three
+  Foxglove Court homes completed that cul-de-sac and 15 homes began Overlook
+  Circle; its future turnaround remains hidden. Supabase contains all 18 new
+  claimable rows. A tight `newgrowthoverhead` rise clip, static whole-town
+  overhead, temporary England v Argentina supporter scene, and combined
+  30.13-second Reel cut were rendered and reviewed. The supporter set is
+  Blender-video-only and is not in `neighborhood.blend`, `town.glb`, or the
+  website. Repo-launched Windows growth now skips the legacy iCloud `wip`
+  auto-share step so a successful `main` growth cannot leave the clone on a
+  stale branch.
 - 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,
   trees, benches, and flags are not rendered and the yard-piece chooser is
   hidden. Existing normalized `claims.customization.yard` values are preserved

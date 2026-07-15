@@ -302,7 +302,20 @@ try {
     # here does NOT fail this growth run, since the town itself already grew
     # and (if -UseGit) pushed successfully above.
     $ShareScript = Join-Path $Dir 'share_progress.bat'
-    if (Test-Path -LiteralPath $ShareScript) {
+    $RunningInAuthoritativeRepo = [string]::Equals(
+        [System.IO.Path]::GetFullPath($Dir).TrimEnd('\'),
+        [System.IO.Path]::GetFullPath($RepoDir).TrimEnd('\'),
+        [System.StringComparison]::OrdinalIgnoreCase)
+    if ($RunningInAuthoritativeRepo) {
+        # share_progress.bat is designed to copy from the iCloud handoff folder
+        # into this separate clone and therefore checks the clone out to wip.
+        # When grow_windows.ps1 itself already lives in the authoritative clone,
+        # calling it would switch this working tree away from main after a good
+        # growth push (observed on Day 14). The state/model are already on main;
+        # skip the legacy iCloud-sharing hop here.
+        Log-Line "AUTO_SHARE_SKIPPED (running in authoritative repo; main is already pushed)"
+    }
+    elseif (Test-Path -LiteralPath $ShareScript) {
         Log-Line "-- auto-sharing progress to wip --"
         $PrevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"

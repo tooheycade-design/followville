@@ -4,15 +4,19 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
-## Current town (Day 13, 2026-07-14)
+## Current town (Day 14, 2026-07-15)
 
-Population is 226 with 229 buildings. Day 13 added 40 ordinary suburban houses
-at plan IDs 53-92: two finished Creekside Bend, then 38 began Willow Hills.
-Use `--cam newgrowth` for the one video where today's houses rise and
-`--cam newstreet` for a completed-state glide along today's busiest street.
+Population is 244 with 247 buildings. Day 14 added 18 ordinary suburban houses
+at plan IDs 93-110: three completed Foxglove Court and 15 began Overlook Circle.
+Its future turnaround is still hidden. Use `--cam newgrowthoverhead` for the one
+top-down video where today's houses rise and `--cam newstreet` for a
+completed-state glide along today's busiest street. `--cam football` is a
+temporary Day 14 fan-video mode and must never be used for the permanent GLB.
 Nature scatter automatically clears from road/cul-de-sac geometry and occupied
 planned lots as development reveals them; do not remove that clearance logic.
-The Day 13 GLB and all 40 Supabase rows were validated.
+The Day 14 GLB and all 18 new Supabase rows were validated. On Windows, running
+`grow_windows.ps1` from the authoritative repo intentionally skips the old
+iCloud `wip` auto-share hook so the clone stays on `main` after growth.
 
 ## Website multiplayer (2026-07-14)
 

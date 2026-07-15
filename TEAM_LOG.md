@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WORLD] Completed Day 14 from 226 to 244 followers with 18 validated houses at plan IDs 93-110, finished Foxglove Court and began Overlook Circle without revealing its future cul-de-sac, synced all 18 homes to claiming, rendered/reviewed rise-overhead plus static-town-overhead plus a temporary England v Argentina #10 supporter scene and a combined 30.13-second Reel cut, kept the fan set out of the saved Blender/web model, and guarded repo-based Windows growth from leaving `main` for stale `wip`.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Temporarily removed homeowner yard decorations from the town and customizer while preserving every saved yard choice in Supabase for a future redesign; house colors, claims, Blender/GLB, state, population, and buildings remain unchanged.
 
 2026-07-15 - Cade (via Windows Codex) - [BOTH] Rebuilt founder house #29 with its structure set back 1.3m and its drive/walk still curb-connected; fixed multi-material facade measurement so driveway/mailbox triangles cannot squeeze decorations, fitted the saved full-depth two-person bench between path and mailbox, kept custom trees round in X/Z, and passed all 904 house/decor placements plus current/full-plan collision audits without changing state, population, buildings, seeds, or claims.
