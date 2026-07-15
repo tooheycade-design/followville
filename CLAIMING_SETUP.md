@@ -181,8 +181,12 @@ schema safely creates/replaces the RPC without changing existing claim rows.
 Yard pieces are browser-only and are placed from the exported home's actual
 root rotation, its ground-level structural footprint, and the distance to the
 curb. They must stay between the façade and curb; tight founder lots scale the
-piece down and corner lots suppress the sideways offset. Do not restore the old
-fixed inward/backyard offset. The same footprint helpers drive player collision:
+front-to-back depth instead of shrinking the whole piece. Placement uses a
+side-lawn zone: normal houses avoid their garage side, founder homes avoid their
+actual door mesh, and corner lots choose the side away from their second road.
+Benches face the street and flags sit curbward so their poles clear porch roofs.
+Do not restore the old fixed centerline/inward/backyard offset. The same
+footprint helpers drive player collision:
 homes and cars use oriented boxes, while trees collide only at their trunks.
 
 ## 6. How the pieces fit (for future AI sessions)

@@ -41,8 +41,10 @@ client UPDATE on `claims`. The browser clones materials per claimed house before
 recoloring, preserving shared GLB batching and preventing neighboring houses
   from changing. Yard pieces must remain in the measured strip between the
   home's real GLB façade and the curb. Use the actual root facing, preserve the
-  corner-lot road guard, and scale pieces on tight lots rather than moving them
-  behind the house or into a street. Web collisions use oriented boxes for
+  corner-lot road guard, and preserve the side-lawn/door/garage avoidance.
+  Benches must face the street, flags must stay curbward of porch covers, and
+  tight lots may compress front-to-back but must not shrink the whole piece or
+  move it behind the house. Web collisions use oriented boxes for
   houses/cars and measured trunk cylinders for trees; never restore one large
   circular hitbox per GLB root. This is web/backend-only and must not rewrite
   building seeds.

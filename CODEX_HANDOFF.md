@@ -21,8 +21,11 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   and unclaim actions by house ID. Existing claims were not reassigned.
 - Web yard decorations now occupy the real front-yard strip: `town.html` reads
   the GLB root's actual facing, measures the structural façade and curb setback,
-  and scales a decoration down on tight founder lots rather than entering the
-  street. Corner-lot side offsets are disabled so the second road stays clear.
+  then uses a side-lawn planting zone rather than the doorway centerline.
+  Standard homes choose the side away from the garage; founder homes use their
+  actual door meshes; corner lots choose the side away from the second road.
+  Benches face the street, flags sit curbward to clear porch covers, and tight
+  lots compress only front-to-back rather than shrinking the whole decoration.
 - Web collisions are shape-aware. All 226 homes and 16 cars have oriented box
   footprints, the school has three independent wing boxes, and each tree blocks
   only at its measured trunk (77 existing GLB trunks plus homeowner yard trees),

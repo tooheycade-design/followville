@@ -353,6 +353,23 @@ Kept here (rather than just in chat) so it survives across sessions.
   GLB sanity, and the 366-address suburban collision audit all passed. This was
   web-only; Blender, `world_state.json`, and `town.glb` did not change.
 
+## 20. Door-safe, visually complete yard pieces
+
+- Moved pieces off the front-door centerline into a side-lawn planting zone.
+  Normal suburban styles choose the side opposite their garage; founder homes
+  inspect their exported door meshes; corner lots override either choice when
+  needed to point away from their second road.
+- Rotated benches so the seat faces the street instead of the house. Flags move
+  toward the curb side of the safe strip, keeping their poles out from under
+  entry canopies and porch covers.
+- Tight yards now scale only the piece's front-to-back depth. Width and height
+  remain intact, preventing miniature benches and flags or tiny collapsed trees.
+- Rendered and reviewed bench, flag, and tree placements at Cade's claimed
+  castle. Re-ran the 904-case placement audit: every decoration retained positive
+  façade and curb clearance, including all corner/founder homes. Module parse,
+  GLB sanity, and the full 366-address audit still pass. Web-only; no state,
+  Blender, GLB, population, building, or claim changes.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

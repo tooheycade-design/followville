@@ -1486,6 +1486,7 @@ const SUBURBAN_FOOTPRINTS = [
   [7.8,5.8], [7.5,5.9], [7.2,5.5], [7.4,5.8], [7.8,5.6],
   [7.0,5.9], [8.4,5.8], [8.2,5.9], [6.7,5.3], [8.6,5.9]
 ];
+const SUBURBAN_GARAGE_SIDES = [1,-1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1];
 
 function boxCollider(x, z, ux, uz, vx, vz, hx, hz, label="object"){
   const uLength = Math.hypot(ux, uz) || 1;
@@ -1970,17 +1971,33 @@ function makeYardDecoration(kind, entry){
   const curbMargin = Math.min(.48, yardStrip*.35);
   const freeWidth = Math.max(.005, yardStrip-houseMargin-curbMargin);
   const roadDepth = { flowers:.25, tree:1.25, bench:.42, flag:.08 }[kind] || .3;
-  group.scale.setScalar(Math.min(1, Math.max(.01, freeWidth/(roadDepth*2))));
-  const frontOffset = frontExtent + houseMargin + freeWidth/2;
-  // Keep corner lots centered so a sideways offset cannot enter their second
-  // road. Other lots get a small deterministic left/right planting offset.
-  const cornerLot = typeof building.px !== "number" && frontDirsFor(building).length > 1;
-  const sideSign = Number(building.seed) % 2 ? 1 : -1;
-  const sideOffset = cornerLot ? 0 : 2.15*sideSign;
+  // Compress only front-to-back when a yard strip is tight. Keeping the full
+  // width and height prevents benches, flags, and trees from looking like tiny
+  // broken miniatures on founder lots.
+  const depthScale = Math.min(1, Math.max(.01, freeWidth/(roadDepth*2)));
+  group.scale.set(1, 1, depthScale);
+  let frontOffset = frontExtent + houseMargin + freeWidth/2;
+  // Tall flagpoles sit toward the curb side of the strip, clear of porch roofs.
+  if (kind === "flag")
+    frontOffset = Math.max(frontOffset, curbDistance-curbMargin-roadDepth*depthScale);
+
+  // Put every piece on a side-lawn planting zone instead of in the doorway.
+  // The complete local decoration width is measured, so flags and benches stay
+  // inside the frontage even though their geometry is wider than their origin.
+  group.updateWorldMatrix(true, true);
+  const localDecorationBounds = new THREE.Box3().setFromObject(group);
+  const sideRadius = Math.max(Math.abs(localDecorationBounds.min.x),
+                              Math.abs(localDecorationBounds.max.x));
+  const sideTarget = { flowers:2.8, tree:2.75, bench:3.15, flag:3.0 }[kind] || 2.8;
+  const sideLimit = (typeof building.px === "number" ? 4.4 : LOT/2-.48);
+  const sideSign = decorationSideSign(entry, frontX, frontZ);
+  const sideOffset = Math.max(0, Math.min(sideTarget, sideLimit-sideRadius))*sideSign;
   const sideX = frontZ*sideOffset, sideZ = -frontX*sideOffset;
   group.position.set(center.x + frontX*frontOffset + sideX, center.y+.04,
                      center.z + frontZ*frontOffset + sideZ);
-  group.rotation.y = Math.atan2(frontX, frontZ);
+  // The bench's backrest is local +Z, so turn that side toward the house and
+  // leave the seat facing the street. Other decorations keep their front yaw.
+  group.rotation.y = Math.atan2(frontX, frontZ) + (kind === "bench" ? Math.PI : 0);
   return group;
 }
 
@@ -1993,6 +2010,45 @@ function frontCurbDistance(building, frontX, frontZ){
   if (Math.abs(frontX) > Math.abs(frontZ))
     return (frontX > 0 ? BLOCK_N-ix-.5 : ix+.5)*LOT;
   return (frontZ > 0 ? iy+.5 : BLOCK_N-iy-.5)*LOT;
+}
+
+function decorationSideSign(entry, frontX, frontZ){
+  const building = entry.building;
+  let sign = Number(building.seed)%2 ? 1 : -1;
+  if (["house", "ringhouse", "lanehouse"].includes(building.type)){
+    const style = Math.abs(Number(building.seed)||0)%SUBURBAN_GARAGE_SIDES.length;
+    sign = -SUBURBAN_GARAGE_SIDES[style];
+  } else {
+    // Founder homes retain separate door meshes. When the door is off-center,
+    // choose the other side of the façade before applying corner-road safety.
+    const center = entry.root.getWorldPosition(new THREE.Vector3());
+    const positiveSideX = frontZ, positiveSideZ = -frontX;
+    const doorSides = [];
+    entry.root.traverse(obj => {
+      if (!obj.isMesh || !/^door(?:\d|[._]|$)/i.test(obj.name || "")) return;
+      const doorCenter = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+      doorSides.push((doorCenter.x-center.x)*positiveSideX + (doorCenter.z-center.z)*positiveSideZ);
+    });
+    if (doorSides.length){
+      const doorSide = doorSides.reduce((sum,value)=>sum+value,0)/doorSides.length;
+      if (Math.abs(doorSide) > .3) sign = doorSide > 0 ? -1 : 1;
+    }
+  }
+  if (typeof building.px === "number") return sign;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const roadDirs = [];
+  if (ix === 0) roadDirs.push(FACE_DIR.w);
+  if (ix === BLOCK_N-1) roadDirs.push(FACE_DIR.e);
+  if (iy === 0) roadDirs.push(FACE_DIR.s);
+  if (iy === BLOCK_N-1) roadDirs.push(FACE_DIR.n);
+  const secondRoad = roadDirs.find(direction => direction[0]*frontX + direction[1]*frontZ < .5);
+  if (secondRoad){
+    const positiveSideX = frontZ, positiveSideZ = -frontX;
+    // Pick the side pointing away from the corner lot's second curb.
+    sign = positiveSideX*secondRoad[0] + positiveSideZ*secondRoad[1] > 0 ? -1 : 1;
+  }
+  return sign;
 }
 
 function removeYardDecorationCollider(houseId){

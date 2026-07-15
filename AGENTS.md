@@ -8,10 +8,18 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 yard-decoration presentation correction (Cade via Codex): pieces
+  now use a side-lawn planting zone instead of the front-door centerline.
+  Founder doors and normal-house garage sides steer the piece to the clear side;
+  corner lots steer away from their second road. Benches rotate 180 degrees to
+  face the street and flags sit curbward so poles clear porch covers. Tight lots
+  compress only front-to-back, preserving normal decoration height/width. Cade's
+  castle bench/flag/tree were rendered and visually checked; all 904 current
+  house/decoration combinations still clear both façade and curb. Web-only.
 - 2026-07-15 front-yard placement + accurate web collisions (Cade via Codex):
   homeowner decorations now read each GLB home's real facing and façade, then
-  fit between the building and its curb. Tight founder lots scale the selected
-  piece down instead of crossing the street; corner lots cannot offset toward a
+  fit between the building and its curb. Tight founder lots constrain the
+  piece's depth instead of crossing the street; corner lots cannot offset toward a
   second road. The browser collision system now uses oriented rectangular
   footprints for all 226 homes and 16 cars, three separate school-wing boxes,
   and only the actual cylinders of 77 existing tree trunks (plus customized
