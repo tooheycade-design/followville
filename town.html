@@ -1513,7 +1513,7 @@ function colliderFromLocalBounds(root, bounds, label){
                      size.x*Math.abs(scale.x)/2, size.z*Math.abs(scale.z)/2, label);
 }
 
-function localBoundsAtPlayerHeight(root, acceptMesh=()=>true){
+function localBoundsAtPlayerHeight(root, acceptMesh=()=>true, minHeight=.18, maxHeight=2.35){
   root.updateWorldMatrix(true, true);
   const inverseRoot = root.matrixWorld.clone().invert();
   const result = new THREE.Box3();
@@ -1526,7 +1526,7 @@ function localBoundsAtPlayerHeight(root, acceptMesh=()=>true){
     const part = obj.geometry.boundingBox.clone().applyMatrix4(relative);
     // Roofs, canopies, and elevated ornaments should not widen a player's
     // ground-level hitbox. Keep only geometry intersecting body height.
-    if (part.max.y < .18 || part.min.y > 2.35) return;
+    if (part.max.y < minHeight || part.min.y > maxHeight) return;
     result.union(part);
   });
   return result;
@@ -1557,6 +1557,19 @@ function houseFootprint(entry){
   if (!bounds.isEmpty()) return colliderFromLocalBounds(entry.root, bounds, `house-${entry.building.seed}`);
   const center = entry.root.getWorldPosition(new THREE.Vector3());
   return boxCollider(center.x, center.z, 1,0,0,1, 3.8,3.2, `house-${entry.building.seed}`);
+}
+
+function decorationObstacleFootprint(entry){
+  if (!entry?.root) return null;
+  const suburban = ["house", "ringhouse", "lanehouse"].includes(entry.building.type);
+  const bounds = localBoundsAtPlayerHeight(entry.root, mesh => {
+    if (!suburban) return !NON_STRUCTURAL_HOME_PART.test(mesh.name || "");
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    return materials.some(material =>
+      /^NB_sub_(?:wall|roof|door|garage|glass|trim|shutter)(?:_|$)/i.test(material?.name || ""));
+  }, -Infinity, Infinity);
+  if (bounds.isEmpty()) return houseFootprint(entry);
+  return colliderFromLocalBounds(entry.root, bounds, `yard-obstacle-${entry.building.seed}`);
 }
 
 function addMeshBoxCollider(mesh, label){
@@ -1956,7 +1969,10 @@ function makeYardDecoration(kind, entry){
   const front3 = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
   const frontLength = Math.hypot(front3.x, front3.z) || 1;
   const frontX = front3.x/frontLength, frontZ = front3.z/frontLength;
-  const footprint = houseFootprint(entry);
+  // Yard pieces must clear the full exported porch/door/roof silhouette, not
+  // merely the player's ground-level wall hitbox. Wide styles such as house 29
+  // project much farther toward the curb than their nominal body dimensions.
+  const footprint = decorationObstacleFootprint(entry);
   const frontExtent = footprint
     ? (footprint.x-center.x)*frontX + (footprint.z-center.z)*frontZ
       + footprint.hx*Math.abs(frontX*footprint.ux + frontZ*footprint.uz)
@@ -2018,21 +2034,25 @@ function decorationSideSign(entry, frontX, frontZ){
   if (["house", "ringhouse", "lanehouse"].includes(building.type)){
     const style = Math.abs(Number(building.seed)||0)%SUBURBAN_GARAGE_SIDES.length;
     sign = -SUBURBAN_GARAGE_SIDES[style];
-  } else {
-    // Founder homes retain separate door meshes. When the door is off-center,
-    // choose the other side of the façade before applying corner-road safety.
-    const center = entry.root.getWorldPosition(new THREE.Vector3());
-    const positiveSideX = frontZ, positiveSideZ = -frontX;
-    const doorSides = [];
-    entry.root.traverse(obj => {
-      if (!obj.isMesh || !/^door(?:\d|[._]|$)/i.test(obj.name || "")) return;
-      const doorCenter = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
-      doorSides.push((doorCenter.x-center.x)*positiveSideX + (doorCenter.z-center.z)*positiveSideZ);
-    });
-    if (doorSides.length){
-      const doorSide = doorSides.reduce((sum,value)=>sum+value,0)/doorSides.length;
-      if (Math.abs(doorSide) > .3) sign = doorSide > 0 ? -1 : 1;
-    }
+  }
+  // Both optimized suburban homes and founder homes retain a door material or
+  // door mesh. Always prioritize the side opposite an off-center entrance;
+  // this keeps wide porch styles such as house 29 from covering their doorway.
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  const positiveSideX = frontZ, positiveSideZ = -frontX;
+  const doorSides = [];
+  entry.root.traverse(obj => {
+    if (!obj.isMesh) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isDoor = /^door(?:\d|[._]|$)/i.test(obj.name || "")
+      || materials.some(material => /^NB_sub_door_/i.test(material?.name || ""));
+    if (!isDoor) return;
+    const doorCenter = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+    doorSides.push((doorCenter.x-center.x)*positiveSideX + (doorCenter.z-center.z)*positiveSideZ);
+  });
+  if (doorSides.length){
+    const doorSide = doorSides.reduce((sum,value)=>sum+value,0)/doorSides.length;
+    if (Math.abs(doorSide) > .3) sign = doorSide > 0 ? -1 : 1;
   }
   if (typeof building.px === "number") return sign;
   const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;

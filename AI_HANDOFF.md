@@ -42,6 +42,9 @@ recoloring, preserving shared GLB batching and preventing neighboring houses
   from changing. Yard pieces must remain in the measured strip between the
   home's real GLB façade and the curb. Use the actual root facing, preserve the
   corner-lot road guard, and preserve the side-lawn/door/garage avoidance.
+  Clearance must use `decorationObstacleFootprint()` (the complete exported
+  roof/door/garage silhouette), not the ground-level collision footprint; house
+  #29 proves those can differ by more than a meter.
   Benches must face the street, flags must stay curbward of porch covers, and
   tight lots may compress front-to-back but must not shrink the whole piece or
   move it behind the house. Web collisions use oriented boxes for

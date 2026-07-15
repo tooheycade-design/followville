@@ -370,6 +370,24 @@ Kept here (rather than just in chat) so it survives across sessions.
   GLB sanity, and the full 366-address audit still pass. Web-only; no state,
   Blender, GLB, population, building, or claim changes.
 
+## 21. House #29 full-silhouette placement fix
+
+- Reproduced the report at house #29 (`double_garage`, seed/house ID 29). Its
+  exported door/porch projects about 1.6m farther toward the curb than the
+  nominal body used for player collision, so mathematically road-safe pieces
+  were still visibly inside the awning and entrance.
+- Added a dedicated decoration obstacle footprint from the full-height exported
+  wall, roof, door, garage, glass, trim, and shutter materials. Player hitboxes
+  remain ground-level and are intentionally independent.
+- Optimized suburban door materials now participate in the side choice just as
+  founder door meshes do. An off-center entrance takes priority over the garage
+  heuristic; corner-road safety remains the final override.
+- Rendered #29's saved tree plus bench and flag previews from its street side.
+  All clear the actual porch, doorway, and curb. Re-audited all four choices on
+  all 226 homes against the new full structural footprint: 904/904 have positive
+  house and curb clearance. Module parse, GLB check, and 366-address audit pass.
+  Web-only; no Blender, GLB, world-state, population, building, or claim changes.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

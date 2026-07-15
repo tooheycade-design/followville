@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed house #29's decorations intersecting its double-garage porch/door by measuring each home's full exported structural silhouette and prioritizing the side opposite the actual door material; visually checked #29's tree, bench, and flag and revalidated all 904 placements with zero house/curb intersections.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Corrected broken-looking homeowner decorations: pieces now occupy a door/garage-aware side-lawn zone, corner lots steer away from their second road, benches face the street, flags clear porch covers, and tight lots preserve full height/width; visually checked bench/flag/tree at Cade's castle and revalidated all 904 placements.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Moved homeowner yard pieces into each home's measured front-yard strip without crossing the curb (including tight founder and corner lots), and replaced oversized circular web hitboxes with oriented house/car footprints plus trunk-only tree collisions; runtime-tested all four decorations across all 226 homes and left Blender/state/GLB unchanged.

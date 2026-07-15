@@ -184,6 +184,11 @@ curb. They must stay between the façade and curb; tight founder lots scale the
 front-to-back depth instead of shrinking the whole piece. Placement uses a
 side-lawn zone: normal houses avoid their garage side, founder homes avoid their
 actual door mesh, and corner lots choose the side away from their second road.
+The placement boundary is `decorationObstacleFootprint()`, built from the full
+exported wall/roof/door/garage/glass/trim geometry at every height. Do not use
+the player collision footprint here: house #29's porch/door extends roughly
+1.6m beyond that ground-level body. Off-center suburban door materials override
+the garage preference so the entrance always remains open.
 Benches face the street and flags sit curbward so their poles clear porch roofs.
 Do not restore the old fixed centerline/inward/backyard offset. The same
 footprint helpers drive player collision:
