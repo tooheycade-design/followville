@@ -59,7 +59,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --still          render one preview PNG after building
 #   --replay         re-animate the last day, change nothing
 #   --cam newgrowth  frame the largest cluster of today's rising houses
+#   --cam newgrowthoverhead  top-down view of today's rising houses
 #   --cam newstreet  finished eye-level glide through today's busiest street
+#   --cam football   temporary England v Argentina supporter vignette
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
 #                     buildings across many blocks instead of filling one
@@ -247,6 +249,56 @@ def add_prism_roof(col, name, w, d, h, x, y, z, material):
     verts = [(-hw, -hd, 0), (hw, -hd, 0), (hw, hd, 0), (-hw, hd, 0),
              (-hw, 0, h), (hw, 0, h)]
     faces = [(0, 1, 2, 3), (0, 4, 5, 1), (2, 5, 4, 3), (0, 3, 4), (1, 5, 2)]
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    obj.location = (x, y, z)
+    obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+def add_text(col, name, body, size, depth, x, y, z, material,
+             rotation=(math.pi / 2, 0, 0)):
+    """Small extruded title card text, facing toward negative Y by default."""
+    curve = bpy.data.curves.new(name, type="FONT")
+    curve.body = body
+    curve.align_x = "CENTER"
+    curve.align_y = "CENTER"
+    curve.size = size
+    curve.extrude = depth
+    curve.bevel_depth = min(0.025, depth * 0.25)
+    curve.materials.append(material)
+    obj = bpy.data.objects.new(name, curve)
+    obj.location = (x, y, z)
+    obj.rotation_euler = rotation
+    col.objects.link(obj)
+    return obj
+
+def add_uv_sphere(col, name, radius, x, y, z, material, rings=8, segments=12):
+    """Low-poly sphere without operators, safe for background rendering."""
+    verts = [(0, 0, radius), (0, 0, -radius)]
+    for ring in range(1, rings):
+        phi = math.pi * ring / rings
+        for seg in range(segments):
+            theta = math.tau * seg / segments
+            verts.append((radius * math.sin(phi) * math.cos(theta),
+                          radius * math.sin(phi) * math.sin(theta),
+                          radius * math.cos(phi)))
+    faces = []
+    first_ring = 2
+    for seg in range(segments):
+        faces.append((0, first_ring + seg,
+                      first_ring + (seg + 1) % segments))
+    for ring in range(rings - 2):
+        a0 = first_ring + ring * segments
+        b0 = a0 + segments
+        for seg in range(segments):
+            nxt = (seg + 1) % segments
+            faces.append((a0 + seg, b0 + seg, b0 + nxt, a0 + nxt))
+    last_ring = first_ring + (rings - 2) * segments
+    for seg in range(segments):
+        faces.append((1, last_ring + (seg + 1) % segments, last_ring + seg))
     me = bpy.data.meshes.new(name)
     me.from_pydata(verts, [], faces)
     me.update()
@@ -2269,6 +2321,157 @@ def city_center_and_extent(buildings):
     ext = max(max(xs) - min(xs), max(ys) - min(ys), 40)
     return cx, cy, ext
 
+def build_football_vignette(world_col, buildings, frame_end):
+    """Temporary fan-prediction set used only by ``--cam football``.
+
+    This deliberately says "TONIGHT" and uses a question mark instead of
+    inventing a match result before England v Argentina has been played. The
+    #10 memorial is a visual sports metaphor, not a permanent town object.
+    """
+    m_white = mat("NB_fan_white", (0.96, 0.97, 0.98), 0.8)
+    m_red = mat("NB_fan_england_red", (0.78, 0.04, 0.05), 0.72)
+    m_sky = mat("NB_fan_argentina_sky", (0.28, 0.68, 0.91), 0.7)
+    m_blue = mat("NB_fan_navy", (0.04, 0.10, 0.24), 0.7)
+    m_gold = mat("NB_fan_gold", (0.96, 0.68, 0.08), 0.5)
+    m_stone = mat("NB_fan_stone", (0.34, 0.36, 0.40), 0.9)
+    m_dark = mat("NB_fan_dark", (0.025, 0.035, 0.05), 0.8)
+    m_turf = mat("NB_fan_turf", (0.10, 0.42, 0.16), 1.0)
+    m_plane = mat("NB_fan_plane", (0.80, 0.84, 0.88), 0.55)
+
+    points = [build_pos(b) for b in buildings]
+    xs = [p[0] for p in points] or [0.0]
+    ys = [p[1] for p in points] or [0.0]
+    cx = (min(xs) + max(xs)) / 2
+    # Put the temporary set just south of the developed town. The camera
+    # looks north so real Followville houses remain the background.
+    sy = min(ys) - 27.0
+
+    # Small football presentation terrace and touchline accents.
+    add_box(world_col, "fan_pitch", 31, 23, .35, cx, sy + 3, .02, m_turf)
+    add_box(world_col, "fan_touchline_front", 29, .18, .06,
+            cx, sy - 7.5, .38, m_white)
+    add_box(world_col, "fan_touchline_back", 29, .18, .06,
+            cx, sy + 13.5, .38, m_white)
+    add_box(world_col, "fan_touchline_left", .18, 21, .06,
+            cx - 14.5, sy + 3, .38, m_white)
+    add_box(world_col, "fan_touchline_right", .18, 21, .06,
+            cx + 14.5, sy + 3, .38, m_white)
+
+    # Match card: no fake score, only the verified semi-final matchup.
+    add_box(world_col, "fan_scoreboard", 18, .7, 6.4,
+            cx, sy + 11.0, 2.0, m_blue)
+    add_box(world_col, "fan_scoreboard_cap", 19, .9, .35,
+            cx, sy + 11.0, 8.35, m_gold)
+    add_text(world_col, "fan_semifinal_text", "WORLD CUP SEMI-FINAL",
+             .75, .055, cx, sy + 10.60, 7.15, m_gold)
+    add_text(world_col, "fan_match_text", "ENGLAND  v  ARGENTINA",
+             .72, .06, cx, sy + 10.59, 5.25, m_white)
+    add_text(world_col, "fan_tonight_text", "TONIGHT",
+             .88, .055, cx, sy + 10.58, 3.35, m_red)
+
+    # Symbolic #10 / "GOAT defeated?" football memorial.
+    add_box(world_col, "fan_grave_base", 6.4, 3.8, .6,
+            cx, sy + 1.8, .35, m_stone)
+    stone = add_box(world_col, "fan_number10_stone", 4.8, 1.25, 5.8,
+                    cx, sy + 2.1, .9, m_stone)
+    bevel = stone.modifiers.new("Rounded stone", "BEVEL")
+    bevel.width = .38
+    bevel.segments = 3
+    add_text(world_col, "fan_goat_text", "THE GOAT?",
+             .65, .06, cx, sy + 1.44, 5.35, m_white)
+    add_text(world_col, "fan_ten_text", "#10",
+             1.5, .09, cx, sy + 1.42, 3.45, m_gold)
+    add_text(world_col, "fan_defeated_text", "DEFEATED?",
+             .57, .055, cx, sy + 1.40, 1.85, m_red)
+    ball = add_uv_sphere(world_col, "fan_football", 1.0,
+                         cx + 3.7, sy - .1, 1.3, m_white)
+    # Simple dark panels make the ball read immediately at Reel size.
+    for a in (0, math.tau / 3, 2 * math.tau / 3):
+        add_uv_sphere(world_col, "fan_ball_panel", .23,
+                      ball.location.x + .84 * math.cos(a),
+                      ball.location.y - .25,
+                      ball.location.z + .55 * math.sin(a), m_dark, 5, 8)
+
+    def flag_on_pole(prefix, x, stripe_mats, lowered=False):
+        pole_h = 8.0
+        add_ngon_cone(world_col, prefix + "_pole", .10, .08, pole_h, 10,
+                      x, sy + .2, .4, m_plane)
+        top = 6.2 if lowered else 8.0
+        flag_h, flag_w = 4.2, 6.3
+        stripe_h = flag_h / len(stripe_mats)
+        for i, stripe_mat in enumerate(stripe_mats):
+            z = top - flag_h + i * stripe_h
+            add_box(world_col, prefix + "_stripe", flag_w, .12, stripe_h,
+                    x + flag_w / 2, sy + .15, z, stripe_mat)
+        return top, flag_w, flag_h
+
+    # Argentina lowered beside #10; England fully raised on the other side.
+    flag_on_pole("fan_argentina", cx - 10.7, (m_sky, m_white, m_sky), True)
+    top, fw, fh = flag_on_pole("fan_england", cx + 4.3,
+                               (m_white,), False)
+    add_box(world_col, "fan_england_cross_h", fw, .14, .72,
+            cx + 4.3 + fw / 2, sy + .08, top - fh / 2 - .36, m_red)
+    add_box(world_col, "fan_england_cross_v", .72, .14, fh,
+            cx + 4.3 + fw / 2, sy + .07, top - fh, m_red)
+
+    # Low-poly flyby. All pieces are local to one animated root so the plane
+    # and its St George banner cross the town together in the background.
+    fly = bpy.data.objects.new("EnglandFlyby", None)
+    world_col.objects.link(fly)
+    fly_parts = []
+    fly_parts.append(add_box(world_col, "fan_plane_fuselage", 8.5, 1.3, 1.25,
+                             1.0, 0, 0, m_plane))
+    fly_parts.append(add_box(world_col, "fan_plane_wings", 3.6, 9.5, .22,
+                             1.1, 0, .48, m_white))
+    fly_parts.append(add_box(world_col, "fan_plane_tail", 2.0, 3.7, .18,
+                             -3.0, 0, .55, m_red))
+    fly_parts.append(add_box(world_col, "fan_plane_fin", 1.4, .2, 2.0,
+                             -3.2, 0, .5, m_red))
+    fly_parts.append(add_box(world_col, "fan_plane_cockpit", 2.1, 1.0, .5,
+                             3.0, -.05, 1.18, m_blue))
+    fly_parts.append(add_box(world_col, "fan_fly_flag", 13.0, .12, 5.4,
+                             -13.2, 0, -2.2, m_white))
+    fly_parts.append(add_box(world_col, "fan_fly_cross_h", 13.0, .15, .78,
+                             -13.2, -.08, .1, m_red))
+    fly_parts.append(add_box(world_col, "fan_fly_cross_v", .78, .15, 5.4,
+                             -13.2, -.09, -2.2, m_red))
+    fly_parts.append(add_beam_between(world_col, "fan_tow_top",
+                                      (-3.3, 0, .7), (-6.7, 0, 2.9), .08, m_dark))
+    fly_parts.append(add_beam_between(world_col, "fan_tow_bottom",
+                                      (-3.3, 0, .4), (-6.7, 0, -2.0), .08, m_dark))
+    for obj in fly_parts:
+        obj.parent = fly
+    fly.location = (cx - 92, sy + 36, 26)
+    fly.keyframe_insert("location", frame=1)
+    fly.location = (cx + 92, sy + 36, 26)
+    fly.keyframe_insert("location", frame=frame_end)
+    for fc in obj_fcurves(fly):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "LINEAR"
+
+    # Dedicated low-angle portrait camera: memorial foreground, real town and
+    # passing plane behind. A restrained side-dolly gives the set depth.
+    cam_data = bpy.data.cameras.new("FootballCam")
+    cam_data.lens = 42
+    cam_data.dof.use_dof = False
+    cam_obj = bpy.data.objects.new("FootballCamera", cam_data)
+    aim = bpy.data.objects.new("FootballAim", None)
+    aim.location = (cx, sy + 7.0, 7.2)
+    world_col.objects.link(cam_obj)
+    world_col.objects.link(aim)
+    tr = cam_obj.constraints.new("TRACK_TO")
+    tr.target = aim
+    tr.track_axis = "TRACK_NEGATIVE_Z"
+    tr.up_axis = "UP_Y"
+    cam_obj.location = (cx - 4.0, sy - 34.0, 14.5)
+    cam_obj.keyframe_insert("location", frame=1)
+    cam_obj.location = (cx + 4.0, sy - 31.0, 13.0)
+    cam_obj.keyframe_insert("location", frame=frame_end)
+    for fc in obj_fcurves(cam_obj):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "BEZIER"
+    bpy.context.scene.camera = cam_obj
+
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
@@ -2302,6 +2505,12 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # sweep with how far back the camera already sits, capped so a small
         # close-up still doesn't swing wildly off its subject.
         orbit_deg = min(38, 9 + hdist / 12)
+        if cam == "newgrowthoverhead":
+            # Keep the new neighborhood large in frame while clearly reading
+            # as a top-down growth shot rather than another oblique reveal.
+            pol_deg, fstop = 39, 4.5
+            dist *= 1.05
+            orbit_deg = min(30, orbit_deg)
         if cam == "school":
             # Higher, front-left campus reveal avoids neighboring rooftops and
             # lets the orbit uncover the playground behind the classroom wings.
@@ -2606,7 +2815,8 @@ def clear_world():
     for obj in list(bpy.data.objects):
         if obj.users == 0:
             bpy.data.objects.remove(obj)
-    for coll in (bpy.data.meshes, bpy.data.actions, bpy.data.lights, bpy.data.cameras):
+    for coll in (bpy.data.meshes, bpy.data.curves, bpy.data.actions,
+                 bpy.data.lights, bpy.data.cameras):
         for blk in list(coll):
             if blk.users == 0:
                 coll.remove(blk)
@@ -2847,6 +3057,8 @@ def main(cfg=None):
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
     if cfg.get("cam") in ("street", "newstreet", "park", "overhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
+    elif cfg.get("cam") == "football":
+        frame_end = max(frame_end, FPS * 10)
     elif cfg.get("cam") == "school":
         frame_end = max(frame_end, FPS * 8)
     f = prehold
@@ -2865,7 +3077,7 @@ def main(cfg=None):
     animate_ring_traffic(world_col, keep or state["buildings"], frame_end)
     hero = None
     hero_batch = animation_batch if focus_type else new_batch
-    if cfg.get("cam") == "newgrowth" and hero_batch:
+    if cfg.get("cam") in ("newgrowth", "newgrowthoverhead") and hero_batch:
         # A daily total can finish one cul-de-sac and start a distant district.
         # Frame the largest new district so the rise shot stays close enough to
         # read as houses appearing instead of shrinking the entire town to fit.
@@ -2873,7 +3085,7 @@ def main(cfg=None):
         for b in hero_batch:
             district_groups.setdefault(b.get("district") or "", []).append(b)
         hero_batch = max(district_groups.values(), key=len)
-    if (cfg.get("hero") or cfg.get("cam") == "newgrowth") and hero_batch:
+    if (cfg.get("hero") or cfg.get("cam") in ("newgrowth", "newgrowthoverhead")) and hero_batch:
         pts = []
         for b in hero_batch:
             x, y = build_pos(b)
@@ -2900,6 +3112,8 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "football":
+        build_football_vignette(world_col, state["buildings"], frame_end)
     if cfg.get("celebrate"):
         # fireworks over today's new batch if there is one (e.g. the day-8
         # park district), otherwise over the founders' custom homes
