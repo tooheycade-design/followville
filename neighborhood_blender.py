@@ -463,12 +463,17 @@ def build_suburban_house(col, variant):
     style_index = variant % len(SUBURBAN_STYLES)
     palette_index = (variant // len(SUBURBAN_STYLES)) % len(SUBURBAN_PALETTES)
     name, w, d, floors, garage_side, porch_kind, roof_h, feature = SUBURBAN_STYLES[style_index]
+    # Founder house #29's double-garage facade and portico leave no usable front
+    # yard. Set that structure back while leaving its drive, walk, and mailbox
+    # at the curb so the lot still connects cleanly to its road.
+    structure_setback = 1.30 if variant == 29 else 0.0
     wall_c, roof_c, door_c, shutter_c = SUBURBAN_PALETTES[palette_index]
     rng = random.Random(9100 + variant)
     m = std_mats()
     wall = mat("NB_sub_wall_%d" % palette_index, wall_c, .82)
     roof = mat("NB_sub_roof_%d" % palette_index, roof_c, .88)
     door = mat("NB_sub_door_%d" % palette_index, door_c, .72)
+    mail_flag = mat("NB_mail_flag", (0.72, 0.12, 0.11), .65)
     shutter = mat("NB_sub_shutter_%d" % palette_index, shutter_c, .78)
     trim = mat("NB_sub_trim", (.94, .92, .84), .76)
     glass = mat("NB_sub_glass", (.10, .23, .32), .25)
@@ -587,12 +592,17 @@ def build_suburban_house(col, variant):
     # Driveway extends toward the street from the garage. Landscaping is
     # deliberately restricted to the opposite planting bed, never this x-zone.
     drive_front = -4.90
-    drive_back = front_y - .02
+    drive_back = front_y + structure_setback - .02
     drive_depth = max(.80, drive_back - drive_front)
     add_box(col, "driveway", garage_w + .48, drive_depth, .09,
             garage_x, (drive_front + drive_back) / 2, .02, m["cap"])
-    add_box(col, "front_walk", 1.08, max(.65, -4.82 - (front_y - 1.0)), .10,
-            door_x, -4.05, .03, m["cap"])
+    if structure_setback:
+        walk_front, walk_back = -4.82, front_y + structure_setback - .10
+        add_box(col, "front_walk", 1.08, walk_back - walk_front, .10,
+                door_x, (walk_front + walk_back) / 2, .03, m["cap"])
+    else:
+        add_box(col, "front_walk", 1.08, max(.65, -4.82 - (front_y - 1.0)), .10,
+                door_x, -4.05, .03, m["cap"])
     bed_center = -garage_side * (w * .34)
     for i, bx in enumerate((bed_center - .42, bed_center + .42)):
         # Extra exclusion check is cheap insurance if future style dimensions change.
@@ -602,13 +612,19 @@ def build_suburban_house(col, variant):
     add_box(col, "mailpost", .13, .13, 1.02, mailbox_x, -4.62, .02, m["trunk"])
     add_box(col, "mailbox", .42, .66, .34, mailbox_x, -4.66, .98, m["metal"])
     add_box(col, "mailflag", .06, .07, .46,
-            mailbox_x + .25, -4.66, 1.08, door)
+            mailbox_x + .25, -4.66, 1.08, mail_flag)
 
     if feature in ("classic_ranch", "colonial", "farmhouse") or rng.random() < .24:
         add_box(col, "chimney", .64, .68, 1.45,
                 -garage_side * w * .30, .72, foundation_z + body_h + .72, brick)
         add_box(col, "chimney_cap", .82, .86, .16,
                 -garage_side * w * .30, .72, foundation_z + body_h + 2.13, m["cap"])
+
+    if structure_setback:
+        curb_anchored = ("driveway", "front_walk", "mailpost", "mailbox", "mailflag")
+        for obj in list(col.objects):
+            if obj.type == "MESH" and not obj.name.lower().startswith(curb_anchored):
+                obj.location.y += structure_setback
 
     _merge_asset_meshes(col, "suburban_%02d_%s" % (variant, name))
 

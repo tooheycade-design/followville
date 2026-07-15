@@ -1488,6 +1488,10 @@ const SUBURBAN_FOOTPRINTS = [
 ];
 const SUBURBAN_GARAGE_SIDES = [1,-1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1];
 
+function suburbanStructureSetback(entry){
+  return Number(entry.building.seed) === 29 ? 1.30 : 0;
+}
+
 function boxCollider(x, z, ux, uz, vx, vz, hx, hz, label="object"){
   const uLength = Math.hypot(ux, uz) || 1;
   const vLength = Math.hypot(vx, vz) || 1;
@@ -1532,11 +1536,43 @@ function localBoundsAtPlayerHeight(root, acceptMesh=()=>true, minHeight=.18, max
   return result;
 }
 
+function localBoundsForMaterials(root, acceptMaterial){
+  root.updateWorldMatrix(true, true);
+  const inverseRoot = root.matrixWorld.clone().invert();
+  const result = new THREE.Box3();
+  const relative = new THREE.Matrix4();
+  const point = new THREE.Vector3();
+  root.traverse(obj => {
+    if (!obj.isMesh || !obj.geometry) return;
+    const geometry = obj.geometry;
+    const position = geometry.getAttribute("position");
+    if (!position) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const index = geometry.index;
+    const elementCount = index ? index.count : position.count;
+    const groups = geometry.groups.length
+      ? geometry.groups : [{ start:0, count:elementCount, materialIndex:0 }];
+    relative.multiplyMatrices(inverseRoot, obj.matrixWorld);
+    for (const group of groups){
+      if (!acceptMaterial(materials[group.materialIndex])) continue;
+      const end = Math.min(elementCount, group.start + group.count);
+      for (let i=group.start; i<end; i++){
+        const vertexIndex = index ? index.getX(i) : i;
+        point.fromBufferAttribute(position, vertexIndex).applyMatrix4(relative);
+        result.expandByPoint(point);
+      }
+    }
+  });
+  return result;
+}
+
 function suburbanFootprint(entry){
-  const style = SUBURBAN_FOOTPRINTS[Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length];
+  const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
+  const style = SUBURBAN_FOOTPRINTS[styleIndex];
   const root = entry.root;
   root.updateWorldMatrix(true, true);
-  const center = root.getWorldPosition(new THREE.Vector3());
+  const center = new THREE.Vector3(0,0,-suburbanStructureSetback(entry));
+  root.localToWorld(center);
   const scale = root.getWorldScale(new THREE.Vector3());
   const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
   const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
@@ -1562,12 +1598,11 @@ function houseFootprint(entry){
 function decorationObstacleFootprint(entry){
   if (!entry?.root) return null;
   const suburban = ["house", "ringhouse", "lanehouse"].includes(entry.building.type);
-  const bounds = localBoundsAtPlayerHeight(entry.root, mesh => {
-    if (!suburban) return !NON_STRUCTURAL_HOME_PART.test(mesh.name || "");
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    return materials.some(material =>
-      /^NB_sub_(?:wall|roof|door|garage|glass|trim|shutter)(?:_|$)/i.test(material?.name || ""));
-  }, -Infinity, Infinity);
+  const bounds = suburban
+    ? localBoundsForMaterials(entry.root, material =>
+        /^NB_sub_(?:wall|roof|door|garage|glass|trim|shutter)(?:_|$)/i.test(material?.name || ""))
+    : localBoundsAtPlayerHeight(entry.root,
+        mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""), -Infinity, Infinity);
   if (bounds.isEmpty()) return houseFootprint(entry);
   return colliderFromLocalBounds(entry.root, bounds, `yard-obstacle-${entry.building.seed}`);
 }
@@ -1950,9 +1985,9 @@ function makeYardDecoration(kind, entry){
     group.add(decorationMesh(new THREE.ConeGeometry(.95,2.0,9), decorationMaterial(0x5e9258), 0, 4.05, 0));
   } else if (kind === "bench"){
     const wood = decorationMaterial(0x9a6741), metal = decorationMaterial(0x3d4650,.45);
-    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.22,.62), wood, 0,.72,0));
-    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.95,.18), wood, 0,1.18,.3));
-    for (const x of [-.8,.8]) for (const z of [-.2,.2])
+    group.add(decorationMesh(new THREE.BoxGeometry(1.5,.22,.62), wood, 0,.72,0));
+    group.add(decorationMesh(new THREE.BoxGeometry(1.5,.95,.18), wood, 0,1.18,.3));
+    for (const x of [-.52,.52]) for (const z of [-.2,.2])
       group.add(decorationMesh(new THREE.BoxGeometry(.14,.72,.14), metal, x,.36,z));
   } else if (kind === "flag"){
     group.add(decorationMesh(new THREE.CylinderGeometry(.045,.06,4.1,8), decorationMaterial(0xd5d9dc,.35), 0,2.05,0));
@@ -1991,7 +2026,8 @@ function makeYardDecoration(kind, entry){
   // width and height prevents benches, flags, and trees from looking like tiny
   // broken miniatures on founder lots.
   const depthScale = Math.min(1, Math.max(.01, freeWidth/(roadDepth*2)));
-  group.scale.set(1, 1, depthScale);
+  if (kind === "tree") group.scale.set(depthScale, 1, depthScale);
+  else group.scale.set(1, 1, depthScale);
   let frontOffset = frontExtent + houseMargin + freeWidth/2;
   // Tall flagpoles sit toward the curb side of the strip, clear of porch roofs.
   if (kind === "flag")
@@ -2007,7 +2043,12 @@ function makeYardDecoration(kind, entry){
   const sideTarget = { flowers:2.8, tree:2.75, bench:3.15, flag:3.0 }[kind] || 2.8;
   const sideLimit = (typeof building.px === "number" ? 4.4 : LOT/2-.48);
   const sideSign = decorationSideSign(entry, frontX, frontZ);
-  const sideOffset = Math.max(0, Math.min(sideTarget, sideLimit-sideRadius))*sideSign;
+  // Founder house #29 uses the open lawn beyond its entrance. The narrow gap
+  // between its double garage and door cannot safely hold a full-size bench.
+  const house29SideTarget = { flowers:3.0, tree:3.2, bench:2.95, flag:3.0 }[kind] || 3.0;
+  const sideOffset = Number(building.seed) === 29
+    ? Math.max(0, Math.min(house29SideTarget, sideLimit-sideRadius))
+    : Math.max(0, Math.min(sideTarget, sideLimit-sideRadius))*sideSign;
   const sideX = frontZ*sideOffset, sideZ = -frontX*sideOffset;
   group.position.set(center.x + frontX*frontOffset + sideX, center.y+.04,
                      center.z + frontZ*frontOffset + sideZ);

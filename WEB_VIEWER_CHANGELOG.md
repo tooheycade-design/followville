@@ -388,6 +388,28 @@ Kept here (rather than just in chat) so it survives across sessions.
   house and curb clearance. Module parse, GLB check, and 366-address audit pass.
   Web-only; no Blender, GLB, world-state, population, building, or claim changes.
 
+## 22. House #29 structural lot and multi-material clearance fix
+
+- Replaced the failed depth-compression workaround with a real lot correction:
+  founder house/seed 29's structure is authored 1.3m farther from the curb,
+  while its driveway and front walk extend back to the relocated facade and
+  remain connected to the street.
+- Found the underlying web-measurement bug in optimized houses. Each house is
+  one merged mesh with multiple material groups, so accepting a mesh because it
+  contained a wall material also accepted its driveway and mailbox. Clearance
+  now iterates only vertices from structural wall/roof/door/garage/glass/trim/
+  shutter material groups. Mailbox flags use their own non-structural material.
+- House #29 uses its open side lawn beyond the entrance. Its saved bench is a
+  proportional 1.5m two-person bench at full depth between the entry path and
+  mailbox, not across the garage/driveway. Custom trees use identical X/Z scale,
+  so tight front yards produce upright round evergreens instead of flat slices.
+- Rebuilt and saved `neighborhood.blend`, exported `town.glb`, and reviewed
+  street-level bench and tree shots. Runtime mapped all 226 homes and reported
+  245 rectangular colliders plus 77 trunk cylinders with no page errors. All
+  904 home/decoration combinations cleared house, curb, and side-lot limits;
+  GLB integrity and current/full-366 suburban collision audits passed. Day 13,
+  population 226, 229 buildings, world state, seeds, and claims are unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

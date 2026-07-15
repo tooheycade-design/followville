@@ -43,14 +43,18 @@ recoloring, preserving shared GLB batching and preventing neighboring houses
   home's real GLB façade and the curb. Use the actual root facing, preserve the
   corner-lot road guard, and preserve the side-lawn/door/garage avoidance.
   Clearance must use `decorationObstacleFootprint()` (the complete exported
-  roof/door/garage silhouette), not the ground-level collision footprint; house
-  #29 proves those can differ by more than a meter.
+  roof/door/garage silhouette), not the ground-level collision footprint. It
+  must measure accepted material groups/triangles inside optimized multi-material
+  meshes; accepting a whole mesh because one material matches also accepts its
+  driveway and mailbox. Founder house #29 proves both distinctions matter.
   Benches must face the street, flags must stay curbward of porch covers, and
   tight lots may compress front-to-back but must not shrink the whole piece or
   move it behind the house. Web collisions use oriented boxes for
   houses/cars and measured trunk cylinders for trees; never restore one large
-  circular hitbox per GLB root. This is web/backend-only and must not rewrite
-  building seeds.
+  circular hitbox per GLB root. House #29 is the one Blender-authored exception:
+  its structure is set back 1.3m while its drive/walk remain curb-connected, and
+  its open-side lawn socket fits pieces between the path and mailbox. Never
+  rewrite building seeds or world state to accomplish a visual correction.
 
 Trusted `profiles.is_admin` accounts (`cade.toohey` and `stellar.kehler`) may
 own two homes; all normal users remain limited to one. The limit is enforced by

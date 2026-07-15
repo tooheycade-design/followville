@@ -15,6 +15,14 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Founder house #29's structure is now authored 1.3m farther back, with its
+  driveway and walk extended to remain connected to the curb. Yard clearance
+  reads the selected structural material triangles inside the merged GLB mesh,
+  so curb-anchored driveway/mailbox parts no longer make the house look deeper
+  than it is. The saved bench is a full-depth two-person bench fitted on the
+  open side lawn between entry path and mailbox; custom trees keep equal X/Z
+  scale instead of becoming flat. Blender and GLB changed; world state, Day 13,
+  population 226, 229 buildings, seeds, and claims did not.
 - Admin accounts now have a database-enforced two-home allowance; normal
   accounts still have one. The live handles are `cade.toohey` and
   `stellar.kehler`. `town.html` lists both homes and targets visit, customize,
@@ -31,7 +39,7 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 - Web collisions are shape-aware. All 226 homes and 16 cars have oriented box
   footprints, the school has three independent wing boxes, and each tree blocks
   only at its measured trunk (77 existing GLB trunks plus homeowner yard trees),
-  not at the canopy. Blender/state/GLB are unchanged.
+  not at the canopy. The collision system itself remains browser-side.
 - Day 13 is complete: population/followers 226, 229 buildings, with 40 new
   ordinary houses at suburban plan IDs 53-92. The batch finished Creekside
   Bend (2 Pebble Court homes) and started Willow Hills (20 Willow Rise and 18

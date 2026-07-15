@@ -8,14 +8,17 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
-- 2026-07-15 house #29 decoration correction (Cade via Codex): yard placement
-  now measures the full exported wall/roof/door/garage/glass/trim silhouette,
-  not only the ground-level player hitbox. This fixes the double-garage model's
-  porch and door projecting 1.6m beyond its nominal body. Suburban door
-  materials now steer pieces to the side opposite the entrance, even when that
-  overrides the garage-side preference. House #29's tree, bench, and flag were
-  rendered from the street and cleared the porch/door/road. The actual-geometry
-  904-case audit has zero house or curb intersections. Web-only; no GLB changes.
+- 2026-07-15 final house #29 lot correction (Cade via Codex): founder house 29's
+  structure is authored 1.3m farther back while its driveway and walk remain
+  connected to the curb. The web clearance pass now measures only the actual
+  structural material triangles inside each optimized multi-material house mesh;
+  driveway/mailbox geometry can no longer inflate the facade boundary. #29 uses
+  its open side lawn beyond the entrance: its saved bench is a proportional,
+  full-depth two-person bench between the path and mailbox, and trees scale
+  equally across both horizontal axes instead of flattening toward the road.
+  Street renders and all 904 house/decoration cases passed with zero house,
+  curb, or lot-edge violations. Blender + web model changed; day/population,
+  229 buildings, seeds, and claims are unchanged.
 - 2026-07-15 yard-decoration presentation correction (Cade via Codex): pieces
   now use a side-lawn planting zone instead of the front-door centerline.
   Founder doors and normal-house garage sides steer the piece to the clear side;

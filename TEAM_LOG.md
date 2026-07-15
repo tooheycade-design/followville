@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [BOTH] Rebuilt founder house #29 with its structure set back 1.3m and its drive/walk still curb-connected; fixed multi-material facade measurement so driveway/mailbox triangles cannot squeeze decorations, fitted the saved full-depth two-person bench between path and mailbox, kept custom trees round in X/Z, and passed all 904 house/decor placements plus current/full-plan collision audits without changing state, population, buildings, seeds, or claims.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed house #29's decorations intersecting its double-garage porch/door by measuring each home's full exported structural silhouette and prioritizing the side opposite the actual door material; visually checked #29's tree, bench, and flag and revalidated all 904 placements with zero house/curb intersections.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Corrected broken-looking homeowner decorations: pieces now occupy a door/garage-aware side-lawn zone, corner lots steer away from their second road, benches face the street, flags clear porch covers, and tight lots preserve full height/width; visually checked bench/flag/tree at Cade's castle and revalidated all 904 placements.
