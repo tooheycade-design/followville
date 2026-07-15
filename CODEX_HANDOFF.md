@@ -1,6 +1,6 @@
 # Codex handoff -- current through Day 13
 
-Updated 2026-07-14 for Cade's next Claude/Codex session.
+Updated 2026-07-15 for Cade's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -15,6 +15,13 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Admin accounts now have a database-enforced two-home allowance; normal
+  accounts still have one. The live handles are `cade.toohey` and
+  `stellar.kehler`. `town.html` lists both homes and targets visit, customize,
+  and unclaim actions by house ID. Existing claims were not reassigned.
+- Web yard decorations are road-aware: they are placed inward from every
+  road-facing side, including diagonal inward placement on corner lots. This
+  fixes Burj/founder yard pieces appearing in streets without changing Blender.
 - Day 13 is complete: population/followers 226, 229 buildings, with 40 new
   ordinary houses at suburban plan IDs 53-92. The batch finished Creekside
   Bend (2 Pebble Court homes) and started Willow Hills (20 Willow Rise and 18

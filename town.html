@@ -224,6 +224,20 @@
     font-weight:700; cursor:pointer;
   }
   #authCard .secondary:disabled, .custom-option:disabled { opacity:.55; cursor:default; }
+  .owned-home-summary { margin:8px 0 12px; font-size:12px; opacity:.72; }
+  .owned-home-list { display:grid; gap:10px; margin-top:12px; }
+  .owned-home-card {
+    padding:12px; border:1px solid #d7d9dc; border-radius:13px; background:#fff;
+  }
+  .owned-home-card.active { border-color:#2b6a94; box-shadow:0 0 0 2px rgba(43,106,148,.12); }
+  .owned-home-title { display:flex; align-items:center; justify-content:space-between; gap:8px; font-weight:800; }
+  .owned-home-title span { font-size:10px; padding:3px 8px; border-radius:20px; background:#dceaf3; color:#245c80; }
+  .owned-home-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:10px; }
+  #authCard .home-action {
+    padding:9px 7px; border:1px solid #c9d1dc; border-radius:9px; background:#fdfaf4;
+    color:#1c2b45; font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+  }
+  #authCard .home-action.danger { grid-column:1 / -1; border-color:#e0c4c4; color:#963838; background:#fff8f7; }
   @media (max-width:520px){
     #authCard.customizer-card { padding:20px 16px 16px; }
     .custom-options { grid-template-columns:repeat(4,1fr); gap:6px; }
@@ -1603,7 +1617,8 @@ const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk"; // anon/public key — safe to ship in HTML (RLS enforces access)
 
 let sb = null;                  // supabase client (null = feature off/unavailable)
-let session = null, myProfile = null, myClaim = null;
+let session = null, myProfile = null, myClaim = null, myClaims = [];
+let claimLimit = 1;
 let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
 let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
 let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
@@ -1747,7 +1762,8 @@ function decorationMesh(geometry, material, x, y, z){
   return mesh;
 }
 
-function makeYardDecoration(kind, building, groundY=0){
+function makeYardDecoration(kind, entry){
+  const building = entry.building;
   const group = new THREE.Group();
   group.name = `yard-${kind}-${building.seed}`;
   if (kind === "flowers"){
@@ -1774,12 +1790,24 @@ function makeYardDecoration(kind, building, groundY=0){
     group.add(decorationMesh(new THREE.SphereGeometry(.09,8,6), decorationMaterial(0xe5c45e,.3), 0,4.18,0));
   }
   const [x,z] = buildingWorldXZ(building);
-  const f = frontDirsFor(building)[0] || [0,1];
-  const side = [f[1], -f[0]];
-  const frontOffset = ["beachhouse", "eiffelhouse", "burjhouse"].includes(building.type) ? 6.2 : 4.7;
-  group.position.set(x + f[0]*frontOffset + side[0]*2.7, groundY+.04,
-                     z + f[1]*frontOffset + side[1]*2.7);
-  group.rotation.y = Math.atan2(f[0], f[1]);
+  const fronts = frontDirsFor(building);
+  // Each front points toward a road. Move the item in the opposite direction;
+  // on corner lots, averaging both fronts moves it diagonally into the lot.
+  let inwardX = 0, inwardZ = 0;
+  for (const front of fronts){ inwardX -= front[0]; inwardZ -= front[1]; }
+  const inwardLength = Math.hypot(inwardX, inwardZ) || 1;
+  inwardX /= inwardLength; inwardZ /= inwardLength;
+  const landmark = ["beachhouse", "eiffelhouse", "burjhouse"].includes(building.type);
+  const inwardOffset = landmark ? 6.2 : 4.7;
+  let sideX = 0, sideZ = 0;
+  if (fronts.length === 1){
+    const sideSign = Number(building.seed) % 2 ? 1 : -1;
+    sideX = fronts[0][1] * sideSign * 2.7;
+    sideZ = -fronts[0][0] * sideSign * 2.7;
+  }
+  group.position.set(x + inwardX*inwardOffset + sideX, entry.root.position.y+.04,
+                     z + inwardZ*inwardOffset + sideZ);
+  group.rotation.y = Math.atan2(-inwardX, -inwardZ);
   return group;
 }
 
@@ -1804,7 +1832,7 @@ function applyCustomizationToHouse(houseId, value){
   }
   clearYardDecoration(Number(houseId));
   if (custom.yard !== "none"){
-    const decor = makeYardDecoration(custom.yard, entry.building, entry.root.position.y);
+    const decor = makeYardDecoration(custom.yard, entry);
     customizationLayer.add(decor);
     yardDecorations.set(Number(houseId), decor);
   }
@@ -1919,11 +1947,14 @@ async function refreshClaims(){
   }
 }
 async function refreshMyStatus(){
-  if (!session){ myProfile = null; myClaim = null; return; }
+  if (!session){ myProfile = null; myClaim = null; myClaims = []; claimLimit = 1; return; }
   const { data, error } = await sb.rpc("my_status");
   if (error) return;
+  const priorHouseId = Number(myClaim?.house_id || 0);
   myProfile = data?.profile ?? null;
-  myClaim = data?.claim ?? null;
+  myClaims = Array.isArray(data?.claims) ? data.claims : (data?.claim ? [data.claim] : []);
+  claimLimit = Math.max(1, Number(data?.claim_limit || (myProfile?.is_admin ? 2 : 1)));
+  myClaim = myClaims.find(claim => Number(claim.house_id) === priorHouseId) || myClaims[0] || null;
   // first login after signup: profile row doesn't exist yet — create it from
   // the handle stashed in auth metadata at signup time
   const metaHandle = session.user?.user_metadata?.instagram_handle;
@@ -1931,6 +1962,16 @@ async function refreshMyStatus(){
     const { data: prof } = await sb.rpc("setup_profile", { p_handle: metaHandle });
     if (prof) myProfile = prof;
   }
+}
+
+function canClaimAnotherHome(){
+  return !!session && myProfile?.verification_status === "verified" && myClaims.length < claimLimit;
+}
+
+function selectOwnedHome(houseId){
+  const selected = myClaims.find(claim => Number(claim.house_id) === Number(houseId));
+  if (selected) myClaim = selected;
+  return selected || null;
 }
 
 function rebuildClaimSpots(){
@@ -1988,7 +2029,7 @@ scene.add(targetTag);
 
 /* ── the claim itself ── */
 async function attemptClaim(){
-  if (!sb || !session || !nearestOpen || claiming) return;
+  if (!sb || !canClaimAnotherHome() || !nearestOpen || claiming) return;
   claiming = true;
   const houseId = nearestOpen;
   const { error } = await sb.rpc("claim_house", { p_house_id: houseId });
@@ -1996,13 +2037,15 @@ async function attemptClaim(){
   if (error){
     const m = error.message || "";
     if (m.includes("house_taken"))            showToast("Someone claimed this house seconds ago — pick another!");
-    else if (m.includes("already_have_house")) showToast("You already have a house in Followville!");
+    else if (m.includes("claim_limit_reached") || m.includes("already_have_house"))
+      showToast(claimLimit > 1 ? "Your admin account already has two homes." : "You already have a house in Followville!");
     else if (m.includes("not_verified"))       showToast("Your Instagram isn't verified yet — check your account panel.");
     else if (m.includes("not_claimable"))      showToast("This building can't be claimed.");
     else                                       showToast("Couldn't claim: " + m);
     refreshClaims();
   } else {
     await Promise.all([refreshClaims(), refreshMyStatus()]);
+    selectOwnedHome(houseId);
     updateAccountUI();
     claimMode = false;
     showToast("🏠 It's yours! Welcome home" + (myProfile ? ", @" + myProfile.instagram_handle : "") + "!");
@@ -2010,12 +2053,13 @@ async function attemptClaim(){
 }
 claimPrompt.addEventListener("click", attemptClaim);
 
-/* ── give up your house (one house per account still enforced server-side —
-   unclaiming just frees the row so you, or someone else, can claim again) ── */
+/* ── Give up the currently selected home. The house id matters for admins,
+   who can own two homes without deleting both at once. ── */
 async function attemptUnclaim(){
   if (!sb || !session || !myClaim || unclaiming) return;
+  const houseId = Number(myClaim.house_id);
   unclaiming = true;
-  const { error } = await sb.rpc("unclaim_house");
+  const { error } = await sb.rpc("unclaim_house", { p_house_id:houseId });
   unclaiming = false;
   confirmingUnclaim = false;
   if (error){
@@ -2023,7 +2067,7 @@ async function attemptUnclaim(){
   } else {
     await Promise.all([refreshClaims(), refreshMyStatus()]);
     updateAccountUI();
-    showToast("You've given up your house — walk up to any open one to claim a new one.");
+    showToast(`Home #${houseId} is open again${canClaimAnotherHome() ? " — you can claim another home." : "."}`);
   }
   if (modalOpen()) renderAuthCard();
 }
@@ -2048,10 +2092,11 @@ function updateAccountUI(){
   if (!session)            accountBtn.textContent = "sign in · claim a home";
   else if (!myProfile)     accountBtn.textContent = "finish account setup";
   else if (myProfile.verification_status === "verified")
-                           accountBtn.textContent = "@" + myProfile.instagram_handle + " ✓";
+                           accountBtn.textContent = "@" + myProfile.instagram_handle + " ✓" +
+                             (claimLimit > 1 ? ` · ${myClaims.length}/${claimLimit} homes` : "");
   else                     accountBtn.textContent = "@" + myProfile.instagram_handle + " · pending";
-  const verified = myProfile?.verification_status === "verified";
-  claimHomeBtn.style.display = (session && verified && !myClaim) ? "" : "none";
+  claimHomeBtn.style.display = canClaimAnotherHome() ? "" : "none";
+  claimHomeBtn.textContent = myClaims.length ? "claim second home" : "claim a home";
   goHomeBtn.style.display = (session && myClaim) ? "" : "none";
   customizeHomeBtn.style.display = (session && myClaim) ? "" : "none";
   if (modalOpen()) renderAuthCard();
@@ -2060,6 +2105,7 @@ accountBtn.addEventListener("click", openModal);
 
 claimHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
+  if (!canClaimAnotherHome()) return;
   claimMode = true;
   if (isTouch) beginWalking(); else controls.lock();
   showToast(isTouch
@@ -2113,7 +2159,9 @@ async function saveHomeCustomization(){
   savingCustomization = true;
   renderHomeCustomizer();
   const payload = normalizeCustomization(customizationDraft);
-  const { data, error } = await sb.rpc("update_my_customization", { p_customization:payload });
+  const { data, error } = await sb.rpc("update_my_customization", {
+    p_house_id:Number(myClaim.house_id), p_customization:payload
+  });
   savingCustomization = false;
   if (error){
     renderHomeCustomizer();
@@ -2239,7 +2287,7 @@ function renderAuthCard(){
     wireSignout();
     return;
   }
-  if (!myClaim){
+  if (!myClaims.length){
     authCard.innerHTML = `
       <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
       <p class="muted">You're verified! Close this, hit <b>claim a home</b>, and walk
@@ -2255,27 +2303,45 @@ function renderAuthCard(){
   if (confirmingUnclaim){
     authCard.innerHTML = `
       <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
-      <p class="muted">Give up your house? It goes back up for anyone to claim, including
+      <p class="muted">Give up home #${Number(myClaim.house_id)}? It goes back up for anyone to claim, including
       you — but if you want it back, someone else might get there first.</p>
       <button class="primary" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
-        ${unclaiming ? "unclaiming…" : "yes, unclaim my house"}</button>
+        ${unclaiming ? "unclaiming…" : `yes, unclaim home #${Number(myClaim.house_id)}`}</button>
       <div class="err" id="authErr"></div>
       <button class="linkish" id="doCancelUnclaim">never mind</button>`;
     document.getElementById("doConfirmUnclaim").onclick = attemptUnclaim;
     document.getElementById("doCancelUnclaim").onclick = () => { confirmingUnclaim = false; renderAuthCard(); };
     return;
   }
+  const homesMarkup = myClaims.map(claim => {
+    const houseId = Number(claim.house_id);
+    const active = houseId === Number(myClaim?.house_id);
+    return `<div class="owned-home-card ${active ? "active" : ""}" data-owned-home="${houseId}">
+      <div class="owned-home-title">Home #${houseId}${active ? "<span>selected</span>" : ""}</div>
+      <div class="owned-home-actions">
+        <button class="home-action" data-home-action="visit" data-house-id="${houseId}">go home</button>
+        <button class="home-action" data-home-action="customize" data-house-id="${houseId}">customize</button>
+        <button class="home-action danger" data-home-action="unclaim" data-house-id="${houseId}">unclaim this home</button>
+      </div>
+    </div>`;
+  }).join("");
   authCard.innerHTML = `
     <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
-    <p class="muted">Home #${Number(myClaim.house_id)} is yours. Change its colors or add one yard piece whenever you want.</p>
-    <button class="primary" id="doCustomize">customize my home</button>
-    <button class="secondary" id="doGoHome" style="margin-top:9px;">go to my home</button>
-    <button class="linkish" id="doUnclaim">unclaim this house</button>
+    <p class="owned-home-summary">You own ${myClaims.length} of ${claimLimit} allowed ${claimLimit === 1 ? "home" : "homes"}. Select either home below.</p>
+    ${canClaimAnotherHome() ? '<button class="primary" id="doStartClaim">claim second home</button>' : ""}
+    <div class="owned-home-list">${homesMarkup}</div>
     <div class="err" id="authErr"></div>
     <button class="linkish" id="doSignout">log out</button>`;
-  document.getElementById("doCustomize").onclick = openHomeCustomizer;
-  document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
-  document.getElementById("doUnclaim").onclick = () => { confirmingUnclaim = true; renderAuthCard(); };
+  const startClaim = document.getElementById("doStartClaim");
+  if (startClaim) startClaim.onclick = () => { closeModal(); claimHomeBtn.click(); };
+  authCard.querySelectorAll("[data-home-action]").forEach(button => {
+    button.onclick = () => {
+      if (!selectOwnedHome(button.dataset.houseId)) return;
+      if (button.dataset.homeAction === "visit") { closeModal(); goHomeBtn.click(); }
+      else if (button.dataset.homeAction === "customize") openHomeCustomizer();
+      else { confirmingUnclaim = true; renderAuthCard(); }
+    };
+  });
   wireSignout();
 }
 
@@ -2771,8 +2837,7 @@ async function initSupabase(){
   if (location.hash === "#home" && myClaim){
     goHome();               // arriving from the landing page's "Go to my home"
   } else if (location.hash === "#claim"){
-    if (myClaim) { /* already claimed — no modal nagging, buttons say it all */ }
-    else openModal();
+    if (canClaimAnotherHome()) openModal();
   }
 }
 
@@ -2936,7 +3001,7 @@ function animate(){
     // its FRONT/door side, and LOOKING at it — then exactly one house is the
     // target, marked by a floating tag right above it.
     let target = null;
-    if (sb && session && myProfile?.verification_status === "verified" && !myClaim && claimSpots.length){
+    if (sb && canClaimAnotherHome() && claimSpots.length){
       camera.getWorldDirection(_camDir);
       let bestLook = 0.5;   // must be within ~60° of screen center
       for (const s of claimSpots){

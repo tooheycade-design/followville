@@ -8,13 +8,23 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 admin two-home allowance + yard placement fix (Cade via Codex):
+  trusted `profiles.is_admin` accounts may own two houses while every normal
+  account remains capped at one. The live admins are `cade.toohey` and
+  `stellar.kehler`. The account panel shows 1/2 or 2/2 homes and lets an admin
+  visit, customize, or unclaim either home independently. Supabase enforces
+  the limit with a profile-row lock plus a claims trigger, and the RPCs target
+  an explicit owned house ID. All 27 claims stayed unchanged. Yard pieces now
+  move opposite every road-facing side of a lot (diagonally inward on corner
+  lots), fixing founder/landmark decorations such as the Burj appearing in a
+  street. This is web/backend-only; Blender/state/GLB were not modified.
 - 2026-07-15 Homeowner Mode (Cade via Codex): every signed-in claimed-house
   owner can now open `customize my home`, choose an exterior color, roof/accent
   color, door color, and one lightweight yard piece (flowers, tree, bench, or
   flag), preview the result, and save it. The approved palette IDs live in the
   existing `claims.customization` JSONB field; the owner-only
-  `update_my_customization(jsonb)` RPC validates/normalizes every value and
-  updates only the `auth.uid()` caller's claim. Existing claim Realtime updates
+  `update_my_customization(bigint,jsonb)` RPC validates/normalizes every value
+  and updates only the caller-owned house ID. Existing claim Realtime updates
   make saved looks visible to all visitors. Web materials are cloned per house
   before recoloring so shared Blender materials cannot recolor neighbors.
   All 27 existing claims remain unchanged and no Blender/state/GLB data moved.
@@ -401,7 +411,7 @@ HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimabl
 incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas/schools.
 Admin (verify/reject/revoke) = the "Admin" button on the LIVE homepage (visible
 only to accounts with profiles.is_admin = true — currently cade.toohey and
-stellarkehler; every action is re-checked server-side inside the SQL functions,
+stellar.kehler; every action is re-checked server-side inside the SQL functions,
 so the page itself is safe to be public). admin.bat still works locally too
 (same admin.html, service key from supabase_sync.env). See CLAIMING_SETUP.md §3.
 Setup status: LIVE as of 2026-07-09. Supabase project "followville"

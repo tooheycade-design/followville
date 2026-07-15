@@ -307,6 +307,32 @@ Kept here (rather than just in chat) so it survives across sessions.
   RPC execution is rejected. Blender, `world_state.json`, and `town.glb` did not
   change.
 
+## 18. Two-home admins and road-safe yard placement
+
+- Replaced the old unique-user claim constraint with a concurrency-safe owner
+  limit: normal accounts remain capped at one house and trusted admins may own
+  two. Both `claim_house()` and a defensive claims trigger lock/count by owner.
+- `my_status()` now returns the complete ordered claims list plus `claim_limit`,
+  while retaining the first `claim` field for older clients.
+- Added house-specific `unclaim_house(bigint)` and
+  `update_my_customization(bigint,jsonb)` RPCs. Both require the requested house
+  to belong to `auth.uid()`, so one admin home cannot modify the other by
+  accident and a two-home unclaim removes only the selected row.
+- The account modal shows 1/2 or 2/2 for admins, offers `claim second home`, and
+  gives each home independent go/customize/unclaim actions. Normal follower UX
+  is unchanged.
+- Yard placement now averages every road-facing lot direction and offsets the
+  decoration inward. Single-road lots retain a deterministic sideways offset;
+  corner lots move diagonally inward. This fixes landmark pieces such as the
+  Burj yard decoration appearing on the street.
+- Applied the live `allow_admins_two_homes` migration, aligned the targeted
+  customization validator with the canonical palette, and rollback-tested second
+  admin claims, rejected third/normal-second claims, targeted customization and
+  unclaim, trigger enforcement, and RPC privileges. All 27 existing claims
+  remained unchanged. Browser verification passed the 1/2 and 2/2 panels, a
+  second-home customization selection, and the rendered Burj yard placement.
+  Blender, population, world state, and GLB were not changed.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

@@ -34,11 +34,20 @@ Claimed-house owners can customize exterior, roof/accent, and door colors plus
 one yard piece from the account modal or start screen. `town.html` reads the
 existing `claims.customization` JSONB through `public_claims`; the normal
 `claims` Realtime channel applies saves to every visitor. Saves must continue
-to use `update_my_customization(jsonb)`, which derives the target owner from
-`auth.uid()` and accepts only the hard-coded palette IDs. Never grant direct
+to use `update_my_customization(bigint,jsonb)`, which requires an explicit
+house ID owned by `auth.uid()` and accepts only the hard-coded palette IDs.
+Never grant direct
 client UPDATE on `claims`. The browser clones materials per claimed house before
 recoloring, preserving shared GLB batching and preventing neighboring houses
-from changing. This is web/backend-only and must not rewrite building seeds.
+from changing. Yard pieces must stay opposite all road-facing lot directions;
+corner lots use the combined inward direction. This is web/backend-only and
+must not rewrite building seeds.
+
+Trusted `profiles.is_admin` accounts (`cade.toohey` and `stellar.kehler`) may
+own two homes; all normal users remain limited to one. The limit is enforced by
+`claim_house()` plus `claims_enforce_owner_limit`, not by UI state. Multi-home
+actions must keep passing a specific house ID so one home cannot overwrite or
+unclaim the other.
 
 ## Current suburban house system (2026-07-13)
 

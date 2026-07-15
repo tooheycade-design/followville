@@ -1,7 +1,8 @@
 # Followville — Claimable Homes: setup + admin guide
 
-Real followers create an account on the site, verify their Instagram handle, and
-claim exactly one house in the town. Built 2026-07-09 (Cade's Windows Claude, Fable).
+Real followers create an account on the site, verify their Instagram handle,
+and normally claim one house in the town. Trusted admin accounts may claim two.
+Built 2026-07-09 (Cade's Windows Claude, Fable).
 
 **Stack:** Supabase (Postgres + Auth + Realtime) as the backend; the site stays
 static on Vercel. New files: `supabase_schema.sql` (run once in Supabase),
@@ -9,22 +10,21 @@ static on Vercel. New files: `supabase_schema.sql` (run once in Supabase),
 `grow_windows.ps1` (Windows, automatic), and account/claim UI inside `town.html`.
 
 **Hard rules enforced at the DATABASE level** (survive concurrent claims):
-one house per account and one account per house (`claims.house_id` primary key +
-`claims.user_id` unique). All claims go through the `claim_house()` Postgres
-function — first commit wins, the loser gets a clean "house_taken" error, and
-Supabase Realtime pushes the change to every open browser instantly.
+one account per house (`claims.house_id` primary key); one house per normal
+account; and two per trusted `profiles.is_admin` account. `claim_house()` locks
+the caller's profile row before counting, and `claims_enforce_owner_limit`
+defends direct/service writes too. A simultaneous house collision gets a clean
+`house_taken` error, and Realtime pushes the winner to every open browser.
 
-**Unclaiming (added 2026-07-10):** followers can also give up their house — the
-`unclaim_house()` Postgres function deletes their `claims` row, which frees the
-house for anyone (including them) to claim again. The rule above still holds:
-you can never have more than one house at a time, unclaiming is just the
-reverse of claiming, enforced by the exact same constraint.
+**Unclaiming (added 2026-07-10, multi-home overload 2026-07-15):** followers
+can give up an owned house with `unclaim_house(bigint)`. The explicit house ID
+ensures a two-home admin removes only the selected row. The no-argument overload
+remains for backward compatibility but refuses an ambiguous two-home request.
 
-**Migration note for this iteration:** `supabase_schema.sql` is safe to
-re-run in full (everything is `IF NOT EXISTS`/`CREATE OR REPLACE`) — if the
-live database doesn't have `unclaim_house` yet, paste the whole file into the
-SQL Editor and run it again, same as step 2 below. No data is touched; it only
-adds/replaces functions and grants.
+**Current migration state:** `allow_admins_two_homes` was applied to the live
+Supabase project on 2026-07-15. It dropped the old per-user unique constraint,
+added the locking limit trigger and targeted RPC overloads, and preserved all
+27 claim rows. `supabase_schema.sql` remains the re-runnable canonical schema.
 
 **Multiplayer (added 2026-07-14):** the same Supabase project now backs website
 Presence/movement, persistent town chat, and admin activity logs. Signed-in
@@ -39,10 +39,11 @@ checks the existing admin flag before returning online/session/chat logs.
 panel and start screen expose `customize my home`. Owners can preview and save
 approved exterior, roof/accent, and door colors plus one yard piece. The data
 uses the existing `claims.customization` JSONB column. Browser code never gets
-direct UPDATE access: `update_my_customization(jsonb)` derives the claim from
-`auth.uid()`, rejects unknown keys/values, normalizes the payload, and updates
-only that owner's row. The existing `claims` Realtime subscription makes saved
-looks appear for every open visitor.
+direct UPDATE access: `update_my_customization(bigint,jsonb)` requires a house
+ID owned by `auth.uid()`, rejects unknown values, normalizes the payload, and
+updates only that row. Yard pieces are placed inward from every road-facing lot
+edge (diagonally inward on corner lots). The existing `claims` Realtime
+subscription makes saved looks appear for every open visitor.
 
 ---
 
@@ -91,7 +92,7 @@ and never overwrites manual edits.
 ## 3. Verifying followers (manual, until Meta app review)
 
 **The easy way (built 2026-07-09): the Admin button on the live site.** Log in
-as @cade.toohey or @stellarkehler on followville-kappa.vercel.app and an
+as @cade.toohey or @stellar.kehler on followville-kappa.vercel.app and an
 "Admin →" button appears on the home page → one-click approve/reject for
 everyone waiting, plus revoke on every claim. This is safe to have live
 because the page holds no secrets: every admin action is a Postgres function
@@ -171,8 +172,9 @@ Sources from the research: [Meta webhook docs](https://developers.facebook.com/d
 Allowed values are defined in both `supabase_schema.sql` (the authoritative
 security validation) and `town.html` (the picker/render palette). Keep those two
 lists synchronized when adding an option. Never accept arbitrary CSS colors or
-arbitrary decoration/model URLs from a client. `update_my_customization()` is
-intentionally executable only by `authenticated` and updates the row matching
+arbitrary decoration/model URLs from a client.
+`update_my_customization(bigint,jsonb)` is intentionally executable only by
+`authenticated` and updates the requested row only when it matches
 `auth.uid()`; `anon` and `PUBLIC` have no execute grant. Re-running the complete
 schema safely creates/replaces the RPC without changing existing claim rows.
 
@@ -188,14 +190,15 @@ town.html (static, on Vercel)
   └─ supabase-js (CDN) → auth, claim_house RPC, Realtime on `claims`,
                           name-tag sprites over claimed houses
 Supabase
-  └─ auth.users + profiles (verification) + houses + claims (constraints)
+  └─ auth.users + profiles (verification/admin allowance) + houses + claims
+     (house PK + per-owner limit trigger)
 ```
 
 Claim UX in town.html: sign up (email+password+handle) → DM the code → admin
 verifies → "claim a home" button → walk up to an open house → press E (or tap)
 → `claim_house` RPC → name tag appears for everyone in real time. `Go to my
 home` spawns you at your own house. Not signed in = exact old free-roam.
-Once you have a house, the account panel (click your `@handle ✓` button) also
-shows an `unclaim this house` option, behind a one-step "are you sure" confirm
-card — `unclaim_house` RPC, frees the house, no re-login needed to claim a
-different one afterward.
+Once you have a house, the account panel (click your `@handle ✓` button) shows
+per-home visit, customize, and unclaim controls behind a one-step confirmation.
+Admins see their 1/2 or 2/2 allowance plus `claim second home`; normal accounts
+still see only one home. Every multi-home action passes the selected house ID.
