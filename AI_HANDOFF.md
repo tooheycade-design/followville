@@ -39,9 +39,13 @@ house ID owned by `auth.uid()` and accepts only the hard-coded palette IDs.
 Never grant direct
 client UPDATE on `claims`. The browser clones materials per claimed house before
 recoloring, preserving shared GLB batching and preventing neighboring houses
-from changing. Yard pieces must stay opposite all road-facing lot directions;
-corner lots use the combined inward direction. This is web/backend-only and
-must not rewrite building seeds.
+  from changing. Yard pieces must remain in the measured strip between the
+  home's real GLB façade and the curb. Use the actual root facing, preserve the
+  corner-lot road guard, and scale pieces on tight lots rather than moving them
+  behind the house or into a street. Web collisions use oriented boxes for
+  houses/cars and measured trunk cylinders for trees; never restore one large
+  circular hitbox per GLB root. This is web/backend-only and must not rewrite
+  building seeds.
 
 Trusted `profiles.is_admin` accounts (`cade.toohey` and `stellar.kehler`) may
 own two homes; all normal users remain limited to one. The limit is enforced by

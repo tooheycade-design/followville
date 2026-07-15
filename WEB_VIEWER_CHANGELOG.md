@@ -333,6 +333,26 @@ Kept here (rather than just in chat) so it survives across sessions.
   second-home customization selection, and the rendered Burj yard placement.
   Blender, population, world state, and GLB were not changed.
 
+## 19. Front-yard fitting and shape-accurate collisions
+
+- Replaced the fixed backyard/inward yard-piece offset with geometry-aware
+  front-yard fitting. The viewer reads each exported home's actual facing,
+  projects its structural façade toward the road, measures the curb setback,
+  and centers the piece in the remaining strip.
+- Decorations scale down only when a founder lot is too tight. Corner lots drop
+  the sideways planting offset so a piece cannot enter their second road.
+- Replaced the former one-circle-per-top-level-object collision pass with
+  oriented boxes for all 226 house bodies and all 16 complete car bodies. The
+  school uses three separate wing boxes so its courtyard stays walkable.
+- Tree collisions now come only from the 77 exported trunk meshes; foliage,
+  bushes, yards, and roads are walkable. Customized yard trees dynamically add
+  and remove their own scaled trunk collider.
+- Verified all four decoration choices against every mapped home (904 cases):
+  zero façade overlaps and zero curb crossings. Runtime mapping reported 245
+  box footprints and 77 base trunk cylinders, with no page errors. Module parse,
+  GLB sanity, and the 366-address suburban collision audit all passed. This was
+  web-only; Blender, `world_state.json`, and `town.glb` did not change.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

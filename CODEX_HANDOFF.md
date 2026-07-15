@@ -19,9 +19,14 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   accounts still have one. The live handles are `cade.toohey` and
   `stellar.kehler`. `town.html` lists both homes and targets visit, customize,
   and unclaim actions by house ID. Existing claims were not reassigned.
-- Web yard decorations are road-aware: they are placed inward from every
-  road-facing side, including diagonal inward placement on corner lots. This
-  fixes Burj/founder yard pieces appearing in streets without changing Blender.
+- Web yard decorations now occupy the real front-yard strip: `town.html` reads
+  the GLB root's actual facing, measures the structural façade and curb setback,
+  and scales a decoration down on tight founder lots rather than entering the
+  street. Corner-lot side offsets are disabled so the second road stays clear.
+- Web collisions are shape-aware. All 226 homes and 16 cars have oriented box
+  footprints, the school has three independent wing boxes, and each tree blocks
+  only at its measured trunk (77 existing GLB trunks plus homeowner yard trees),
+  not at the canopy. Blender/state/GLB are unchanged.
 - Day 13 is complete: population/followers 226, 229 buildings, with 40 new
   ordinary houses at suburban plan IDs 53-92. The batch finished Creekside
   Bend (2 Pebble Court homes) and started Willow Hills (20 Willow Rise and 18

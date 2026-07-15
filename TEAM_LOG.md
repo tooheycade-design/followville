@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Moved homeowner yard pieces into each home's measured front-yard strip without crossing the curb (including tight founder and corner lots), and replaced oversized circular web hitboxes with oriented house/car footprints plus trunk-only tree collisions; runtime-tested all four decorations across all 226 homes and left Blender/state/GLB unchanged.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Allowed trusted admins `cade.toohey` and `stellar.kehler` to own two houses while normal accounts remain capped at one; added per-home visit/customize/unclaim controls and concurrency-safe Supabase enforcement, preserved all 27 claims, and moved yard decorations inward from every road-facing lot edge so Burj/founder decorations no longer land in streets.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Built Homeowner Mode: claimed owners can preview/save approved exterior, roof/accent, and door colors plus one lightweight yard piece; added a validated owner-only Supabase RPC and realtime town updates, preserved all 27 existing claims, mapped all 226 homes with per-house material isolation, and left Blender/state/GLB unchanged.

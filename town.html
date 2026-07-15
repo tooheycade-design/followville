@@ -1476,8 +1476,160 @@ if (isTouch){
   }, { passive:false });
 }
 
-/* collision colliders: simple circles pushed out against each building */
+/* Player collisions use the shape that is actually solid: oriented boxes for
+   houses/cars and small circles for cylindrical tree trunks. Tree canopies,
+   yards, roads, and landscaping remain walkable. */
 const colliders = [];
+const PLAYER_COLLIDER_RADIUS = 0.6;
+const SUBURBAN_FOOTPRINTS = [
+  [7.9,5.7], [8.5,5.4], [7.7,5.8], [8.3,5.7], [7.1,5.7],
+  [7.8,5.8], [7.5,5.9], [7.2,5.5], [7.4,5.8], [7.8,5.6],
+  [7.0,5.9], [8.4,5.8], [8.2,5.9], [6.7,5.3], [8.6,5.9]
+];
+
+function boxCollider(x, z, ux, uz, vx, vz, hx, hz, label="object"){
+  const uLength = Math.hypot(ux, uz) || 1;
+  const vLength = Math.hypot(vx, vz) || 1;
+  return { kind:"box", x, z, ux:ux/uLength, uz:uz/uLength,
+           vx:vx/vLength, vz:vz/vLength, hx, hz, label };
+}
+
+function circleCollider(x, z, radius, label="trunk", owner=null){
+  return { kind:"circle", x, z, radius, label, owner };
+}
+
+function colliderFromLocalBounds(root, bounds, label){
+  if (!root || !bounds || bounds.isEmpty()) return null;
+  root.updateWorldMatrix(true, true);
+  const center = bounds.getCenter(new THREE.Vector3());
+  root.localToWorld(center);
+  const size = bounds.getSize(new THREE.Vector3());
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     size.x*Math.abs(scale.x)/2, size.z*Math.abs(scale.z)/2, label);
+}
+
+function localBoundsAtPlayerHeight(root, acceptMesh=()=>true){
+  root.updateWorldMatrix(true, true);
+  const inverseRoot = root.matrixWorld.clone().invert();
+  const result = new THREE.Box3();
+  const relative = new THREE.Matrix4();
+  root.traverse(obj => {
+    if (!obj.isMesh || !obj.geometry || !acceptMesh(obj)) return;
+    if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
+    if (!obj.geometry.boundingBox) return;
+    relative.multiplyMatrices(inverseRoot, obj.matrixWorld);
+    const part = obj.geometry.boundingBox.clone().applyMatrix4(relative);
+    // Roofs, canopies, and elevated ornaments should not widen a player's
+    // ground-level hitbox. Keep only geometry intersecting body height.
+    if (part.max.y < .18 || part.min.y > 2.35) return;
+    result.union(part);
+  });
+  return result;
+}
+
+function suburbanFootprint(entry){
+  const style = SUBURBAN_FOOTPRINTS[Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length];
+  const root = entry.root;
+  root.updateWorldMatrix(true, true);
+  const center = root.getWorldPosition(new THREE.Vector3());
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     style[0]*Math.abs(scale.x)/2 + .16,
+                     style[1]*Math.abs(scale.z)/2 + .16,
+                     `house-${entry.building.seed}`);
+}
+
+const NON_STRUCTURAL_HOME_PART = /(drive|walk|mail|shrub|bush|trunk|blob|pine|palm|flower|rock|lawn|ground|landscape|deck|rail|step|stilt|ocean|sand|surf|frond|ball)/i;
+function houseFootprint(entry){
+  if (!entry?.root) return null;
+  if (["house", "ringhouse", "lanehouse"].includes(entry.building.type))
+    return suburbanFootprint(entry);
+  const bounds = localBoundsAtPlayerHeight(entry.root,
+    mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""));
+  if (!bounds.isEmpty()) return colliderFromLocalBounds(entry.root, bounds, `house-${entry.building.seed}`);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  return boxCollider(center.x, center.z, 1,0,0,1, 3.8,3.2, `house-${entry.building.seed}`);
+}
+
+function addMeshBoxCollider(mesh, label){
+  const bounds = localBoundsAtPlayerHeight(mesh);
+  const collider = colliderFromLocalBounds(mesh, bounds, label);
+  if (collider && collider.hx > .08 && collider.hz > .08) colliders.push(collider);
+}
+
+function addTrunkColliderFromMesh(mesh, label="tree-trunk", owner=null){
+  mesh.updateWorldMatrix(true, false);
+  const bounds = new THREE.Box3().setFromObject(mesh);
+  if (bounds.isEmpty()) return;
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  const radius = Math.max(size.x, size.z)/2;
+  if (radius > .025 && radius < 1.5)
+    colliders.push(circleCollider(center.x, center.z, radius, label, owner));
+}
+
+function buildGLBColliders(root){
+  colliders.length = 0;
+  for (const entry of houseVisuals.values()){
+    const collider = houseFootprint(entry);
+    if (collider) colliders.push(collider);
+  }
+  for (const child of root.children){
+    const name = (child.name || "").toLowerCase();
+    // GLTFLoader sanitizes Blender dots to underscores (car.001 -> car_001).
+    if (/^(car|traffic)(?:\d|[._]|$)/.test(name) || name === "ringtraffic")
+      addMeshBoxCollider(child, `car-${child.name}`);
+  }
+  root.traverse(obj => {
+    const name = obj.name || "";
+    if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);
+    // The school is one large export root. Its three building wings need
+    // separate footprints so the courtyard remains open and walkable.
+    if (obj.isMesh && /^school_(?:center_hall|classroom_wing)(?:\d|[._]|$)/i.test(name))
+      addMeshBoxCollider(obj, `school-${name}`);
+  });
+  refreshYardDecorationColliders();
+  const boxes = colliders.filter(collider => collider.kind === "box").length;
+  const trunks = colliders.filter(collider => collider.kind === "circle").length;
+  console.info(`[Followville] collisions mapped ${boxes} rectangular footprints and ${trunks} trunk cylinders.`);
+}
+
+function resolvePlayerCollision(position, collider){
+  if (collider.kind === "circle"){
+    let dx = position.x-collider.x, dz = position.z-collider.z;
+    let distance = Math.hypot(dx,dz);
+    const radius = collider.radius + PLAYER_COLLIDER_RADIUS;
+    if (distance >= radius) return;
+    if (distance < .0001){ position.x += radius; return; }
+    const push = radius-distance;
+    position.x += dx/distance*push;
+    position.z += dz/distance*push;
+    return;
+  }
+  const dx = position.x-collider.x, dz = position.z-collider.z;
+  const localX = dx*collider.ux + dz*collider.uz;
+  const localZ = dx*collider.vx + dz*collider.vz;
+  const limitX = collider.hx + PLAYER_COLLIDER_RADIUS;
+  const limitZ = collider.hz + PLAYER_COLLIDER_RADIUS;
+  if (Math.abs(localX) >= limitX || Math.abs(localZ) >= limitZ) return;
+  const pushX = limitX-Math.abs(localX), pushZ = limitZ-Math.abs(localZ);
+  if (pushX < pushZ){
+    const direction = localX < 0 ? -1 : 1;
+    position.x += collider.ux*pushX*direction;
+    position.z += collider.uz*pushX*direction;
+  } else {
+    const direction = localZ < 0 ? -1 : 1;
+    position.x += collider.vx*pushZ*direction;
+    position.z += collider.vz*pushZ*direction;
+  }
+}
 
 function addRoads(buildings){
   const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
@@ -1600,7 +1752,8 @@ function addBuildings(buildings){
     world.add(inst);
     if (HOME_MATERIAL_ROLES[b.type])
       houseVisuals.set(Number(b.seed), { building:b, root:inst, isolated:false, materials:[] });
-    colliders.push({ x, z: y, radius: inst.userData.radius || 4.2 });
+    const fallbackCollider = houseFootprint({ building:b, root:inst });
+    if (fallbackCollider) colliders.push(fallbackCollider);
   }
   scene.add(world);
   applyAllHomeCustomizations();
@@ -1608,7 +1761,8 @@ function addBuildings(buildings){
 
 /* ═══════════════════════ ACCOUNTS + HOME CLAIMING ═══════════════════════
    Every real follower can create an account, verify their Instagram handle,
-   and claim exactly ONE house. Backend: Supabase (Postgres + Auth + Realtime),
+   and claim a house (two for the two admin accounts). Backend: Supabase
+   (Postgres + Auth + Realtime),
    schema in supabase_schema.sql, full guide in CLAIMING_SETUP.md.
    If the two constants below are left empty, ALL of this is disabled and the
    page behaves exactly like the original free-roam viewer. */
@@ -1774,7 +1928,10 @@ function makeYardDecoration(kind, entry){
       group.add(decorationMesh(new THREE.DodecahedronGeometry(.16,0), decorationMaterial(petals[i%3]), x, h+.1, z));
     }
   } else if (kind === "tree"){
-    group.add(decorationMesh(new THREE.CylinderGeometry(.22,.3,2.0,8), decorationMaterial(0x765137), 0, 1, 0));
+    const trunk = decorationMesh(new THREE.CylinderGeometry(.22,.3,2.0,8), decorationMaterial(0x765137), 0, 1, 0);
+    trunk.name = "yard_trunk";
+    group.add(trunk);
+    group.userData.collisionMesh = trunk;
     group.add(decorationMesh(new THREE.ConeGeometry(1.25,2.6,9), decorationMaterial(0x4f8250), 0, 2.85, 0));
     group.add(decorationMesh(new THREE.ConeGeometry(.95,2.0,9), decorationMaterial(0x5e9258), 0, 4.05, 0));
   } else if (kind === "bench"){
@@ -1789,26 +1946,70 @@ function makeYardDecoration(kind, entry){
     group.add(flag);
     group.add(decorationMesh(new THREE.SphereGeometry(.09,8,6), decorationMaterial(0xe5c45e,.3), 0,4.18,0));
   }
-  const [x,z] = buildingWorldXZ(building);
-  const fronts = frontDirsFor(building);
-  // Each front points toward a road. Move the item in the opposite direction;
-  // on corner lots, averaging both fronts moves it diagonally into the lot.
-  let inwardX = 0, inwardZ = 0;
-  for (const front of fronts){ inwardX -= front[0]; inwardZ -= front[1]; }
-  const inwardLength = Math.hypot(inwardX, inwardZ) || 1;
-  inwardX /= inwardLength; inwardZ /= inwardLength;
-  const landmark = ["beachhouse", "eiffelhouse", "burjhouse"].includes(building.type);
-  const inwardOffset = landmark ? 6.2 : 4.7;
-  let sideX = 0, sideZ = 0;
-  if (fronts.length === 1){
-    const sideSign = Number(building.seed) % 2 ? 1 : -1;
-    sideX = fronts[0][1] * sideSign * 2.7;
-    sideZ = -fronts[0][0] * sideSign * 2.7;
-  }
-  group.position.set(x + inwardX*inwardOffset + sideX, entry.root.position.y+.04,
-                     z + inwardZ*inwardOffset + sideZ);
-  group.rotation.y = Math.atan2(-inwardX, -inwardZ);
+  entry.root.updateWorldMatrix(true, true);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  // Blender homes face local -Y, exported as Three.js local +Z. Reading the
+  // real root rotation removes the old corner-lot guess that sometimes chose
+  // the wrong yard.
+  const quaternion = entry.root.getWorldQuaternion(new THREE.Quaternion());
+  const front3 = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  const frontLength = Math.hypot(front3.x, front3.z) || 1;
+  const frontX = front3.x/frontLength, frontZ = front3.z/frontLength;
+  const footprint = houseFootprint(entry);
+  const frontExtent = footprint
+    ? (footprint.x-center.x)*frontX + (footprint.z-center.z)*frontZ
+      + footprint.hx*Math.abs(frontX*footprint.ux + frontZ*footprint.uz)
+      + footprint.hz*Math.abs(frontX*footprint.vx + frontZ*footprint.vz)
+    : 3.2;
+  const curbDistance = frontCurbDistance(building, frontX, frontZ);
+  const yardStrip = Math.max(.01, curbDistance-frontExtent);
+  // Most lots retain a generous façade/curb buffer. A few founder buildings
+  // nearly fill their old 10m lots, so their buffers and decoration scale down
+  // together instead of letting the decoration cross the curb.
+  const houseMargin = Math.min(.28, yardStrip*.2);
+  const curbMargin = Math.min(.48, yardStrip*.35);
+  const freeWidth = Math.max(.005, yardStrip-houseMargin-curbMargin);
+  const roadDepth = { flowers:.25, tree:1.25, bench:.42, flag:.08 }[kind] || .3;
+  group.scale.setScalar(Math.min(1, Math.max(.01, freeWidth/(roadDepth*2))));
+  const frontOffset = frontExtent + houseMargin + freeWidth/2;
+  // Keep corner lots centered so a sideways offset cannot enter their second
+  // road. Other lots get a small deterministic left/right planting offset.
+  const cornerLot = typeof building.px !== "number" && frontDirsFor(building).length > 1;
+  const sideSign = Number(building.seed) % 2 ? 1 : -1;
+  const sideOffset = cornerLot ? 0 : 2.15*sideSign;
+  const sideX = frontZ*sideOffset, sideZ = -frontX*sideOffset;
+  group.position.set(center.x + frontX*frontOffset + sideX, center.y+.04,
+                     center.z + frontZ*frontOffset + sideZ);
+  group.rotation.y = Math.atan2(frontX, frontZ);
   return group;
+}
+
+function frontCurbDistance(building, frontX, frontZ){
+  // Planned winding-road homes are authored 8.5m from the road center; the
+  // road is 6m wide. Older off-grid ring homes use the same curb setback.
+  if (typeof building.px === "number") return 8.5-ROAD/2;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  if (Math.abs(frontX) > Math.abs(frontZ))
+    return (frontX > 0 ? BLOCK_N-ix-.5 : ix+.5)*LOT;
+  return (frontZ > 0 ? iy+.5 : BLOCK_N-iy-.5)*LOT;
+}
+
+function removeYardDecorationCollider(houseId){
+  const owner = `yard-${Number(houseId)}`;
+  for (let i=colliders.length-1; i>=0; i--)
+    if (colliders[i].owner === owner) colliders.splice(i,1);
+}
+
+function addYardDecorationCollider(houseId, decoration){
+  removeYardDecorationCollider(houseId);
+  const trunk = decoration?.userData?.collisionMesh;
+  if (trunk) addTrunkColliderFromMesh(trunk, `yard-tree-${houseId}`, `yard-${Number(houseId)}`);
+}
+
+function refreshYardDecorationColliders(){
+  for (const [houseId, decoration] of yardDecorations)
+    addYardDecorationCollider(houseId, decoration);
 }
 
 function clearYardDecoration(houseId){
@@ -1817,6 +2018,7 @@ function clearYardDecoration(houseId){
   customizationLayer.remove(old);
   disposeObject(old);
   yardDecorations.delete(houseId);
+  removeYardDecorationCollider(houseId);
 }
 
 function applyCustomizationToHouse(houseId, value){
@@ -1835,6 +2037,7 @@ function applyCustomizationToHouse(houseId, value){
     const decor = makeYardDecoration(custom.yard, entry);
     customizationLayer.add(decor);
     yardDecorations.set(Number(houseId), decor);
+    addYardDecorationCollider(houseId, decor);
   }
   customizedHouseIds.add(Number(houseId));
 }
@@ -2857,10 +3060,9 @@ function loadFromGLB(buildings){
     loadedTownRoot = root;
     scene.add(root);
     indexHouseVisuals(root, buildings);
+    buildGLBColliders(root);
 
-    // collision colliders: one per top-level object Blender exported
-    // (each building/tree/car/streetlight ends up as its own top-level node).
-    // Also build the "real town" bounding box from just these reasonably-sized
+    // Build the "real town" bounding box from reasonably-sized top-level
     // objects — Blender's export includes a 4000x4000 ground plane as part of
     // the same scene, and letting that into the framing math would put the
     // spawn point in the middle of a giant empty field instead of the town.
@@ -2878,14 +3080,6 @@ function loadFromGLB(buildings){
       if (radius > 200) continue; // the giant ground/road-spanning plane(s) — ignore for framing
       full.union(box);
       sawAny = true;
-      // Only flat, walkable stuff (roads, lane dashes, the ground plane) is
-      // under ~1 unit tall; everything meant to be bumped into (a house, a
-      // tree, a car) stands well above that. Use height, not footprint, to
-      // decide what collides — a thin road can still be 70+ units LONG,
-      // which a horizontal-radius check alone was wrongly treating as a
-      // giant circular wall.
-      if (size.y > 1.0 && radius > 0.3 && radius < 40)
-        colliders.push({ x: center.x, z: center.z, radius: radius * 0.85 });
     }
     if (!sawAny) full.setFromObject(root); // fallback if every object got filtered out
 
@@ -2976,19 +3170,9 @@ function animate(){
       controls.moveForward(dir.z * speed);
       controls.moveRight(dir.x * speed);
     }
-    // simple push-out collision against building footprints
+    // Shape-aware push-out against building/car footprints and tree trunks.
     const p = camera.position;
-    for (const col of colliders){
-      const dx = p.x - col.x, dz = p.z - col.z;
-      const distSq = dx*dx + dz*dz;
-      const r = col.radius + 0.6;
-      if (distSq < r*r && distSq > 0.0001){
-        const dist = Math.sqrt(distSq);
-        const push = (r - dist);
-        p.x += (dx/dist) * push;
-        p.z += (dz/dist) * push;
-      }
-    }
+    for (const col of colliders) resolvePlayerCollision(p, col);
     camera.position.y = 1.7;
 
     // name tags on claimed houses: only visible when you're near that house
