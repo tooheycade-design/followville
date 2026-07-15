@@ -1,0 +1,2341 @@
+﻿=== grow_windows.ps1 started 2026-07-15T14:59:50.8372280-04:00 ===
+Change requested: +18
+Extra args: --followers 18 --cam newgrowthoverhead --render --tag houses_appearing_overhead --time day
+-- git pull (repo clone, before growing) --
+git.exe : From https://github.com/tooheycade-design/followville
+At C:\Users\cadet\followville_repo\grow_windows.ps1:87 char:15
++     $result = & git @GitArgs 2>&1
++               ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (From https://gi...ign/followville:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+
+Running: "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" --background C:\Users\cadet\followville_repo\neighborhood.blend --python C:\Users\cadet\followville_repo\neighborhood_blender.py --python C:\Users\cadet\followville_repo\export_web.py -- --gained 18 --followers 18 --cam newgrowthoverhead --render --tag houses_appearing_overhead --time day
+00:01.782  blend            | Read blend: "C:\Users\cadet\followville_repo\neighborhood.blend"
+blender.exe : C:\Users\cadet\followville_repo\neighborhood_blender.py:157: DeprecationWarning: 'Material.use_nodes' is 
+expected to be removed in Blender 6.0
+At C:\Users\cadet\followville_repo\grow_windows.ps1:229 char:15
++     $Output = & $Blender @AllArgs 2>&1
++               ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\cadet\... in Blender 6.0:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  m.use_nodes = True
+C:\Users\cadet\followville_repo\neighborhood_blender.py:2749: DeprecationWarning: 'World.use_nodes' is expected to be 
+removed in Blender 6.0
+  world.use_nodes = True
+C:\Users\cadet\followville_repo\neighborhood_blender.py:2226: DeprecationWarning: 'Material.use_nodes' is expected to 
+be removed in Blender 6.0
+  if m and m.use_nodes:
+C:\Users\cadet\followville_repo\neighborhood_blender.py:2219: DeprecationWarning: 'Material.use_nodes' is expected to 
+be removed in Blender 6.0
+  if m and m.use_nodes:
+00:17.094  render           | Video append frame 1
+00:19.625  render           | Video append frame 2
+00:20.532  render           | Video append frame 3
+00:21.422  render           | Video append frame 4
+00:22.313  render           | Video append frame 5
+00:23.204  render           | Video append frame 6
+00:24.125  render           | Video append frame 7
+00:25.094  render           | Video append frame 8
+00:25.985  render           | Video append frame 9
+00:26.875  render           | Video append frame 10
+00:27.750  render           | Video append frame 11
+00:28.657  render           | Video append frame 12
+00:29.547  render           | Video append frame 13
+00:30.438  render           | Video append frame 14
+00:31.329  render           | Video append frame 15
+00:32.235  render           | Video append frame 16
+00:33.141  render           | Video append frame 17
+00:34.032  render           | Video append frame 18
+00:34.922  render           | Video append frame 19
+00:35.829  render           | Video append frame 20
+00:36.750  render           | Video append frame 21
+00:37.641  render           | Video append frame 22
+00:38.516  render           | Video append frame 23
+00:39.469  render           | Video append frame 24
+00:40.391  render           | Video append frame 25
+00:41.329  render           | Video append frame 26
+00:42.235  render           | Video append frame 27
+00:43.204  render           | Video append frame 28
+00:44.204  render           | Video append frame 29
+00:45.219  render           | Video append frame 30
+00:46.172  render           | Video append frame 31
+00:47.079  render           | Video append frame 32
+00:48.000  render           | Video append frame 33
+00:48.907  render           | Video append frame 34
+00:49.891  render           | Video append frame 35
+00:50.797  render           | Video append frame 36
+00:51.704  render           | Video append frame 37
+00:52.641  render           | Video append frame 38
+00:53.579  render           | Video append frame 39
+00:54.469  render           | Video append frame 40
+00:55.391  render           | Video append frame 41
+00:56.282  render           | Video append frame 42
+00:57.172  render           | Video append frame 43
+00:58.110  render           | Video append frame 44
+00:59.016  render           | Video append frame 45
+00:59.922  render           | Video append frame 46
+01:00.844  render           | Video append frame 47
+01:01.735  render           | Video append frame 48
+01:02.641  render           | Video append frame 49
+01:03.532  render           | Video append frame 50
+01:04.438  render           | Video append frame 51
+01:05.329  render           | Video append frame 52
+01:06.235  render           | Video append frame 53
+01:07.110  render           | Video append frame 54
+01:08.016  render           | Video append frame 55
+01:08.922  render           | Video append frame 56
+01:09.875  render           | Video append frame 57
+01:10.860  render           | Video append frame 58
+01:11.922  render           | Video append frame 59
+01:12.891  render           | Video append frame 60
+01:13.969  render           | Video append frame 61
+01:14.922  render           | Video append frame 62
+01:15.907  render           | Video append frame 63
+01:16.813  render           | Video append frame 64
+01:17.719  render           | Video append frame 65
+01:18.610  render           | Video append frame 66
+01:19.532  render           | Video append frame 67
+01:20.422  render           | Video append frame 68
+01:21.438  render           | Video append frame 69
+01:22.344  render           | Video append frame 70
+01:23.282  render           | Video append frame 71
+01:24.204  render           | Video append frame 72
+01:25.094  render           | Video append frame 73
+01:26.000  render           | Video append frame 74
+01:26.969  render           | Video append frame 75
+01:27.844  render           | Video append frame 76
+01:28.719  render           | Video append frame 77
+01:29.610  render           | Video append frame 78
+01:30.516  render           | Video append frame 79
+01:31.407  render           | Video append frame 80
+01:32.313  render           | Video append frame 81
+01:33.204  render           | Video append frame 82
+01:34.063  render           | Video append frame 83
+01:34.922  render           | Video append frame 84
+01:35.782  render           | Video append frame 85
+01:36.625  render           | Video append frame 86
+01:37.485  render           | Video append frame 87
+01:38.329  render           | Video append frame 88
+01:39.188  render           | Video append frame 89
+01:40.047  render           | Video append frame 90
+01:40.907  render           | Video append frame 91
+01:41.766  render           | Video append frame 92
+01:42.657  render           | Video append frame 93
+01:43.516  render           | Video append frame 94
+01:44.391  render           | Video append frame 95
+01:45.282  render           | Video append frame 96
+01:46.157  render           | Video append frame 97
+01:47.032  render           | Video append frame 98
+01:47.907  render           | Video append frame 99
+01:48.782  render           | Video append frame 100
+01:49.672  render           | Video append frame 101
+01:50.563  render           | Video append frame 102
+01:51.438  render           | Video append frame 103
+01:52.313  render           | Video append frame 104
+01:53.188  render           | Video append frame 105
+01:54.063  render           | Video append frame 106
+01:54.907  render           | Video append frame 107
+01:55.782  render           | Video append frame 108
+01:56.672  render           | Video append frame 109
+01:57.532  render           | Video append frame 110
+01:58.422  render           | Video append frame 111
+01:59.282  render           | Video append frame 112
+02:00.141  render           | Video append frame 113
+02:01.032  render           | Video append frame 114
+02:01.922  render           | Video append frame 115
+02:02.782  render           | Video append frame 116
+02:03.657  render           | Video append frame 117
+02:04.547  render           | Video append frame 118
+02:05.438  render           | Video append frame 119
+02:06.297  render           | Video append frame 120
+02:07.172  render           | Video append frame 121
+02:08.047  render           | Video append frame 122
+02:08.938  render           | Video append frame 123
+02:09.829  render           | Video append frame 124
+02:10.719  render           | Video append frame 125
+02:11.579  render           | Video append frame 126
+02:12.469  render           | Video append frame 127
+02:13.329  render           | Video append frame 128
+02:14.235  render           | Video append frame 129
+02:15.125  render           | Video append frame 130
+02:16.016  render           | Video append frame 131
+02:16.891  render           | Video append frame 132
+02:17.766  render           | Video append frame 133
+02:18.657  render           | Video append frame 134
+02:19.532  render           | Video append frame 135
+02:20.407  render           | Video append frame 136
+02:21.282  render           | Video append frame 137
+02:22.157  render           | Video append frame 138
+02:23.079  render           | Video append frame 139
+02:24.063  render           | Video append frame 140
+02:25.047  render           | Video append frame 141
+02:25.954  render           | Video append frame 142
+02:26.938  render           | Video append frame 143
+02:27.860  render           | Video append frame 144
+02:28.750  render           | Video append frame 145
+02:29.641  render           | Video append frame 146
+02:30.516  render           | Video append frame 147
+02:31.422  render           | Video append frame 148
+02:32.344  render           | Video append frame 149
+02:33.219  render           | Video append frame 150
+02:34.110  render           | Video append frame 151
+02:35.000  render           | Video append frame 152
+02:35.907  render           | Video append frame 153
+02:36.782  render           | Video append frame 154
+02:37.672  render           | Video append frame 155
+02:38.579  render           | Video append frame 156
+02:39.469  render           | Video append frame 157
+02:40.438  render           | Video append frame 158
+02:41.344  render           | Video append frame 159
+02:42.219  render           | Video append frame 160
+02:43.141  render           | Video append frame 161
+02:44.110  render           | Video append frame 162
+02:45.172  render           | Video append frame 163
+02:46.079  render           | Video append frame 164
+02:47.000  render           | Video append frame 165
+02:47.860  render           | Video append frame 166
+02:48.766  render           | Video append frame 167
+02:49.641  render           | Video append frame 168
+02:50.500  render           | Video append frame 169
+02:51.407  render           | Video append frame 170
+02:52.297  render           | Video append frame 171
+02:53.219  render           | Video append frame 172
+02:54.110  render           | Video append frame 173
+02:55.016  render           | Video append frame 174
+02:55.891  render           | Video append frame 175
+02:56.782  render           | Video append frame 176
+02:57.657  render           | Video append frame 177
+02:58.532  render           | Video append frame 178
+02:59.391  render           | Video append frame 179
+03:00.250  render           | Video append frame 180
+03:01.125  render           | Video append frame 181
+03:02.000  render           | Video append frame 182
+03:02.875  render           | Video append frame 183
+03:03.750  render           | Video append frame 184
+03:04.610  render           | Video append frame 185
+03:05.485  render           | Video append frame 186
+03:06.360  render           | Video append frame 187
+03:07.235  render           | Video append frame 188
+03:08.110  render           | Video append frame 189
+03:09.000  render           | Video append frame 190
+03:09.875  render           | Video append frame 191
+03:10.766  render           | Video append frame 192
+03:11.641  render           | Video append frame 193
+03:12.516  render           | Video append frame 194
+03:13.422  render           | Video append frame 195
+03:14.313  render           | Video append frame 196
+03:15.219  render           | Video append frame 197
+03:16.110  render           | Video append frame 198
+03:16.985  render           | Video append frame 199
+03:17.860  render           | Video append frame 200
+03:18.735  render           | Video append frame 201
+03:19.594  render           | Video append frame 202
+03:20.485  render           | Video append frame 203
+03:21.360  render           | Video append frame 204
+03:22.235  render           | Video append frame 205
+03:23.125  render           | Video append frame 206
+03:24.000  render           | Video append frame 207
+03:24.875  render           | Video append frame 208
+03:25.735  render           | Video append frame 209
+03:26.610  render           | Video append frame 210
+03:27.485  render           | Video append frame 211
+03:28.360  render           | Video append frame 212
+03:29.250  render           | Video append frame 213
+03:30.125  render           | Video append frame 214
+03:31.000  render           | Video append frame 215
+03:31.860  render           | Video append frame 216
+03:32.735  render           | Video append frame 217
+03:33.688  render           | Video append frame 218
+03:34.641  render           | Video append frame 219
+03:35.563  render           | Video append frame 220
+03:36.454  render           | Video append frame 221
+03:37.344  render           | Video append frame 222
+03:38.235  render           | Video append frame 223
+03:39.094  render           | Video append frame 224
+03:39.969  render           | Video append frame 225
+03:40.860  render           | Video append frame 226
+03:41.735  render           | Video append frame 227
+03:42.625  render           | Video append frame 228
+03:43.532  render           | Video append frame 229
+03:44.422  render           | Video append frame 230
+03:45.329  render           | Video append frame 231
+03:46.204  render           | Video append frame 232
+03:47.079  render           | Video append frame 233
+03:47.954  render           | Video append frame 234
+03:48.844  render           | Video append frame 235
+03:49.719  render           | Video append frame 236
+03:50.563  render           | Video append frame 237
+03:51.454  render           | Video append frame 238
+03:52.297  render           | Video append frame 239
+03:53.172  render           | Video append frame 240
+03:54.047  render           | Video append frame 241
+03:54.922  render           | Video append frame 242
+03:55.782  render           | Video append frame 243
+03:56.641  render           | Video append frame 244
+Info: Deleted 1809 data-block(s)
+==================================================
+DAY 14 | population 244 | buildings 247 | +18 / -0 today
+Render: Ctrl+F12 (output -> renders/day_014_*.mp4)
+==================================================
+RESULT {"day": 14, "population": 244, "buildings": 247, "added": 18, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "C:\\Users\\cadet\\followville_repo\\world_state.json"}
+VIDEO C:\Users\cadet\followville_repo\renders\day_014_houses_appearing_overhead_
+INFO Draco mesh compression is available, use library at C:\Program Files\Blender Foundation\Blender 5.1\5.1\scripts\addons_core\io_scene_gltf2\extern_draco.dll
+15:03:49 | INFO: Starting glTF 2.0 export
+15:03:49 | INFO: Extracting primitive: b_cap
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: b_spot
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: b_stem
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cap
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: captip
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: knob
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rim
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spot.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stem
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: awning
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beacon
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lobby
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spire
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tier0
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tier1
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tier2
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tier3
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trim0
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trim1
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trim2
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trim3
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: base
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bulb
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bulb.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bulb.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bulb.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bulb.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cap.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: carpet
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: die
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pip
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pip.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pip.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: sign
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: star
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: winL
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: body
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ear
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ear.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: eye
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: eye.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: mouthdoor
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: nose
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: paw
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: paw.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pupil
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pupil.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: roofcap
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tail1
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tail2
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: whisker.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: banner
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.016
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.017
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.018
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cren.019
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flag
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gate
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: keep
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pole
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: slit
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: slit.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tower
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tower.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tower.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tower.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: troof
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: troof.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: troof.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: troof.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: arch
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beacon.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: deck
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: home
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: homedoor
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: homewin
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: homewin.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leg
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leg.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leg.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leg.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: spire.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: t1
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: t2
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: topdeck
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: base.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.016
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bloom0
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: leaf.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bowl
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flush
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: footring
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lid
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: mat
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: plunger
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: porthole
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: seat
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stick
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tank
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tanklid
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: tankwin
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ball
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: balltop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: cabin
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: deck.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: frond.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ocean
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: palm
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rail
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rail.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rail.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rail.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: railtop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: roof
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: sandpatch
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stilt
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stilt.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stilt.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: stilt.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: surf
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: winside
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: suburban_10_front_gable_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_11_l_shaped_ranch_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: base.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beam
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beam.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beam.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beam.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: beamtop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.017
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: chimney
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: door.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: doortop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: dormer
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: dormroof
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: dormwin
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fbox
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fbox.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: fdot.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: picket
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: picket.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: picket.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: picket.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pickrail
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: puff
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: puff.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: puff.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ridge
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: roof.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: step.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: win.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: suburban_13_starter_suburban_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_14_double_garage_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_15_classic_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_16_wide_ranch_mesh
+15:03:49 | INFO: Primitives created: 15
+15:03:49 | INFO: Extracting primitive: suburban_17_raised_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_18_split_level_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_19_center_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_20_garage_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_21_craftsman_mesh
+15:03:49 | INFO: Primitives created: 15
+15:03:49 | INFO: Extracting primitive: suburban_22_cape_cod_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_23_suburban_farmhouse_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_24_modern_suburban_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_25_front_gable_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_26_l_shaped_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: bank
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lily
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lily.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lily.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pebble
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pebble.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pebble.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: reed
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: reed.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: reed.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: reed.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: reed.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: water
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: waterlip
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: suburban_28_starter_suburban_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_29_double_garage_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_30_classic_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: bench
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bench.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bench.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: bench.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.018
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.019
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.020
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blob.021
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: blobtop.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: flower.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gdeck
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gpost.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: groof
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: gtip
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lawn
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.016
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.017
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.018
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: llamp.019
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.016
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.017
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.018
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: lpole.019
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pad
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine1.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: pine2.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ppath
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ppath.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ppath.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ppath.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.002
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.003
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.004
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.005
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.006
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.014
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.015
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.016
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.017
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.018
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.019
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.020
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.021
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.022
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.023
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.024
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.025
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.026
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.027
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.028
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.029
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.030
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.031
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.032
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.033
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.034
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.035
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.036
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.037
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.038
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.039
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.040
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.041
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.042
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.043
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.044
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.045
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: rdash.046
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ringroad
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: ringroad.001
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.007
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.008
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.009
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.010
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.011
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.012
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: trunk.013
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: walkloop
+15:03:49 | INFO: Primitives created: 1
+15:03:49 | INFO: Extracting primitive: suburban_32_raised_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_33_split_level_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_34_center_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_35_garage_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_36_craftsman_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_37_cape_cod_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_38_suburban_farmhouse_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_39_modern_suburban_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_40_front_gable_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_41_l_shaped_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_42_side_garage_two_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_43_starter_suburban_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_44_double_garage_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_45_classic_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_46_wide_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_47_raised_ranch_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_48_split_level_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_49_center_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_50_garage_colonial_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_51_craftsman_mesh
+15:03:49 | INFO: Primitives created: 15
+15:03:49 | INFO: Extracting primitive: suburban_52_cape_cod_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:49 | INFO: Extracting primitive: suburban_53_suburban_farmhouse_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_54_modern_suburban_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_55_front_gable_mesh
+15:03:49 | INFO: Primitives created: 14
+15:03:49 | INFO: Extracting primitive: suburban_56_l_shaped_ranch_mesh
+15:03:49 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_57_side_garage_two_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_58_starter_suburban_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_59_double_garage_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_60_classic_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_61_wide_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_62_raised_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_63_split_level_mesh
+15:03:50 | INFO: Primitives created: 15
+15:03:50 | INFO: Extracting primitive: suburban_64_center_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_65_garage_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_66_craftsman_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_67_cape_cod_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_68_suburban_farmhouse_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_69_modern_suburban_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_70_front_gable_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_71_l_shaped_ranch_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_72_side_garage_two_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_73_starter_suburban_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_74_double_garage_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_75_classic_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_76_wide_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_77_raised_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_78_split_level_mesh
+15:03:50 | INFO: Primitives created: 15
+15:03:50 | INFO: Extracting primitive: suburban_79_center_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_80_garage_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_81_craftsman_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_82_cape_cod_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_83_suburban_farmhouse_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_84_modern_suburban_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_85_front_gable_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_86_l_shaped_ranch_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_87_side_garage_two_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_88_starter_suburban_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_89_double_garage_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_00_classic_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_01_wide_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_02_raised_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_03_split_level_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_04_center_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_05_garage_colonial_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_06_craftsman_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_07_cape_cod_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_08_suburban_farmhouse_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_09_modern_suburban_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_12_side_garage_two_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: suburban_27_side_garage_two_mesh
+15:03:50 | INFO: Primitives created: 13
+15:03:50 | INFO: Extracting primitive: suburban_31_wide_ranch_mesh
+15:03:50 | INFO: Primitives created: 14
+15:03:50 | INFO: Extracting primitive: blob.022
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blob.023
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: pine1.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: pine1.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: pine2.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: pine2.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bench_leg.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bridge_rail
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bridge_rail.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_body
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_loop
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_roof
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_stop_arm
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_wheel
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_wheel.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_wheel.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_wheel.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_window.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_bus_windshield
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_canopy
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_canopy_column
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_canopy_column.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_center_cornice
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_center_hall
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_center_roof
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_classroom_wing
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_classroom_wing.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_bar.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_climber_top
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_clock
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_clock_hand_h
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_clock_hand_v
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_crosswalk
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_crosswalk.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_crosswalk.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_crosswalk.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_crosswalk.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_door_left
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_door_right
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_door_split
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_entry
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_entry_glass
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_entry_walk
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.016
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.017
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.018
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_post.019
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_rail
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_rail.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_side
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_side.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_side.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_fence_side.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_flag_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_flagpole
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_front_walk
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_hopscotch
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_hopscotch.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_hopscotch.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_hopscotch.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_hopscotch.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_lawn
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_border
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_bridge
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_deck
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_deck.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_mat
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_post.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_roof
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_play_roof.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_shrub.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_frame.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_side_window.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_base
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_face
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_mark
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_mark.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_mark.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_sign_mark.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_slide_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_slide_exit
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_slide_rail
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_slide_rail.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step_pod
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step_pod.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_step_pod.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_beam
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_chain
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_chain.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_chain.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_chain.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_foot
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_foot.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_foot.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_foot.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_leg
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_leg.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_leg.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_leg.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_seat
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_swing_seat.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_frame.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_mullion.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_window_sill.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_wing_belt
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_wing_belt.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_wing_roof
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: school_wing_roof.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.016
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.017
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadV
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadV.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadV.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadV.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadV.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadH
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.016
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.017
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadH.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.018
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.019
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.020
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.021
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.022
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.023
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.024
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.025
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.026
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.027
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.028
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.029
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.030
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.031
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.032
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.033
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.034
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.035
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadH.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.036
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.037
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.038
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.039
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.040
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.041
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.042
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.043
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.044
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.045
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.046
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.047
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.048
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.049
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.050
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.051
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.052
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.053
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadH.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.054
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.055
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.056
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.057
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.058
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.059
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.060
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.061
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.062
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.063
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.064
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.065
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.066
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.067
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.068
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.069
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.070
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.071
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: roadH.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.072
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.073
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.074
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.075
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.076
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.077
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.078
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.079
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.080
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.081
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.082
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.083
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.084
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.085
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.086
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.087
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.088
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dash.089
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: arm
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: lamp
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: pole.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: body.073
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cab
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: body.074
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cab.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: body.075
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cab.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: connector
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cdash
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cdash.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cdash.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: spur
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: radial
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_Creekside Pond
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_Meadow Pond
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_Willow Hill_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_North Ridge_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_Pine Knoll_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: terrain_Meadow Run Green_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_00_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.016
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.017
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.018
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_01_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.019
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.020
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.021
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.022
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.023
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.024
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.025
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.026
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.027
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.028
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.029
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.030
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.031
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.032
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.033
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.034
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.035
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_02_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.036
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.037
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.038
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.039
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.040
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.041
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.042
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.043
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.044
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.045
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.046
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.047
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.048
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.049
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.050
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.051
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.052
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_03_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.053
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.054
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.055
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.056
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.057
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.058
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.059
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.060
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.061
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.062
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.063
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.064
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.065
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.066
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.067
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.068
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.069
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.070
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.071
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.072
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_04_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.073
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.074
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.075
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.076
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.077
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.078
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.079
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.080
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.081
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.082
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.083
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.084
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.085
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.086
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.087
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.088
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.089
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.090
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_road_05_mesh
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.091
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.092
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.093
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.094
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.095
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.096
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.097
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.098
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.099
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.100
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.101
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: suburban_dash.102
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: culdesac
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: culdesac.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: culdesac.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: culdesac.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: culdesac.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blob.024
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.018
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blob.025
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.019
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blob.026
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.020
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blob.027
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: blobtop.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: trunk.021
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.006
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.007
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.008
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock.001
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.009
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.010
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bushblob.011
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: dot.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock.004
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: rock.005
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: body.076
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: cab.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.012
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.013
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.014
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: wheel_hub.015
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: bill
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: body.077
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: eye.002
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: eye.003
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: head
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: tail
+15:03:50 | INFO: Primitives created: 1
+15:03:50 | INFO: Extracting primitive: ground
+15:03:50 | INFO: Primitives created: 1
+15:03:51 | INFO: Finished glTF 2.0 export in 2.0526161193847656 s
+
+export_web.py: wrote C:\Users\cadet\followville_repo\town.glb
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)
+scripts disabled for "C:\Users\cadet\followville_repo\neighborhood.blend", skipping 'neighborhood_blender.py'
+
+Blender quit
+
+RESULT {"day": 14, "population": 244, "buildings": 247, "added": 18, "removed": 0, "time": "day", "season": "summer", "milestones": [], "state_file": "C:\\Users\\cadet\\followville_repo\\world_state.json"}
+VIDEO C:\Users\cadet\followville_repo\renders\day_014_houses_appearing_overhead_
+WEB C:\Users\cadet\followville_repo\town.glb
+DESKTOP C:\Users\cadet\OneDrive\Desktop\day_014_houses_appearing_overhead_0001-0244.mp4
+-- git add/commit/push (world_state.json + town.glb) --
+
+[main df0c971] Grow: +18 (auto-committed by grow_windows.ps1 2026-07-15T15:03:52.3086588-04:00)
+ 2 files changed, 237 insertions(+), 3 deletions(-)
+
+git.exe : To https://github.com/tooheycade-design/followville
+At C:\Users\cadet\followville_repo\grow_windows.ps1:87 char:15
++     $result = & git @GitArgs 2>&1
++               ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (To https://gith...ign/followville:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   44e2449..df0c971  main -> main
+
+PUSHED Grow: +18 (auto-committed by grow_windows.ps1 2026-07-15T15:03:52.3086588-04:00)
+-- houses table sync (claimable homes, see CLAIMING_SETUP.md) --
+HOUSES_SYNC_SKIPPED (no supabase_sync.env -- claimable-homes sync not configured)
+-- auto-sharing progress to wip --

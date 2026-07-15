@@ -1,0 +1,2957 @@
+﻿
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const pageParams = new URLSearchParams(location.search);
+const previewView = pageParams.get("preview");
+const previewMode = previewView === "founders" || previewView === "buildings";
+const classicGraphics = pageParams.get("graphics") === "classic";
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• WORLD LAYOUT CONSTANTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Mirrors neighborhood_blender.py so the web town matches the Blender town. */
+const LOT = 10, BLOCK_N = 3, ROAD = 6, PITCH = BLOCK_N * LOT + ROAD;
+
+const WALLS = [[0.96,0.90,0.81],[0.91,0.84,0.77],[0.97,0.82,0.79],
+               [0.85,0.89,0.87],[0.90,0.89,0.94],[0.98,0.93,0.82],[0.86,0.91,0.96]];
+const ROOFS = [[0.75,0.34,0.31],[0.54,0.60,0.36],[0.36,0.49,0.60],
+               [0.71,0.52,0.42],[0.49,0.42,0.57],[0.66,0.37,0.43]];
+const GREENS = [[0.31,0.54,0.31],[0.36,0.61,0.33],[0.25,0.49,0.27]];
+const DOOR = c(0.36,0.24,0.17), WINDOW = c(0.95,0.90,0.70), WINDARK = c(0.16,0.22,0.30),
+      CAP = c(0.32,0.34,0.38), METAL = c(0.25,0.27,0.30), BULB = c(1.0,0.95,0.75),
+      TRUNK = c(0.44,0.31,0.21), WATER = c(0.30,0.58,0.78), GRASS = c(0.40,0.62,0.31);
+
+function c(r,g,b){ return new THREE.Color(r,g,b); }
+function pick(arr, i){ return c(...arr[i % arr.length]); }
+
+/* deterministic seeded RNG (not the same sequence as Python, but stable per-seed) */
+function rngFor(seed){
+  let a = (seed * 2654435761) >>> 0 || 1;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MESH HELPERS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Blender is Z-up (x,y,z). Three.js is Y-up. Mapping used everywhere below:
+     three.x = blender.x   three.y = blender.z (height)   three.z = blender.y (depth)
+   Boxes/cones are specified with their BOTTOM at the given z, matching the
+   original Blender helpers, so porting shapes over is a near copy/paste. */
+const matCache = new Map();
+function lam(color, rough = 0.82){
+  const key = color.getHexString() + "_" + rough;
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.04 }));
+  return matCache.get(key);
+}
+
+function addBox(group, w, d, h, x, y, z, color){
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lam(color));
+  mesh.position.set(x, z + h/2, y);
+  group.add(mesh);
+  return mesh;
+}
+
+function addCone(group, rBot, rTop, h, sides, x, y, z, color, rotY = 0){
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, sides), lam(color));
+  mesh.position.set(x, z + h/2, y);
+  mesh.rotation.y = rotY;
+  group.add(mesh);
+  return mesh;
+}
+
+function addPrismRoof(group, w, d, h, x, y, z, color){
+  const hw = w/2, hd = d/2;
+  const pos = new Float32Array([
+    -hw,0,-hd,  hw,0,-hd,  hw,0,hd,  -hw,0,hd,
+    -hw,h,0,    hw,h,0
+  ]);
+  const idx = [0,1,2, 0,2,3, 0,4,5, 0,5,1, 2,5,4, 2,4,3, 0,3,4, 1,5,2];
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.03, side: THREE.DoubleSide }));
+  mesh.position.set(x, z, y);
+  group.add(mesh);
+  return mesh;
+}
+
+function buildTree(group, rng, scale, px, py){
+  const s = scale;
+  addCone(group, 0.4*s, 0.3*s, 2.0*s, 6, px, py, 0, TRUNK);
+  const green = pick(GREENS, Math.floor(rng()*GREENS.length));
+  if (rng() < 0.5){
+    addCone(group, 1.8*s, 0, 3.0*s, 7, px, py, 1.8*s, green);
+    addCone(group, 1.3*s, 0, 2.3*s, 7, px, py, 3.6*s, green);
+  } else {
+    addCone(group, 1.9*s, 0.7*s, 2.8*s, 7, px, py, 1.8*s, green);
+    addCone(group, 0.7*s, 0, 0.9*s, 7, px, py, 4.6*s, green);
+  }
+}
+
+function buildBushProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const n = 2 + Math.floor(rng()*2);
+  for (let i=0;i<n;i++){
+    const green = pick(GREENS, Math.floor(rng()*GREENS.length));
+    const s = 0.6 + rng()*0.7;
+    addCone(g, s, s*0.55, s*1.1, 7, (rng()-0.5)*3.5, (rng()-0.5)*3.5, 0, green);
+  }
+  if (rng() < 0.5){
+    const fl = c(0.95,0.70,0.78);
+    for (let i=0;i<3;i++) addCone(g, 0.14, 0.1, 0.25, 6, (rng()-0.5)*4, (rng()-0.5)*4, 0, fl);
+  }
+  return g;
+}
+
+function buildRockProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const grey = c(0.62,0.61,0.60);
+  const n = 1 + Math.floor(rng()*3);
+  for (let i=0;i<n;i++){
+    const s = 0.5 + rng()*0.8;
+    const r = addCone(g, s, s*0.4, s*0.8, 6, (rng()-0.5)*3.5, (rng()-0.5)*3.5, 0, grey);
+    r.rotation.y = -rng()*Math.PI*2;
+  }
+  return g;
+}
+
+function buildStreetlightProp(){
+  const g = new THREE.Group();
+  addCone(g, 0.14, 0.10, 4.6, 6, 0, 0, 0, METAL);
+  addBox(g, 1.3, 0.14, 0.14, 0.65, 0, 4.5, METAL);
+  addBox(g, 0.5, 0.4, 0.22, 1.2, 0, 4.35, BULB);
+  return g;
+}
+
+function buildCarProp(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const body = pick(ROOFS, Math.floor(rng()*ROOFS.length));
+  addBox(g, 3.6, 1.7, 0.85, 0, 0, 0.35, body);
+  addBox(g, 1.9, 1.5, 0.7, -0.2, 0, 1.2, WINDARK);
+  for (const dx of [-1.15, 1.15]) for (const dy of [-0.85, 0.85])
+    addCone(g, 0.36, 0.36, 0.3, 10, dx, dy, 0.0, METAL);
+  return g;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HOUSE BUILDERS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+function buildHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const wall = pick(WALLS, Math.floor(rng()*WALLS.length));
+  const roof = pick(ROOFS, Math.floor(rng()*ROOFS.length));
+  const w = 5.5 + rng()*1.5, d = 5.0 + rng()*1.2, h = 3.4 + rng()*1.2;
+  addBox(g, w, d, h, 0, 0, 0, wall);
+  addPrismRoof(g, w+0.7, d+0.7, 1.9+rng(), 0, 0, h, roof);
+  addBox(g, 1.1, 0.25, 1.9, (rng()-0.5)*w*0.35, -d/2-0.1, 0, DOOR);
+  addBox(g, 1.0, 0.2, 0.9, -w*0.28, -d/2-0.08, 1.6, WINDOW);
+  addBox(g, 1.0, 0.2, 0.9,  w*0.28, -d/2-0.08, 1.6, WINDOW);
+  if (rng() < 0.6) addBox(g, 0.7, 0.7, 1.3, w*0.25, d*0.15, h+0.8, CAP);
+  if (rng() < 0.65) buildTree(g, rng, 0.6+rng()*0.4, (rng()<0.5?1:-1)*(w/2+1.5), (rng()-0.5)*3);
+  g.userData.radius = Math.max(w, d) * 0.62;
+  return g;
+}
+
+function buildMushroomHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const cream = c(0.97,0.94,0.85);
+  const caps = [[0.52,0.06,0.05],[0.58,0.13,0.04],[0.48,0.05,0.10]];
+  const red = c(...caps[seed % 3]);
+  const white = c(0.98,0.97,0.93);
+  addCone(g, 2.9, 2.35, 3.4, 24, 0, 0, 0, cream);
+  addBox(g, 1.15, 0.35, 2.0, 0, -2.7, 0, DOOR);
+  for (const t of [Math.PI*210/180, Math.PI*330/180]){
+    const win = addBox(g, 0.95, 0.5, 0.95, 2.5*Math.cos(t), 2.5*Math.sin(t), 1.5, WINDOW);
+    win.rotation.y = -(t + Math.PI/2);
+  }
+  addCone(g, 4.95, 4.55, 0.4, 24, 0, 0, 3.1, cream);
+  addCone(g, 4.8, 1.0, 2.8, 24, 0, 0, 3.4, red);
+  addCone(g, 1.02, 0.0, 0.6, 24, 0, 0, 6.18, red);
+  for (let i=0;i<7;i++){
+    const t = rng()*Math.PI*2, r = 1.7 + rng()*2.3;
+    const z = 3.4 + (4.8-r)/(4.8-1.0)*2.8;
+    const s = 0.32 + rng()*0.38;
+    addCone(g, s, s*0.7, 0.5, 10, r*Math.cos(t), r*Math.sin(t), z-0.3, white);
+  }
+  addCone(g, 0.45, 0.38, 1.0, 16, 3.6, -1.6, 0, cream);
+  addCone(g, 1.05, 0.15, 0.85, 16, 3.6, -1.6, 0.95, red);
+  buildTree(g, rng, 0.75, -3.6, 1.8);
+  g.userData.radius = 5.2;
+  return g;
+}
+
+function buildCasinoHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const cream = c(0.96,0.92,0.82), gold = c(0.78,0.62,0.22), red = c(0.62,0.10,0.12);
+  addBox(g, 6.4, 5.4, 3.6, 0, 0, 0, cream);
+  addBox(g, 6.9, 5.9, 0.5, 0, 0, 3.6, gold);
+  addBox(g, 1.5, 0.3, 2.2, 0.6, -2.75, 0, DOOR);
+  addBox(g, 1.7, 1.6, 0.06, 0.6, -3.6, 0, red);
+  addBox(g, 1.3, 0.2, 1.1, -1.8, -2.75, 1.4, WINDARK);
+  const sign = addBox(g, 2.3, 0.4, 3.3, -2.6, -3.1, 0.4, red);
+  sign.rotation.y = -Math.PI*14/180;
+  for (let i=0;i<5;i++) addCone(g, 0.14, 0.1, 0.25, 6, -3.45+i*0.47, -3.45+i*0.11, 3.9, BULB);
+  addCone(g, 0.75, 0.0, 0.9, 5, -2.9, -3.2, 3.95, gold);
+  const die = addBox(g, 1.5, 1.5, 1.5, 1.8, 1.2, 4.1, c(0.97,0.97,0.97));
+  die.rotation.y = -Math.PI*28/180;
+  for (const [dx,dy] of [[-0.35,-0.35],[0.35,0.35],[0,0]])
+    addCone(g, 0.16, 0.16, 0.08, 8, 1.8+dx, 1.2+dy, 5.6, WINDARK);
+  buildTree(g, rng, 0.7, 3.2, -1.8);
+  g.userData.radius = 5.0;
+  return g;
+}
+
+function buildCatHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const fur = c(0.78,0.74,0.71), dark = c(0.45,0.42,0.40), pink = c(0.92,0.60,0.62);
+  addBox(g, 6.0, 5.2, 4.2, 0, 0, 0, fur);
+  addPrismRoof(g, 6.3, 5.5, 0.9, 0, 0, 4.2, fur);
+  for (const sx of [-1,1]){
+    const ear = addCone(g, 0.9, 0.0, 1.8, 4, sx*2.0, -1.4, 4.6, dark);
+    ear.rotation.y = -Math.PI/4;
+  }
+  for (const sx of [-1,1]){
+    addBox(g, 1.05, 0.18, 1.05, sx*1.5, -2.68, 2.6, c(0.97,0.97,0.95));
+    addBox(g, 0.4, 0.12, 0.75, sx*1.5, -2.78, 2.75, WINDARK);
+  }
+  const nose = addBox(g, 0.55, 0.2, 0.55, 0, -2.75, 1.95, pink);
+  nose.rotation.x = -Math.PI/4;
+  for (const sx of [-1,1]){
+    const angles = [-12,0,12];
+    for (let i=0;i<3;i++){
+      const wh = addBox(g, 1.5, 0.08, 0.08, sx*2.6, -2.8, 2.0 + i*0.25, dark);
+      wh.rotation.y = -Math.PI*angles[i]/180;
+    }
+  }
+  addBox(g, 1.3, 0.3, 1.9, 0, -2.7, 0, DOOR);
+  addCone(g, 0.3, 0.26, 2.6, 8, 2.6, 2.9, 0, dark);
+  for (const sx of [-1,1]) addBox(g, 1.0, 0.9, 0.5, sx*1.1, -2.9, 0, fur);
+  buildTree(g, rng, 0.65, -3.3, 2.0);
+  g.userData.radius = 5.2;
+  return g;
+}
+
+function buildCastleHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stone = c(0.63,0.63,0.67), stone2 = c(0.70,0.70,0.73), blue = c(0.25,0.33,0.52), red = c(0.60,0.12,0.12);
+  addBox(g, 5.6, 5.6, 4.2, 0, 0, 0, stone);
+  for (let i=-2;i<=2;i++){
+    addBox(g, 0.7, 0.55, 0.7, i*1.25, -2.65, 4.2, stone2);
+    addBox(g, 0.7, 0.55, 0.7, i*1.25,  2.65, 4.2, stone2);
+  }
+  for (const sx of [-1,1]) for (const sy of [-1,1]){
+    const x = sx*2.8, y = sy*2.8;
+    addCone(g, 1.05, 0.95, 5.4, 10, x, y, 0, stone2);
+    addCone(g, 1.35, 0.0, 1.9, 10, x, y, 5.4, blue);
+  }
+  addBox(g, 1.6, 0.4, 2.5, 0, -2.85, 0, DOOR);
+  addBox(g, 0.3, 0.2, 0.9, -1.4, -2.85, 2.6, WINDARK);
+  addBox(g, 0.3, 0.2, 0.9,  1.4, -2.85, 2.6, WINDARK);
+  addBox(g, 0.9, 0.1, 1.6, 0, -2.9, 2.3, red);
+  addBox(g, 1.0, 0.06, 0.5, 3.35, 2.8, 8.5, red);
+  buildTree(g, rng, 0.6, -3.6, -0.5);
+  g.userData.radius = 5.8;
+  return g;
+}
+
+function buildEiffelHouse(seed){
+  const g = new THREE.Group();
+  const bronze = c(0.45,0.32,0.20), cream = c(0.96,0.92,0.82);
+  const tilt = Math.PI*15/180;
+  for (const sx of [-1,1]) for (const sy of [-1,1]){
+    const leg = addBox(g, 0.85, 0.85, 5.2, sx*2.4, sy*2.4, 0, bronze);
+    leg.rotation.x = -tilt*sy;
+    leg.rotation.z = tilt*sx;
+  }
+  addBox(g, 4.4, 0.5, 0.7, 0, -2.1, 2.6, bronze);
+  addBox(g, 4.6, 4.6, 2.4, 0, 0, 4.6, cream);
+  addBox(g, 1.0, 0.3, 1.7, 0, -2.35, 4.6, DOOR);
+  addBox(g, 0.9, 0.2, 0.8, -1.5, -2.35, 5.6, WINDOW);
+  addBox(g, 0.9, 0.2, 0.8,  1.5, -2.35, 5.6, WINDOW);
+  addBox(g, 5.6, 5.6, 0.4, 0, 0, 6.9, bronze);
+  addCone(g, 1.7, 1.0, 3.2, 4, 0, 0, 7.3, bronze, Math.PI/4);
+  addCone(g, 1.0, 0.5, 2.8, 4, 0, 0, 10.5, bronze, Math.PI/4);
+  addBox(g, 1.6, 1.6, 0.35, 0, 0, 13.3, bronze);
+  addCone(g, 0.3, 0.0, 1.8, 6, 0, 0, 13.65, bronze);
+  addCone(g, 0.18, 0.14, 0.3, 6, 0, 0, 15.0, BULB);
+  g.userData.radius = 4.8;
+  return g;
+}
+
+function buildFlowerHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stemG = c(0.55,0.70,0.48), leafG = c(0.40,0.60,0.36);
+  const pinks = [c(0.93,0.55,0.68), c(0.97,0.70,0.79), c(0.88,0.45,0.60)];
+  addCone(g, 2.85, 2.55, 3.2, 12, 0, 0, 0, stemG);
+  addBox(g, 1.1, 0.35, 1.9, 0, -2.6, 0, DOOR);
+  for (const t of [Math.PI*215/180, Math.PI*325/180]){
+    const win = addBox(g, 0.9, 0.5, 0.9, 2.45*Math.cos(t), 2.45*Math.sin(t), 1.5, WINDOW);
+    win.rotation.y = -(t + Math.PI/2);
+  }
+  for (let i=0;i<6;i++){
+    const a = i/6*Math.PI*2 + 0.3;
+    addCone(g, 1.25, 0.1, 0.6, 5, 3.0*Math.cos(a), 3.0*Math.sin(a), 2.9, leafG);
+  }
+  addCone(g, 2.9, 1.9, 2.1, 12, 0, 0, 3.2, pinks[1]);
+  for (let i=0;i<14;i++){
+    const a = rng()*Math.PI*2, r = 0.6 + rng()*2.2;
+    const z = 4.6 + (2.6-r)*0.55 + rng()*0.4;
+    const s = 0.55 + rng()*0.55;
+    addCone(g, s, s*0.55, s*1.1, 8, r*Math.cos(a), r*Math.sin(a), z-s*0.5, pinks[Math.floor(rng()*3)]);
+  }
+  for (let i=0;i<3;i++) addCone(g, 0.45, 0.45, 0.08, 8, 0, -3.3-i*0.9, 0, pinks[1]);
+  g.userData.radius = 4.6;
+  return g;
+}
+
+function buildBurjHouse(seed){
+  const g = new THREE.Group();
+  const glass = c(0.52,0.63,0.74), trim = c(0.88,0.90,0.93);
+  const tiers = [[2.6,2.3,6.0,0.0],[2.0,1.75,5.5,6.0],[1.5,1.3,5.0,11.5],[1.0,0.85,4.0,16.5]];
+  for (const [rb,rt,h,z] of tiers){
+    addCone(g, rb, rt, h, 6, 0, 0, z, glass);
+    addCone(g, rb+0.12, rb+0.06, 0.35, 6, 0, 0, z, trim);
+  }
+  addCone(g, 0.4, 0.0, 4.5, 6, 0, 0, 20.5, trim);
+  addCone(g, 0.14, 0.1, 0.25, 6, 0, 0, 24.2, BULB);
+  addBox(g, 3.4, 3.4, 1.6, 0, 0, 0, trim);
+  addBox(g, 1.2, 0.3, 1.4, 0, -1.75, 0, DOOR);
+  addBox(g, 2.0, 0.9, 0.2, 0, -2.3, 1.6, glass);
+  buildTree(g, rngFor(seed), 0.6, 2.9, -2.4);
+  g.userData.radius = 3.2;
+  return g;
+}
+
+function buildToiletHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const porcelain = c(0.93,0.94,0.96), seatm = c(0.97,0.95,0.90), silver = c(0.75,0.77,0.80), matp = c(0.55,0.75,0.85);
+  addCone(g, 3.1, 2.55, 2.6, 14, 0, -0.6, 0, porcelain);
+  addCone(g, 3.25, 3.1, 0.35, 14, 0, -0.6, 0, porcelain);
+  addCone(g, 2.95, 2.75, 0.45, 14, 0, -0.6, 2.6, seatm);
+  const lid = addCone(g, 2.85, 2.75, 0.3, 14, 0, 1.05, 3.4, seatm);
+  lid.rotation.x = Math.PI*78/180;
+  addBox(g, 4.4, 1.9, 3.2, 0, 2.35, 2.2, porcelain);
+  addBox(g, 4.7, 2.2, 0.4, 0, 2.35, 5.4, seatm);
+  addBox(g, 0.9, 0.5, 0.25, -1.6, 1.3, 5.5, silver);
+  addBox(g, 1.1, 0.15, 0.9, 0, 1.34, 3.2, WINDOW);
+  addBox(g, 1.15, 0.3, 1.9, 0, -3.35, 0, DOOR);
+  addBox(g, 0.8, 0.3, 0.8, -1.9, -2.55, 1.2, WINDOW);
+  addCone(g, 1.5, 1.5, 0.07, 12, 0, -4.3, 0, matp);
+  addCone(g, 0.5, 0.35, 0.5, 10, 3.3, -1.8, 0, c(0.72,0.28,0.24));
+  buildTree(g, rng, 0.55, -3.4, 1.6);
+  g.userData.radius = 4.6;
+  return g;
+}
+
+function buildBeachHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const sand = c(0.90,0.83,0.62), turq = c(0.55,0.82,0.80), white = c(0.97,0.96,0.93);
+  const thatch = c(0.80,0.68,0.42), board = c(0.95,0.55,0.35);
+  addBox(g, 8.6, 8.6, 0.18, 0, 0, 0, sand);
+  addCone(g, 2.2, 2.2, 0.12, 14, -3.1, -3.0, 0.14, WATER);
+  for (const sx of [-1,1]) for (const sy of [-1,1])
+    addBox(g, 0.5, 0.5, 1.4, sx*2.2, sy*1.8, 0.15, TRUNK);
+  addBox(g, 5.6, 4.6, 2.9, 0, 0.2, 1.5, turq);
+  addPrismRoof(g, 6.3, 5.4, 1.7, 0, 0.2, 4.4, thatch);
+  addBox(g, 1.05, 0.25, 1.8, -0.9, -2.15, 1.5, DOOR);
+  addBox(g, 1.2, 0.2, 1.0, 1.2, -2.15, 2.3, WINDOW);
+  addBox(g, 0.2, 1.2, 1.0, 2.85, 0.6, 2.3, WINDOW);
+  addBox(g, 5.6, 1.6, 0.25, 0, -2.9, 1.25, white);
+  for (let i=0;i<3;i++) addBox(g, 1.4, 0.55, 0.22, -0.9, -3.9-i*0.5, 0.85-i*0.35, white);
+  for (const sx of [-2.6,-0.9,0.9,2.6]) addBox(g, 0.18, 0.18, 0.9, sx, -3.6, 1.5, white);
+  addBox(g, 5.6, 0.18, 0.16, 0, -3.6, 2.35, white);
+  const palm = addCone(g, 0.4, 0.25, 4.6, 7, 3.4, 2.6, 0.1, TRUNK);
+  palm.rotation.x = Math.PI*10/180; palm.rotation.z = -Math.PI*12/180;
+  for (let i=0;i<6;i++){
+    const a = i/6*Math.PI*2;
+    addCone(g, 1.6, 0.12, 0.5, 4, 4.05+1.1*Math.cos(a), 1.85+1.1*Math.sin(a), 4.5, c(0.36,0.62,0.34));
+  }
+  const sb = addBox(g, 0.85, 0.2, 3.0, 2.6, -1.9, 1.6, board);
+  sb.rotation.x = Math.PI*14/180; sb.rotation.y = -Math.PI*8/180;
+  addCone(g, 0.5, 0.28, 0.62, 10, -2.6, -1.2, 0.18, board);
+  g.userData.radius = 5.6;
+  return g;
+}
+
+function buildCottageHouse(seed){
+  const g = new THREE.Group();
+  const rng = rngFor(seed);
+  const stucco = c(0.96,0.93,0.84), timber = c(0.38,0.27,0.18), straw = c(0.78,0.64,0.38);
+  const stone = c(0.66,0.66,0.68), puff = c(0.96,0.96,0.97);
+  const w=6.0, d=5.0, h=3.2;
+  addBox(g, w, d, h, 0, 0, 0, stucco);
+  for (const sx of [-2.6,-0.9,0.9,2.6]) addBox(g, 0.28, 0.15, h, sx, -d/2-0.02, 0, timber);
+  addBox(g, w+0.2, 0.15, 0.28, 0, -d/2-0.02, h-0.28, timber);
+  addPrismRoof(g, w+1.0, d+1.0, 2.9, 0, 0, h, straw);
+  addPrismRoof(g, w+1.2, 1.0, 0.5, 0, 0, h+2.85, straw);
+  addBox(g, 1.5, 1.2, 1.3, -1.3, -d/2+0.4, h+0.5, stucco);
+  addPrismRoof(g, 1.8, 1.5, 0.8, -1.3, -d/2+0.4, h+1.8, straw);
+  addBox(g, 0.9, 0.2, 0.8, -1.3, -d/2-0.25, h+0.8, WINDOW);
+  addBox(g, 1.15, 0.3, 1.9, 1.3, -d/2-0.08, 0, DOOR);
+  addCone(g, 0.58, 0.55, 0.3, 10, 1.3, -d/2-0.08, 1.9, DOOR);
+  for (const sx of [-1.6, 0.0]){
+    addBox(g, 1.0, 0.2, 0.95, sx, -d/2-0.06, 1.4, WINDOW);
+    addBox(g, 1.1, 0.35, 0.3, sx, -d/2-0.28, 1.05, timber);
+  }
+  addBox(g, 0.95, 0.95, 2.2, 2.0, 1.2, h+1.2, stone);
+  for (const [px,pz,s] of [[0.1,0.5,0.4],[0.45,1.2,0.55],[0.9,2.0,0.7]])
+    addCone(g, s, s*0.75, s, 8, 2.0+px, 1.2+px*0.4, h+3.4+pz, puff);
+  for (let i=0;i<3;i++) addCone(g, 0.42, 0.42, 0.07, 8, 1.3, -3.2-i*0.85, 0, stone);
+  for (const sx of [-2.9,-2.1,-1.3,2.9]) addBox(g, 0.18, 0.18, 0.9, sx, -3.6, 0, stucco);
+  buildTree(g, rngFor(seed), 0.7, -3.3, 1.6);
+  g.userData.radius = 5.4;
+  return g;
+}
+
+const BUILDERS = {
+  house: buildHouse,
+  mushroomhouse: buildMushroomHouse,
+  casinohouse: buildCasinoHouse,
+  cathouse: buildCatHouse,
+  castlehouse: buildCastleHouse,
+  eiffelhouse: buildEiffelHouse,
+  flowerhouse: buildFlowerHouse,
+  burjhouse: buildBurjHouse,
+  toilethouse: buildToiletHouse,
+  beachhouse: buildBeachHouse,
+  cottagehouse: buildCottageHouse,
+};
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• GRID / PLACEMENT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+function lotToWorld(gx, gy){
+  const bx = Math.floor(gx / BLOCK_N), ix = ((gx % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const by = Math.floor(gy / BLOCK_N), iy = ((gy % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  return [bx*PITCH + ix*LOT + LOT/2, by*PITCH + iy*LOT + LOT/2];
+}
+
+const FACE_ANGLE = { s: 0, e: -Math.PI/2, n: Math.PI, w: Math.PI/2 };
+
+function blockExtent(buildings){
+  if (!buildings.length) return [-1,1,-1,1];
+  const bxs = buildings.map(b => Math.floor(b.gx / BLOCK_N));
+  const bys = buildings.map(b => Math.floor(b.gy / BLOCK_N));
+  return [Math.min(...bxs,-1), Math.max(...bxs,1), Math.min(...bys,-1), Math.max(...bys,1)];
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SCENE SETUP â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+const scene = new THREE.Scene();
+
+/* A tiny generated sky texture gives the scene depth without adding an image
+   download or pushing Followville away from its clean illustrated look. */
+function makeSkyTexture(){
+  const canvas = document.createElement("canvas");
+  canvas.width = 512; canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  sky.addColorStop(0, "#5faee0");
+  sky.addColorStop(0.58, "#9ed4ec");
+  sky.addColorStop(1, "#dcebdc");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const glow = ctx.createRadialGradient(390, 118, 5, 390, 118, 155);
+  glow.addColorStop(0, "rgba(255,247,214,0.46)");
+  glow.addColorStop(1, "rgba(255,247,214,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+scene.background = classicGraphics ? new THREE.Color(0x8fd0f0) : makeSkyTexture();
+scene.fog = classicGraphics
+  ? new THREE.Fog(0x9fd6ee, 90, 320)
+  : new THREE.Fog(0xa6d5e8, 115, 390);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.1, 500);
+camera.position.set(0, 1.7, -70);
+camera.rotation.y = Math.PI; // face north into town
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = classicGraphics ? 1.05 : 0.96;
+document.body.appendChild(renderer.domElement);
+
+const hemi = new THREE.HemisphereLight(
+  classicGraphics ? 0xbfe0ff : 0xc9e7ff,
+  classicGraphics ? 0x4a5a34 : 0x4b5d38,
+  classicGraphics ? 0.6 : 0.54
+);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(classicGraphics ? 0xfff0d0 : 0xffe4b0, classicGraphics ? 2.2 : 2.45);
+sun.position.set(70, 110, -40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = classicGraphics ? -0.0015 : -0.0008;
+if (!classicGraphics) sun.shadow.normalBias = 0.025;
+scene.add(sun);
+scene.add(sun.target);
+const fill = new THREE.DirectionalLight(classicGraphics ? 0xcfe0ff : 0xd9ebff, classicGraphics ? 0.35 : 0.2);
+fill.position.set(-60, 50, 60);
+scene.add(fill);
+
+/* glTF keeps Blender's material names, so one compact pass can give each
+   surface its own character. The texture is generated in the shader from
+   local position: no UVs, image files, or extra network weight required. */
+function addSurfaceVariation(material, scale, strength, cacheKey){
+  if (!material || material.userData.followvilleSurface) return;
+  material.userData.followvilleSurface = true;
+  const detailKind = cacheKey.split("-")[0];
+  const detailShader = detailKind === "wall" ? `
+        float fvSiding = smoothstep(0.88, 1.0, abs(sin(fvLocalPos.x * 7.5)));
+        float fvBaseBand = 1.0 - smoothstep(0.12, 0.36, fvLocalPos.y);
+        diffuseColor.rgb *= (1.0 - fvSiding * 0.038) * (1.0 - fvBaseBand * 0.085);`
+    : detailKind === "roof" ? `
+        float fvShingle = smoothstep(0.91, 1.0, abs(sin((fvLocalPos.y + fvLocalPos.z * 0.18) * 10.0)));
+        diffuseColor.rgb *= 1.0 - fvShingle * 0.075;`
+    : detailKind === "wood" ? `
+        float fvWoodGrain = 0.5 + 0.5 * sin(fvLocalPos.y * 13.0 + sin(fvLocalPos.x * 5.0));
+        diffuseColor.rgb *= mix(0.965, 1.025, fvWoodGrain);`
+    : "";
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", `#include <common>\nvarying vec3 fvLocalPos;\nvarying vec3 fvObjectNormal;`)
+      .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nfvObjectNormal = normalize(objectNormal);`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>\nfvLocalPos = transformed;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>
+        varying vec3 fvLocalPos;
+        varying vec3 fvObjectNormal;
+        float fvHash(vec2 p){
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+        }
+        float fvNoise(vec2 p){
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float a = fvHash(i);
+          float b = fvHash(i + vec2(1.0, 0.0));
+          float c = fvHash(i + vec2(0.0, 1.0));
+          float d = fvHash(i + vec2(1.0, 1.0));
+          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }`)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float fvGrain = (
+          fvNoise(fvLocalPos.xy * ${scale.toFixed(3)}) +
+          fvNoise(fvLocalPos.xz * ${scale.toFixed(3)}) +
+          fvNoise(fvLocalPos.yz * ${scale.toFixed(3)})
+        ) / 3.0 * 2.0 - 1.0;
+        float fvSoft = sin((fvLocalPos.x + fvLocalPos.z) * ${Math.max(0.35, scale * 0.45).toFixed(3)});
+        float fvUp = abs(normalize(fvObjectNormal).y);
+        float fvShapeLight = mix(0.92, 1.055, pow(fvUp, 0.7));
+        diffuseColor.rgb *= fvShapeLight * (1.0 + fvGrain * ${strength.toFixed(3)} + fvSoft * ${(strength * 0.26).toFixed(3)});
+        ${detailShader}`);
+  };
+  material.customProgramCacheKey = () => `followville-${cacheKey}`;
+  material.needsUpdate = true;
+}
+
+function tuneTownMaterial(material){
+  if (!material || material.userData.followvilleTuned) return;
+  material.userData.followvilleTuned = true;
+  const name = (material.name || "").toLowerCase();
+
+  if (name.includes("grass") || name.includes("lawn") || name.includes("bank")){
+    material.roughness = 0.96;
+    material.metalness = 0.0;
+    material.color.offsetHSL(-0.01, 0.08, -0.015);
+    addSurfaceVariation(material, 0.72, 0.095, "grass-v2");
+  } else if (name.includes("road")){
+    material.roughness = 0.9;
+    material.metalness = 0.01;
+    material.color.offsetHSL(0.0, 0.01, -0.035);
+    addSurfaceVariation(material, 1.4, 0.05, "road-v2");
+  } else if (name.includes("roof") || name.includes("cap")){
+    material.roughness = 0.68;
+    material.metalness = 0.02;
+    material.color.offsetHSL(0.0, 0.075, -0.005);
+    addSurfaceVariation(material, 1.7, 0.065, "roof-v2");
+  } else if (name.includes("wall") || name.includes("stem") || name.includes("fur")){
+    material.roughness = 0.82;
+    material.metalness = 0.0;
+    material.color.offsetHSL(0.0, 0.055, 0.012);
+    addSurfaceVariation(material, 1.1, 0.04, "wall-v2");
+  } else if (name.includes("trunk") || name.includes("wood") || name.includes("door")){
+    material.roughness = 0.84;
+    material.metalness = 0.0;
+    material.color.offsetHSL(0.0, 0.05, -0.015);
+    addSurfaceVariation(material, 2.4, 0.065, "wood-v2");
+  } else if (name.includes("water")){
+    material.roughness = 0.08;
+    material.metalness = 0.14;
+    material.color.offsetHSL(-0.015, 0.12, 0.035);
+  } else if (name.includes("window") || name.includes("windark") || name.includes("glass")){
+    material.roughness = 0.16;
+    material.metalness = 0.14;
+    if (material.emissive){
+      material.emissive.copy(material.color).multiplyScalar(0.055);
+      material.emissiveIntensity = 0.8;
+    }
+  } else if (name.includes("bulb") || name.includes("lamp")){
+    material.roughness = 0.18;
+    if (material.emissive){
+      material.emissive.copy(material.color).multiplyScalar(0.28);
+      material.emissiveIntensity = 1.15;
+    }
+  } else if (name.includes("metal") || name.includes("gold")){
+    material.roughness = 0.42;
+    material.metalness = 0.48;
+  } else {
+    material.roughness = Math.min(material.roughness ?? 0.82, 0.82);
+    material.metalness = Math.min(material.metalness ?? 0.02, 0.04);
+  }
+  material.needsUpdate = true;
+}
+
+function frameFounderPreview(){
+  document.body.classList.add("preview-mode");
+  if (previewView === "buildings"){
+    camera.fov = 49;
+    camera.position.set(39, 12.5, 21);
+    camera.lookAt(0, 4.0, -4);
+  } else {
+    camera.fov = 50;
+    camera.position.set(45, 20, 46);
+    camera.lookAt(0, 4.0, -3);
+  }
+  camera.updateProjectionMatrix();
+}
+
+function appendWorldLines(target, object, edgeGeometry){
+  const positions = edgeGeometry.getAttribute("position");
+  const point = new THREE.Vector3();
+  for (let i=0; i<positions.count; i++){
+    point.fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld);
+    target.push(point.x, point.y, point.z);
+  }
+}
+
+function lineObjectFromPositions(name, positions, material){
+  if (!positions.length) return null;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  const lines = new THREE.LineSegments(geometry, material);
+  lines.name = name;
+  lines.renderOrder = 3;
+  return lines;
+}
+
+function appendWindowMullions(target, object, box){
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const dims = {x:size.x, y:size.y, z:size.z};
+  const thin = Object.keys(dims).reduce((a,b) => dims[a] < dims[b] ? a : b);
+  if (dims[thin] > 0.85 || Math.max(size.x,size.y,size.z) > 5.0) return;
+  const axes = ["x","y","z"].filter(a => a !== thin);
+  const a = axes[0], b = axes[1];
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  const faces = [box.min[thin] - 0.012, box.max[thin] + 0.012];
+  const points = [];
+  for (const face of faces){
+    const p1 = center.clone(), p2 = center.clone(), p3 = center.clone(), p4 = center.clone();
+    p1[thin]=p2[thin]=p3[thin]=p4[thin]=face;
+    p1[a]=box.min[a]; p2[a]=box.max[a]; p1[b]=p2[b]=center[b];
+    p3[b]=box.min[b]; p4[b]=box.max[b]; p3[a]=p4[a]=center[a];
+    points.push(p1,p2,p3,p4);
+  }
+  for (const p of points){
+    p.applyMatrix4(object.matrixWorld);
+    target.push(p.x,p.y,p.z);
+  }
+}
+
+/* One merged line layer adds crisp facade/roof edges and window mullions
+   without creating hundreds of extra draw calls. Door knobs use one shared
+   instanced mesh, so the detail remains suitable for district-sized scenes. */
+function addBuildingDetails(root){
+  root.updateMatrixWorld(true);
+  const structureLines = [], trimLines = [], mullionLines = [];
+  const knobPoints = [];
+  const planterMatrices = [], flowerMatrices = [];
+
+  root.traverse(object => {
+    if (!object.isMesh || !object.geometry || object.isInstancedMesh) return;
+    const nodeName = (object.name || "").toLowerCase().replace(/\.\d+$/, "");
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const materialNames = materials.map(m => (m?.name || "").toLowerCase()).join(" ");
+    if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+    const box = object.geometry.boundingBox;
+    if (!box) return;
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x,size.y,size.z);
+
+    const isWindow = /^(win|winl|winr|glass|lobby)/.test(nodeName) && maxDim <= 5.0;
+    const isDoor = /(door|entry|mouthdoor)/.test(nodeName) && maxDim <= 4.5;
+    const isRoof = /(roof|roofcap|cap|awning|trim|rim)/.test(nodeName) || /roof/.test(materialNames);
+    const isStructure = /^(base|stem|home|body|tower|tier)/.test(nodeName)
+      && /(wall|stone|stem|fur|board|home|white)/.test(materialNames)
+      && maxDim <= 24;
+    const isAccent = /(step|stair|porch|rail|column|pillar|balcony|sign)/.test(nodeName);
+
+    if (isWindow || isDoor || isRoof || isAccent){
+      const edge = new THREE.EdgesGeometry(object.geometry, isRoof ? 24 : 32);
+      appendWorldLines(trimLines, object, edge);
+      edge.dispose();
+    } else if (isStructure){
+      const edge = new THREE.EdgesGeometry(object.geometry, 35);
+      appendWorldLines(structureLines, object, edge);
+      edge.dispose();
+    }
+
+    if (isWindow){
+      appendWindowMullions(mullionLines, object, box);
+      const nameHash = [...object.name].reduce((sum,ch) => sum + ch.charCodeAt(0), 0);
+      const thin = size.x < size.z ? "x" : "z";
+      const horizontal = thin === "x" ? "z" : "x";
+      if (nameHash % 3 === 0 && size.y > 0.35 && size[horizontal] < 3.2){
+        const sign = object.position[thin] < 0 ? -1 : 1;
+        const localPos = new THREE.Vector3();
+        box.getCenter(localPos);
+        localPos[thin] = sign > 0 ? box.max[thin] + 0.13 : box.min[thin] - 0.13;
+        localPos.y = box.min.y - 0.11;
+        const localScale = new THREE.Vector3(0.26, 0.16, 0.26);
+        localScale[horizontal] = Math.max(0.42, size[horizontal] * 0.82);
+        const localMatrix = new THREE.Matrix4().compose(localPos, new THREE.Quaternion(), localScale);
+        planterMatrices.push(object.matrixWorld.clone().multiply(localMatrix));
+
+        for (const offset of [-0.28, 0, 0.28]){
+          const flowerPos = localPos.clone();
+          flowerPos[horizontal] += offset * Math.min(1.0, size[horizontal]);
+          flowerPos.y += 0.17;
+          const flowerScale = new THREE.Vector3(0.12,0.16,0.12);
+          const flowerMatrix = new THREE.Matrix4().compose(flowerPos,new THREE.Quaternion(),flowerScale);
+          flowerMatrices.push(object.matrixWorld.clone().multiply(flowerMatrix));
+        }
+      }
+    }
+    if (isDoor && size.y > 0.7){
+      const thin = size.x < size.z ? "x" : "z";
+      const horizontal = thin === "x" ? "z" : "x";
+      const knob = new THREE.Vector3();
+      box.getCenter(knob);
+      knob[thin] = box.max[thin] + 0.055;
+      knob[horizontal] = box.min[horizontal] + (box.max[horizontal]-box.min[horizontal]) * 0.7;
+      knob.y = box.min.y + size.y * 0.52;
+      knob.applyMatrix4(object.matrixWorld);
+      knobPoints.push(knob);
+    }
+  });
+
+  const structureMat = new THREE.LineBasicMaterial({color:0x5b554e, transparent:true, opacity:0.16, depthWrite:false});
+  const trimMat = new THREE.LineBasicMaterial({color:0x514b48, transparent:true, opacity:0.34, depthWrite:false});
+  const mullionMat = new THREE.LineBasicMaterial({color:0x53606b, transparent:true, opacity:0.68, depthWrite:false});
+  for (const lines of [
+    lineObjectFromPositions("FV_structure_edges",structureLines,structureMat),
+    lineObjectFromPositions("FV_roof_and_trim_edges",trimLines,trimMat),
+    lineObjectFromPositions("FV_window_mullions",mullionLines,mullionMat)
+  ]) if (lines) scene.add(lines);
+
+  if (knobPoints.length){
+    const geometry = new THREE.SphereGeometry(0.085, 7, 5);
+    const material = new THREE.MeshStandardMaterial({name:"FV_door_hardware",color:0xc9a44b,roughness:0.32,metalness:0.62});
+    const knobs = new THREE.InstancedMesh(geometry, material, knobPoints.length);
+    const matrix = new THREE.Matrix4();
+    knobPoints.forEach((p,i) => knobs.setMatrixAt(i,matrix.makeTranslation(p.x,p.y,p.z)));
+    knobs.instanceMatrix.needsUpdate = true;
+    knobs.name = "FV_door_knobs";
+    scene.add(knobs);
+  }
+
+  if (planterMatrices.length){
+    const planterMaterial = new THREE.MeshStandardMaterial({name:"FV_window_boxes",color:0x8d6046,roughness:0.86,metalness:0.0});
+    const planters = new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),planterMaterial,planterMatrices.length);
+    planterMatrices.forEach((matrix,i) => planters.setMatrixAt(i,matrix));
+    planters.instanceMatrix.needsUpdate = true;
+    planters.name = "FV_window_boxes";
+    scene.add(planters);
+
+    const flowerMaterial = new THREE.MeshStandardMaterial({name:"FV_window_box_flowers",color:0xf19aaa,roughness:0.72,metalness:0.0});
+    const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),flowerMaterial,flowerMatrices.length);
+    flowerMatrices.forEach((matrix,i) => flowers.setMatrixAt(i,matrix));
+    flowers.instanceMatrix.needsUpdate = true;
+    flowers.name = "FV_window_box_flowers";
+    scene.add(flowers);
+  }
+}
+
+function gridBlockExtent(buildings){
+  const grid = buildings.filter(b => b.type !== "parkdistrict" && b.type !== "ringhouse");
+  if (!grid.length) return [-1, 1, -1, 1];
+  const bxs = grid.map(b => Math.floor(b.gx / BLOCK_N));
+  const bys = grid.map(b => Math.floor(b.gy / BLOCK_N));
+  return [Math.min(...bxs, -1), Math.max(...bxs, 1), Math.min(...bys, -1), Math.max(...bys, 1)];
+}
+
+function addFinishInstances(group, w, d, h, positions, material){
+  if (!positions.length) return;
+  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(w, h, d), material, positions.length);
+  const matrix = new THREE.Matrix4();
+  positions.forEach(([x,z], i) => mesh.setMatrixAt(i, matrix.makeTranslation(x, h / 2 + 0.17, z)));
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+}
+
+/* Warm curb lines and small crosswalks make the streets feel authored rather
+   than laid onto one flat plane. Segments stop at intersections, so they do
+   not create stripes across the road grid. */
+function addTownFinish(buildings){
+  const [minBx, maxBx, minBy, maxBy] = gridBlockExtent(buildings);
+  const group = new THREE.Group();
+  group.name = "FV_town_finish";
+  const curb = new THREE.MeshStandardMaterial({
+    name:"FV_curb", color:0xd9cfb5, roughness:0.9, metalness:0.0
+  });
+  const stripe = new THREE.MeshStandardMaterial({
+    name:"FV_crosswalk", color:0xf3ead5, roughness:0.88, metalness:0.0
+  });
+  const verticalCurbs = [], horizontalCurbs = [];
+
+  for (let bx=minBx; bx<=maxBx+1; bx++){
+    const roadX = bx * PITCH - ROAD / 2;
+    for (let by=minBy; by<=maxBy; by++){
+      const blockY = by * PITCH + (BLOCK_N * LOT) / 2;
+      const z = -blockY;
+      verticalCurbs.push([roadX - ROAD/2 - 0.31, z], [roadX + ROAD/2 + 0.31, z]);
+    }
+  }
+  for (let by=minBy; by<=maxBy+1; by++){
+    const roadZ = -(by * PITCH - ROAD / 2);
+    for (let bx=minBx; bx<=maxBx; bx++){
+      const blockX = bx * PITCH + (BLOCK_N * LOT) / 2;
+      horizontalCurbs.push([blockX, roadZ - ROAD/2 - 0.31], [blockX, roadZ + ROAD/2 + 0.31]);
+    }
+  }
+  addFinishInstances(group, 0.62, BLOCK_N * LOT, 0.12, verticalCurbs, curb);
+  addFinishInstances(group, BLOCK_N * LOT, 0.62, 0.12, horizontalCurbs, curb);
+
+  // Two founder-district crosswalks, kept short and graphic.
+  const crosswalkX = [], crosswalkZ = [];
+  for (let i=-2; i<=2; i++){
+    crosswalkX.push([-4.8 + i * 0.95, 3.0]);
+    crosswalkZ.push([-3.0, 4.8 + i * 0.95]);
+  }
+  addFinishInstances(group, 0.48, 4.8, 0.035, crosswalkX, stripe);
+  addFinishInstances(group, 4.8, 0.48, 0.035, crosswalkZ, stripe);
+  scene.add(group);
+}
+
+function addTownAtmosphere(){
+  const hills = new THREE.Group();
+  hills.name = "FV_distant_hills";
+  const hillColors = [0x76947d, 0x7d9b84, 0x6f8d78, 0x86a18a];
+  for (let i=0; i<18; i++){
+    const a = i / 18 * Math.PI * 2;
+    const radius = 282 + (i % 3) * 14;
+    const h = 18 + (i * 11 % 22);
+    const r = 34 + (i * 17 % 24);
+    const material = new THREE.MeshStandardMaterial({
+      color:hillColors[i % hillColors.length], roughness:1.0, flatShading:true,
+      transparent:true, opacity:0.76
+    });
+    const hill = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), material);
+    hill.position.set(Math.cos(a) * radius, h / 2 - 2, Math.sin(a) * radius);
+    hill.scale.x = 1.15 + (i % 3) * 0.12;
+    hill.rotation.y = a * 0.37;
+    hills.add(hill);
+  }
+  scene.add(hills);
+
+  const clouds = new THREE.Group();
+  clouds.name = "FV_clouds";
+  const cloudMat = new THREE.MeshLambertMaterial({
+    color:0xfffbec, transparent:true, opacity:0.5, depthWrite:false, flatShading:true
+  });
+  const cloudSpots = [[-105,54,-130],[72,61,-155],[-165,48,35],[145,56,20]];
+  for (const [x,y,z] of cloudSpots){
+    const cluster = new THREE.Group();
+    for (const [dx,dy,s] of [[-9,0,10],[0,3,14],[11,0,9],[2,-2,11]]){
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(s * 0.78, 7, 5), cloudMat);
+      puff.scale.y = 0.52;
+      puff.position.set(dx, dy, 0);
+      cluster.add(puff);
+    }
+    cluster.position.set(x,y,z);
+    clouds.add(cluster);
+  }
+  scene.add(clouds);
+}
+
+const controls = new PointerLockControls(camera, document.body);
+
+const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+
+const startScreen = document.getElementById("startScreen");
+const loadingEl = document.getElementById("loading");
+const hud = document.getElementById("hud");
+const hudSub = document.getElementById("hudSub");
+const crosshair = document.getElementById("crosshair");
+const hint = document.getElementById("hint");
+const startHint = document.getElementById("startHint");
+const enterBtn = document.getElementById("enterBtn");
+const lookZone = document.getElementById("lookZone");
+const joystickZone = document.getElementById("joystickZone");
+const joystickNub = document.getElementById("joystickNub");
+const runBtn = document.getElementById("runBtn");
+const onlineCount = document.getElementById("onlineCount");
+const chatToggle = document.getElementById("chatToggle");
+const chatPanel = document.getElementById("chatPanel");
+const chatClose = document.getElementById("chatClose");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatSend = document.getElementById("chatSend");
+const chatNote = document.getElementById("chatNote");
+
+let gameRunning = false; // true once walking has actually started, desktop or touch
+let resumeWalkingAfterChat = false;
+
+function beginWalking(){
+  gameRunning = true;
+  startScreen.style.display = "none";
+  crosshair.style.display = isTouch ? "none" : "block";
+  hint.style.display = "block";
+  if (isTouch){
+    lookZone.style.display = "block";
+    joystickZone.style.display = "block";
+    runBtn.style.display = "flex";
+  }
+}
+function stopWalking(){
+  gameRunning = false;
+  startScreen.style.display = "flex";
+  crosshair.style.display = "none";
+  hint.style.display = "none";
+  lookZone.style.display = "none";
+  joystickZone.style.display = "none";
+  runBtn.style.display = "none";
+}
+
+function chatOpen(){ return chatPanel.classList.contains("open"); }
+function clearMovementInput(){
+  move.x = 0;
+  move.z = 0;
+  move.run = false;
+}
+function openChat(){
+  if (chatOpen()){
+    if (!chatInput.disabled) chatInput.focus();
+    return;
+  }
+  resumeWalkingAfterChat = gameRunning || controls.isLocked;
+  chatPanel.classList.add("open");
+  clearMovementInput();
+  if (!isTouch && controls.isLocked) controls.unlock();
+  setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
+}
+function closeChat(resumeWalking = true){
+  chatPanel.classList.remove("open");
+  chatInput.blur();
+  const shouldResume = resumeWalking && resumeWalkingAfterChat;
+  resumeWalkingAfterChat = false;
+  if (!shouldResume) return;
+  if (isTouch) beginWalking();
+  else controls.lock();
+}
+chatToggle.addEventListener("click", openChat);
+chatClose.addEventListener("click", closeChat);
+chatPanel.addEventListener("mousedown", e => e.stopPropagation());
+chatPanel.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); });
+
+if (isTouch){
+  enterBtn.textContent = "tap to enter";
+  startHint.textContent = "drag to look Â· joystick to walk Â· RUN to sprint";
+  hint.textContent = "drag anywhere to look around";
+  enterBtn.addEventListener("touchend", e => { e.preventDefault(); beginWalking(); });
+} else {
+  startScreen.addEventListener("click", () => controls.lock());
+  controls.addEventListener("lock", beginWalking);
+  controls.addEventListener("unlock", () => { if (!chatOpen()) stopWalking(); });
+}
+
+/* movement â€” analog x/z force in [-1,1], driven by keyboard (desktop) or the
+   on-screen joystick (touch); both funnel into the same animate() loop. */
+const move = { x:0, z:0, run:false };
+document.addEventListener("keydown", e => {
+  if (chatOpen()){
+    if (e.code === "Escape"){
+      e.preventDefault();
+      closeChat();
+    }
+    return;
+  }
+  if (!modalOpen() && (e.code === "KeyT" || e.code === "Slash" || e.key === "/" || e.code === "Enter")){
+    e.preventDefault(); openChat(); return;
+  }
+  if (modalOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+  // don't walk around while typing in a modal or town chat
+  switch(e.code){
+    case "KeyW": case "ArrowUp": move.z = 1; break;
+    case "KeyS": case "ArrowDown": move.z = -1; break;
+    case "KeyA": case "ArrowLeft": move.x = -1; break;
+    case "KeyD": case "ArrowRight": move.x = 1; break;
+    case "ShiftLeft": case "ShiftRight": move.run = true; break;
+    case "KeyE": if (gameRunning) attemptClaim(); break;
+  }
+});
+document.addEventListener("keyup", e => {
+  if (modalOpen() || chatOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+  switch(e.code){
+    case "KeyW": case "ArrowUp": if (move.z > 0) move.z = 0; break;
+    case "KeyS": case "ArrowDown": if (move.z < 0) move.z = 0; break;
+    case "KeyA": case "ArrowLeft": if (move.x < 0) move.x = 0; break;
+    case "KeyD": case "ArrowRight": if (move.x > 0) move.x = 0; break;
+    case "ShiftLeft": case "ShiftRight": move.run = false; break;
+  }
+});
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* â”€â”€â”€ touch: virtual joystick (movement) â”€â”€â”€ */
+if (isTouch){
+  let joyTouchId = null;
+  const joyRadius = 46; // matches half of #joystickZone minus nub padding
+
+  function resetJoystick(){
+    joystickNub.style.transform = "translate(-50%,-50%)";
+    move.x = 0; move.z = 0;
+  }
+
+  joystickZone.addEventListener("touchstart", e => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    joyTouchId = t.identifier;
+    updateJoystick(t);
+  }, { passive:false });
+
+  joystickZone.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === joyTouchId) updateJoystick(t);
+  }, { passive:false });
+
+  function endJoyTouch(e){
+    for (const t of e.changedTouches){
+      if (t.identifier === joyTouchId){ joyTouchId = null; resetJoystick(); }
+    }
+  }
+  joystickZone.addEventListener("touchend", endJoyTouch);
+  joystickZone.addEventListener("touchcancel", endJoyTouch);
+
+  function updateJoystick(t){
+    const rect = joystickZone.getBoundingClientRect();
+    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    let dx = t.clientX - cx, dy = t.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    const clamped = Math.min(dist, joyRadius);
+    if (dist > 0){ dx = dx/dist*clamped; dy = dy/dist*clamped; }
+    joystickNub.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    // screen-down (dy>0) should move the player forward, screen x maps to strafe
+    move.x = dx / joyRadius;
+    move.z = -dy / joyRadius;
+  }
+
+  /* â”€â”€â”€ touch: drag-to-look, anywhere outside the joystick â”€â”€â”€ */
+  let lookTouchId = null, lastX = 0, lastY = 0;
+  let yaw = camera.rotation.y, pitch = 0;
+
+  lookZone.addEventListener("touchstart", e => {
+    if (lookTouchId !== null) return;
+    const t = e.changedTouches[0];
+    lookTouchId = t.identifier;
+    lastX = t.clientX; lastY = t.clientY;
+  }, { passive:false });
+
+  lookZone.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for (const t of e.changedTouches){
+      if (t.identifier !== lookTouchId) continue;
+      const dx = t.clientX - lastX, dy = t.clientY - lastY;
+      lastX = t.clientX; lastY = t.clientY;
+      yaw -= dx * 0.0035;
+      pitch -= dy * 0.0035;
+      pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, pitch));
+      camera.rotation.order = "YXZ";
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+    }
+  }, { passive:false });
+
+  function endLookTouch(e){
+    for (const t of e.changedTouches) if (t.identifier === lookTouchId) lookTouchId = null;
+  }
+  lookZone.addEventListener("touchend", endLookTouch);
+  lookZone.addEventListener("touchcancel", endLookTouch);
+
+  /* run toggle */
+  runBtn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    move.run = !move.run;
+    runBtn.classList.toggle("active", move.run);
+  }, { passive:false });
+}
+
+/* Player collisions use the shape that is actually solid: oriented boxes for
+   houses/cars and small circles for cylindrical tree trunks. Tree canopies,
+   yards, roads, and landscaping remain walkable. */
+const colliders = [];
+const PLAYER_COLLIDER_RADIUS = 0.6;
+const SUBURBAN_FOOTPRINTS = [
+  [7.9,5.7], [8.5,5.4], [7.7,5.8], [8.3,5.7], [7.1,5.7],
+  [7.8,5.8], [7.5,5.9], [7.2,5.5], [7.4,5.8], [7.8,5.6],
+  [7.0,5.9], [8.4,5.8], [8.2,5.9], [6.7,5.3], [8.6,5.9]
+];
+const SUBURBAN_GARAGE_SIDES = [1,-1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1];
+
+function suburbanStructureSetback(entry){
+  return Number(entry.building.seed) === 29 ? 1.30 : 0;
+}
+
+function boxCollider(x, z, ux, uz, vx, vz, hx, hz, label="object"){
+  const uLength = Math.hypot(ux, uz) || 1;
+  const vLength = Math.hypot(vx, vz) || 1;
+  return { kind:"box", x, z, ux:ux/uLength, uz:uz/uLength,
+           vx:vx/vLength, vz:vz/vLength, hx, hz, label };
+}
+
+function circleCollider(x, z, radius, label="trunk", owner=null){
+  return { kind:"circle", x, z, radius, label, owner };
+}
+
+function colliderFromLocalBounds(root, bounds, label){
+  if (!root || !bounds || bounds.isEmpty()) return null;
+  root.updateWorldMatrix(true, true);
+  const center = bounds.getCenter(new THREE.Vector3());
+  root.localToWorld(center);
+  const size = bounds.getSize(new THREE.Vector3());
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     size.x*Math.abs(scale.x)/2, size.z*Math.abs(scale.z)/2, label);
+}
+
+function localBoundsAtPlayerHeight(root, acceptMesh=()=>true, minHeight=.18, maxHeight=2.35){
+  root.updateWorldMatrix(true, true);
+  const inverseRoot = root.matrixWorld.clone().invert();
+  const result = new THREE.Box3();
+  const relative = new THREE.Matrix4();
+  root.traverse(obj => {
+    if (!obj.isMesh || !obj.geometry || !acceptMesh(obj)) return;
+    if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
+    if (!obj.geometry.boundingBox) return;
+    relative.multiplyMatrices(inverseRoot, obj.matrixWorld);
+    const part = obj.geometry.boundingBox.clone().applyMatrix4(relative);
+    // Roofs, canopies, and elevated ornaments should not widen a player's
+    // ground-level hitbox. Keep only geometry intersecting body height.
+    if (part.max.y < minHeight || part.min.y > maxHeight) return;
+    result.union(part);
+  });
+  return result;
+}
+
+function suburbanFootprint(entry){
+  const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
+  const style = SUBURBAN_FOOTPRINTS[styleIndex];
+  const root = entry.root;
+  root.updateWorldMatrix(true, true);
+  const center = new THREE.Vector3(0,0,-suburbanStructureSetback(entry));
+  root.localToWorld(center);
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     style[0]*Math.abs(scale.x)/2 + .16,
+                     style[1]*Math.abs(scale.z)/2 + .16,
+                     `house-${entry.building.seed}`);
+}
+
+const NON_STRUCTURAL_HOME_PART = /(drive|walk|mail|shrub|bush|trunk|blob|pine|palm|flower|rock|lawn|ground|landscape|deck|rail|step|stilt|ocean|sand|surf|frond|ball)/i;
+function houseFootprint(entry){
+  if (!entry?.root) return null;
+  if (["house", "ringhouse", "lanehouse"].includes(entry.building.type))
+    return suburbanFootprint(entry);
+  const bounds = localBoundsAtPlayerHeight(entry.root,
+    mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""));
+  if (!bounds.isEmpty()) return colliderFromLocalBounds(entry.root, bounds, `house-${entry.building.seed}`);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  return boxCollider(center.x, center.z, 1,0,0,1, 3.8,3.2, `house-${entry.building.seed}`);
+}
+
+function decorationObstacleFootprint(entry){
+  if (!entry?.root) return null;
+  const suburban = ["house", "ringhouse", "lanehouse"].includes(entry.building.type);
+  const bounds = localBoundsAtPlayerHeight(entry.root, mesh => {
+    if (!suburban) return !NON_STRUCTURAL_HOME_PART.test(mesh.name || "");
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    return materials.some(material =>
+      /^NB_sub_(?:wall|roof|door|garage|glass|trim|shutter)(?:_|$)/i.test(material?.name || ""));
+  }, -Infinity, Infinity);
+  if (bounds.isEmpty()) return houseFootprint(entry);
+  return colliderFromLocalBounds(entry.root, bounds, `yard-obstacle-${entry.building.seed}`);
+}
+
+function addMeshBoxCollider(mesh, label){
+  const bounds = localBoundsAtPlayerHeight(mesh);
+  const collider = colliderFromLocalBounds(mesh, bounds, label);
+  if (collider && collider.hx > .08 && collider.hz > .08) colliders.push(collider);
+}
+
+function addTrunkColliderFromMesh(mesh, label="tree-trunk", owner=null){
+  mesh.updateWorldMatrix(true, false);
+  const bounds = new THREE.Box3().setFromObject(mesh);
+  if (bounds.isEmpty()) return;
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  const radius = Math.max(size.x, size.z)/2;
+  if (radius > .025 && radius < 1.5)
+    colliders.push(circleCollider(center.x, center.z, radius, label, owner));
+}
+
+function buildGLBColliders(root){
+  colliders.length = 0;
+  for (const entry of houseVisuals.values()){
+    const collider = houseFootprint(entry);
+    if (collider) colliders.push(collider);
+  }
+  for (const child of root.children){
+    const name = (child.name || "").toLowerCase();
+    // GLTFLoader sanitizes Blender dots to underscores (car.001 -> car_001).
+    if (/^(car|traffic)(?:\d|[._]|$)/.test(name) || name === "ringtraffic")
+      addMeshBoxCollider(child, `car-${child.name}`);
+  }
+  root.traverse(obj => {
+    const name = obj.name || "";
+    if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);
+    // The school is one large export root. Its three building wings need
+    // separate footprints so the courtyard remains open and walkable.
+    if (obj.isMesh && /^school_(?:center_hall|classroom_wing)(?:\d|[._]|$)/i.test(name))
+      addMeshBoxCollider(obj, `school-${name}`);
+  });
+  refreshYardDecorationColliders();
+  const boxes = colliders.filter(collider => collider.kind === "box").length;
+  const trunks = colliders.filter(collider => collider.kind === "circle").length;
+  console.info(`[Followville] collisions mapped ${boxes} rectangular footprints and ${trunks} trunk cylinders.`);
+}
+
+function resolvePlayerCollision(position, collider){
+  if (collider.kind === "circle"){
+    let dx = position.x-collider.x, dz = position.z-collider.z;
+    let distance = Math.hypot(dx,dz);
+    const radius = collider.radius + PLAYER_COLLIDER_RADIUS;
+    if (distance >= radius) return;
+    if (distance < .0001){ position.x += radius; return; }
+    const push = radius-distance;
+    position.x += dx/distance*push;
+    position.z += dz/distance*push;
+    return;
+  }
+  const dx = position.x-collider.x, dz = position.z-collider.z;
+  const localX = dx*collider.ux + dz*collider.uz;
+  const localZ = dx*collider.vx + dz*collider.vz;
+  const limitX = collider.hx + PLAYER_COLLIDER_RADIUS;
+  const limitZ = collider.hz + PLAYER_COLLIDER_RADIUS;
+  if (Math.abs(localX) >= limitX || Math.abs(localZ) >= limitZ) return;
+  const pushX = limitX-Math.abs(localX), pushZ = limitZ-Math.abs(localZ);
+  if (pushX < pushZ){
+    const direction = localX < 0 ? -1 : 1;
+    position.x += collider.ux*pushX*direction;
+    position.z += collider.uz*pushX*direction;
+  } else {
+    const direction = localZ < 0 ? -1 : 1;
+    position.x += collider.vx*pushZ*direction;
+    position.z += collider.vz*pushZ*direction;
+  }
+}
+
+function addRoads(buildings){
+  const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
+  const x0 = minBx*PITCH - ROAD, x1 = (maxBx+1)*PITCH;
+  const y0 = minBy*PITCH - ROAD, y1 = (maxBy+1)*PITCH;
+
+  // grass ground, generous margin beyond the road grid
+  const groundSize = Math.max(x1-x0, y1-y0) + 400;
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(groundSize, groundSize),
+    lam(GRASS, 1.0)
+  );
+  ground.rotation.x = -Math.PI/2;
+  ground.position.set((x0+x1)/2, -0.01, (y0+y1)/2);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // size the sun's shadow frustum to the current town so it stays sharp as it grows
+  const span = Math.max(x1-x0, y1-y0) / 2 + 20;
+  sun.shadow.camera.left = -span; sun.shadow.camera.right = span;
+  sun.shadow.camera.top = span; sun.shadow.camera.bottom = -span;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 400;
+  sun.target.position.set((x0+x1)/2, 0, (y0+y1)/2);
+  sun.position.set((x0+x1)/2 + 70, 110, (y0+y1)/2 - 40);
+  sun.shadow.camera.updateProjectionMatrix();
+
+  const roadMat = lam(c(0.30,0.31,0.33), 0.95);
+  const dashMat = lam(c(0.85,0.80,0.40), 0.7);
+  for (let bx = minBx; bx <= maxBx+1; bx++){
+    const x = bx*PITCH - ROAD/2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(ROAD, 0.15, y1-y0), roadMat);
+    m.position.set(x, 0.07, (y0+y1)/2);
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+  for (let by = minBy; by <= maxBy+1; by++){
+    const y = by*PITCH - ROAD/2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(x1-x0, 0.16, ROAD), roadMat);
+    m.position.set((x0+x1)/2, 0.08, y);
+    m.receiveShadow = true;
+    scene.add(m);
+    for (let x = x0 + 4; x < x1 - 4; x += 8){
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 0.45), dashMat);
+      dash.position.set(x, 0.17, y);
+      dash.receiveShadow = true;
+      scene.add(dash);
+    }
+  }
+
+  // streetlights + parked cars at intersections, seeded per-tile so they stay
+  // put as the town grows (won't reshuffle when the block extent changes)
+  const props = new THREE.Group();
+  for (let bx = minBx; bx <= maxBx+1; bx++){
+    for (let by = minBy; by <= maxBy+1; by++){
+      const ix = bx*PITCH - ROAD/2, iy = by*PITCH - ROAD/2;
+      const rng = rngFor(9000 + bx*131 + by*977);
+      if (rng() < 0.65){
+        const light = buildStreetlightProp();
+        light.position.set(ix + ROAD/2 + 0.6, 0, iy + ROAD/2 + 0.6);
+        light.rotation.y = -rng()*Math.PI*2;
+        props.add(light);
+      }
+      if (rng() < 0.4){
+        const car = buildCarProp(Math.floor(rng()*999));
+        const horiz = rng() < 0.5;
+        const off = (rng()-0.5) * PITCH * 0.7;
+        const lane = rng() < 0.5 ? 1.5 : -1.5;
+        if (horiz){
+          car.position.set(ix + off, 0.05, iy + ROAD/2 + lane);
+          car.rotation.y = (rng()<0.5 ? 0 : Math.PI) - Math.PI/2;
+        } else {
+          car.position.set(ix + ROAD/2 + lane, 0.05, iy + off);
+          car.rotation.y = (rng()<0.5 ? Math.PI/2 : -Math.PI/2) - Math.PI/2;
+        }
+        props.add(car);
+      }
+    }
+  }
+  scene.add(props);
+}
+
+function addNature(buildings){
+  const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
+  const occupied = new Set(buildings.map(b => b.gx + "," + b.gy));
+  const nature = new THREE.Group();
+  for (let gx = (minBx-1)*BLOCK_N; gx < (maxBx+2)*BLOCK_N; gx++){
+    for (let gy = (minBy-1)*BLOCK_N; gy < (maxBy+2)*BLOCK_N; gy++){
+      if (occupied.has(gx + "," + gy)) continue;
+      const r = rngFor(gx*7919 + gy*104729 + 13);
+      const roll = r();
+      const [x, y] = lotToWorld(gx, gy);
+      let inst = null;
+      if (roll < 0.22){ inst = new THREE.Group(); buildTree(inst, r, 0.8+r()*0.6, 0, 0); }
+      else if (roll < 0.36) inst = buildBushProp(Math.floor(r()*99999));
+      else if (roll < 0.42) inst = buildRockProp(Math.floor(r()*99999));
+      if (inst){
+        inst.position.x += x; inst.position.z += y;
+        nature.add(inst);
+      }
+      if (r() < 0.3){
+        const inst2 = new THREE.Group();
+        buildTree(inst2, r, 0.8+r()*0.6, 0, 0);
+        inst2.position.set(x + r()*6-3, 0, y + r()*6-3);
+        nature.add(inst2);
+      }
+    }
+  }
+  scene.add(nature);
+}
+
+function addBuildings(buildings){
+  const world = new THREE.Group();
+  for (const b of buildings){
+    const builder = BUILDERS[b.type] || buildHouse;
+    const inst = builder(b.seed || 0);
+    const [x, y] = lotToWorld(b.gx, b.gy);
+    inst.position.x += x;
+    inst.position.z += y;
+    if (b.face && FACE_ANGLE[b.face] !== undefined) inst.rotation.y = FACE_ANGLE[b.face];
+    world.add(inst);
+    if (HOME_MATERIAL_ROLES[b.type])
+      houseVisuals.set(Number(b.seed), { building:b, root:inst, isolated:false, materials:[] });
+    const fallbackCollider = houseFootprint({ building:b, root:inst });
+    if (fallbackCollider) colliders.push(fallbackCollider);
+  }
+  scene.add(world);
+  applyAllHomeCustomizations();
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ACCOUNTS + HOME CLAIMING â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Every real follower can create an account, verify their Instagram handle,
+   and claim a house (two for the two admin accounts). Backend: Supabase
+   (Postgres + Auth + Realtime),
+   schema in supabase_schema.sql, full guide in CLAIMING_SETUP.md.
+   If the two constants below are left empty, ALL of this is disabled and the
+   page behaves exactly like the original free-roam viewer. */
+
+const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk"; // anon/public key â€” safe to ship in HTML (RLS enforces access)
+
+let sb = null;                  // supabase client (null = feature off/unavailable)
+let session = null, myProfile = null, myClaim = null, myClaims = [];
+let claimLimit = 1;
+let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
+let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
+let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
+let worldBuildings = [];        // from world_state.json (geometry truth)
+let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
+let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
+let nearestOpen = null, claiming = false, claimMode = false;
+let unclaiming = false, confirmingUnclaim = false;
+let customizingHome = false, savingCustomization = false, customizationDraft = null;
+let customizationPreview = null;
+const nameTags = new THREE.Group();
+scene.add(nameTags);
+const customizationLayer = new THREE.Group();
+customizationLayer.name = "homeowner-customizations";
+scene.add(customizationLayer);
+const houseVisuals = new Map();
+const customizedHouseIds = new Set();
+const yardDecorations = new Map();
+
+/* Rough roof-top heights per building type, so tags/markers sit just above
+   the house instead of floating in the sky (or inside a tall tower). */
+const TAG_HEIGHT = {
+  house: 9.2, mushroomhouse: 8, casinohouse: 7.5, cathouse: 8, castlehouse: 9.5,
+  eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
+  beachhouse: 8, cottagehouse: 8.5, ringhouse: 9.2, lanehouse: 6.5,
+};
+
+const HOME_OPTIONS = {
+  wall: [
+    ["original", "original", null], ["butter", "butter", "#e7c875"],
+    ["sage", "sage", "#8faa83"], ["sky", "sky", "#82acc4"],
+    ["blush", "blush", "#d39a98"], ["lavender", "lavender", "#a39ac4"],
+    ["cream", "cream", "#e8ddbd"]
+  ],
+  roof: [
+    ["original", "original", null], ["charcoal", "charcoal", "#384150"],
+    ["cedar", "cedar", "#8a4c34"], ["slate", "slate", "#5e6e87"],
+    ["forest", "forest", "#355b49"], ["plum", "plum", "#5e405f"]
+  ],
+  door: [
+    ["original", "original", null], ["red", "red", "#a13b34"],
+    ["navy", "navy", "#294563"], ["teal", "teal", "#307875"],
+    ["yellow", "yellow", "#dbae3d"], ["white", "white", "#f2eee4"]
+  ],
+  yard: [
+    ["none", "none", "&mdash;"], ["flowers", "flowers", "&#127800;"],
+    ["tree", "tree", "&#127795;"], ["bench", "bench", "&#129681;"],
+    ["flag", "flag", "&#128681;"]
+  ]
+};
+const HOME_DEFAULTS = { version:1, wall:"original", roof:"original", door:"original", yard:"none" };
+const HOME_COLORS = Object.fromEntries(
+  ["wall", "roof", "door"].flatMap(key => HOME_OPTIONS[key].map(([id, , color]) => [`${key}:${id}`, color]))
+);
+
+function normalizeCustomization(value){
+  const input = value && typeof value === "object" ? value : {};
+  const out = { ...HOME_DEFAULTS };
+  for (const key of ["wall", "roof", "door", "yard"]){
+    if (HOME_OPTIONS[key].some(([id]) => id === input[key])) out[key] = input[key];
+  }
+  return out;
+}
+
+/* Material roles for both the standard suburban library and the ten founder
+   landmark houses. Materials are cloned per claimed building before any color
+   change, so a shared Blender material can never recolor neighboring homes. */
+const HOME_MATERIAL_ROLES = {
+  house: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  ringhouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  lanehouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  mushroomhouse: { wall:["NB_mush_stem"], roof:["NB_mush_cap"], door:["NB_door"] },
+  casinohouse: { wall:["NB_cas_wall"], roof:["NB_cas_gold"], door:["NB_door"] },
+  cathouse: { wall:["NB_cat_fur"], roof:["NB_cat_dark"], door:["NB_door"] },
+  castlehouse: { wall:["NB_cast_stone"], roof:["NB_cast_blue"], door:["NB_door"] },
+  eiffelhouse: { wall:["NB_eif_home"], roof:["NB_eif_bronze"], door:["NB_door"] },
+  flowerhouse: { wall:["NB_flw_stem"], roof:["NB_flw_p"], door:["NB_door"] },
+  burjhouse: { wall:["NB_burj_glass"], roof:["NB_burj_trim"], door:["NB_door"] },
+  toilethouse: { wall:["NB_wc_white"], roof:["NB_wc_seat"], door:["NB_door"] },
+  beachhouse: { wall:["NB_bch_wall"], roof:["NB_bch_roof"], door:["NB_door"] },
+  cottagehouse: { wall:["NB_cot_wall"], roof:["NB_cot_roof"], door:["NB_door"] }
+};
+
+function materialRoleFor(building, material){
+  const name = material?.name || "";
+  const roles = HOME_MATERIAL_ROLES[building.type] || HOME_MATERIAL_ROLES.house;
+  for (const role of ["wall", "roof", "door"]){
+    if ((roles[role] || []).some(prefix => name.startsWith(prefix))) return role;
+  }
+  return null;
+}
+
+function ensureHouseMaterialsIsolated(entry){
+  if (!entry || entry.isolated) return;
+  const clones = new Map();
+  entry.root.traverse(obj => {
+    if (!obj.isMesh || !obj.material) return;
+    const source = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isolated = source.map(material => {
+      if (!material) return material;
+      if (!clones.has(material.uuid)){
+        const copy = material.clone();
+        copy.userData = { ...(copy.userData || {}) };
+        if (copy.color) copy.userData.fvOriginalColor = copy.color.getHex();
+        clones.set(material.uuid, copy);
+      }
+      return clones.get(material.uuid);
+    });
+    obj.material = Array.isArray(obj.material) ? isolated : isolated[0];
+  });
+  entry.materials = [...clones.values()];
+  entry.isolated = true;
+}
+
+function resetHouseColors(entry){
+  if (!entry?.isolated) return;
+  for (const material of entry.materials || []){
+    if (material.color && Number.isInteger(material.userData?.fvOriginalColor)){
+      material.color.setHex(material.userData.fvOriginalColor);
+      material.needsUpdate = true;
+    }
+  }
+}
+
+function disposeObject(root){
+  root.traverse(obj => {
+    if (obj.geometry) obj.geometry.dispose();
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const material of materials) if (material?.dispose) material.dispose();
+  });
+}
+
+function decorationMaterial(color, roughness=.82){
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness:.02 });
+}
+function decorationMesh(geometry, material, x, y, z){
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeYardDecoration(kind, entry){
+  const building = entry.building;
+  const group = new THREE.Group();
+  group.name = `yard-${kind}-${building.seed}`;
+  if (kind === "flowers"){
+    const stem = decorationMaterial(0x4e7f48), petals = [0xf39ab6, 0xf3c36b, 0xc59ee8];
+    for (let i=0; i<5; i++){
+      const x = (i-2)*.42, z = (i%2 ? .22 : -.18), h = .42 + (i%3)*.08;
+      group.add(decorationMesh(new THREE.CylinderGeometry(.035,.045,h,6), stem, x, h/2, z));
+      group.add(decorationMesh(new THREE.DodecahedronGeometry(.16,0), decorationMaterial(petals[i%3]), x, h+.1, z));
+    }
+  } else if (kind === "tree"){
+    const trunk = decorationMesh(new THREE.CylinderGeometry(.22,.3,2.0,8), decorationMaterial(0x765137), 0, 1, 0);
+    trunk.name = "yard_trunk";
+    group.add(trunk);
+    group.userData.collisionMesh = trunk;
+    group.add(decorationMesh(new THREE.ConeGeometry(1.25,2.6,9), decorationMaterial(0x4f8250), 0, 2.85, 0));
+    group.add(decorationMesh(new THREE.ConeGeometry(.95,2.0,9), decorationMaterial(0x5e9258), 0, 4.05, 0));
+  } else if (kind === "bench"){
+    const wood = decorationMaterial(0x9a6741), metal = decorationMaterial(0x3d4650,.45);
+    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.22,.62), wood, 0,.72,0));
+    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.95,.18), wood, 0,1.18,.3));
+    for (const x of [-.8,.8]) for (const z of [-.2,.2])
+      group.add(decorationMesh(new THREE.BoxGeometry(.14,.72,.14), metal, x,.36,z));
+  } else if (kind === "flag"){
+    group.add(decorationMesh(new THREE.CylinderGeometry(.045,.06,4.1,8), decorationMaterial(0xd5d9dc,.35), 0,2.05,0));
+    const flag = decorationMesh(new THREE.BoxGeometry(1.45,.8,.07), decorationMaterial(0xe45a5d), .72,3.45,0);
+    group.add(flag);
+    group.add(decorationMesh(new THREE.SphereGeometry(.09,8,6), decorationMaterial(0xe5c45e,.3), 0,4.18,0));
+  }
+  entry.root.updateWorldMatrix(true, true);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  // Blender homes face local -Y, exported as Three.js local +Z. Reading the
+  // real root rotation removes the old corner-lot guess that sometimes chose
+  // the wrong yard.
+  const quaternion = entry.root.getWorldQuaternion(new THREE.Quaternion());
+  const front3 = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  const frontLength = Math.hypot(front3.x, front3.z) || 1;
+  const frontX = front3.x/frontLength, frontZ = front3.z/frontLength;
+  // Yard pieces must clear the full exported porch/door/roof silhouette, not
+  // merely the player's ground-level wall hitbox. Wide styles such as house 29
+  // project much farther toward the curb than their nominal body dimensions.
+  const footprint = decorationObstacleFootprint(entry);
+  const frontExtent = footprint
+    ? (footprint.x-center.x)*frontX + (footprint.z-center.z)*frontZ
+      + footprint.hx*Math.abs(frontX*footprint.ux + frontZ*footprint.uz)
+      + footprint.hz*Math.abs(frontX*footprint.vx + frontZ*footprint.vz)
+    : 3.2;
+  const curbDistance = frontCurbDistance(building, frontX, frontZ);
+  const yardStrip = Math.max(.01, curbDistance-frontExtent);
+  // Most lots retain a generous faÃ§ade/curb buffer. A few founder buildings
+  // nearly fill their old 10m lots, so their buffers and decoration scale down
+  // together instead of letting the decoration cross the curb.
+  const houseMargin = Math.min(.28, yardStrip*.2);
+  const curbMargin = Math.min(.48, yardStrip*.35);
+  const freeWidth = Math.max(.005, yardStrip-houseMargin-curbMargin);
+  const roadDepth = { flowers:.25, tree:1.25, bench:.42, flag:.08 }[kind] || .3;
+  // Compress only front-to-back when a yard strip is tight. Keeping the full
+  // width and height prevents benches, flags, and trees from looking like tiny
+  // broken miniatures on founder lots.
+  const depthScale = Math.min(1, Math.max(.01, freeWidth/(roadDepth*2)));
+  if (kind === "tree") group.scale.set(depthScale, 1, depthScale);
+  else group.scale.set(1, 1, depthScale);
+  let frontOffset = frontExtent + houseMargin + freeWidth/2;
+  // Tall flagpoles sit toward the curb side of the strip, clear of porch roofs.
+  if (kind === "flag")
+    frontOffset = Math.max(frontOffset, curbDistance-curbMargin-roadDepth*depthScale);
+
+  // Put every piece on a side-lawn planting zone instead of in the doorway.
+  // The complete local decoration width is measured, so flags and benches stay
+  // inside the frontage even though their geometry is wider than their origin.
+  group.updateWorldMatrix(true, true);
+  const localDecorationBounds = new THREE.Box3().setFromObject(group);
+  const sideRadius = Math.max(Math.abs(localDecorationBounds.min.x),
+                              Math.abs(localDecorationBounds.max.x));
+  const sideTarget = { flowers:2.8, tree:2.75, bench:3.15, flag:3.0 }[kind] || 2.8;
+  const sideLimit = (typeof building.px === "number" ? 4.4 : LOT/2-.48);
+  const sideSign = decorationSideSign(entry, frontX, frontZ);
+  // Founder house #29's setback creates a deliberate planting pocket between
+  // its garage and entrance. Using that socket keeps pieces out of both.
+  const sideOffset = Number(building.seed) === 29
+    ? .50*Math.abs(entry.root.getWorldScale(new THREE.Vector3()).x)
+    : Math.max(0, Math.min(sideTarget, sideLimit-sideRadius))*sideSign;
+  const sideX = frontZ*sideOffset, sideZ = -frontX*sideOffset;
+  group.position.set(center.x + frontX*frontOffset + sideX, center.y+.04,
+                     center.z + frontZ*frontOffset + sideZ);
+  // The bench's backrest is local +Z, so turn that side toward the house and
+  // leave the seat facing the street. Other decorations keep their front yaw.
+  group.rotation.y = Math.atan2(frontX, frontZ) + (kind === "bench" ? Math.PI : 0);
+  return group;
+}
+
+function frontCurbDistance(building, frontX, frontZ){
+  // Planned winding-road homes are authored 8.5m from the road center; the
+  // road is 6m wide. Older off-grid ring homes use the same curb setback.
+  if (typeof building.px === "number") return 8.5-ROAD/2;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  if (Math.abs(frontX) > Math.abs(frontZ))
+    return (frontX > 0 ? BLOCK_N-ix-.5 : ix+.5)*LOT;
+  return (frontZ > 0 ? iy+.5 : BLOCK_N-iy-.5)*LOT;
+}
+
+function decorationSideSign(entry, frontX, frontZ){
+  const building = entry.building;
+  let sign = Number(building.seed)%2 ? 1 : -1;
+  if (["house", "ringhouse", "lanehouse"].includes(building.type)){
+    const style = Math.abs(Number(building.seed)||0)%SUBURBAN_GARAGE_SIDES.length;
+    sign = -SUBURBAN_GARAGE_SIDES[style];
+  }
+  // Both optimized suburban homes and founder homes retain a door material or
+  // door mesh. Always prioritize the side opposite an off-center entrance;
+  // this keeps wide porch styles such as house 29 from covering their doorway.
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  const positiveSideX = frontZ, positiveSideZ = -frontX;
+  const doorSides = [];
+  entry.root.traverse(obj => {
+    if (!obj.isMesh) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isDoor = /^door(?:\d|[._]|$)/i.test(obj.name || "")
+      || materials.some(material => /^NB_sub_door_/i.test(material?.name || ""));
+    if (!isDoor) return;
+    const doorCenter = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+    doorSides.push((doorCenter.x-center.x)*positiveSideX + (doorCenter.z-center.z)*positiveSideZ);
+  });
+  if (doorSides.length){
+    const doorSide = doorSides.reduce((sum,value)=>sum+value,0)/doorSides.length;
+    if (Math.abs(doorSide) > .3) sign = doorSide > 0 ? -1 : 1;
+  }
+  if (typeof building.px === "number") return sign;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const roadDirs = [];
+  if (ix === 0) roadDirs.push(FACE_DIR.w);
+  if (ix === BLOCK_N-1) roadDirs.push(FACE_DIR.e);
+  if (iy === 0) roadDirs.push(FACE_DIR.s);
+  if (iy === BLOCK_N-1) roadDirs.push(FACE_DIR.n);
+  const secondRoad = roadDirs.find(direction => direction[0]*frontX + direction[1]*frontZ < .5);
+  if (secondRoad){
+    const positiveSideX = frontZ, positiveSideZ = -frontX;
+    // Pick the side pointing away from the corner lot's second curb.
+    sign = positiveSideX*secondRoad[0] + positiveSideZ*secondRoad[1] > 0 ? -1 : 1;
+  }
+  return sign;
+}
+
+function removeYardDecorationCollider(houseId){
+  const owner = `yard-${Number(houseId)}`;
+  for (let i=colliders.length-1; i>=0; i--)
+    if (colliders[i].owner === owner) colliders.splice(i,1);
+}
+
+function addYardDecorationCollider(houseId, decoration){
+  removeYardDecorationCollider(houseId);
+  const trunk = decoration?.userData?.collisionMesh;
+  if (trunk) addTrunkColliderFromMesh(trunk, `yard-tree-${houseId}`, `yard-${Number(houseId)}`);
+}
+
+function refreshYardDecorationColliders(){
+  for (const [houseId, decoration] of yardDecorations)
+    addYardDecorationCollider(houseId, decoration);
+}
+
+function clearYardDecoration(houseId){
+  const old = yardDecorations.get(houseId);
+  if (!old) return;
+  customizationLayer.remove(old);
+  disposeObject(old);
+  yardDecorations.delete(houseId);
+  removeYardDecorationCollider(houseId);
+}
+
+function applyCustomizationToHouse(houseId, value){
+  const entry = houseVisuals.get(Number(houseId));
+  if (!entry) return;
+  const custom = normalizeCustomization(value);
+  ensureHouseMaterialsIsolated(entry);
+  resetHouseColors(entry);
+  for (const material of entry.materials || []){
+    const role = materialRoleFor(entry.building, material);
+    const color = role ? HOME_COLORS[`${role}:${custom[role]}`] : null;
+    if (color && material.color){ material.color.set(color); material.needsUpdate = true; }
+  }
+  clearYardDecoration(Number(houseId));
+  if (custom.yard !== "none"){
+    const decor = makeYardDecoration(custom.yard, entry);
+    customizationLayer.add(decor);
+    yardDecorations.set(Number(houseId), decor);
+    addYardDecorationCollider(houseId, decor);
+  }
+  customizedHouseIds.add(Number(houseId));
+}
+
+function applyAllHomeCustomizations(){
+  for (const houseId of customizedHouseIds){
+    resetHouseColors(houseVisuals.get(houseId));
+    clearYardDecoration(houseId);
+  }
+  customizedHouseIds.clear();
+  for (const [houseId, value] of claimCustomizations){
+    const shown = customizationPreview?.houseId === Number(houseId)
+      ? customizationPreview.value : value;
+    if (shown) applyCustomizationToHouse(houseId, shown);
+  }
+}
+
+function indexHouseVisuals(root, buildings){
+  houseVisuals.clear();
+  const used = new Set();
+  const homes = buildings.filter(building => HOME_MATERIAL_ROLES[building.type]);
+  for (const building of homes){
+    const [x,z] = buildingWorldXZ(building);
+    let best = null, bestDistance = Infinity;
+    for (const child of root.children){
+      if (used.has(child) || !child.name.startsWith(building.type + "_d")) continue;
+      const distance = Math.hypot(child.position.x-x, child.position.z-z);
+      if (distance < bestDistance){ best = child; bestDistance = distance; }
+    }
+    if (best && bestDistance < 1){
+      used.add(best);
+      houseVisuals.set(Number(building.seed), { building, root:best, isolated:false, materials:[] });
+    }
+  }
+  console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} home visuals.`);
+  applyAllHomeCustomizations();
+}
+
+/* Which way does the front door face? Mirrors neighborhood_blender.py's
+   "face the front door toward the nearest road edge of the block" logic
+   (plus the explicit "face" override). When two road edges tie, Blender
+   picks one at random â€” we accept either side rather than guessing wrong. */
+/* NOTE on coordinates: Blender's glTF exporter maps blender (x, y, z) to
+   three.js (x, z, -y) â€” blender NORTH (+y) is three -z. Verified empirically
+   against town.glb (toilet house, blender y=25, sits at three z=-25). All
+   world positions derived from grid math below must negate the y axis. */
+const FACE_DIR = { s: [0, 1], e: [1, 0], n: [0, -1], w: [-1, 0] };  // three.js dirs
+function buildingWorldXZ(b){
+  // day-8+ off-grid buildings (ringhouses around the park) carry exact px/py
+  if (typeof b.px === "number") return [b.px, -b.py];
+  const [x, y] = lotToWorld(b.gx, b.gy);
+  return [x, -y];   // blender y -> three -z (see note above)
+}
+function frontDirsFor(b){
+  // off-grid buildings carry an exact rotation; door faces blender -y at
+  // rot=0, so rotated it faces blender (sin rot, -cos rot) = three (sin, +cos)
+  if (typeof b.rot === "number") return [[Math.sin(b.rot), Math.cos(b.rot)]];
+  if (b.face && FACE_DIR[b.face]) return [FACE_DIR[b.face]];
+  const ix = ((b.gx % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const iy = ((b.gy % BLOCK_N) + BLOCK_N) % BLOCK_N;
+  const bn = BLOCK_N - 1;
+  const dists = { s: iy, n: bn - iy, e: bn - ix, w: ix };
+  const best = Math.min(dists.s, dists.n, dists.e, dists.w);
+  return Object.keys(dists).filter(k => dists[k] === best).map(k => FACE_DIR[k]);
+}
+
+const accountBtn = document.getElementById("accountBtn");
+const claimHomeBtn = document.getElementById("claimHomeBtn");
+const goHomeBtn = document.getElementById("goHomeBtn");
+const customizeHomeBtn = document.getElementById("customizeHomeBtn");
+const claimPrompt = document.getElementById("claimPrompt");
+const claimPromptText = document.getElementById("claimPromptText");
+const authModal = document.getElementById("authModal");
+const authCard = document.getElementById("authCard");
+const toast = document.getElementById("toast");
+
+let toastTimer = null;
+function showToast(msg, ms = 4200){
+  toast.textContent = msg;
+  toast.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.display = "none"; }, ms);
+}
+function modalOpen(){ return authModal.style.display === "flex"; }
+function openModal(){ authModal.style.display = "flex"; renderAuthCard(); }
+function closeModal(){
+  authModal.style.display = "none";
+  confirmingUnclaim = false;
+  customizingHome = false;
+  savingCustomization = false;
+  customizationDraft = null;
+  if (customizationPreview){ customizationPreview = null; applyAllHomeCustomizations(); }
+  authCard.classList.remove("customizer-card");
+}
+authModal.addEventListener("mousedown", e => { if (e.target === authModal) closeModal(); });
+
+/* â”€â”€ data refresh â”€â”€ */
+async function refreshHouses(){
+  const { data, error } = await sb.from("houses").select("id,gx,gy,claimable");
+  if (!error && data) houseRows = new Map(data.map(h => [h.id, h]));
+}
+async function refreshClaims(){
+  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle,customization");
+  if (!error && data){
+    claimedBy = new Map(data.map(r => [r.house_id, r.instagram_handle]));
+    claimCustomizations = new Map(data.map(r => [Number(r.house_id), r.customization]));
+    rebuildNameTags();
+    rebuildClaimSpots();
+    applyAllHomeCustomizations();
+  }
+}
+async function refreshMyStatus(){
+  if (!session){ myProfile = null; myClaim = null; myClaims = []; claimLimit = 1; return; }
+  const { data, error } = await sb.rpc("my_status");
+  if (error) return;
+  const priorHouseId = Number(myClaim?.house_id || 0);
+  myProfile = data?.profile ?? null;
+  myClaims = Array.isArray(data?.claims) ? data.claims : (data?.claim ? [data.claim] : []);
+  claimLimit = Math.max(1, Number(data?.claim_limit || (myProfile?.is_admin ? 2 : 1)));
+  myClaim = myClaims.find(claim => Number(claim.house_id) === priorHouseId) || myClaims[0] || null;
+  // first login after signup: profile row doesn't exist yet â€” create it from
+  // the handle stashed in auth metadata at signup time
+  const metaHandle = session.user?.user_metadata?.instagram_handle;
+  if (!myProfile && metaHandle){
+    const { data: prof } = await sb.rpc("setup_profile", { p_handle: metaHandle });
+    if (prof) myProfile = prof;
+  }
+}
+
+function canClaimAnotherHome(){
+  return !!session && myProfile?.verification_status === "verified" && myClaims.length < claimLimit;
+}
+
+function selectOwnedHome(houseId){
+  const selected = myClaims.find(claim => Number(claim.house_id) === Number(houseId));
+  if (selected) myClaim = selected;
+  return selected || null;
+}
+
+function rebuildClaimSpots(){
+  claimSpots = [];
+  for (const b of worldBuildings){
+    const row = houseRows.get(b.seed);
+    if (!row || !row.claimable || claimedBy.has(b.seed)) continue;
+    const [x, z] = buildingWorldXZ(b);
+    claimSpots.push({ id: b.seed, x, z,
+                      fronts: frontDirsFor(b),
+                      tagH: TAG_HEIGHT[b.type] ?? 8 });
+  }
+}
+
+/* â”€â”€ floating @handle name tags on claimed houses â”€â”€ */
+function makeTagSprite(text){
+  const cv = document.createElement("canvas");
+  cv.width = 512; cv.height = 128;
+  const ctx = cv.getContext("2d");
+  ctx.font = "bold 54px -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const tw = Math.min(ctx.measureText(text).width, 440);
+  const bw = tw + 56, bh = 92, bx = (512 - bw) / 2, by = (128 - bh) / 2, r = 26;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, r);
+  else ctx.rect(bx, by, bw, bh);   // older browsers: square corners, no crash
+  ctx.fillStyle = "rgba(20,30,48,0.82)";
+  ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, 256, 66, 440);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = 4;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  spr.scale.set(7, 1.75, 1);
+  return spr;
+}
+function rebuildNameTags(){
+  nameTags.clear();
+  for (const [id, handle] of claimedBy){
+    const b = worldBuildings.find(bb => bb.seed === id);
+    if (!b) continue;
+    const [x, z] = buildingWorldXZ(b);
+    const spr = makeTagSprite("@" + handle);
+    spr.position.set(x, (TAG_HEIGHT[b.type] ?? 8), z);
+    spr.visible = false;   // shown only when the player is nearby (see animate)
+    nameTags.add(spr);
+  }
+}
+
+/* floating marker over the ONE house you're currently able to claim */
+const targetTag = makeTagSprite(isTouch ? "tap to claim" : "[E] claim this house");
+targetTag.scale.set(6.2, 1.55, 1);
+targetTag.visible = false;
+scene.add(targetTag);
+
+/* â”€â”€ the claim itself â”€â”€ */
+async function attemptClaim(){
+  if (!sb || !canClaimAnotherHome() || !nearestOpen || claiming) return;
+  claiming = true;
+  const houseId = nearestOpen;
+  const { error } = await sb.rpc("claim_house", { p_house_id: houseId });
+  claiming = false;
+  if (error){
+    const m = error.message || "";
+    if (m.includes("house_taken"))            showToast("Someone claimed this house seconds ago â€” pick another!");
+    else if (m.includes("claim_limit_reached") || m.includes("already_have_house"))
+      showToast(claimLimit > 1 ? "Your admin account already has two homes." : "You already have a house in Followville!");
+    else if (m.includes("not_verified"))       showToast("Your Instagram isn't verified yet â€” check your account panel.");
+    else if (m.includes("not_claimable"))      showToast("This building can't be claimed.");
+    else                                       showToast("Couldn't claim: " + m);
+    refreshClaims();
+  } else {
+    await Promise.all([refreshClaims(), refreshMyStatus()]);
+    selectOwnedHome(houseId);
+    updateAccountUI();
+    claimMode = false;
+    showToast("ðŸ  It's yours! Welcome home" + (myProfile ? ", @" + myProfile.instagram_handle : "") + "!");
+  }
+}
+claimPrompt.addEventListener("click", attemptClaim);
+
+/* â”€â”€ Give up the currently selected home. The house id matters for admins,
+   who can own two homes without deleting both at once. â”€â”€ */
+async function attemptUnclaim(){
+  if (!sb || !session || !myClaim || unclaiming) return;
+  const houseId = Number(myClaim.house_id);
+  unclaiming = true;
+  const { error } = await sb.rpc("unclaim_house", { p_house_id:houseId });
+  unclaiming = false;
+  confirmingUnclaim = false;
+  if (error){
+    showToast("Couldn't unclaim: " + (error.message || "try again"));
+  } else {
+    await Promise.all([refreshClaims(), refreshMyStatus()]);
+    updateAccountUI();
+    showToast(`Home #${houseId} is open again${canClaimAnotherHome() ? " â€” you can claim another home." : "."}`);
+  }
+  if (modalOpen()) renderAuthCard();
+}
+
+/* â”€â”€ spawn at your own house â”€â”€ */
+function goHome(){
+  if (!myClaim) return;
+  const b = worldBuildings.find(bb => bb.seed === myClaim.house_id);
+  if (!b) return;
+  const [x, z] = buildingWorldXZ(b);
+  const f = frontDirsFor(b)[0];              // the door side
+  camera.position.set(x + f[0]*12, 1.7, z + f[1]*12);  // out front of the door
+  camera.rotation.order = "YXZ";
+  camera.rotation.y = Math.atan2(f[0], f[1]); // face back toward the house
+  camera.rotation.x = 0;
+}
+
+/* â”€â”€ account button + start-screen routing â”€â”€ */
+function updateAccountUI(){
+  if (!sb){ accountBtn.style.display = "none"; return; }
+  accountBtn.style.display = "block";
+  if (!session)            accountBtn.textContent = "sign in Â· claim a home";
+  else if (!myProfile)     accountBtn.textContent = "finish account setup";
+  else if (myProfile.verification_status === "verified")
+                           accountBtn.textContent = "@" + myProfile.instagram_handle + " âœ“" +
+                             (claimLimit > 1 ? ` Â· ${myClaims.length}/${claimLimit} homes` : "");
+  else                     accountBtn.textContent = "@" + myProfile.instagram_handle + " Â· pending";
+  claimHomeBtn.style.display = canClaimAnotherHome() ? "" : "none";
+  claimHomeBtn.textContent = myClaims.length ? "claim second home" : "claim a home";
+  goHomeBtn.style.display = (session && myClaim) ? "" : "none";
+  customizeHomeBtn.style.display = (session && myClaim) ? "" : "none";
+  if (modalOpen()) renderAuthCard();
+}
+accountBtn.addEventListener("click", openModal);
+
+claimHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (!canClaimAnotherHome()) return;
+  claimMode = true;
+  if (isTouch) beginWalking(); else controls.lock();
+  showToast(isTouch
+    ? "Walk up to the front door of an open house â€” when the claim tag appears over it, tap to claim."
+    : "Walk up to the front door of an open house â€” when the claim tag appears over it, press E.", 7000);
+});
+goHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  goHome();
+  if (isTouch) beginWalking(); else controls.lock();
+});
+customizeHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  openHomeCustomizer();
+});
+
+/* â”€â”€ auth modal panels â”€â”€ */
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch])); }
+
+function customOptionMarkup(key, selected){
+  if (key === "yard"){
+    return HOME_OPTIONS.yard.map(([id, label, icon]) => `
+      <button type="button" class="custom-option yard-option ${id === selected ? "selected" : ""}"
+        data-custom-key="yard" data-custom-value="${id}" aria-pressed="${id === selected}">
+        ${icon}<small>${label}</small></button>`).join("");
+  }
+  return HOME_OPTIONS[key].map(([id, label, color]) => `
+    <button type="button" class="custom-option ${id === selected ? "selected" : ""}"
+      data-custom-key="${key}" data-custom-value="${id}" aria-pressed="${id === selected}">
+      <span class="custom-swatch ${id === "original" ? "original" : ""}"
+        ${color ? `style="background:${color}"` : ""}></span>${label}</button>`).join("");
+}
+
+function previewCustomizationDraft(){
+  if (!myClaim || !customizationDraft) return;
+  customizationPreview = { houseId:Number(myClaim.house_id), value:{ ...customizationDraft } };
+  applyAllHomeCustomizations();
+}
+
+function openHomeCustomizer(){
+  if (!myClaim){ showToast("Claim a home before customizing it."); return; }
+  customizingHome = true;
+  customizationDraft = normalizeCustomization(myClaim.customization);
+  previewCustomizationDraft();
+  authModal.style.display = "flex";
+  renderAuthCard();
+}
+
+async function saveHomeCustomization(){
+  if (!sb || !session || !myClaim || !customizationDraft || savingCustomization) return;
+  savingCustomization = true;
+  renderHomeCustomizer();
+  const payload = normalizeCustomization(customizationDraft);
+  const { data, error } = await sb.rpc("update_my_customization", {
+    p_house_id:Number(myClaim.house_id), p_customization:payload
+  });
+  savingCustomization = false;
+  if (error){
+    renderHomeCustomizer();
+    setErr(error.message?.includes("bad_customization")
+      ? "That combination wasn't accepted. Try choosing the options again."
+      : "Couldn't save your home yet. " + (error.message || "Please try again."));
+    return;
+  }
+  if (data) myClaim = data;
+  customizationPreview = null;
+  await Promise.all([refreshClaims(), refreshMyStatus()]);
+  customizingHome = false;
+  customizationDraft = null;
+  updateAccountUI();
+  if (modalOpen()) renderAuthCard();
+  showToast("Your home was updated - everyone in town can see it now!");
+}
+
+function renderHomeCustomizer(){
+  if (!myClaim) return;
+  authCard.classList.add("customizer-card");
+  customizationDraft = normalizeCustomization(customizationDraft || myClaim.customization);
+  authCard.innerHTML = `
+    <div class="customizer-head">
+      <div class="customizer-home-icon">&#127969;</div>
+      <div><h2>Customize home #${Number(myClaim.house_id)}</h2>
+      <p class="muted">Make it yours. Your saved colors and one yard piece appear for every visitor.</p></div>
+    </div>
+    <div class="custom-section"><div class="custom-section-title">Exterior <span>wall or main body</span></div>
+      <div class="custom-options">${customOptionMarkup("wall", customizationDraft.wall)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Roof <span>roof or landmark accent</span></div>
+      <div class="custom-options">${customOptionMarkup("roof", customizationDraft.roof)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Door <span>front-door color</span></div>
+      <div class="custom-options">${customOptionMarkup("door", customizationDraft.door)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Yard piece <span>choose one</span></div>
+      <div class="custom-options yard-options">${customOptionMarkup("yard", customizationDraft.yard)}</div></div>
+    <div class="customizer-actions">
+      <button class="secondary" id="doCancelCustomize" ${savingCustomization ? "disabled" : ""}>cancel</button>
+      <button class="primary" id="doSaveCustomize" ${savingCustomization ? "disabled" : ""}>
+        ${savingCustomization ? "saving..." : "save my home"}</button>
+    </div>
+    <div class="err" id="authErr"></div>
+    <button class="linkish" id="doResetCustomize" ${savingCustomization ? "disabled" : ""}>reset to original</button>`;
+  authCard.querySelectorAll("[data-custom-key]").forEach(button => {
+    button.disabled = savingCustomization;
+    button.onclick = () => {
+      customizationDraft = { ...customizationDraft, [button.dataset.customKey]:button.dataset.customValue };
+      previewCustomizationDraft();
+      renderHomeCustomizer();
+    };
+  });
+  document.getElementById("doSaveCustomize").onclick = saveHomeCustomization;
+  document.getElementById("doCancelCustomize").onclick = () => {
+    customizationPreview = null;
+    applyAllHomeCustomizations();
+    customizingHome = false;
+    customizationDraft = null;
+    renderAuthCard();
+  };
+  document.getElementById("doResetCustomize").onclick = () => {
+    customizationDraft = { ...HOME_DEFAULTS };
+    previewCustomizationDraft();
+    renderHomeCustomizer();
+  };
+}
+
+function renderAuthCard(){
+  if (!sb) return;
+  authCard.classList.toggle("customizer-card", customizingHome && !!myClaim);
+  if (!session){
+    authCard.innerHTML = `
+      <h2>Claim your home</h2>
+      <p class="muted">Every follower owns a house in Followville. Sign up, verify
+      your Instagram, then walk up to any open house and make it yours.</p>
+      <div id="authForms"></div>`;
+    renderAuthForms("signup");
+    return;
+  }
+  if (!myProfile){
+    authCard.innerHTML = `
+      <h2>One last step</h2>
+      <p class="muted">Which Instagram account is yours? You'll verify it next,
+      so it has to be a handle you control.</p>
+      <label>instagram handle</label>
+      <input id="fHandle" placeholder="@yourhandle" autocapitalize="none" />
+      <button class="primary" id="doSetup">continue</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">log out</button>`;
+    document.getElementById("doSetup").onclick = async () => {
+      const h = document.getElementById("fHandle").value;
+      const { data, error } = await sb.rpc("setup_profile", { p_handle: h });
+      if (error) setErr(error.message);
+      else { myProfile = data; updateAccountUI(); renderAuthCard(); }
+    };
+    wireSignout();
+    return;
+  }
+  if (myProfile.verification_status !== "verified"){
+    const rejected = myProfile.verification_status === "rejected";
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)}
+        <span class="badge pending">${rejected ? "rejected" : "pending"}</span></h2>
+      ${rejected
+        ? `<p class="muted">This account's verification was rejected. If you think
+           that's a mistake, DM @followville on Instagram.</p>`
+        : `<p class="muted">Prove this handle is yours â€” send this code as a DM to
+           <b>@followville</b> on Instagram (or put it in your bio for a day).
+           Once we see it, you're verified and can claim a house.</p>
+           <div class="code">${esc(myProfile.verification_code)}</div>
+           <p class="muted" style="text-align:center;">verification is checked by a human
+           for now, so it can take a little while</p>
+           <button class="primary" id="doRecheck">check again</button>`}
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">log out</button>`;
+    const rc = document.getElementById("doRecheck");
+    if (rc) rc.onclick = async () => {
+      rc.disabled = true;
+      await refreshMyStatus(); updateAccountUI();
+      rc.disabled = false;
+      if (myProfile?.verification_status !== "verified") setErr("not verified yet â€” hang tight!");
+      else renderAuthCard();
+    };
+    wireSignout();
+    return;
+  }
+  if (!myClaims.length){
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+      <p class="muted">You're verified! Close this, hit <b>claim a home</b>, and walk
+      up to any open house ${isTouch ? "â€” a claim button appears when you're close." : "and press <b>E</b>."}</p>
+      <button class="primary" id="doStartClaim">start claiming</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doSignout">log out</button>`;
+    document.getElementById("doStartClaim").onclick = () => { closeModal(); claimHomeBtn.click(); };
+    wireSignout();
+    return;
+  }
+  if (customizingHome){ renderHomeCustomizer(); return; }
+  if (confirmingUnclaim){
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+      <p class="muted">Give up home #${Number(myClaim.house_id)}? It goes back up for anyone to claim, including
+      you â€” but if you want it back, someone else might get there first.</p>
+      <button class="primary" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
+        ${unclaiming ? "unclaimingâ€¦" : `yes, unclaim home #${Number(myClaim.house_id)}`}</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doCancelUnclaim">never mind</button>`;
+    document.getElementById("doConfirmUnclaim").onclick = attemptUnclaim;
+    document.getElementById("doCancelUnclaim").onclick = () => { confirmingUnclaim = false; renderAuthCard(); };
+    return;
+  }
+  const homesMarkup = myClaims.map(claim => {
+    const houseId = Number(claim.house_id);
+    const active = houseId === Number(myClaim?.house_id);
+    return `<div class="owned-home-card ${active ? "active" : ""}" data-owned-home="${houseId}">
+      <div class="owned-home-title">Home #${houseId}${active ? "<span>selected</span>" : ""}</div>
+      <div class="owned-home-actions">
+        <button class="home-action" data-home-action="visit" data-house-id="${houseId}">go home</button>
+        <button class="home-action" data-home-action="customize" data-house-id="${houseId}">customize</button>
+        <button class="home-action danger" data-home-action="unclaim" data-house-id="${houseId}">unclaim this home</button>
+      </div>
+    </div>`;
+  }).join("");
+  authCard.innerHTML = `
+    <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+    <p class="owned-home-summary">You own ${myClaims.length} of ${claimLimit} allowed ${claimLimit === 1 ? "home" : "homes"}. Select either home below.</p>
+    ${canClaimAnotherHome() ? '<button class="primary" id="doStartClaim">claim second home</button>' : ""}
+    <div class="owned-home-list">${homesMarkup}</div>
+    <div class="err" id="authErr"></div>
+    <button class="linkish" id="doSignout">log out</button>`;
+  const startClaim = document.getElementById("doStartClaim");
+  if (startClaim) startClaim.onclick = () => { closeModal(); claimHomeBtn.click(); };
+  authCard.querySelectorAll("[data-home-action]").forEach(button => {
+    button.onclick = () => {
+      if (!selectOwnedHome(button.dataset.houseId)) return;
+      if (button.dataset.homeAction === "visit") { closeModal(); goHomeBtn.click(); }
+      else if (button.dataset.homeAction === "customize") openHomeCustomizer();
+      else { confirmingUnclaim = true; renderAuthCard(); }
+    };
+  });
+  wireSignout();
+}
+
+function setErr(msg){
+  const el = document.getElementById("authErr");
+  if (el) el.textContent = (msg || "").replace(/^.*?(handle_taken|bad_handle|already_verified).*$/,
+    (m, code) => ({ handle_taken: "that handle is already registered",
+                    bad_handle: "that doesn't look like a valid instagram handle",
+                    already_verified: "this account is already verified" }[code]));
+}
+function wireSignout(){
+  const el = document.getElementById("doSignout");
+  if (el) el.onclick = async () => {
+    await endLoggedPlayerSession();
+    await sb.auth.signOut();
+    closeModal();
+  };
+}
+
+function renderAuthForms(mode){
+  const wrap = document.getElementById("authForms");
+  if (!wrap) return;
+  if (mode === "signup"){
+    wrap.innerHTML = `
+      <label>email</label><input id="fEmail" type="email" autocomplete="email" />
+      <label>password</label><input id="fPass" type="password" autocomplete="new-password" />
+      <label>instagram handle</label><input id="fHandle" placeholder="@yourhandle" autocapitalize="none" />
+      <button class="primary" id="doSignup">create account</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="swap">already have an account? sign in</button>`;
+    document.getElementById("doSignup").onclick = async () => {
+      const email = document.getElementById("fEmail").value.trim();
+      const pass = document.getElementById("fPass").value;
+      const handle = document.getElementById("fHandle").value.trim();
+      if (!email || !pass || !handle) return setErr("fill in all three fields");
+      const btn = document.getElementById("doSignup"); btn.disabled = true;
+      const { data, error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { instagram_handle: handle.replace(/^@/, "").toLowerCase() } }
+      });
+      btn.disabled = false;
+      if (error) return setErr(error.message);
+      if (!data.session){
+        wrap.innerHTML = `<p class="muted" style="text-align:center;">Almost there â€” click the
+          confirmation link we just emailed to <b>${esc(email)}</b>, then come back and sign in.</p>
+          <button class="linkish" id="swap">back to sign in</button>`;
+        document.getElementById("swap").onclick = () => renderAuthForms("signin");
+        return;
+      }
+      // session is live; onAuthStateChange picks it up and setup_profile runs
+    };
+    document.getElementById("swap").onclick = () => renderAuthForms("signin");
+  } else {
+    wrap.innerHTML = `
+      <label>email</label><input id="fEmail" type="email" autocomplete="email" />
+      <label>password</label><input id="fPass" type="password" autocomplete="current-password" />
+      <button class="primary" id="doSignin">sign in</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="swap">new here? create an account</button>`;
+    document.getElementById("doSignin").onclick = async () => {
+      const btn = document.getElementById("doSignin"); btn.disabled = true;
+      const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById("fEmail").value.trim(),
+        password: document.getElementById("fPass").value
+      });
+      btn.disabled = false;
+      if (error) setErr(error.message);
+    };
+    document.getElementById("swap").onclick = () => renderAuthForms("signup");
+  }
+}
+
+/* â”€â”€ lightweight multiplayer, presence and town chat â”€â”€ */
+const MULTIPLAYER_TOPIC = "followville-town-v1";
+let multiplayerChannel = null, multiplayerSubscribed = false;
+let multiplayerSessionId = null, multiplayerHeartbeat = null;
+let multiplayerGeneration = 0, lastPositionBroadcast = 0;
+const multiplayerPlayers = new Map();
+const multiplayerPresenceIds = new Set();
+const multiplayerTrustedHandles = new Map();
+const seenChatIds = new Set();
+const multiplayerLayer = new THREE.Group();
+multiplayerLayer.name = "WEB_multiplayer_players";
+scene.add(multiplayerLayer);
+const multiplayerDirection = new THREE.Vector3();
+
+function getMultiplayerClientId(){
+  const makeId = () => crypto.randomUUID ? crypto.randomUUID() :
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+      return (c === "x" ? r : (r & 3) | 8).toString(16);
+    });
+  try {
+    let id = sessionStorage.getItem("followville_multiplayer_client");
+    if (!id){
+      id = makeId();
+      sessionStorage.setItem("followville_multiplayer_client", id);
+    }
+    return id;
+  } catch (_) {
+    return makeId();
+  }
+}
+const multiplayerClientId = getMultiplayerClientId();
+
+function cleanPresence(raw){
+  if (!raw || typeof raw.client_id !== "string") return null;
+  const x = Number(raw.x), z = Number(raw.z), yaw = Number(raw.yaw || 0);
+  if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 5000 || Math.abs(z) > 5000) return null;
+  const trusted = multiplayerTrustedHandles.get(raw.client_id);
+  const loggedIn = typeof trusted === "string";
+  const handle = loggedIn ? trusted : "visitor-" + raw.client_id.slice(0, 4);
+  return { client_id: raw.client_id, x, z, yaw, logged_in: loggedIn, handle };
+}
+
+function playerColor(id){
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  return new THREE.Color().setHSL(Math.abs(hash % 360) / 360, .52, .58);
+}
+
+function disposeSprite(sprite){
+  if (!sprite) return;
+  sprite.material?.map?.dispose();
+  sprite.material?.dispose();
+}
+
+function setPlayerLabel(player, presence){
+  if (player.label) {
+    player.group.remove(player.label);
+    disposeSprite(player.label);
+  }
+  const label = makeTagSprite(presence.logged_in ? "@" + presence.handle : presence.handle);
+  label.scale.set(4.8, 1.2, 1);
+  label.position.y = 2.38;
+  player.group.add(label);
+  player.label = label;
+  player.handle = presence.handle;
+  player.logged_in = presence.logged_in;
+}
+
+function createRemotePlayer(presence){
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({
+    color:playerColor(presence.client_id), roughness:.74, metalness:0
+  });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.34, .42, 1.22, 10), material);
+  body.position.y = .72;
+  body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 7), material);
+  head.position.y = 1.58;
+  head.castShadow = true;
+  const facePanelMaterial = new THREE.MeshBasicMaterial({ color:0xffedb0, side:THREE.DoubleSide });
+  const facePanel = new THREE.Mesh(new THREE.CircleGeometry(.235, 18), facePanelMaterial);
+  facePanel.position.set(0, 1.58, .318);
+  const faceMaterial = new THREE.MeshBasicMaterial({ color:0x1c2b45 });
+  const eyeGeometry = new THREE.SphereGeometry(.047, 8, 6);
+  const leftEye = new THREE.Mesh(eyeGeometry, faceMaterial);
+  leftEye.position.set(-.09, 1.65, .328);
+  const rightEye = new THREE.Mesh(eyeGeometry.clone(), faceMaterial);
+  rightEye.position.set(.09, 1.65, .328);
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(.11, .025, 7, 18, Math.PI), faceMaterial
+  );
+  smile.position.set(0, 1.54, .331);
+  smile.rotation.z = Math.PI;
+  group.add(body, head, facePanel, leftEye, rightEye, smile);
+  group.position.set(presence.x, 0, presence.z);
+  multiplayerLayer.add(group);
+  const player = {
+    group, material, facePanelMaterial, faceMaterial, label:null, bubble:null, bubbleTimer:null,
+    target:new THREE.Vector3(presence.x, 0, presence.z),
+    targetYaw:presence.yaw, handle:"", logged_in:false
+  };
+  setPlayerLabel(player, presence);
+  multiplayerPlayers.set(presence.client_id, player);
+  return player;
+}
+
+function upsertRemotePlayer(raw){
+  const presence = cleanPresence(raw);
+  if (!presence || presence.client_id === multiplayerClientId) return;
+  let player = multiplayerPlayers.get(presence.client_id);
+  if (!player) player = createRemotePlayer(presence);
+  if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
+    setPlayerLabel(player, presence);
+  player.target.set(presence.x, 0, presence.z);
+  player.targetYaw = presence.yaw;
+}
+
+function removeRemotePlayer(clientId){
+  const player = multiplayerPlayers.get(clientId);
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  disposeSprite(player.label);
+  disposeSprite(player.bubble);
+  player.group.traverse(obj => obj.geometry?.dispose?.());
+  player.material.dispose();
+  player.facePanelMaterial.dispose();
+  player.faceMaterial.dispose();
+  multiplayerLayer.remove(player.group);
+  multiplayerPlayers.delete(clientId);
+}
+
+async function refreshTrustedPlayerHandles(){
+  if (!sb) return;
+  const cutoff = new Date(Date.now() - 90000).toISOString();
+  const { data, error } = await sb.from("active_player_identities")
+    .select("client_id,instagram_handle,last_seen_at")
+    .gt("last_seen_at", cutoff);
+  if (error || !Array.isArray(data)) return;
+  multiplayerTrustedHandles.clear();
+  for (const row of data){
+    const id = String(row.client_id || "");
+    const handle = String(row.instagram_handle || "").toLowerCase();
+    if (id && /^[a-z0-9._]{1,30}$/.test(handle))
+      multiplayerTrustedHandles.set(id, handle);
+  }
+}
+
+async function syncMultiplayerPresence(){
+  if (!multiplayerChannel) return;
+  await refreshTrustedPlayerHandles();
+  const state = multiplayerChannel.presenceState();
+  const active = new Set();
+  for (const entries of Object.values(state)){
+    for (const raw of (Array.isArray(entries) ? entries : [entries])){
+      const presence = cleanPresence(raw);
+      if (!presence) continue;
+      active.add(presence.client_id);
+      upsertRemotePlayer(presence);
+    }
+  }
+  multiplayerPresenceIds.clear();
+  for (const id of active) multiplayerPresenceIds.add(id);
+  for (const id of Array.from(multiplayerPlayers.keys()))
+    if (!active.has(id)) removeRemotePlayer(id);
+  onlineCount.textContent = active.size + (active.size === 1 ? " player online" : " players online");
+}
+
+function showPlayerChatBubble(row){
+  const player = multiplayerPlayers.get(String(row.client_id || ""));
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  if (player.bubble){
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+  }
+  const body = String(row.body || "");
+  const shortBody = body.length > 58 ? body.slice(0, 55) + "..." : body;
+  player.bubble = makeTagSprite(shortBody);
+  player.bubble.scale.set(6.2, 1.55, 1);
+  player.bubble.position.y = 3.72;
+  player.group.add(player.bubble);
+  player.bubbleTimer = setTimeout(() => {
+    if (!player.bubble) return;
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+    player.bubble = null;
+  }, 6500);
+}
+
+function addChatMessage(row, showBubble){
+  if (!row || row.id == null || seenChatIds.has(String(row.id))) return;
+  seenChatIds.add(String(row.id));
+  const item = document.createElement("div");
+  item.className = "chat-message";
+  const who = document.createElement("span");
+  who.className = "chat-who";
+  who.textContent = "@" + String(row.sender_handle || "unknown");
+  const body = document.createElement("span");
+  body.textContent = String(row.body || "");
+  const time = document.createElement("span");
+  time.className = "chat-time";
+  const parsed = new Date(row.created_at);
+  time.textContent = Number.isNaN(parsed.getTime()) ? "" :
+    parsed.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
+  item.append(who, body, time);
+  chatMessages.appendChild(item);
+  while (chatMessages.children.length > 80) chatMessages.firstElementChild.remove();
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (showBubble) showPlayerChatBubble(row);
+}
+
+async function loadChatHistory(){
+  if (!sb) return;
+  const { data, error } = await sb.from("chat_messages")
+    .select("id,sender_handle,client_id,body,created_at")
+    .order("created_at", { ascending:false }).limit(50);
+  if (!error && data) for (const row of data.reverse()) addChatMessage(row, false);
+}
+
+function updateChatAuthState(){
+  const canChat = !!(session && myProfile);
+  chatInput.disabled = !canChat;
+  chatSend.disabled = !canChat;
+  chatInput.placeholder = canChat ? "Say something..." : "Sign in to chat";
+  chatNote.textContent = canChat
+    ? "Enter sends and returns to the game Â· messages are saved"
+    : "You can see chat now. Sign in to send messages.";
+}
+
+async function sendTownChat(){
+  if (!sb || !session || !myProfile){
+    chatNote.textContent = "Sign in before sending a message.";
+    openModal();
+    return;
+  }
+  const body = chatInput.value.trim();
+  if (!body) return;
+  chatSend.disabled = true;
+  chatInput.value = "";
+  closeChat();
+  const { data, error } = await sb.rpc("send_chat_message", {
+    p_body:body, p_client_id:multiplayerClientId
+  });
+  chatSend.disabled = false;
+  if (error){
+    chatInput.value = body;
+    openChat();
+    chatNote.textContent = (error.message || "").includes("chat_rate_limited")
+      ? "Slow down â€” wait a second between messages."
+      : "Message failed. Please try again.";
+    return;
+  }
+  chatInput.value = "";
+  chatNote.textContent = "Enter sends and returns to the game Â· messages are saved";
+  addChatMessage(data, true);
+}
+
+async function startLoggedPlayerSession(){
+  if (!sb || !session || !myProfile) return;
+  const { data, error } = await sb.rpc("start_player_session", { p_client_id:multiplayerClientId });
+  if (error || !data){
+    console.warn("multiplayer session log did not start", error);
+    return;
+  }
+  multiplayerSessionId = data;
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = setInterval(async () => {
+    if (!multiplayerSessionId || !session) return;
+    const { error: heartbeatError } = await sb.rpc("heartbeat_player_session", {
+      p_session_id:multiplayerSessionId
+    });
+    if (heartbeatError) console.warn("multiplayer heartbeat failed", heartbeatError);
+  }, 30000);
+}
+
+async function endLoggedPlayerSession(){
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = null;
+  const id = multiplayerSessionId;
+  multiplayerSessionId = null;
+  if (id && sb && session) await sb.rpc("end_player_session", { p_session_id:id });
+}
+
+async function shutdownMultiplayer(endSession){
+  if (endSession) await endLoggedPlayerSession();
+  else {
+    clearInterval(multiplayerHeartbeat);
+    multiplayerHeartbeat = null;
+    multiplayerSessionId = null;
+  }
+  multiplayerSubscribed = false;
+  if (multiplayerChannel && sb) await sb.removeChannel(multiplayerChannel);
+  multiplayerChannel = null;
+  multiplayerPresenceIds.clear();
+  multiplayerTrustedHandles.clear();
+  for (const id of Array.from(multiplayerPlayers.keys())) removeRemotePlayer(id);
+}
+
+async function restartMultiplayer(){
+  const generation = ++multiplayerGeneration;
+  await shutdownMultiplayer(true);
+  if (!sb || previewMode || generation !== multiplayerGeneration) return;
+  updateChatAuthState();
+  await loadChatHistory();
+  if (generation !== multiplayerGeneration) return;
+  await startLoggedPlayerSession();
+  await refreshTrustedPlayerHandles();
+  if (generation !== multiplayerGeneration) return;
+
+  multiplayerChannel = sb.channel(MULTIPLAYER_TOPIC, {
+    config:{
+      presence:{ key:multiplayerClientId },
+      broadcast:{ self:false, ack:false }
+    }
+  });
+  multiplayerChannel
+    .on("presence", { event:"sync" }, syncMultiplayerPresence)
+    .on("broadcast", { event:"player_move" }, ({ payload }) => {
+      if (!payload || !multiplayerPresenceIds.has(payload.client_id)) return;
+      const current = multiplayerPlayers.get(payload.client_id);
+      upsertRemotePlayer({
+        client_id:payload.client_id, x:payload.x, z:payload.z, yaw:payload.yaw,
+        logged_in:current?.logged_in, handle:current?.handle
+      });
+    })
+    .on("postgres_changes", {
+      event:"INSERT", schema:"public", table:"chat_messages"
+    }, payload => addChatMessage(payload.new, true))
+    .subscribe(async status => {
+      if (status !== "SUBSCRIBED" || generation !== multiplayerGeneration) return;
+      multiplayerSubscribed = true;
+      camera.getWorldDirection(multiplayerDirection);
+      await multiplayerChannel.track({
+        client_id:multiplayerClientId,
+        handle:myProfile?.instagram_handle || "",
+        logged_in:!!myProfile,
+        x:camera.position.x, z:camera.position.z,
+        yaw:Math.atan2(multiplayerDirection.x, multiplayerDirection.z),
+        joined_at:new Date().toISOString()
+      });
+      syncMultiplayerPresence();
+    });
+}
+
+function updateMultiplayer(dt){
+  for (const player of multiplayerPlayers.values()){
+    player.group.position.lerp(player.target, Math.min(1, dt * 9));
+    let delta = player.targetYaw - player.group.rotation.y;
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+    player.group.rotation.y += delta * Math.min(1, dt * 9);
+  }
+  const now = performance.now();
+  const interval = gameRunning ? 120 : 1500;
+  if (!multiplayerSubscribed || !multiplayerChannel || now - lastPositionBroadcast < interval) return;
+  lastPositionBroadcast = now;
+  camera.getWorldDirection(multiplayerDirection);
+  multiplayerChannel.send({
+    type:"broadcast", event:"player_move",
+    payload:{
+      client_id:multiplayerClientId,
+      x:Number(camera.position.x.toFixed(3)),
+      z:Number(camera.position.z.toFixed(3)),
+      yaw:Number(Math.atan2(multiplayerDirection.x, multiplayerDirection.z).toFixed(4))
+    }
+  });
+}
+
+window.addEventListener("pagehide", () => {
+  if (!multiplayerSessionId || !session?.access_token) return;
+  fetch(SUPABASE_URL + "/rest/v1/rpc/end_player_session", {
+    method:"POST", keepalive:true,
+    headers:{
+      apikey:SUPABASE_ANON_KEY,
+      Authorization:"Bearer " + session.access_token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ p_session_id:multiplayerSessionId })
+  }).catch(() => {});
+});
+
+/* â”€â”€ boot â”€â”€ */
+async function initSupabase(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    onlineCount.textContent = "multiplayer unavailable";
+    return;
+  }
+  try {
+    const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    sb = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e){
+    console.warn("supabase-js failed to load â€” claiming disabled this visit", e);
+    sb = null;
+    onlineCount.textContent = "multiplayer unavailable";
+    return;
+  }
+  const { data } = await sb.auth.getSession();
+  session = data?.session ?? null;
+  sb.auth.onAuthStateChange((_evt, s) => {
+    const priorUser = session?.user?.id ?? null;
+    const nextUser = s?.user?.id ?? null;
+    session = s;
+    setTimeout(async () => {
+      await refreshMyStatus();
+      updateAccountUI();
+      updateChatAuthState();
+      if (priorUser !== nextUser) await restartMultiplayer();
+    }, 0);
+  });
+  await Promise.all([refreshHouses(), refreshClaims(), refreshMyStatus()]);
+  updateAccountUI();
+  updateChatAuthState();
+  // live updates: any claim anywhere refreshes every visitor's map instantly
+  sb.channel("claims-live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => {
+      refreshClaims();
+      refreshMyStatus().then(updateAccountUI);
+    })
+    .subscribe();
+  await restartMultiplayer();
+  if (location.hash === "#home" && myClaim){
+    goHome();               // arriving from the landing page's "Go to my home"
+  } else if (location.hash === "#claim"){
+    if (canClaimAnotherHome()) openModal();
+  }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• end accounts + claiming â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LOAD + RUN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+// Real path: town.glb, exported straight out of Blender by export_web.py â€”
+// the exact same geometry as your renders, no hand-ported JS shapes.
+// Fallback path (only used if town.glb hasn't been exported yet): rebuild an
+// approximation procedurally from world_state.json using the JS builders above.
+
+function loadFromGLB(buildings){
+  const loader = new GLTFLoader();
+  return loader.loadAsync("town.glb").then(gltf => {
+    const root = gltf.scene;
+    loadedTownRoot = root;
+    scene.add(root);
+    indexHouseVisuals(root, buildings);
+    buildGLBColliders(root);
+
+    // Build the "real town" bounding box from reasonably-sized top-level
+    // objects â€” Blender's export includes a 4000x4000 ground plane as part of
+    // the same scene, and letting that into the framing math would put the
+    // spawn point in the middle of a giant empty field instead of the town.
+    const box = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    const full = new THREE.Box3();
+    let sawAny = false;
+    for (const child of root.children){
+      box.setFromObject(child);
+      if (box.isEmpty()) continue;
+      box.getSize(size);
+      box.getCenter(center);
+      const radius = Math.max(size.x, size.z) * 0.5;
+      if (radius > 200) continue; // the giant ground/road-spanning plane(s) â€” ignore for framing
+      full.union(box);
+      sawAny = true;
+    }
+    if (!sawAny) full.setFromObject(root); // fallback if every object got filtered out
+
+    // Spawn point: don't derive this from the GLB's bounding box â€” that box
+    // also contains the ring of scattered trees/bushes/rocks just outside the
+    // town blocks, which put the player behind a wall of foliage instead of
+    // on a road. Use the same grid math the town is laid out from instead,
+    // so the spawn is always exactly on a real road, at the town's south edge.
+    const [minBx, , minBy] = blockExtent(buildings);
+    const spawnX = 0; // the bx=0 road always exists (block_extent guarantees -1..1)
+    const spawnZ = minBy*PITCH - ROAD - 15;
+    camera.position.set(spawnX, 1.7, spawnZ);
+
+    const fullSize = new THREE.Vector3(), fullCenter = new THREE.Vector3();
+    full.getSize(fullSize); full.getCenter(fullCenter);
+    const span = Math.max(fullSize.x, fullSize.z) / 2 + 20;
+    sun.shadow.camera.left = -span; sun.shadow.camera.right = span;
+    sun.shadow.camera.top = span; sun.shadow.camera.bottom = -span;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 400;
+    sun.target.position.set(fullCenter.x, 0, fullCenter.z);
+    sun.position.set(fullCenter.x + 70, 110, fullCenter.z - 40);
+    sun.shadow.camera.updateProjectionMatrix();
+
+    return true;
+  });
+}
+
+fetch("world_state.json")
+  .then(r => r.json())
+  .then(state => {
+    const buildings = state.buildings || [];
+    worldBuildings = buildings;
+    initSupabase();   // accounts + claiming; no-op until configured
+    loadFromGLB(buildings)
+      .catch(err => {
+        console.warn("town.glb not found or failed to load â€” falling back to the JS-built approximation.", err);
+        addRoads(buildings);
+        addBuildings(buildings);
+        addNature(buildings);
+      })
+      .then(() => {
+        const tunedMaterials = new Set();
+        scene.traverse(obj => {
+          if (obj.isMesh){
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+            const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+            for (const material of materials){
+              if (material && !tunedMaterials.has(material)){
+                tunedMaterials.add(material);
+                if (!classicGraphics) tuneTownMaterial(material);
+              }
+            }
+          }
+        });
+        if (!classicGraphics){
+          document.body.classList.add("enhanced-graphics");
+          if (loadedTownRoot) addBuildingDetails(loadedTownRoot);
+          addTownFinish(buildings);
+          addTownAtmosphere();
+        }
+        document.getElementById("startSub").textContent =
+          `day ${state.day ?? "?"} Â· population ${state.pop ?? buildings.length}`;
+        hudSub.textContent = `day ${state.day ?? "?"} Â· population ${state.pop ?? buildings.length} Â· ${buildings.length} buildings`;
+        loadingEl.style.display = "none";
+        startScreen.style.display = "flex";
+        hud.style.display = "block";
+        if (previewMode) frameFounderPreview();
+        animate();
+      });
+  })
+  .catch(err => {
+    loadingEl.textContent = "couldn't load world_state.json â€” make sure it's next to this file.";
+    console.error(err);
+  });
+
+const clock = new THREE.Clock();
+const _camDir = new THREE.Vector3();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+
+  if (gameRunning){
+    const speed = (move.run ? 11 : 5.5) * dt;
+    const dir = new THREE.Vector3(move.x, 0, move.z);
+    if (dir.lengthSq() > 1) dir.normalize();
+    if (dir.lengthSq() > 0){
+      controls.moveForward(dir.z * speed);
+      controls.moveRight(dir.x * speed);
+    }
+    // Shape-aware push-out against building/car footprints and tree trunks.
+    const p = camera.position;
+    for (const col of colliders) resolvePlayerCollision(p, col);
+    camera.position.y = 1.7;
+
+    // name tags on claimed houses: only visible when you're near that house
+    for (const spr of nameTags.children){
+      const dxT = p.x - spr.position.x, dzT = p.z - spr.position.z;
+      spr.visible = (dxT*dxT + dzT*dzT) < 1225;   // within ~35 units
+    }
+
+    // claim targeting: must be CLOSE to the house (right at its hitbox), on
+    // its FRONT/door side, and LOOKING at it â€” then exactly one house is the
+    // target, marked by a floating tag right above it.
+    let target = null;
+    if (sb && canClaimAnotherHome() && claimSpots.length){
+      camera.getWorldDirection(_camDir);
+      let bestLook = 0.5;   // must be within ~60Â° of screen center
+      for (const s of claimSpots){
+        const dx = p.x - s.x, dz = p.z - s.z;
+        const d2 = dx*dx + dz*dz;
+        if (d2 > 90 || d2 < 0.01) continue;        // within ~9.5 units of center
+        const d = Math.sqrt(d2), ux = dx/d, uz = dz/d;
+        let onFront = false;
+        for (const f of s.fronts){
+          if (ux*f[0] + uz*f[1] > 0.45){ onFront = true; break; }  // door side Â±63Â°
+        }
+        if (!onFront) continue;
+        const look = _camDir.x*(-ux) + _camDir.z*(-uz);            // facing the house?
+        if (look > bestLook){ bestLook = look; target = s; }
+      }
+    }
+    if (target){
+      if (nearestOpen !== target.id){
+        nearestOpen = target.id;
+        claimPrompt.style.display = "block";
+        if (isTouch){
+          claimPrompt.querySelector(".key").style.display = "none";
+          claimPromptText.textContent = "tap to claim this house";
+        }
+      }
+      targetTag.position.set(target.x, target.tagH, target.z);
+      targetTag.visible = true;
+    } else if (nearestOpen){
+      nearestOpen = null;
+      claimPrompt.style.display = "none";
+      targetTag.visible = false;
+    }
+  }
+
+  updateMultiplayer(dt);
+
+  renderer.render(scene, camera);
+}
+

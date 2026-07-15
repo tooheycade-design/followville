@@ -1,7 +1,8 @@
 # Followville — Claimable Homes: setup + admin guide
 
-Real followers create an account on the site, verify their Instagram handle, and
-claim exactly one house in the town. Built 2026-07-09 (Cade's Windows Claude, Fable).
+Real followers create an account on the site, verify their Instagram handle,
+and normally claim one house in the town. Trusted admin accounts may claim two.
+Built 2026-07-09 (Cade's Windows Claude, Fable).
 
 **Stack:** Supabase (Postgres + Auth + Realtime) as the backend; the site stays
 static on Vercel. New files: `supabase_schema.sql` (run once in Supabase),
@@ -9,10 +10,47 @@ static on Vercel. New files: `supabase_schema.sql` (run once in Supabase),
 `grow_windows.ps1` (Windows, automatic), and account/claim UI inside `town.html`.
 
 **Hard rules enforced at the DATABASE level** (survive concurrent claims):
-one house per account and one account per house (`claims.house_id` primary key +
-`claims.user_id` unique). All claims go through the `claim_house()` Postgres
-function — first commit wins, the loser gets a clean "house_taken" error, and
-Supabase Realtime pushes the change to every open browser instantly.
+one account per house (`claims.house_id` primary key); one house per normal
+account; and two per trusted `profiles.is_admin` account. `claim_house()` locks
+the caller's profile row before counting, and `claims_enforce_owner_limit`
+defends direct/service writes too. A simultaneous house collision gets a clean
+`house_taken` error, and Realtime pushes the winner to every open browser.
+
+**Unclaiming (added 2026-07-10, multi-home overload 2026-07-15):** followers
+can give up an owned house with `unclaim_house(bigint)`. The explicit house ID
+ensures a two-home admin removes only the selected row. The no-argument overload
+remains for backward compatibility but refuses an ambiguous two-home request.
+
+**Current migration state:** `allow_admins_two_homes` was applied to the live
+Supabase project on 2026-07-15. It dropped the old per-user unique constraint,
+added the locking limit trigger and targeted RPC overloads, and preserved all
+27 claim rows. `supabase_schema.sql` remains the re-runnable canonical schema.
+
+**Multiplayer (added 2026-07-14):** the same Supabase project now backs website
+Presence/movement, persistent town chat, and admin activity logs. Signed-in
+sessions are stored in `player_sessions`; safe public handle/client mappings in
+`active_player_identities`; chat in `chat_messages`. Clients write only through
+`start_player_session`, `heartbeat_player_session`, `end_player_session`, and
+`send_chat_message`. These functions derive identity from `auth.uid()`, while
+RLS and column grants keep account UUIDs private. `admin_list_multiplayer()`
+checks the existing admin flag before returning online/session/chat logs.
+
+**Homeowner Mode (added 2026-07-15):** once a follower has a claim, the account
+panel and start screen expose `customize my home`. Owners can preview and save
+approved exterior, roof/accent, and door colors. The data model also retains the
+previously offered yard choice in the existing `claims.customization` JSONB
+column. Browser code never gets
+direct UPDATE access: `update_my_customization(bigint,jsonb)` requires a house
+ID owned by `auth.uid()`, rejects unknown values, normalizes the payload, and
+updates only that row. Yard pieces are placed inward from every road-facing lot
+edge (diagonally inward on corner lots). The existing `claims` Realtime
+subscription makes saved looks appear for every open visitor.
+
+**Temporary yard pause (2026-07-15):** Cade disabled the yard-piece presentation
+pending a better redesign. `YARD_DECORATIONS_ENABLED` is false in `town.html`,
+so saved pieces do not render and the chooser is hidden. Existing normalized
+`customization.yard` values remain stored; do not delete them or run a database
+migration. Exterior, roof/accent, and door customization remains live.
 
 ---
 
@@ -61,7 +99,7 @@ and never overwrites manual edits.
 ## 3. Verifying followers (manual, until Meta app review)
 
 **The easy way (built 2026-07-09): the Admin button on the live site.** Log in
-as @cade.toohey or @stellarkehler on followville-kappa.vercel.app and an
+as @cade.toohey or @stellar.kehler on followville-kappa.vercel.app and an
 "Admin →" button appears on the home page → one-click approve/reject for
 everyone waiting, plus revoke on every claim. This is safe to have live
 because the page holds no secrets: every admin action is a Postgres function
@@ -130,12 +168,43 @@ Sources from the research: [Meta webhook docs](https://developers.facebook.com/d
 [business_discovery limits](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery/),
 [app-review reality check](https://developers.chatwoot.com/self-hosted/instagram-app-review).
 
-## 5. Future: house customization
+## 5. House customization (shipped 2026-07-15)
 
-`claims.customization` (jsonb) is already in the schema, null for now. When the
-feature ships: add an `update_my_customization()` RPC that only touches the
-caller's own claim row, and read the json in `town.html` when building name
-tags / recoloring. No migration needed.
+`claims.customization` stores only normalized palette IDs in this shape:
+
+```json
+{"version":1,"wall":"sage","roof":"charcoal","door":"red","yard":"flowers"}
+```
+
+Allowed values are defined in both `supabase_schema.sql` (the authoritative
+security validation) and `town.html` (the picker/render palette). Keep those two
+lists synchronized when adding an option. Never accept arbitrary CSS colors or
+arbitrary decoration/model URLs from a client.
+`update_my_customization(bigint,jsonb)` is intentionally executable only by
+`authenticated` and updates the requested row only when it matches
+`auth.uid()`; `anon` and `PUBLIC` have no execute grant. Re-running the complete
+schema safely creates/replaces the RPC without changing existing claim rows.
+
+Yard pieces are browser-only and are placed from the exported home's actual
+root rotation, its full-height structural silhouette, and the distance to the
+curb. They must stay between the façade and curb; tight founder lots scale the
+front-to-back depth instead of shrinking the whole piece. Trees preserve equal
+horizontal X/Z scale so they cannot become flat. Placement uses a
+side-lawn zone: normal houses avoid their garage side, founder homes avoid their
+actual door mesh, and corner lots choose the side away from their second road.
+The placement boundary is `decorationObstacleFootprint()`, built from the full
+exported wall/roof/door/garage/glass/trim geometry at every height. Optimized
+houses are merged multi-material meshes, so this helper must inspect accepted
+material groups/triangles rather than accepting the entire mesh; otherwise its
+driveway/mailbox incorrectly becomes part of the facade. Do not use the player
+collision footprint here. Founder house #29 is also authored 1.3m farther back
+while its driveway/walk stay curb-connected, and its decorations use the open
+side lawn between entry path and mailbox. Off-center suburban door materials
+override the garage preference so the entrance always remains open.
+Benches face the street and flags sit curbward so their poles clear porch roofs.
+Do not restore the old fixed centerline/inward/backyard offset. The same
+footprint helpers drive player collision:
+homes and cars use oriented boxes, while trees collide only at their trunks.
 
 ## 6. How the pieces fit (for future AI sessions)
 
@@ -149,10 +218,15 @@ town.html (static, on Vercel)
   └─ supabase-js (CDN) → auth, claim_house RPC, Realtime on `claims`,
                           name-tag sprites over claimed houses
 Supabase
-  └─ auth.users + profiles (verification) + houses + claims (constraints)
+  └─ auth.users + profiles (verification/admin allowance) + houses + claims
+     (house PK + per-owner limit trigger)
 ```
 
 Claim UX in town.html: sign up (email+password+handle) → DM the code → admin
 verifies → "claim a home" button → walk up to an open house → press E (or tap)
 → `claim_house` RPC → name tag appears for everyone in real time. `Go to my
 home` spawns you at your own house. Not signed in = exact old free-roam.
+Once you have a house, the account panel (click your `@handle ✓` button) shows
+per-home visit, customize, and unclaim controls behind a one-step confirmation.
+Admins see their 1/2 or 2/2 allowance plus `claim second home`; normal accounts
+still see only one home. Every multi-home action passes the selected house ID.

@@ -6,7 +6,14 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## How to use this
 - Whoever finishes a turn (Cade or Zach) adds ONE line before handing off, in this format:
-  `YYYY-MM-DD — Name — what changed (one line)`
+  `YYYY-MM-DD — Name — [TAG] what changed (one line)`
+- **Start every entry with a tag — added 2026-07-10:** `[WORLD]` (changed Blender-authoritative
+  stuff: world_state.json, neighborhood_blender.py, anything that should look the same in the
+  rendered videos and on the website), `[WEB]` (website-only presentation -- UI, controls,
+  decorative additions made straight in index.html/town.html that were never added to Blender),
+  or `[BOTH]`. This exists because a `[WEB]`-only change (backdrop mountains/clouds, added
+  2026-07-09) shipped with no way for the next AI to know it wasn't also in Blender -- see
+  CLAUDE.md's Collaboration section for the full reasoning.
 - If an AI made the change, say so, e.g. "via his Claude" or "via Cade's Claude" —
   that's the whole "tracking" mechanism, no git needed.
 - Newest entries at the top.
@@ -15,7 +22,164 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-07-10 — Cade (via Codex) — made a standalone three-second transparent 70-to-134 follower counter animation for the next reel.
+2026-07-15 - Cade (via Windows Codex) - [WEB] Temporarily removed homeowner yard decorations from the town and customizer while preserving every saved yard choice in Supabase for a future redesign; house colors, claims, Blender/GLB, state, population, and buildings remain unchanged.
+
+2026-07-15 - Cade (via Windows Codex) - [BOTH] Rebuilt founder house #29 with its structure set back 1.3m and its drive/walk still curb-connected; fixed multi-material facade measurement so driveway/mailbox triangles cannot squeeze decorations, fitted the saved full-depth two-person bench between path and mailbox, kept custom trees round in X/Z, and passed all 904 house/decor placements plus current/full-plan collision audits without changing state, population, buildings, seeds, or claims.
+
+2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed house #29's decorations intersecting its double-garage porch/door by measuring each home's full exported structural silhouette and prioritizing the side opposite the actual door material; visually checked #29's tree, bench, and flag and revalidated all 904 placements with zero house/curb intersections.
+
+2026-07-15 - Cade (via Windows Codex) - [WEB] Corrected broken-looking homeowner decorations: pieces now occupy a door/garage-aware side-lawn zone, corner lots steer away from their second road, benches face the street, flags clear porch covers, and tight lots preserve full height/width; visually checked bench/flag/tree at Cade's castle and revalidated all 904 placements.
+
+2026-07-15 - Cade (via Windows Codex) - [WEB] Moved homeowner yard pieces into each home's measured front-yard strip without crossing the curb (including tight founder and corner lots), and replaced oversized circular web hitboxes with oriented house/car footprints plus trunk-only tree collisions; runtime-tested all four decorations across all 226 homes and left Blender/state/GLB unchanged.
+
+2026-07-15 - Cade (via Windows Codex) - [WEB] Allowed trusted admins `cade.toohey` and `stellar.kehler` to own two houses while normal accounts remain capped at one; added per-home visit/customize/unclaim controls and concurrency-safe Supabase enforcement, preserved all 27 claims, and moved yard decorations inward from every road-facing lot edge so Burj/founder decorations no longer land in streets.
+
+2026-07-15 - Cade (via Windows Codex) - [WEB] Built Homeowner Mode: claimed owners can preview/save approved exterior, roof/accent, and door colors plus one lightweight yard piece; added a validated owner-only Supabase RPC and realtime town updates, preserved all 27 existing claims, mapped all 226 homes with per-house material isolation, and left Blender/state/GLB unchanged.
+
+2026-07-14 - Cade (via Windows Codex) - [BOTH] Completed Day 13 from 186 to 226 followers with 40 validated houses at plan IDs 53-92, finished Creekside Bend and began Willow Hills, added reusable newest-district/newest-street cameras, cleared procedural nature from newly revealed roads/lots, rendered and reviewed static street plus house-appearance plus static overhead videos, rebuilt/validated the 6.1 MB GLB, matched all 40 new Supabase rows, and emailed the three videos to zachkehler@gmail.com.
+
+2026-07-14 - Cade (via Windows Codex) - [WEB] Made the temporary multiplayer smiley faces unmistakable at gameplay distance by adding a light circular face panel, larger dark eyes, and a thicker forward-facing smile to every player marker.
+
+2026-07-14 - Cade (via Windows Codex) - [WEB] Improved multiplayer usability: T, /, or Enter now opens focused desktop chat without the Escape/start-screen interruption, Enter sends and restores walking, player markers have forward-facing 3D smiley faces, and admin data is organized into Accounts/Claims and Multiplayer/Chat tabs with compact scrollable sections.
+
+2026-07-14 - Cade (via Windows Codex) - [WEB] Added secure live website multiplayer: online count, visible moving visitor markers and names, signed-in persistent town chat with speech bubbles, plus admin online/session-duration/chat logs; migrated RLS-protected Supabase tables and authenticated RPCs without changing Blender, population, buildings, or existing house claims.
+
+2026-07-13 - Cade (via Windows Codex) - [BOTH] Fixed the three-upper-window `side_garage_two` design that looked half-loaded: its main two-story wall and roof now span the complete facade instead of an offset 70% section; visually checked the corrected real-world house and every other two-story type, reran the zero-overlap 366-address audit, and rebuilt/validated the web model without changing state or claims.
+
+2026-07-13 - Cade (via Windows Codex) - [BOTH] Replaced all 176 ordinary and park-ring home visuals with an optimized 15-design suburban library and six stable color palettes, including complete lots with clear driveways and landscaping; preserved every seed/claim and all world-state values, collision-checked all current homes plus the full 366-address reserve, rebuilt/validated the 6.0 MB web model, and raised website name tags above taller roofs.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Rerendered and visually reviewed the complete Day 12 delivery set after the final playground/wheel corrections (houses appearing, elementary school appearing, and finished town overhead), copied the replacement MP4s to Cade's Codex outputs folder, and emailed all three corrected videos to tooheycade@gmail.com.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Corrected the school-equipment/car follow-up after Cade caught remaining geometry errors: rebuilt the swings with endpoint-aligned connected A-frames and chains, rebuilt the slide rails and exit to follow the chute exactly, and gave the two sides of every car opposite inward tire rotations so all four wheels sit at the front/rear axles and protrude outside the body; verified the playground from above and the side plus both sides of an isolated car before publishing.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Rebuilt the elementary school's rear playground as a finished fenced safety-surface yard with connected roofed towers, a correctly joined deck-to-ground slide, swings, climbing equipment, stepping pods, and ground games; also rotated every ordinary car tire upright, added visible hubs, regenerated the Blender/GLB world, and visually checked close views of both fixes without changing Day 12 or population 186.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Grew Day 12 from 169 to 186 followers with 17 validated Creekside Bend houses (addresses 36-52), completed Heron Court, began Pebble Court, and added a detailed non-claimable full-block elementary school campus; rendered and reviewed separate house-rise, school-rise, and finished overhead videos, validated Blender/GLB, and synced all 18 new records to claiming.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Rebuilt staged suburban roads as continuous shared-vertex meshes so turns cannot gap, and matched established roads with the same width, asphalt, height, and yellow center-dash rhythm; rebuilt and visually reviewed Blender/GLB without changing Day 11 or population 169.
+
+2026-07-13 - Cade (via Codex) - [WORLD] Corrected the suburban placement system: realigned all 35 built planned houses to face their roads, moved the house intersecting Heron Court, sealed curved-road joints, and added permanent facing/road/cul-de-sac/state-drift validation for all 366 planned addresses; Day 11 and population 169 stayed unchanged.
+
+2026-07-12 - Cade (via Codex) - [WORLD] Fixed Day 11 cul-de-sac and pond video flicker by delaying each turnaround until its connecting road is complete and replacing overlapping flat surfaces with shallow solid geometry; rerendered and reviewed both corrected videos.
+
+2026-07-12 - Cade (via Codex) - [WORLD] Grew Followville from 155 to 169 followers with 14 new Creekside Bend houses and only their required winding-road extension, rendered and reviewed a house-loading video plus finished overhead video, validated the web model, and synced every new home to claiming.
+
+2026-07-11 - Cade (via Codex) - [WORLD] Grew Followville from 134 to 155 followers with 21 new Creekside Bend houses and only their required winding road/cul-de-sac pieces, rendered a house-loading video plus a finished overhead video, validated the web model, and synced all new homes to claiming.
+
+2026-07-11 - Cade (via Codex) - [WORLD] Planned and built the hidden next-366-house suburban reserve: six terrain-shaped neighborhoods, winding staged roads, and 18 cul-de-sacs; terrain is visible now, while each future road segment and ordinary house appears only when its growth address is reached, without moving anything already built.
+
+2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Added the ability for a
+  follower to give up (unclaim) their house, at Cade's request ("people need the
+  option to unclaim, one house per user still"). New `unclaim_house()` Postgres
+  RPC in supabase_schema.sql -- deletes the caller's own `claims` row, which
+  frees the house for anyone (including them) to claim again; the existing
+  `claims.user_id` UNIQUE constraint that already enforces one-house-per-account
+  keeps enforcing it afterward, so no new concurrency logic was needed, this is
+  just claim_house() in reverse. town.html: the account panel (click your
+  `@handle ✓` button once you have a house) now shows an "unclaim this house"
+  option behind a one-step "are you sure" confirm card (new `attemptUnclaim()`,
+  `confirmingUnclaim` state, wired into the existing `renderAuthCard()` flow --
+  no new top-level UI, reuses the existing modal). Also documented in
+  CLAIMING_SETUP.md (a migration note: existing installs just need to re-run
+  the whole `supabase_schema.sql` in the Supabase SQL Editor once, safe since
+  everything in it is `IF NOT EXISTS`/`CREATE OR REPLACE`). **Cade: one thing
+  still needed from you** -- this session can't reach the Supabase SQL Editor
+  itself, so `unclaim_house()` exists in the pushed schema file but hasn't
+  actually been created in the live database yet. Paste all of
+  `supabase_schema.sql` into the SQL Editor and hit Run (same one-time step as
+  the original setup, safe to re-run) before the button will work live.
+
+2026-07-10 — Cade (via Windows Claude Cowork) — [BOTH] Confirmed day 9 (pop 134, 136
+  buildings) live on followville-kappa.vercel.app, matching world_state.json exactly. At
+  Cade's request, diagnosed the recurring "AI builds on a stale/backup copy" problem and
+  wrote up a fix plan in a new file, SYNC_AND_ZONING_PLAN.md (root cause: the iCloud folder
+  is used as a live shared working directory for files multiple machines/AI sessions edit
+  concurrently; iCloud resolves collisions by silently renaming the loser to a numbered
+  copy instead of merging or erroring, so the next session has to guess which copy is
+  real -- a wrong guess is exactly "building on a backup"). Corrected a misunderstanding on
+  my part along the way: Cade uses Claude (Cowork, Windows); Zach (Mac) uses Claude too
+  (Sonnet/Opus/Fable) AND sometimes OpenAI's Codex/GPT models. Also clarified: the day-9
+  "curving lane" attempt with the overlapping roads (world_state 5.json/grow_day9_growth.txt,
+  never shipped) was Cade using Claude Fable directly to preview that day's growth, not a
+  separate AI experimenting on its own -- Fable's road math was just wrong.
+  Then found and fixed what this sandboxed session actually could reach: this iCloud
+  folder's own `.git` was completely broken (`HEAD`/`config`/`refs/heads/main` had all been
+  renamed away by the same race, plus a stale `index.lock`) -- restored those, which is a
+  DIFFERENT git-internal-file instance of the race than the `refs/remotes/origin/main`
+  duplicate Zach's session found and fixed the same day (see both writeups in CLAUDE.md's
+  Day 9 canon / Collaboration section). Could not get `git fetch`/`push` fully working from
+  inside that sandbox (a couple of objects read as corrupt -- looks like a sandbox-only
+  limitation, not real data loss), so used computer-use (Win+R -> a `.bat` script) to push
+  through the real `C:\Users\cadet\followville_repo` clone instead once Cade said "you have
+  access to the terminal and whatever you need" -- confirmed pushed to `main`. Along the
+  way, nearly clobbered Zach's much-more-current CLAUDE.md/TEAM_LOG.md with a stale local
+  copy (the push script's file-copy step happened to fail first, by luck, catching it) --
+  refreshed from the real repo before finishing. Added the `[WORLD]`/`[WEB]`/`[BOTH]` TEAM_LOG
+  tag convention above and in CLAUDE.md, plus Cade's clarification there that "same world"
+  means same geometry, not same visual quality -- the Blender videos are supposed to keep
+  looking better than the website; only what's built and where has to match via town.glb.
+
+2026-07-10 — Zach (via Claude) — fixed a typo'd Supabase account handle at Zach's request:
+  instagram_handle was "stellarkehler", corrected to "stellar.kehler". The normal signup
+  RPC refuses handle changes once an account is verified, so this went straight to the
+  profiles table with the service-role key (fix_stellarkehler_handle.command, kept for
+  reference). Only instagram_handle changed — verification_status, is_admin, and the
+  claimed house are untouched. Confirmed live via public_claims (what the floating name
+  tag actually reads). Worth flagging: this account's claimed house (house_id 2) is the
+  Burj Khalifa founder house, not an actual "skyscraper" building — the skyscraper
+  milestone building doesn't exist in the town yet (unlocks at 2,000 population; we're at
+  134). If a real skyscraper is wanted sooner, that'd need a deliberate special-placement
+  decision from Cade, not something to do quietly as a side effect of a handle fix.
+
+2026-07-10 — Zach (via Claude) — made the day-9 layout condense automatic going forward,
+  per Zach's request ("make the condensed automatic unless otherwise specified"). Until
+  today, dense block-filling only happened via the one-off condense_day9.py script (see
+  the entry right below this one) — regular growth still used the old pure-radial lot
+  order, which scatters new buildings across many blocks instead of filling any one
+  solid, and would have gone back to looking sparse again after a few more growth days.
+  Promoted that script's block-filling logic into neighborhood_blender.py itself as a new
+  sorted_lots_filling() function, and made find_free_lots() use it by default for every
+  building type (houses, apartments, parks, pond clusters, all of it) — no code
+  invocation is required anymore, it just happens. Kept the old scattered look available
+  on purpose, opt-in only: pass --scatter on the CLI for a specific run if that messier
+  spread-out look is ever wanted again. Verified the new lot-picker's behavior directly
+  against the real world_state.json (pure Python, no Blender needed): simulated adding 40
+  houses to the current town landed them in 6 blocks under the new default vs. 13 blocks
+  under the old scatter order for the exact same input, with zero collisions, zero
+  dead-center placements, and custom/founder blocks still correctly avoided. Not yet
+  exercised on a real growth day (that needs Blender, which only runs via a real machine)
+  — next real +N day is the live test; if anything looks off compared to how day 9 turned
+  out, --scatter is the immediate fallback while it gets sorted out. Pushed to main
+  (docs) — condense_day9.py itself is now mostly historical/reference, no longer needed
+  for routine growth.
+
+2026-07-10 — Zach (via Claude) — finished and shipped day 9 (population 134, 136
+  buildings), picking up from the in-progress entry below. Three real code fixes, all
+  permanent (full writeup in CLAUDE.md's Day 9 canon entry and the "House-facing rules"
+  section — read those before touching growth/camera code again):
+  (1) fixed a real bug where every block's dead-center lot (no road frontage on any side)
+  was still being handed to regular houses, stranding them — Cade's screenshots of a
+  "house in the middle of the square" were this bug, not a one-off. find_free_lots() now
+  skips that lot for good.
+  (2) retuned the render cameras (default/overhead orbit, the --hero close-up, and --cam
+  street) for a more cinematic look per Zach's feedback — these are the new defaults, no
+  need to touch them again unless something looks off compared to today's videos.
+  (3) condensed day 9's 64 new houses only (never touching founders, claimed houses, or
+  anything from an earlier day — Zach's explicit call) into the sparse/half-empty blocks
+  left over from earlier growth days, via a one-off script (condense_day9.py, kept in the
+  folder for reference). This was a ONE-TIME cleanup, not automatic — day 10 will scatter
+  again over time unless find_free_lots() itself gets the same block-filling logic later.
+  Rendered and Zach-approved three final videos with fireworks left out on purpose:
+  day_009_hero_fixed, day_009_street_walkin, day_009_overhead_condensed (this last one
+  uses +0 instead of replay so the houses-rising animation doesn't play — Zach's cutting
+  it into a longer video). Deployed live via deploy_website.command (commit c2ab97e on
+  main) and confirmed the live site's world_state.json shows day 9/pop 134/136 buildings.
+  **Heads up for Cade before his next growth day:** the town looking dense right now is
+  from the one-time condense script, not a permanent behavior — if blocks start looking
+  sparse again after a few more growth days, that's expected until someone gives
+  find_free_lots() the same block-fill-first ordering permanently.
+
+2026-07-10 — Cade (via Codex) — made a standalone transparent 70-to-134 follower counter animation and matching 134 hold image for the next reel.
 
 2026-07-10 — Zach (via Claude) — grew the town to day 9, population 134 (+64 houses), per
   Cade's go-ahead to build from the day-8/pop-70 state rather than a broken concurrent

@@ -8,6 +8,138 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,
+  trees, benches, and flags are not rendered and the yard-piece chooser is
+  hidden. Existing normalized `claims.customization.yard` values are preserved
+  in Supabase for a future redesign; house colors, claims, Blender, GLB, state,
+  day, population, and buildings are unchanged. `YARD_DECORATIONS_ENABLED` in
+  `town.html` is the single intentional feature gate.
+- 2026-07-15 final house #29 lot correction (Cade via Codex): founder house 29's
+  structure is authored 1.3m farther back while its driveway and walk remain
+  connected to the curb. The web clearance pass now measures only the actual
+  structural material triangles inside each optimized multi-material house mesh;
+  driveway/mailbox geometry can no longer inflate the facade boundary. #29 uses
+  its open side lawn beyond the entrance: its saved bench is a proportional,
+  full-depth two-person bench between the path and mailbox, and trees scale
+  equally across both horizontal axes instead of flattening toward the road.
+  Street renders and all 904 house/decoration cases passed with zero house,
+  curb, or lot-edge violations. Blender + web model changed; day/population,
+  229 buildings, seeds, and claims are unchanged.
+- 2026-07-15 yard-decoration presentation correction (Cade via Codex): pieces
+  now use a side-lawn planting zone instead of the front-door centerline.
+  Founder doors and normal-house garage sides steer the piece to the clear side;
+  corner lots steer away from their second road. Benches rotate 180 degrees to
+  face the street and flags sit curbward so poles clear porch covers. Tight lots
+  compress only front-to-back, preserving normal decoration height/width. Cade's
+  castle bench/flag/tree were rendered and visually checked; all 904 current
+  house/decoration combinations still clear both façade and curb. Web-only.
+- 2026-07-15 front-yard placement + accurate web collisions (Cade via Codex):
+  homeowner decorations now read each GLB home's real facing and façade, then
+  fit between the building and its curb. Tight founder lots constrain the
+  piece's depth instead of crossing the street; corner lots cannot offset toward a
+  second road. The browser collision system now uses oriented rectangular
+  footprints for all 226 homes and 16 cars, three separate school-wing boxes,
+  and only the actual cylinders of 77 existing tree trunks (plus customized
+  yard-tree trunks), never foliage. Runtime QA tested all four decorations on
+  all 226 homes with no house/curb overlap. Web-only: Blender/state/GLB unchanged.
+- 2026-07-15 admin two-home allowance (Cade via Codex):
+  trusted `profiles.is_admin` accounts may own two houses while every normal
+  account remains capped at one. The live admins are `cade.toohey` and
+  `stellar.kehler`. The account panel shows 1/2 or 2/2 homes and lets an admin
+  visit, customize, or unclaim either home independently. Supabase enforces
+  the limit with a profile-row lock plus a claims trigger, and the RPCs target
+  an explicit owned house ID. All 27 claims stayed unchanged. This is
+  web/backend-only; Blender/state/GLB were not modified.
+- 2026-07-15 Homeowner Mode (Cade via Codex): every signed-in claimed-house
+  owner can now open `customize my home`, choose an exterior color, roof/accent
+  color, door color, and one lightweight yard piece (flowers, tree, bench, or
+  flag), preview the result, and save it. The approved palette IDs live in the
+  existing `claims.customization` JSONB field; the owner-only
+  `update_my_customization(bigint,jsonb)` RPC validates/normalizes every value
+  and updates only the caller-owned house ID. Existing claim Realtime updates
+  make saved looks visible to all visitors. Web materials are cloned per house
+  before recoloring so shared Blender materials cannot recolor neighbors.
+  All 27 existing claims remain unchanged and no Blender/state/GLB data moved.
+- Day 13, population 226, 229 buildings (grown 2026-07-14 via Cade's
+  Codex: +40 ordinary houses at planned addresses 53-92). Creekside Bend
+  completed with the final two Pebble Court homes; Willow Hills began with
+  20 homes on Willow Rise and 18 on Foxglove Court. Only the road sections
+  required by those homes are revealed. Separate finished-street,
+  house-appearance, and finished-overhead videos were rendered and reviewed;
+  only the house-appearance video animates buildings. The new `newgrowth` and
+  `newstreet` cameras keep future daily shots centered on the newest planned
+  district/street. Nature scatter now clears automatically from revealed
+  suburban roads, cul-de-sacs, and occupied planned lots. The final GLB passed
+  validation, all 40 database rows matched Supabase, and the three videos were
+  emailed to `zachkehler@gmail.com`.
+- 2026-07-14 website multiplayer (Cade via Codex): `town.html` now uses
+  Supabase Realtime Presence for online players and Broadcast for live movement.
+  Visitors see lightweight player markers and name labels; signed-in followers
+  can send persistent town chat with speech bubbles. Admins can review current
+  signed-in players, session start/end/duration history, and chat history in
+  `admin.html`. Database identity, session, and chat writes are authenticated
+  RPCs with RLS and narrow public-read columns; guests cannot forge them. This
+  is website/backend-only: Blender, `town.glb`, population, buildings, and all
+  existing house claims are unchanged.
+  Follow-up controls/UI: desktop chat opens with `T`, `/`, or Enter without
+  showing the start screen; Enter sends and immediately restores walking.
+  Remote markers have a forward-facing 3D smiley, and the admin page is split
+  into Accounts/Claims and Multiplayer/Chat tabs with compact scrolling lists.
+- 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
+  `house` and `ringhouse` now draws from one optimized library of 15
+  distinct suburban designs and six coordinated color palettes (90 stable
+  variants). Houses include their own driveway, walk, mailbox, porch/stoop,
+  garage, windows, trim, and driveway-safe landscaping. Existing building
+  seeds, positions, types, population, and day are unchanged, so all claims
+  remain attached to the same homes. Planned lots use audited compact scales
+  where needed; oriented-box validation reports zero overlaps across all 176
+  current ordinary/ring homes and all 366 reserved future addresses. Each
+  variant is batched to one mesh to keep the website smooth.
+  Follow-up fix: `side_garage_two` now has a full-width two-story body and
+  main roof; its former offset 70% body left the third upstairs window over
+  empty space and looked like half the house had failed to load.
+- Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
+  +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
+  non-population Followville Elementary School). Heron Court completed and
+  Pebble Court began with only their required continuous road ribbons. The
+  school is a detailed full-block campus with classroom wings, clocked glass
+  entrance, bus loop and bus, crosswalk, landscaping, flag court, and fenced
+  playground. Separate house-rise, school-rise, and finished overhead videos
+  rendered and passed sampled-frame review; GLB validated and all 18 new DB
+  records synced, with the school explicitly non-claimable.
+  Final 2026-07-13 corrections: the playground now uses connected A-frame
+  swings with attached chains/seats and an endpoint-aligned slide/rails/exit;
+  ordinary cars have four upright tires placed at the front/rear axles and
+  protruding outside the body. Both sides of an isolated car and two playground
+  angles passed visual review. The full Day 12 video set was rerendered from
+  this corrected world and emailed to tooheycade@gmail.com.
+- Day 11, population 169, 171 buildings (grown 2026-07-12 via Cade's Codex:
+  +14 ordinary houses, planned addresses 22-35 in Creekside Bend). The winding
+  street extended only as far as today's houses. Growth/loading and finished
+  overhead videos rendered and passed visual review; town.glb validated clean;
+  all 14 new houses synced to Supabase.
+  Post-render correction: cul-de-sac bulbs now wait until their connecting road
+  is complete, and pond/bulb surfaces use shallow solid geometry to prevent
+  depth flicker. Corrected growth and overhead videos were rerendered and reviewed.
+  Placement correction on 2026-07-13: all 35 planned houses were realigned to
+  face their roads, the house in the Heron Court branch was relocated, and
+  road-bend joints were sealed. Permanent full-plan collision/facing/state-drift
+  validation now protects all 366 addresses. Population and day were unchanged.
+  Road upgrade on 2026-07-13: staged suburban streets now build as continuous
+  mitered meshes instead of separate rotated boxes, eliminating turn gaps, and
+  use the same width/material/center-dash rhythm as established town roads.
+- Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
+  +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
+  curving entrance road and first cul-de-sac appeared only as required by the
+  new houses. Growth/loading and finished overhead videos were rendered and
+  approved; town.glb validated clean; all 21 houses synced to Supabase.
+- 2026-07-11 structural reserve (Cade via Codex): `neighborhood_plan.py`
+  deterministically plans the next 366 ordinary houses (population 135-500)
+  across six curved-road districts with 18 cul-de-sacs. Undeveloped hills,
+  meadows, and ponds are visible now; planned roads and houses create no object
+  until ordinary +N growth consumes their exact addresses. Existing geometry
+  never moves. See `NEIGHBORHOOD_EXPANSION_PLAN.md`. The legacy pop-500 plaza
+  is intentionally suppressed when this houses-only reserve completes.
 - Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Codex: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
@@ -207,10 +339,10 @@ sync new world_state.json buildings into the Supabase `houses` table after each
 growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored,
 NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
-incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas.
+incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas/schools.
 Admin (verify/reject/revoke) = the "Admin" button on the LIVE homepage (visible
 only to accounts with profiles.is_admin = true — currently cade.toohey and
-stellarkehler; every action is re-checked server-side inside the SQL functions,
+stellar.kehler; every action is re-checked server-side inside the SQL functions,
 so the page itself is safe to be public). admin.bat still works locally too
 (same admin.html, service key from supabase_sync.env). See CLAIMING_SETUP.md §3.
 Setup status: LIVE as of 2026-07-09. Supabase project "followville"

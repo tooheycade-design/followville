@@ -1,0 +1,1771 @@
+{
+ "day": 12,
+ "pop": 186,
+ "seed_counter": 190,
+ "buildings": [
+  {
+   "type": "mushroomhouse",
+   "gx": -1,
+   "gy": 0,
+   "seed": 1,
+   "day": 1
+  },
+  {
+   "type": "burjhouse",
+   "gx": 0,
+   "gy": 1,
+   "seed": 2,
+   "day": 2
+  },
+  {
+   "type": "casinohouse",
+   "gx": -1,
+   "gy": 1,
+   "seed": 3,
+   "day": 2
+  },
+  {
+   "type": "cathouse",
+   "gx": -1,
+   "gy": -1,
+   "seed": 4,
+   "day": 2
+  },
+  {
+   "type": "castlehouse",
+   "gx": 0,
+   "gy": 0,
+   "seed": 5,
+   "day": 2
+  },
+  {
+   "type": "eiffelhouse",
+   "gx": -2,
+   "gy": 0,
+   "seed": 6,
+   "day": 2
+  },
+  {
+   "type": "flowerhouse",
+   "gx": 0,
+   "gy": -1,
+   "seed": 7,
+   "day": 2
+  },
+  {
+   "type": "toilethouse",
+   "gx": 0,
+   "gy": 2,
+   "seed": 8,
+   "day": 3,
+   "face": "e"
+  },
+  {
+   "type": "beachhouse",
+   "gx": 1,
+   "gy": 0,
+   "seed": 9,
+   "day": 3
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -1,
+   "seed": 10,
+   "day": 3
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 1,
+   "seed": 11,
+   "day": 3
+  },
+  {
+   "type": "cottagehouse",
+   "gx": 2,
+   "gy": 0,
+   "seed": 12,
+   "day": 4,
+   "face": "e"
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 3,
+   "seed": 13,
+   "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -3,
+   "seed": 14,
+   "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 0,
+   "seed": 15,
+   "day": 4
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 3,
+   "seed": 16,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -4,
+   "seed": 17,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 3,
+   "seed": 18,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -2,
+   "seed": 19,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -4,
+   "seed": 20,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 3,
+   "seed": 21,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -4,
+   "seed": 22,
+   "day": 5
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": 2,
+   "seed": 23,
+   "day": 6
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 0,
+   "seed": 24,
+   "day": 6
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -1,
+   "seed": 25,
+   "day": 6
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 1,
+   "seed": 26,
+   "day": 6
+  },
+  {
+   "type": "pond",
+   "gx": 1,
+   "gy": 1,
+   "seed": 27,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 1,
+   "seed": 28,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 2,
+   "seed": 29,
+   "day": 7
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 2,
+   "seed": 30,
+   "day": 7
+  },
+  {
+   "type": "parkdistrict",
+   "gx": 11,
+   "gy": -1,
+   "px": 134.0,
+   "py": -3.0,
+   "r": 57.0,
+   "seed": 31,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": -2,
+   "px": 106.77,
+   "py": -16.74,
+   "rot": 2.0379,
+   "seed": 32,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": -2,
+   "px": 112.78,
+   "py": -24.91,
+   "rot": 2.3723,
+   "seed": 33,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": -3,
+   "px": 121.15,
+   "py": -30.66,
+   "rot": 2.7066,
+   "seed": 34,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -3,
+   "px": 130.93,
+   "py": -33.35,
+   "rot": 3.0409,
+   "seed": 35,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -3,
+   "px": 141.06,
+   "py": -32.67,
+   "rot": 3.3752,
+   "seed": 36,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": -3,
+   "px": 150.4,
+   "py": -28.71,
+   "rot": 3.7095,
+   "seed": 37,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -2,
+   "px": 157.93,
+   "py": -21.91,
+   "rot": 4.0438,
+   "seed": 38,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -1,
+   "px": 162.81,
+   "py": -13.01,
+   "rot": 4.3781,
+   "seed": 39,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -1,
+   "px": 164.5,
+   "py": -3.0,
+   "rot": 4.7124,
+   "seed": 40,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 0,
+   "px": 162.81,
+   "py": 7.01,
+   "rot": 5.0467,
+   "seed": 41,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 1,
+   "px": 157.93,
+   "py": 15.91,
+   "rot": 5.381,
+   "seed": 42,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": 2,
+   "px": 150.4,
+   "py": 22.71,
+   "rot": 5.7153,
+   "seed": 43,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 2,
+   "px": 141.06,
+   "py": 26.67,
+   "rot": 6.0496,
+   "seed": 44,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 2,
+   "px": 130.93,
+   "py": 27.35,
+   "rot": 6.3839,
+   "seed": 45,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": 2,
+   "px": 121.15,
+   "py": 24.66,
+   "rot": 6.7182,
+   "seed": 46,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": 1,
+   "px": 112.78,
+   "py": 18.91,
+   "rot": 7.0525,
+   "seed": 47,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": 1,
+   "px": 106.77,
+   "py": 10.74,
+   "rot": 7.3868,
+   "seed": 48,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": -2,
+   "px": 86.1,
+   "py": -19.01,
+   "rot": 1.8934,
+   "seed": 49,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": -3,
+   "px": 91.42,
+   "py": -30.15,
+   "rot": 2.1385,
+   "seed": 50,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": -4,
+   "px": 99.28,
+   "py": -39.67,
+   "rot": 2.3836,
+   "seed": 51,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": -4,
+   "px": 109.22,
+   "py": -47.0,
+   "rot": 2.6288,
+   "seed": 52,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": -4,
+   "px": 120.64,
+   "py": -51.7,
+   "rot": 2.8739,
+   "seed": 53,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": -5,
+   "px": 132.86,
+   "py": -53.49,
+   "rot": 3.119,
+   "seed": 54,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": -5,
+   "px": 145.15,
+   "py": -52.25,
+   "rot": 3.3642,
+   "seed": 55,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": -4,
+   "px": 156.77,
+   "py": -48.08,
+   "rot": 3.6093,
+   "seed": 56,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -4,
+   "px": 167.03,
+   "py": -41.2,
+   "rot": 3.8544,
+   "seed": 57,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": -3,
+   "px": 175.31,
+   "py": -32.05,
+   "rot": 4.0996,
+   "seed": 58,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": -2,
+   "px": 181.12,
+   "py": -21.15,
+   "rot": 4.3447,
+   "seed": 59,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": -1,
+   "px": 184.12,
+   "py": -9.17,
+   "rot": 4.5898,
+   "seed": 60,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": 0,
+   "px": 184.12,
+   "py": 3.17,
+   "rot": 4.835,
+   "seed": 61,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 15,
+   "gy": 1,
+   "px": 181.12,
+   "py": 15.15,
+   "rot": 5.0801,
+   "seed": 62,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": 2,
+   "px": 175.31,
+   "py": 26.05,
+   "rot": 5.3252,
+   "seed": 63,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 14,
+   "gy": 2,
+   "px": 167.03,
+   "py": 35.2,
+   "rot": 5.5704,
+   "seed": 64,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 13,
+   "gy": 3,
+   "px": 156.77,
+   "py": 42.08,
+   "rot": 5.8155,
+   "seed": 65,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 12,
+   "gy": 4,
+   "px": 145.15,
+   "py": 46.25,
+   "rot": 6.0606,
+   "seed": 66,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 11,
+   "gy": 4,
+   "px": 132.86,
+   "py": 47.49,
+   "rot": 6.3058,
+   "seed": 67,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 10,
+   "gy": 3,
+   "px": 120.64,
+   "py": 45.7,
+   "rot": 6.5509,
+   "seed": 68,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 9,
+   "gy": 3,
+   "px": 109.22,
+   "py": 41.0,
+   "rot": 6.796,
+   "seed": 69,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 8,
+   "gy": 2,
+   "px": 99.28,
+   "py": 33.67,
+   "rot": 7.0411,
+   "seed": 70,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": 2,
+   "px": 91.42,
+   "py": 24.15,
+   "rot": 7.2863,
+   "seed": 71,
+   "day": 8
+  },
+  {
+   "type": "ringhouse",
+   "gx": 7,
+   "gy": 1,
+   "px": 86.1,
+   "py": 13.01,
+   "rot": 7.5314,
+   "seed": 72,
+   "day": 8
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -3,
+   "seed": 73,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -3,
+   "seed": 74,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -3,
+   "seed": 75,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -2,
+   "seed": 76,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -2,
+   "seed": 77,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -1,
+   "seed": 78,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -1,
+   "seed": 79,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 0,
+   "seed": 80,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 1,
+   "seed": 81,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 2,
+   "seed": 82,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 2,
+   "seed": 83,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 2,
+   "seed": 84,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -3,
+   "seed": 85,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -3,
+   "seed": 86,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -3,
+   "seed": 87,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -2,
+   "seed": 88,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -2,
+   "seed": 89,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -1,
+   "seed": 90,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -1,
+   "seed": 91,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": -3,
+   "seed": 92,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": -3,
+   "seed": 93,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": -3,
+   "seed": 94,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": -2,
+   "seed": 95,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": -1,
+   "seed": 96,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": -1,
+   "seed": 97,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": 0,
+   "seed": 98,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 0,
+   "seed": 99,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": 1,
+   "seed": 100,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -6,
+   "gy": 2,
+   "seed": 101,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -5,
+   "gy": 2,
+   "seed": 102,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -4,
+   "gy": 2,
+   "seed": 103,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -6,
+   "seed": 104,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": -6,
+   "seed": 105,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -6,
+   "seed": 106,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -5,
+   "seed": 107,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": -5,
+   "seed": 108,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": -4,
+   "seed": 109,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 3,
+   "seed": 110,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 4,
+   "seed": 111,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 4,
+   "seed": 112,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -3,
+   "gy": 5,
+   "seed": 113,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -2,
+   "gy": 5,
+   "seed": 114,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": -1,
+   "gy": 5,
+   "seed": 115,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -6,
+   "seed": 116,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -6,
+   "seed": 117,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -6,
+   "seed": 118,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": -5,
+   "seed": 119,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -5,
+   "seed": 120,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": -4,
+   "seed": 121,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": -4,
+   "seed": 122,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 3,
+   "seed": 123,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 4,
+   "seed": 124,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 4,
+   "seed": 125,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 5,
+   "seed": 126,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 1,
+   "gy": 5,
+   "seed": 127,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 2,
+   "gy": 5,
+   "seed": 128,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -3,
+   "seed": 129,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": -3,
+   "seed": 130,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 3,
+   "gy": -2,
+   "seed": 131,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": -2,
+   "seed": 132,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": -1,
+   "seed": 133,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": -1,
+   "seed": 134,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 4,
+   "gy": 0,
+   "seed": 135,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 5,
+   "gy": 0,
+   "seed": 136,
+   "day": 9
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -33.537,
+   "py": 84.009,
+   "rot": 5.21399,
+   "plan_id": 1,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 137,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -52.33,
+   "py": 82.955,
+   "rot": 2.03677,
+   "plan_id": 2,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 138,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -40.484,
+   "py": 97.408,
+   "rot": 5.15263,
+   "plan_id": 3,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 139,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -58.705,
+   "py": 96.952,
+   "rot": 1.94876,
+   "plan_id": 4,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 140,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -61.461,
+   "py": 105.001,
+   "rot": 1.86624,
+   "plan_id": 5,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 141,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -63.6,
+   "py": 113.815,
+   "rot": 1.71712,
+   "plan_id": 6,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 142,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -47.449,
+   "py": 122.202,
+   "rot": 4.75525,
+   "plan_id": 7,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 143,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -63.616,
+   "py": 131.634,
+   "rot": 1.32884,
+   "plan_id": 8,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 144,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -45.195,
+   "py": 134.217,
+   "rot": 4.36764,
+   "plan_id": 9,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 145,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -57.956,
+   "py": 147.094,
+   "rot": 1.10715,
+   "plan_id": 10,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 146,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -39.171,
+   "py": 144.916,
+   "rot": 4.0948,
+   "plan_id": 11,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 147,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -47.259,
+   "py": 161.919,
+   "rot": 0.78905,
+   "plan_id": 12,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 148,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -30.592,
+   "py": 154.437,
+   "rot": 3.88383,
+   "plan_id": 13,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 149,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -35.281,
+   "py": 172.633,
+   "rot": 0.6188,
+   "plan_id": 14,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 150,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -19.246,
+   "py": 163.06,
+   "rot": 3.72525,
+   "plan_id": 15,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 151,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -22.244,
+   "py": 181.035,
+   "rot": 0.51507,
+   "plan_id": 16,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 152,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -7.57,
+   "py": 169.249,
+   "rot": 3.55945,
+   "plan_id": 17,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 153,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -0.872,
+   "py": 171.806,
+   "rot": 3.48462,
+   "plan_id": 18,
+   "district": "Creekside Bend",
+   "street": "Creekside Lane",
+   "seed": 154,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -45.196,
+   "py": 117.054,
+   "rot": 0.38813,
+   "plan_id": 19,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 155,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -35.92,
+   "py": 118.72,
+   "rot": 0.11488,
+   "plan_id": 20,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 156,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -27.5,
+   "py": 102.35,
+   "rot": 3.17964,
+   "plan_id": 21,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 157,
+   "day": 10
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -21.301,
+   "py": 119.262,
+   "rot": -0.03161,
+   "plan_id": 22,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 158,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -16.068,
+   "py": 101.6,
+   "rot": 2.95295,
+   "plan_id": 23,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 159,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -5.422,
+   "py": 116.633,
+   "rot": -0.24673,
+   "plan_id": 24,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 160,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -2.446,
+   "py": 98.432,
+   "rot": 3.0218,
+   "plan_id": 25,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 161,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 5.447,
+   "py": 114.848,
+   "rot": 0.02791,
+   "plan_id": 26,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 162,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 14.107,
+   "py": 98.724,
+   "rot": 3.2985,
+   "plan_id": 27,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 163,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 15.214,
+   "py": 116.657,
+   "rot": 0.42976,
+   "plan_id": 28,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 164,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 29.612,
+   "py": 105.06,
+   "rot": 3.70499,
+   "plan_id": 29,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 165,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 24.987,
+   "py": 122.652,
+   "rot": 0.75754,
+   "plan_id": 30,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 166,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 41.701,
+   "py": 115.295,
+   "rot": 3.99784,
+   "plan_id": 31,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 167,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 32.634,
+   "py": 131.305,
+   "rot": 0.97124,
+   "plan_id": 32,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 168,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 51.021,
+   "py": 129.287,
+   "rot": 4.30064,
+   "plan_id": 33,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 169,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 37.248,
+   "py": 140.696,
+   "rot": 1.31146,
+   "plan_id": 34,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 170,
+   "day": 11
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 55.111,
+   "py": 144.725,
+   "rot": 4.6159,
+   "plan_id": 35,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 171,
+   "day": 11
+  },
+  {
+   "type": "elementaryschool",
+   "gx": -6,
+   "gy": -6,
+   "seed": 172,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 37.919,
+   "py": 151.663,
+   "rot": 1.69023,
+   "plan_id": 36,
+   "district": "Creekside Bend",
+   "street": "Heron Court",
+   "seed": 173,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -17.858,
+   "py": 189.513,
+   "rot": 1.18392,
+   "plan_id": 37,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 174,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -14.487,
+   "py": 196.842,
+   "rot": 1.04399,
+   "plan_id": 38,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 175,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -10.146,
+   "py": 203.592,
+   "rot": 0.90773,
+   "plan_id": 39,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 176,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -5.765,
+   "py": 208.721,
+   "rot": 0.82182,
+   "plan_id": 40,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 177,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 11.163,
+   "py": 201.4,
+   "rot": 3.8809,
+   "plan_id": 41,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 178,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 6.976,
+   "py": 218.902,
+   "rot": 0.51363,
+   "plan_id": 42,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 179,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 19.936,
+   "py": 206.408,
+   "rot": 3.55418,
+   "plan_id": 43,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 180,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 20.691,
+   "py": 224.527,
+   "rot": 0.28084,
+   "plan_id": 44,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 181,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 29.959,
+   "py": 208.53,
+   "rot": 3.15034,
+   "plan_id": 45,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 182,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 36.67,
+   "py": 225.274,
+   "rot": -0.09141,
+   "plan_id": 46,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 183,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 40.775,
+   "py": 207.293,
+   "rot": 2.91893,
+   "plan_id": 47,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 184,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 52.761,
+   "py": 220.821,
+   "rot": -0.44763,
+   "plan_id": 48,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 185,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 49.974,
+   "py": 203.068,
+   "rot": 2.59534,
+   "plan_id": 49,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 186,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 65.296,
+   "py": 212.831,
+   "rot": -0.68573,
+   "plan_id": 50,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 187,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 58.418,
+   "py": 195.843,
+   "rot": 2.28892,
+   "plan_id": 51,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 188,
+   "day": 12
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 75.52,
+   "py": 201.693,
+   "rot": -0.95128,
+   "plan_id": 52,
+   "district": "Creekside Bend",
+   "street": "Pebble Court",
+   "seed": 189,
+   "day": 12
+  }
+ ],
+ "milestones": []
+}

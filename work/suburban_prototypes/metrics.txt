@@ -1,0 +1,4 @@
+SUBURBAN_RANCH: {'mesh_objects': 76, 'vertices': 680, 'polygons': 492, 'triangles': 1056}
+SUBURBAN_TWO_STORY: {'mesh_objects': 97, 'vertices': 846, 'polygons': 617, 'triangles': 1304}
+SUBURBAN_SPLIT_LEVEL: {'mesh_objects': 72, 'vertices': 648, 'polygons': 468, 'triangles': 1008}
+GLB bytes: 477960

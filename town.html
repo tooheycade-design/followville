@@ -22,7 +22,10 @@
   body.preview-mode #lookZone,
   body.preview-mode #joystickZone,
   body.preview-mode #runBtn,
-  body.preview-mode #claimPrompt { display:none !important; }
+  body.preview-mode #claimPrompt,
+  body.preview-mode #multiplayerStatus,
+  body.preview-mode #chatToggle,
+  body.preview-mode #chatPanel { display:none !important; }
 
   #cinematicGrade {
     position:fixed; inset:0; z-index:3; display:none; pointer-events:none;
@@ -183,6 +186,115 @@
   }
   #authCard .badge.pending { background:#f6e3b4; color:#7a5b12; }
   #authCard .badge.verified { background:#cdeccc; color:#20621f; }
+  #authCard.customizer-card { width:min(520px, 94vw); padding:24px 24px 20px; }
+  .customizer-head { display:flex; align-items:flex-start; gap:12px; }
+  .customizer-head > div { flex:1; }
+  .customizer-home-icon { font-size:30px; line-height:1; }
+  .custom-section { margin-top:17px; }
+  .custom-section-title {
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  }
+  .custom-section-title span { font-size:10.5px; font-weight:600; opacity:.55; letter-spacing:0; text-transform:none; }
+  .custom-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(62px,1fr)); gap:8px; margin-top:8px; }
+  .custom-option {
+    min-width:0; padding:8px 5px 7px; border:1px solid #d6d8dc; border-radius:11px;
+    background:#fff; color:#1c2b45; font-family:inherit; font-size:10.5px;
+    font-weight:600; line-height:1.15; cursor:pointer;
+    text-align:center; transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;
+  }
+  .custom-option:hover { transform:translateY(-1px); border-color:#8aa0b8; }
+  .custom-option.selected { border-color:#1c2b45; box-shadow:0 0 0 2px rgba(28,43,69,.14); }
+  .custom-option:focus-visible { outline:3px solid rgba(43,106,148,.28); outline-offset:2px; }
+  .custom-swatch {
+    display:block; width:27px; height:27px; margin:0 auto 5px; border-radius:50%;
+    border:1px solid rgba(28,43,69,.2); box-shadow:inset 0 0 0 2px rgba(255,255,255,.42);
+  }
+  .custom-swatch.original {
+    background:linear-gradient(135deg,#f2d49c 0 49%,#728093 50% 100%);
+  }
+  .yard-options { grid-template-columns:repeat(5,1fr); }
+  .yard-option { font-size:19px; padding:9px 3px 7px; }
+  .yard-option small { display:block; margin-top:3px; font-size:9.5px; font-weight:700; }
+  .customizer-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:18px; }
+  #authCard .customizer-actions .primary { margin-top:0; }
+  #authCard .secondary {
+    width:100%; padding:12px; border:1px solid #c9d1dc; border-radius:12px;
+    background:#fff; color:#1c2b45; font-family:inherit; font-size:14px;
+    font-weight:700; cursor:pointer;
+  }
+  #authCard .secondary:disabled, .custom-option:disabled { opacity:.55; cursor:default; }
+  .owned-home-summary { margin:8px 0 12px; font-size:12px; opacity:.72; }
+  .owned-home-list { display:grid; gap:10px; margin-top:12px; }
+  .owned-home-card {
+    padding:12px; border:1px solid #d7d9dc; border-radius:13px; background:#fff;
+  }
+  .owned-home-card.active { border-color:#2b6a94; box-shadow:0 0 0 2px rgba(43,106,148,.12); }
+  .owned-home-title { display:flex; align-items:center; justify-content:space-between; gap:8px; font-weight:800; }
+  .owned-home-title span { font-size:10px; padding:3px 8px; border-radius:20px; background:#dceaf3; color:#245c80; }
+  .owned-home-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:10px; }
+  #authCard .home-action {
+    padding:9px 7px; border:1px solid #c9d1dc; border-radius:9px; background:#fdfaf4;
+    color:#1c2b45; font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+  }
+  #authCard .home-action.danger { grid-column:1 / -1; border-color:#e0c4c4; color:#963838; background:#fff8f7; }
+  @media (max-width:520px){
+    #authCard.customizer-card { padding:20px 16px 16px; }
+    .custom-options { grid-template-columns:repeat(4,1fr); gap:6px; }
+    .yard-options { grid-template-columns:repeat(5,1fr); }
+    .custom-option { font-size:9.5px; }
+    .yard-option small { font-size:8.5px; }
+  }
+
+  /* lightweight multiplayer + town chat */
+  #multiplayerStatus {
+    position:fixed; top:94px; right:14px; z-index:6; pointer-events:none;
+    color:#fff; background:rgba(0,0,0,0.25); border-radius:20px;
+    padding:7px 13px; font-size:12px; font-weight:700;
+    text-shadow:0 1px 4px rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+  }
+  #multiplayerStatus .dot {
+    display:inline-block; width:8px; height:8px; margin-right:6px;
+    background:#70df7a; border-radius:50%; box-shadow:0 0 7px rgba(112,223,122,.85);
+  }
+  #chatToggle {
+    position:fixed; right:14px; bottom:18px; z-index:8; border:0; cursor:pointer;
+    padding:10px 16px; border-radius:22px; background:rgba(20,30,48,.88);
+    color:#fff; font-family:inherit; font-size:13px; font-weight:700;
+    box-shadow:0 5px 20px rgba(0,0,0,.25);
+  }
+  #chatPanel {
+    position:fixed; right:14px; bottom:62px; z-index:16; display:none;
+    width:min(360px, calc(100vw - 28px)); height:min(430px, 62vh);
+    background:rgba(247,243,234,.97); color:#1c2b45; border-radius:16px;
+    box-shadow:0 14px 42px rgba(0,0,0,.36); overflow:hidden;
+    flex-direction:column; touch-action:auto;
+  }
+  #chatPanel.open { display:flex; }
+  #chatHeader {
+    display:flex; align-items:center; padding:12px 14px; font-size:14px;
+    font-weight:800; border-bottom:1px solid rgba(28,43,69,.10);
+  }
+  #chatHeader span { flex:1; }
+  #chatClose { border:0; background:none; color:#1c2b45; font-size:20px; cursor:pointer; }
+  #chatMessages { flex:1; overflow:auto; padding:10px 12px; overscroll-behavior:contain; }
+  .chat-message { margin:0 0 9px; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
+  .chat-message .chat-who { font-weight:800; color:#2b6a94; margin-right:6px; }
+  .chat-message .chat-time { font-size:10px; opacity:.46; margin-left:6px; white-space:nowrap; }
+  #chatForm { display:flex; gap:7px; padding:10px; border-top:1px solid rgba(28,43,69,.10); }
+  #chatInput {
+    flex:1; min-width:0; border:1px solid #c9d1dc; border-radius:10px;
+    padding:10px 11px; font-family:inherit; font-size:13px; background:#fff; touch-action:auto;
+  }
+  #chatSend { border:0; border-radius:10px; padding:0 13px; background:#1c2b45;
+    color:#fff; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+  #chatSend:disabled, #chatInput:disabled { opacity:.52; cursor:default; }
+  #chatNote { min-height:16px; padding:0 12px 9px; font-size:11px; opacity:.62; }
+  @media (max-width: 600px){
+    #multiplayerStatus { top:92px; font-size:11px; }
+    #chatToggle { right:18px; bottom:122px; }
+    #chatPanel { right:10px; bottom:172px; width:calc(100vw - 20px); height:min(360px, 54vh); }
+  }
 </style>
 </head>
 <body>
@@ -194,11 +306,12 @@
 <div id="startScreen" style="display:none;">
   <h1>Followville</h1>
   <p id="startSub">a town where every follower is a house</p>
-  <p id="startHint">WASD or arrows to walk · mouse to look · shift to run</p>
+  <p id="startHint">WASD or arrows to walk · T or / to chat · shift to run</p>
   <div id="startBtns">
     <div class="btn" id="enterBtn">click to enter</div>
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
     <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
+    <div class="btn alt" id="customizeHomeBtn" style="display:none;">customize my home</div>
   </div>
 </div>
 
@@ -213,6 +326,17 @@
 <div id="authModal"><div id="authCard"></div></div>
 <div id="crosshair"></div>
 <div id="hint">ESC to release mouse</div>
+<div id="multiplayerStatus"><span class="dot"></span><span id="onlineCount">connecting...</span></div>
+<button id="chatToggle" type="button">town chat</button>
+<section id="chatPanel" aria-label="Followville town chat">
+  <div id="chatHeader"><span>Town chat</span><button id="chatClose" type="button" aria-label="Close chat">&times;</button></div>
+  <div id="chatMessages"></div>
+  <form id="chatForm">
+    <input id="chatInput" maxlength="240" autocomplete="off" placeholder="Sign in to chat" />
+    <button id="chatSend" type="submit">send</button>
+  </form>
+  <div id="chatNote"></div>
+</section>
 
 <div id="lookZone"></div>
 <div id="joystickZone">
@@ -1150,8 +1274,18 @@ const lookZone = document.getElementById("lookZone");
 const joystickZone = document.getElementById("joystickZone");
 const joystickNub = document.getElementById("joystickNub");
 const runBtn = document.getElementById("runBtn");
+const onlineCount = document.getElementById("onlineCount");
+const chatToggle = document.getElementById("chatToggle");
+const chatPanel = document.getElementById("chatPanel");
+const chatClose = document.getElementById("chatClose");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatSend = document.getElementById("chatSend");
+const chatNote = document.getElementById("chatNote");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
+let resumeWalkingAfterChat = false;
 
 function beginWalking(){
   gameRunning = true;
@@ -1174,6 +1308,38 @@ function stopWalking(){
   runBtn.style.display = "none";
 }
 
+function chatOpen(){ return chatPanel.classList.contains("open"); }
+function clearMovementInput(){
+  move.x = 0;
+  move.z = 0;
+  move.run = false;
+}
+function openChat(){
+  if (chatOpen()){
+    if (!chatInput.disabled) chatInput.focus();
+    return;
+  }
+  resumeWalkingAfterChat = gameRunning || controls.isLocked;
+  chatPanel.classList.add("open");
+  clearMovementInput();
+  if (!isTouch && controls.isLocked) controls.unlock();
+  setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
+}
+function closeChat(resumeWalking = true){
+  chatPanel.classList.remove("open");
+  chatInput.blur();
+  const shouldResume = resumeWalking && resumeWalkingAfterChat;
+  resumeWalkingAfterChat = false;
+  if (!shouldResume) return;
+  if (isTouch) beginWalking();
+  else controls.lock();
+}
+chatToggle.addEventListener("click", openChat);
+chatClose.addEventListener("click", closeChat);
+chatPanel.addEventListener("mousedown", e => e.stopPropagation());
+chatPanel.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); });
+
 if (isTouch){
   enterBtn.textContent = "tap to enter";
   startHint.textContent = "drag to look · joystick to walk · RUN to sprint";
@@ -1182,14 +1348,25 @@ if (isTouch){
 } else {
   startScreen.addEventListener("click", () => controls.lock());
   controls.addEventListener("lock", beginWalking);
-  controls.addEventListener("unlock", stopWalking);
+  controls.addEventListener("unlock", () => { if (!chatOpen()) stopWalking(); });
 }
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
-  if (modalOpen()) return;  // don't walk around while typing in the account modal
+  if (chatOpen()){
+    if (e.code === "Escape"){
+      e.preventDefault();
+      closeChat();
+    }
+    return;
+  }
+  if (!modalOpen() && (e.code === "KeyT" || e.code === "Slash" || e.key === "/" || e.code === "Enter")){
+    e.preventDefault(); openChat(); return;
+  }
+  if (modalOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+  // don't walk around while typing in a modal or town chat
   switch(e.code){
     case "KeyW": case "ArrowUp": move.z = 1; break;
     case "KeyS": case "ArrowDown": move.z = -1; break;
@@ -1200,7 +1377,7 @@ document.addEventListener("keydown", e => {
   }
 });
 document.addEventListener("keyup", e => {
-  if (modalOpen()) return;
+  if (modalOpen() || chatOpen() || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
   switch(e.code){
     case "KeyW": case "ArrowUp": if (move.z > 0) move.z = 0; break;
     case "KeyS": case "ArrowDown": if (move.z < 0) move.z = 0; break;
@@ -1299,8 +1476,209 @@ if (isTouch){
   }, { passive:false });
 }
 
-/* collision colliders: simple circles pushed out against each building */
+/* Player collisions use the shape that is actually solid: oriented boxes for
+   houses/cars and small circles for cylindrical tree trunks. Tree canopies,
+   yards, roads, and landscaping remain walkable. */
 const colliders = [];
+const PLAYER_COLLIDER_RADIUS = 0.6;
+const SUBURBAN_FOOTPRINTS = [
+  [7.9,5.7], [8.5,5.4], [7.7,5.8], [8.3,5.7], [7.1,5.7],
+  [7.8,5.8], [7.5,5.9], [7.2,5.5], [7.4,5.8], [7.8,5.6],
+  [7.0,5.9], [8.4,5.8], [8.2,5.9], [6.7,5.3], [8.6,5.9]
+];
+const SUBURBAN_GARAGE_SIDES = [1,-1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1];
+
+function suburbanStructureSetback(entry){
+  return Number(entry.building.seed) === 29 ? 1.30 : 0;
+}
+
+function boxCollider(x, z, ux, uz, vx, vz, hx, hz, label="object"){
+  const uLength = Math.hypot(ux, uz) || 1;
+  const vLength = Math.hypot(vx, vz) || 1;
+  return { kind:"box", x, z, ux:ux/uLength, uz:uz/uLength,
+           vx:vx/vLength, vz:vz/vLength, hx, hz, label };
+}
+
+function circleCollider(x, z, radius, label="trunk", owner=null){
+  return { kind:"circle", x, z, radius, label, owner };
+}
+
+function colliderFromLocalBounds(root, bounds, label){
+  if (!root || !bounds || bounds.isEmpty()) return null;
+  root.updateWorldMatrix(true, true);
+  const center = bounds.getCenter(new THREE.Vector3());
+  root.localToWorld(center);
+  const size = bounds.getSize(new THREE.Vector3());
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     size.x*Math.abs(scale.x)/2, size.z*Math.abs(scale.z)/2, label);
+}
+
+function localBoundsAtPlayerHeight(root, acceptMesh=()=>true, minHeight=.18, maxHeight=2.35){
+  root.updateWorldMatrix(true, true);
+  const inverseRoot = root.matrixWorld.clone().invert();
+  const result = new THREE.Box3();
+  const relative = new THREE.Matrix4();
+  root.traverse(obj => {
+    if (!obj.isMesh || !obj.geometry || !acceptMesh(obj)) return;
+    if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
+    if (!obj.geometry.boundingBox) return;
+    relative.multiplyMatrices(inverseRoot, obj.matrixWorld);
+    const part = obj.geometry.boundingBox.clone().applyMatrix4(relative);
+    // Roofs, canopies, and elevated ornaments should not widen a player's
+    // ground-level hitbox. Keep only geometry intersecting body height.
+    if (part.max.y < minHeight || part.min.y > maxHeight) return;
+    result.union(part);
+  });
+  return result;
+}
+
+function localBoundsForMaterials(root, acceptMaterial){
+  root.updateWorldMatrix(true, true);
+  const inverseRoot = root.matrixWorld.clone().invert();
+  const result = new THREE.Box3();
+  const relative = new THREE.Matrix4();
+  const point = new THREE.Vector3();
+  root.traverse(obj => {
+    if (!obj.isMesh || !obj.geometry) return;
+    const geometry = obj.geometry;
+    const position = geometry.getAttribute("position");
+    if (!position) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const index = geometry.index;
+    const elementCount = index ? index.count : position.count;
+    const groups = geometry.groups.length
+      ? geometry.groups : [{ start:0, count:elementCount, materialIndex:0 }];
+    relative.multiplyMatrices(inverseRoot, obj.matrixWorld);
+    for (const group of groups){
+      if (!acceptMaterial(materials[group.materialIndex])) continue;
+      const end = Math.min(elementCount, group.start + group.count);
+      for (let i=group.start; i<end; i++){
+        const vertexIndex = index ? index.getX(i) : i;
+        point.fromBufferAttribute(position, vertexIndex).applyMatrix4(relative);
+        result.expandByPoint(point);
+      }
+    }
+  });
+  return result;
+}
+
+function suburbanFootprint(entry){
+  const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
+  const style = SUBURBAN_FOOTPRINTS[styleIndex];
+  const root = entry.root;
+  root.updateWorldMatrix(true, true);
+  const center = new THREE.Vector3(0,0,-suburbanStructureSetback(entry));
+  root.localToWorld(center);
+  const scale = root.getWorldScale(new THREE.Vector3());
+  const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+  const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x, center.z, u.x, u.z, v.x, v.z,
+                     style[0]*Math.abs(scale.x)/2 + .16,
+                     style[1]*Math.abs(scale.z)/2 + .16,
+                     `house-${entry.building.seed}`);
+}
+
+const NON_STRUCTURAL_HOME_PART = /(drive|walk|mail|shrub|bush|trunk|blob|pine|palm|flower|rock|lawn|ground|landscape|deck|rail|step|stilt|ocean|sand|surf|frond|ball)/i;
+function houseFootprint(entry){
+  if (!entry?.root) return null;
+  if (["house", "ringhouse", "lanehouse"].includes(entry.building.type))
+    return suburbanFootprint(entry);
+  const bounds = localBoundsAtPlayerHeight(entry.root,
+    mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""));
+  if (!bounds.isEmpty()) return colliderFromLocalBounds(entry.root, bounds, `house-${entry.building.seed}`);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  return boxCollider(center.x, center.z, 1,0,0,1, 3.8,3.2, `house-${entry.building.seed}`);
+}
+
+function decorationObstacleFootprint(entry){
+  if (!entry?.root) return null;
+  const suburban = ["house", "ringhouse", "lanehouse"].includes(entry.building.type);
+  const bounds = suburban
+    ? localBoundsForMaterials(entry.root, material =>
+        /^NB_sub_(?:wall|roof|door|garage|glass|trim|shutter)(?:_|$)/i.test(material?.name || ""))
+    : localBoundsAtPlayerHeight(entry.root,
+        mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""), -Infinity, Infinity);
+  if (bounds.isEmpty()) return houseFootprint(entry);
+  return colliderFromLocalBounds(entry.root, bounds, `yard-obstacle-${entry.building.seed}`);
+}
+
+function addMeshBoxCollider(mesh, label){
+  const bounds = localBoundsAtPlayerHeight(mesh);
+  const collider = colliderFromLocalBounds(mesh, bounds, label);
+  if (collider && collider.hx > .08 && collider.hz > .08) colliders.push(collider);
+}
+
+function addTrunkColliderFromMesh(mesh, label="tree-trunk", owner=null){
+  mesh.updateWorldMatrix(true, false);
+  const bounds = new THREE.Box3().setFromObject(mesh);
+  if (bounds.isEmpty()) return;
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  const radius = Math.max(size.x, size.z)/2;
+  if (radius > .025 && radius < 1.5)
+    colliders.push(circleCollider(center.x, center.z, radius, label, owner));
+}
+
+function buildGLBColliders(root){
+  colliders.length = 0;
+  for (const entry of houseVisuals.values()){
+    const collider = houseFootprint(entry);
+    if (collider) colliders.push(collider);
+  }
+  for (const child of root.children){
+    const name = (child.name || "").toLowerCase();
+    // GLTFLoader sanitizes Blender dots to underscores (car.001 -> car_001).
+    if (/^(car|traffic)(?:\d|[._]|$)/.test(name) || name === "ringtraffic")
+      addMeshBoxCollider(child, `car-${child.name}`);
+  }
+  root.traverse(obj => {
+    const name = obj.name || "";
+    if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);
+    // The school is one large export root. Its three building wings need
+    // separate footprints so the courtyard remains open and walkable.
+    if (obj.isMesh && /^school_(?:center_hall|classroom_wing)(?:\d|[._]|$)/i.test(name))
+      addMeshBoxCollider(obj, `school-${name}`);
+  });
+  refreshYardDecorationColliders();
+  const boxes = colliders.filter(collider => collider.kind === "box").length;
+  const trunks = colliders.filter(collider => collider.kind === "circle").length;
+  console.info(`[Followville] collisions mapped ${boxes} rectangular footprints and ${trunks} trunk cylinders.`);
+}
+
+function resolvePlayerCollision(position, collider){
+  if (collider.kind === "circle"){
+    let dx = position.x-collider.x, dz = position.z-collider.z;
+    let distance = Math.hypot(dx,dz);
+    const radius = collider.radius + PLAYER_COLLIDER_RADIUS;
+    if (distance >= radius) return;
+    if (distance < .0001){ position.x += radius; return; }
+    const push = radius-distance;
+    position.x += dx/distance*push;
+    position.z += dz/distance*push;
+    return;
+  }
+  const dx = position.x-collider.x, dz = position.z-collider.z;
+  const localX = dx*collider.ux + dz*collider.uz;
+  const localZ = dx*collider.vx + dz*collider.vz;
+  const limitX = collider.hx + PLAYER_COLLIDER_RADIUS;
+  const limitZ = collider.hz + PLAYER_COLLIDER_RADIUS;
+  if (Math.abs(localX) >= limitX || Math.abs(localZ) >= limitZ) return;
+  const pushX = limitX-Math.abs(localX), pushZ = limitZ-Math.abs(localZ);
+  if (pushX < pushZ){
+    const direction = localX < 0 ? -1 : 1;
+    position.x += collider.ux*pushX*direction;
+    position.z += collider.uz*pushX*direction;
+  } else {
+    const direction = localZ < 0 ? -1 : 1;
+    position.x += collider.vx*pushZ*direction;
+    position.z += collider.vz*pushZ*direction;
+  }
+}
 
 function addRoads(buildings){
   const [minBx, maxBx, minBy, maxBy] = blockExtent(buildings);
@@ -1421,14 +1799,19 @@ function addBuildings(buildings){
     inst.position.z += y;
     if (b.face && FACE_ANGLE[b.face] !== undefined) inst.rotation.y = FACE_ANGLE[b.face];
     world.add(inst);
-    colliders.push({ x, z: y, radius: inst.userData.radius || 4.2 });
+    if (HOME_MATERIAL_ROLES[b.type])
+      houseVisuals.set(Number(b.seed), { building:b, root:inst, isolated:false, materials:[] });
+    const fallbackCollider = houseFootprint({ building:b, root:inst });
+    if (fallbackCollider) colliders.push(fallbackCollider);
   }
   scene.add(world);
+  applyAllHomeCustomizations();
 }
 
 /* ═══════════════════════ ACCOUNTS + HOME CLAIMING ═══════════════════════
    Every real follower can create an account, verify their Instagram handle,
-   and claim exactly ONE house. Backend: Supabase (Postgres + Auth + Realtime),
+   and claim a house (two for the two admin accounts). Backend: Supabase
+   (Postgres + Auth + Realtime),
    schema in supabase_schema.sql, full guide in CLAIMING_SETUP.md.
    If the two constants below are left empty, ALL of this is disabled and the
    page behaves exactly like the original free-roam viewer. */
@@ -1437,23 +1820,381 @@ const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk"; // anon/public key — safe to ship in HTML (RLS enforces access)
 
 let sb = null;                  // supabase client (null = feature off/unavailable)
-let session = null, myProfile = null, myClaim = null;
+let session = null, myProfile = null, myClaim = null, myClaims = [];
+let claimLimit = 1;
 let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
 let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
+let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
 let worldBuildings = [];        // from world_state.json (geometry truth)
 let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
+let unclaiming = false, confirmingUnclaim = false;
+let customizingHome = false, savingCustomization = false, customizationDraft = null;
+let customizationPreview = null;
 const nameTags = new THREE.Group();
 scene.add(nameTags);
+const customizationLayer = new THREE.Group();
+customizationLayer.name = "homeowner-customizations";
+scene.add(customizationLayer);
+const houseVisuals = new Map();
+const customizedHouseIds = new Set();
+const yardDecorations = new Map();
 
 /* Rough roof-top heights per building type, so tags/markers sit just above
    the house instead of floating in the sky (or inside a tall tower). */
 const TAG_HEIGHT = {
-  house: 7.5, mushroomhouse: 8, casinohouse: 7.5, cathouse: 8, castlehouse: 9.5,
+  house: 9.2, mushroomhouse: 8, casinohouse: 7.5, cathouse: 8, castlehouse: 9.5,
   eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
-  beachhouse: 8, cottagehouse: 8.5, ringhouse: 8.5, lanehouse: 6.5,
+  beachhouse: 8, cottagehouse: 8.5, ringhouse: 9.2, lanehouse: 6.5,
 };
+
+const HOME_OPTIONS = {
+  wall: [
+    ["original", "original", null], ["butter", "butter", "#e7c875"],
+    ["sage", "sage", "#8faa83"], ["sky", "sky", "#82acc4"],
+    ["blush", "blush", "#d39a98"], ["lavender", "lavender", "#a39ac4"],
+    ["cream", "cream", "#e8ddbd"]
+  ],
+  roof: [
+    ["original", "original", null], ["charcoal", "charcoal", "#384150"],
+    ["cedar", "cedar", "#8a4c34"], ["slate", "slate", "#5e6e87"],
+    ["forest", "forest", "#355b49"], ["plum", "plum", "#5e405f"]
+  ],
+  door: [
+    ["original", "original", null], ["red", "red", "#a13b34"],
+    ["navy", "navy", "#294563"], ["teal", "teal", "#307875"],
+    ["yellow", "yellow", "#dbae3d"], ["white", "white", "#f2eee4"]
+  ],
+  yard: [
+    ["none", "none", "&mdash;"], ["flowers", "flowers", "&#127800;"],
+    ["tree", "tree", "&#127795;"], ["bench", "bench", "&#129681;"],
+    ["flag", "flag", "&#128681;"]
+  ]
+};
+// Paused 2026-07-15 at Cade's request. Keep normalized saved choices intact so
+// a future redesign can restore them without deleting homeowner data.
+const YARD_DECORATIONS_ENABLED = false;
+const HOME_DEFAULTS = { version:1, wall:"original", roof:"original", door:"original", yard:"none" };
+const HOME_COLORS = Object.fromEntries(
+  ["wall", "roof", "door"].flatMap(key => HOME_OPTIONS[key].map(([id, , color]) => [`${key}:${id}`, color]))
+);
+
+function normalizeCustomization(value){
+  const input = value && typeof value === "object" ? value : {};
+  const out = { ...HOME_DEFAULTS };
+  for (const key of ["wall", "roof", "door", "yard"]){
+    if (HOME_OPTIONS[key].some(([id]) => id === input[key])) out[key] = input[key];
+  }
+  return out;
+}
+
+/* Material roles for both the standard suburban library and the ten founder
+   landmark houses. Materials are cloned per claimed building before any color
+   change, so a shared Blender material can never recolor neighboring homes. */
+const HOME_MATERIAL_ROLES = {
+  house: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  ringhouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  lanehouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  mushroomhouse: { wall:["NB_mush_stem"], roof:["NB_mush_cap"], door:["NB_door"] },
+  casinohouse: { wall:["NB_cas_wall"], roof:["NB_cas_gold"], door:["NB_door"] },
+  cathouse: { wall:["NB_cat_fur"], roof:["NB_cat_dark"], door:["NB_door"] },
+  castlehouse: { wall:["NB_cast_stone"], roof:["NB_cast_blue"], door:["NB_door"] },
+  eiffelhouse: { wall:["NB_eif_home"], roof:["NB_eif_bronze"], door:["NB_door"] },
+  flowerhouse: { wall:["NB_flw_stem"], roof:["NB_flw_p"], door:["NB_door"] },
+  burjhouse: { wall:["NB_burj_glass"], roof:["NB_burj_trim"], door:["NB_door"] },
+  toilethouse: { wall:["NB_wc_white"], roof:["NB_wc_seat"], door:["NB_door"] },
+  beachhouse: { wall:["NB_bch_wall"], roof:["NB_bch_roof"], door:["NB_door"] },
+  cottagehouse: { wall:["NB_cot_wall"], roof:["NB_cot_roof"], door:["NB_door"] }
+};
+
+function materialRoleFor(building, material){
+  const name = material?.name || "";
+  const roles = HOME_MATERIAL_ROLES[building.type] || HOME_MATERIAL_ROLES.house;
+  for (const role of ["wall", "roof", "door"]){
+    if ((roles[role] || []).some(prefix => name.startsWith(prefix))) return role;
+  }
+  return null;
+}
+
+function ensureHouseMaterialsIsolated(entry){
+  if (!entry || entry.isolated) return;
+  const clones = new Map();
+  entry.root.traverse(obj => {
+    if (!obj.isMesh || !obj.material) return;
+    const source = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isolated = source.map(material => {
+      if (!material) return material;
+      if (!clones.has(material.uuid)){
+        const copy = material.clone();
+        copy.userData = { ...(copy.userData || {}) };
+        if (copy.color) copy.userData.fvOriginalColor = copy.color.getHex();
+        clones.set(material.uuid, copy);
+      }
+      return clones.get(material.uuid);
+    });
+    obj.material = Array.isArray(obj.material) ? isolated : isolated[0];
+  });
+  entry.materials = [...clones.values()];
+  entry.isolated = true;
+}
+
+function resetHouseColors(entry){
+  if (!entry?.isolated) return;
+  for (const material of entry.materials || []){
+    if (material.color && Number.isInteger(material.userData?.fvOriginalColor)){
+      material.color.setHex(material.userData.fvOriginalColor);
+      material.needsUpdate = true;
+    }
+  }
+}
+
+function disposeObject(root){
+  root.traverse(obj => {
+    if (obj.geometry) obj.geometry.dispose();
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const material of materials) if (material?.dispose) material.dispose();
+  });
+}
+
+function decorationMaterial(color, roughness=.82){
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness:.02 });
+}
+function decorationMesh(geometry, material, x, y, z){
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeYardDecoration(kind, entry){
+  const building = entry.building;
+  const group = new THREE.Group();
+  group.name = `yard-${kind}-${building.seed}`;
+  if (kind === "flowers"){
+    const stem = decorationMaterial(0x4e7f48), petals = [0xf39ab6, 0xf3c36b, 0xc59ee8];
+    for (let i=0; i<5; i++){
+      const x = (i-2)*.42, z = (i%2 ? .22 : -.18), h = .42 + (i%3)*.08;
+      group.add(decorationMesh(new THREE.CylinderGeometry(.035,.045,h,6), stem, x, h/2, z));
+      group.add(decorationMesh(new THREE.DodecahedronGeometry(.16,0), decorationMaterial(petals[i%3]), x, h+.1, z));
+    }
+  } else if (kind === "tree"){
+    const trunk = decorationMesh(new THREE.CylinderGeometry(.22,.3,2.0,8), decorationMaterial(0x765137), 0, 1, 0);
+    trunk.name = "yard_trunk";
+    group.add(trunk);
+    group.userData.collisionMesh = trunk;
+    group.add(decorationMesh(new THREE.ConeGeometry(1.25,2.6,9), decorationMaterial(0x4f8250), 0, 2.85, 0));
+    group.add(decorationMesh(new THREE.ConeGeometry(.95,2.0,9), decorationMaterial(0x5e9258), 0, 4.05, 0));
+  } else if (kind === "bench"){
+    const wood = decorationMaterial(0x9a6741), metal = decorationMaterial(0x3d4650,.45);
+    group.add(decorationMesh(new THREE.BoxGeometry(1.5,.22,.62), wood, 0,.72,0));
+    group.add(decorationMesh(new THREE.BoxGeometry(1.5,.95,.18), wood, 0,1.18,.3));
+    for (const x of [-.52,.52]) for (const z of [-.2,.2])
+      group.add(decorationMesh(new THREE.BoxGeometry(.14,.72,.14), metal, x,.36,z));
+  } else if (kind === "flag"){
+    group.add(decorationMesh(new THREE.CylinderGeometry(.045,.06,4.1,8), decorationMaterial(0xd5d9dc,.35), 0,2.05,0));
+    const flag = decorationMesh(new THREE.BoxGeometry(1.45,.8,.07), decorationMaterial(0xe45a5d), .72,3.45,0);
+    group.add(flag);
+    group.add(decorationMesh(new THREE.SphereGeometry(.09,8,6), decorationMaterial(0xe5c45e,.3), 0,4.18,0));
+  }
+  entry.root.updateWorldMatrix(true, true);
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  // Blender homes face local -Y, exported as Three.js local +Z. Reading the
+  // real root rotation removes the old corner-lot guess that sometimes chose
+  // the wrong yard.
+  const quaternion = entry.root.getWorldQuaternion(new THREE.Quaternion());
+  const front3 = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  const frontLength = Math.hypot(front3.x, front3.z) || 1;
+  const frontX = front3.x/frontLength, frontZ = front3.z/frontLength;
+  // Yard pieces must clear the full exported porch/door/roof silhouette, not
+  // merely the player's ground-level wall hitbox. Wide styles such as house 29
+  // project much farther toward the curb than their nominal body dimensions.
+  const footprint = decorationObstacleFootprint(entry);
+  const frontExtent = footprint
+    ? (footprint.x-center.x)*frontX + (footprint.z-center.z)*frontZ
+      + footprint.hx*Math.abs(frontX*footprint.ux + frontZ*footprint.uz)
+      + footprint.hz*Math.abs(frontX*footprint.vx + frontZ*footprint.vz)
+    : 3.2;
+  const curbDistance = frontCurbDistance(building, frontX, frontZ);
+  const yardStrip = Math.max(.01, curbDistance-frontExtent);
+  // Most lots retain a generous façade/curb buffer. A few founder buildings
+  // nearly fill their old 10m lots, so their buffers and decoration scale down
+  // together instead of letting the decoration cross the curb.
+  const houseMargin = Math.min(.28, yardStrip*.2);
+  const curbMargin = Math.min(.48, yardStrip*.35);
+  const freeWidth = Math.max(.005, yardStrip-houseMargin-curbMargin);
+  const roadDepth = { flowers:.25, tree:1.25, bench:.42, flag:.08 }[kind] || .3;
+  // Compress only front-to-back when a yard strip is tight. Keeping the full
+  // width and height prevents benches, flags, and trees from looking like tiny
+  // broken miniatures on founder lots.
+  const depthScale = Math.min(1, Math.max(.01, freeWidth/(roadDepth*2)));
+  if (kind === "tree") group.scale.set(depthScale, 1, depthScale);
+  else group.scale.set(1, 1, depthScale);
+  let frontOffset = frontExtent + houseMargin + freeWidth/2;
+  // Tall flagpoles sit toward the curb side of the strip, clear of porch roofs.
+  if (kind === "flag")
+    frontOffset = Math.max(frontOffset, curbDistance-curbMargin-roadDepth*depthScale);
+
+  // Put every piece on a side-lawn planting zone instead of in the doorway.
+  // The complete local decoration width is measured, so flags and benches stay
+  // inside the frontage even though their geometry is wider than their origin.
+  group.updateWorldMatrix(true, true);
+  const localDecorationBounds = new THREE.Box3().setFromObject(group);
+  const sideRadius = Math.max(Math.abs(localDecorationBounds.min.x),
+                              Math.abs(localDecorationBounds.max.x));
+  const sideTarget = { flowers:2.8, tree:2.75, bench:3.15, flag:3.0 }[kind] || 2.8;
+  const sideLimit = (typeof building.px === "number" ? 4.4 : LOT/2-.48);
+  const sideSign = decorationSideSign(entry, frontX, frontZ);
+  // Founder house #29 uses the open lawn beyond its entrance. The narrow gap
+  // between its double garage and door cannot safely hold a full-size bench.
+  const house29SideTarget = { flowers:3.0, tree:3.2, bench:2.95, flag:3.0 }[kind] || 3.0;
+  const sideOffset = Number(building.seed) === 29
+    ? Math.max(0, Math.min(house29SideTarget, sideLimit-sideRadius))
+    : Math.max(0, Math.min(sideTarget, sideLimit-sideRadius))*sideSign;
+  const sideX = frontZ*sideOffset, sideZ = -frontX*sideOffset;
+  group.position.set(center.x + frontX*frontOffset + sideX, center.y+.04,
+                     center.z + frontZ*frontOffset + sideZ);
+  // The bench's backrest is local +Z, so turn that side toward the house and
+  // leave the seat facing the street. Other decorations keep their front yaw.
+  group.rotation.y = Math.atan2(frontX, frontZ) + (kind === "bench" ? Math.PI : 0);
+  return group;
+}
+
+function frontCurbDistance(building, frontX, frontZ){
+  // Planned winding-road homes are authored 8.5m from the road center; the
+  // road is 6m wide. Older off-grid ring homes use the same curb setback.
+  if (typeof building.px === "number") return 8.5-ROAD/2;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  if (Math.abs(frontX) > Math.abs(frontZ))
+    return (frontX > 0 ? BLOCK_N-ix-.5 : ix+.5)*LOT;
+  return (frontZ > 0 ? iy+.5 : BLOCK_N-iy-.5)*LOT;
+}
+
+function decorationSideSign(entry, frontX, frontZ){
+  const building = entry.building;
+  let sign = Number(building.seed)%2 ? 1 : -1;
+  if (["house", "ringhouse", "lanehouse"].includes(building.type)){
+    const style = Math.abs(Number(building.seed)||0)%SUBURBAN_GARAGE_SIDES.length;
+    sign = -SUBURBAN_GARAGE_SIDES[style];
+  }
+  // Both optimized suburban homes and founder homes retain a door material or
+  // door mesh. Always prioritize the side opposite an off-center entrance;
+  // this keeps wide porch styles such as house 29 from covering their doorway.
+  const center = entry.root.getWorldPosition(new THREE.Vector3());
+  const positiveSideX = frontZ, positiveSideZ = -frontX;
+  const doorSides = [];
+  entry.root.traverse(obj => {
+    if (!obj.isMesh) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isDoor = /^door(?:\d|[._]|$)/i.test(obj.name || "")
+      || materials.some(material => /^NB_sub_door_/i.test(material?.name || ""));
+    if (!isDoor) return;
+    const doorCenter = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+    doorSides.push((doorCenter.x-center.x)*positiveSideX + (doorCenter.z-center.z)*positiveSideZ);
+  });
+  if (doorSides.length){
+    const doorSide = doorSides.reduce((sum,value)=>sum+value,0)/doorSides.length;
+    if (Math.abs(doorSide) > .3) sign = doorSide > 0 ? -1 : 1;
+  }
+  if (typeof building.px === "number") return sign;
+  const ix = ((building.gx % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const iy = ((building.gy % BLOCK_N)+BLOCK_N)%BLOCK_N;
+  const roadDirs = [];
+  if (ix === 0) roadDirs.push(FACE_DIR.w);
+  if (ix === BLOCK_N-1) roadDirs.push(FACE_DIR.e);
+  if (iy === 0) roadDirs.push(FACE_DIR.s);
+  if (iy === BLOCK_N-1) roadDirs.push(FACE_DIR.n);
+  const secondRoad = roadDirs.find(direction => direction[0]*frontX + direction[1]*frontZ < .5);
+  if (secondRoad){
+    const positiveSideX = frontZ, positiveSideZ = -frontX;
+    // Pick the side pointing away from the corner lot's second curb.
+    sign = positiveSideX*secondRoad[0] + positiveSideZ*secondRoad[1] > 0 ? -1 : 1;
+  }
+  return sign;
+}
+
+function removeYardDecorationCollider(houseId){
+  const owner = `yard-${Number(houseId)}`;
+  for (let i=colliders.length-1; i>=0; i--)
+    if (colliders[i].owner === owner) colliders.splice(i,1);
+}
+
+function addYardDecorationCollider(houseId, decoration){
+  removeYardDecorationCollider(houseId);
+  const trunk = decoration?.userData?.collisionMesh;
+  if (trunk) addTrunkColliderFromMesh(trunk, `yard-tree-${houseId}`, `yard-${Number(houseId)}`);
+}
+
+function refreshYardDecorationColliders(){
+  for (const [houseId, decoration] of yardDecorations)
+    addYardDecorationCollider(houseId, decoration);
+}
+
+function clearYardDecoration(houseId){
+  const old = yardDecorations.get(houseId);
+  if (!old) return;
+  customizationLayer.remove(old);
+  disposeObject(old);
+  yardDecorations.delete(houseId);
+  removeYardDecorationCollider(houseId);
+}
+
+function applyCustomizationToHouse(houseId, value){
+  const entry = houseVisuals.get(Number(houseId));
+  if (!entry) return;
+  const custom = normalizeCustomization(value);
+  ensureHouseMaterialsIsolated(entry);
+  resetHouseColors(entry);
+  for (const material of entry.materials || []){
+    const role = materialRoleFor(entry.building, material);
+    const color = role ? HOME_COLORS[`${role}:${custom[role]}`] : null;
+    if (color && material.color){ material.color.set(color); material.needsUpdate = true; }
+  }
+  clearYardDecoration(Number(houseId));
+  if (YARD_DECORATIONS_ENABLED && custom.yard !== "none"){
+    const decor = makeYardDecoration(custom.yard, entry);
+    customizationLayer.add(decor);
+    yardDecorations.set(Number(houseId), decor);
+    addYardDecorationCollider(houseId, decor);
+  }
+  customizedHouseIds.add(Number(houseId));
+}
+
+function applyAllHomeCustomizations(){
+  for (const houseId of customizedHouseIds){
+    resetHouseColors(houseVisuals.get(houseId));
+    clearYardDecoration(houseId);
+  }
+  customizedHouseIds.clear();
+  for (const [houseId, value] of claimCustomizations){
+    const shown = customizationPreview?.houseId === Number(houseId)
+      ? customizationPreview.value : value;
+    if (shown) applyCustomizationToHouse(houseId, shown);
+  }
+}
+
+function indexHouseVisuals(root, buildings){
+  houseVisuals.clear();
+  const used = new Set();
+  const homes = buildings.filter(building => HOME_MATERIAL_ROLES[building.type]);
+  for (const building of homes){
+    const [x,z] = buildingWorldXZ(building);
+    let best = null, bestDistance = Infinity;
+    for (const child of root.children){
+      if (used.has(child) || !child.name.startsWith(building.type + "_d")) continue;
+      const distance = Math.hypot(child.position.x-x, child.position.z-z);
+      if (distance < bestDistance){ best = child; bestDistance = distance; }
+    }
+    if (best && bestDistance < 1){
+      used.add(best);
+      houseVisuals.set(Number(building.seed), { building, root:best, isolated:false, materials:[] });
+    }
+  }
+  console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} home visuals.`);
+  applyAllHomeCustomizations();
+}
 
 /* Which way does the front door face? Mirrors neighborhood_blender.py's
    "face the front door toward the nearest road edge of the block" logic
@@ -1486,6 +2227,7 @@ function frontDirsFor(b){
 const accountBtn = document.getElementById("accountBtn");
 const claimHomeBtn = document.getElementById("claimHomeBtn");
 const goHomeBtn = document.getElementById("goHomeBtn");
+const customizeHomeBtn = document.getElementById("customizeHomeBtn");
 const claimPrompt = document.getElementById("claimPrompt");
 const claimPromptText = document.getElementById("claimPromptText");
 const authModal = document.getElementById("authModal");
@@ -1501,7 +2243,15 @@ function showToast(msg, ms = 4200){
 }
 function modalOpen(){ return authModal.style.display === "flex"; }
 function openModal(){ authModal.style.display = "flex"; renderAuthCard(); }
-function closeModal(){ authModal.style.display = "none"; }
+function closeModal(){
+  authModal.style.display = "none";
+  confirmingUnclaim = false;
+  customizingHome = false;
+  savingCustomization = false;
+  customizationDraft = null;
+  if (customizationPreview){ customizationPreview = null; applyAllHomeCustomizations(); }
+  authCard.classList.remove("customizer-card");
+}
 authModal.addEventListener("mousedown", e => { if (e.target === authModal) closeModal(); });
 
 /* ── data refresh ── */
@@ -1510,19 +2260,24 @@ async function refreshHouses(){
   if (!error && data) houseRows = new Map(data.map(h => [h.id, h]));
 }
 async function refreshClaims(){
-  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle");
+  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle,customization");
   if (!error && data){
     claimedBy = new Map(data.map(r => [r.house_id, r.instagram_handle]));
+    claimCustomizations = new Map(data.map(r => [Number(r.house_id), r.customization]));
     rebuildNameTags();
     rebuildClaimSpots();
+    applyAllHomeCustomizations();
   }
 }
 async function refreshMyStatus(){
-  if (!session){ myProfile = null; myClaim = null; return; }
+  if (!session){ myProfile = null; myClaim = null; myClaims = []; claimLimit = 1; return; }
   const { data, error } = await sb.rpc("my_status");
   if (error) return;
+  const priorHouseId = Number(myClaim?.house_id || 0);
   myProfile = data?.profile ?? null;
-  myClaim = data?.claim ?? null;
+  myClaims = Array.isArray(data?.claims) ? data.claims : (data?.claim ? [data.claim] : []);
+  claimLimit = Math.max(1, Number(data?.claim_limit || (myProfile?.is_admin ? 2 : 1)));
+  myClaim = myClaims.find(claim => Number(claim.house_id) === priorHouseId) || myClaims[0] || null;
   // first login after signup: profile row doesn't exist yet — create it from
   // the handle stashed in auth metadata at signup time
   const metaHandle = session.user?.user_metadata?.instagram_handle;
@@ -1530,6 +2285,16 @@ async function refreshMyStatus(){
     const { data: prof } = await sb.rpc("setup_profile", { p_handle: metaHandle });
     if (prof) myProfile = prof;
   }
+}
+
+function canClaimAnotherHome(){
+  return !!session && myProfile?.verification_status === "verified" && myClaims.length < claimLimit;
+}
+
+function selectOwnedHome(houseId){
+  const selected = myClaims.find(claim => Number(claim.house_id) === Number(houseId));
+  if (selected) myClaim = selected;
+  return selected || null;
 }
 
 function rebuildClaimSpots(){
@@ -1587,7 +2352,7 @@ scene.add(targetTag);
 
 /* ── the claim itself ── */
 async function attemptClaim(){
-  if (!sb || !session || !nearestOpen || claiming) return;
+  if (!sb || !canClaimAnotherHome() || !nearestOpen || claiming) return;
   claiming = true;
   const houseId = nearestOpen;
   const { error } = await sb.rpc("claim_house", { p_house_id: houseId });
@@ -1595,19 +2360,40 @@ async function attemptClaim(){
   if (error){
     const m = error.message || "";
     if (m.includes("house_taken"))            showToast("Someone claimed this house seconds ago — pick another!");
-    else if (m.includes("already_have_house")) showToast("You already have a house in Followville!");
+    else if (m.includes("claim_limit_reached") || m.includes("already_have_house"))
+      showToast(claimLimit > 1 ? "Your admin account already has two homes." : "You already have a house in Followville!");
     else if (m.includes("not_verified"))       showToast("Your Instagram isn't verified yet — check your account panel.");
     else if (m.includes("not_claimable"))      showToast("This building can't be claimed.");
     else                                       showToast("Couldn't claim: " + m);
     refreshClaims();
   } else {
     await Promise.all([refreshClaims(), refreshMyStatus()]);
+    selectOwnedHome(houseId);
     updateAccountUI();
     claimMode = false;
     showToast("🏠 It's yours! Welcome home" + (myProfile ? ", @" + myProfile.instagram_handle : "") + "!");
   }
 }
 claimPrompt.addEventListener("click", attemptClaim);
+
+/* ── Give up the currently selected home. The house id matters for admins,
+   who can own two homes without deleting both at once. ── */
+async function attemptUnclaim(){
+  if (!sb || !session || !myClaim || unclaiming) return;
+  const houseId = Number(myClaim.house_id);
+  unclaiming = true;
+  const { error } = await sb.rpc("unclaim_house", { p_house_id:houseId });
+  unclaiming = false;
+  confirmingUnclaim = false;
+  if (error){
+    showToast("Couldn't unclaim: " + (error.message || "try again"));
+  } else {
+    await Promise.all([refreshClaims(), refreshMyStatus()]);
+    updateAccountUI();
+    showToast(`Home #${houseId} is open again${canClaimAnotherHome() ? " — you can claim another home." : "."}`);
+  }
+  if (modalOpen()) renderAuthCard();
+}
 
 /* ── spawn at your own house ── */
 function goHome(){
@@ -1629,17 +2415,20 @@ function updateAccountUI(){
   if (!session)            accountBtn.textContent = "sign in · claim a home";
   else if (!myProfile)     accountBtn.textContent = "finish account setup";
   else if (myProfile.verification_status === "verified")
-                           accountBtn.textContent = "@" + myProfile.instagram_handle + " ✓";
+                           accountBtn.textContent = "@" + myProfile.instagram_handle + " ✓" +
+                             (claimLimit > 1 ? ` · ${myClaims.length}/${claimLimit} homes` : "");
   else                     accountBtn.textContent = "@" + myProfile.instagram_handle + " · pending";
-  const verified = myProfile?.verification_status === "verified";
-  claimHomeBtn.style.display = (session && verified && !myClaim) ? "" : "none";
+  claimHomeBtn.style.display = canClaimAnotherHome() ? "" : "none";
+  claimHomeBtn.textContent = myClaims.length ? "claim second home" : "claim a home";
   goHomeBtn.style.display = (session && myClaim) ? "" : "none";
+  customizeHomeBtn.style.display = (session && myClaim) ? "" : "none";
   if (modalOpen()) renderAuthCard();
 }
 accountBtn.addEventListener("click", openModal);
 
 claimHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
+  if (!canClaimAnotherHome()) return;
   claimMode = true;
   if (isTouch) beginWalking(); else controls.lock();
   showToast(isTouch
@@ -1651,12 +2440,118 @@ goHomeBtn.addEventListener("click", e => {
   goHome();
   if (isTouch) beginWalking(); else controls.lock();
 });
+customizeHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  openHomeCustomizer();
+});
 
 /* ── auth modal panels ── */
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch])); }
 
+function customOptionMarkup(key, selected){
+  if (key === "yard"){
+    return HOME_OPTIONS.yard.map(([id, label, icon]) => `
+      <button type="button" class="custom-option yard-option ${id === selected ? "selected" : ""}"
+        data-custom-key="yard" data-custom-value="${id}" aria-pressed="${id === selected}">
+        ${icon}<small>${label}</small></button>`).join("");
+  }
+  return HOME_OPTIONS[key].map(([id, label, color]) => `
+    <button type="button" class="custom-option ${id === selected ? "selected" : ""}"
+      data-custom-key="${key}" data-custom-value="${id}" aria-pressed="${id === selected}">
+      <span class="custom-swatch ${id === "original" ? "original" : ""}"
+        ${color ? `style="background:${color}"` : ""}></span>${label}</button>`).join("");
+}
+
+function previewCustomizationDraft(){
+  if (!myClaim || !customizationDraft) return;
+  customizationPreview = { houseId:Number(myClaim.house_id), value:{ ...customizationDraft } };
+  applyAllHomeCustomizations();
+}
+
+function openHomeCustomizer(){
+  if (!myClaim){ showToast("Claim a home before customizing it."); return; }
+  customizingHome = true;
+  customizationDraft = normalizeCustomization(myClaim.customization);
+  previewCustomizationDraft();
+  authModal.style.display = "flex";
+  renderAuthCard();
+}
+
+async function saveHomeCustomization(){
+  if (!sb || !session || !myClaim || !customizationDraft || savingCustomization) return;
+  savingCustomization = true;
+  renderHomeCustomizer();
+  const payload = normalizeCustomization(customizationDraft);
+  const { data, error } = await sb.rpc("update_my_customization", {
+    p_house_id:Number(myClaim.house_id), p_customization:payload
+  });
+  savingCustomization = false;
+  if (error){
+    renderHomeCustomizer();
+    setErr(error.message?.includes("bad_customization")
+      ? "That combination wasn't accepted. Try choosing the options again."
+      : "Couldn't save your home yet. " + (error.message || "Please try again."));
+    return;
+  }
+  if (data) myClaim = data;
+  customizationPreview = null;
+  await Promise.all([refreshClaims(), refreshMyStatus()]);
+  customizingHome = false;
+  customizationDraft = null;
+  updateAccountUI();
+  if (modalOpen()) renderAuthCard();
+  showToast("Your home was updated - everyone in town can see it now!");
+}
+
+function renderHomeCustomizer(){
+  if (!myClaim) return;
+  authCard.classList.add("customizer-card");
+  customizationDraft = normalizeCustomization(customizationDraft || myClaim.customization);
+  authCard.innerHTML = `
+    <div class="customizer-head">
+      <div class="customizer-home-icon">&#127969;</div>
+      <div><h2>Customize home #${Number(myClaim.house_id)}</h2>
+      <p class="muted">Make it yours. Your saved house colors appear for every visitor.</p></div>
+    </div>
+    <div class="custom-section"><div class="custom-section-title">Exterior <span>wall or main body</span></div>
+      <div class="custom-options">${customOptionMarkup("wall", customizationDraft.wall)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Roof <span>roof or landmark accent</span></div>
+      <div class="custom-options">${customOptionMarkup("roof", customizationDraft.roof)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Door <span>front-door color</span></div>
+      <div class="custom-options">${customOptionMarkup("door", customizationDraft.door)}</div></div>
+    <div class="customizer-actions">
+      <button class="secondary" id="doCancelCustomize" ${savingCustomization ? "disabled" : ""}>cancel</button>
+      <button class="primary" id="doSaveCustomize" ${savingCustomization ? "disabled" : ""}>
+        ${savingCustomization ? "saving..." : "save my home"}</button>
+    </div>
+    <div class="err" id="authErr"></div>
+    <button class="linkish" id="doResetCustomize" ${savingCustomization ? "disabled" : ""}>reset to original</button>`;
+  authCard.querySelectorAll("[data-custom-key]").forEach(button => {
+    button.disabled = savingCustomization;
+    button.onclick = () => {
+      customizationDraft = { ...customizationDraft, [button.dataset.customKey]:button.dataset.customValue };
+      previewCustomizationDraft();
+      renderHomeCustomizer();
+    };
+  });
+  document.getElementById("doSaveCustomize").onclick = saveHomeCustomization;
+  document.getElementById("doCancelCustomize").onclick = () => {
+    customizationPreview = null;
+    applyAllHomeCustomizations();
+    customizingHome = false;
+    customizationDraft = null;
+    renderAuthCard();
+  };
+  document.getElementById("doResetCustomize").onclick = () => {
+    customizationDraft = { ...HOME_DEFAULTS };
+    previewCustomizationDraft();
+    renderHomeCustomizer();
+  };
+}
+
 function renderAuthCard(){
   if (!sb) return;
+  authCard.classList.toggle("customizer-card", customizingHome && !!myClaim);
   if (!session){
     authCard.innerHTML = `
       <h2>Claim your home</h2>
@@ -1713,7 +2608,7 @@ function renderAuthCard(){
     wireSignout();
     return;
   }
-  if (!myClaim){
+  if (!myClaims.length){
     authCard.innerHTML = `
       <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
       <p class="muted">You're verified! Close this, hit <b>claim a home</b>, and walk
@@ -1725,12 +2620,49 @@ function renderAuthCard(){
     wireSignout();
     return;
   }
+  if (customizingHome){ renderHomeCustomizer(); return; }
+  if (confirmingUnclaim){
+    authCard.innerHTML = `
+      <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
+      <p class="muted">Give up home #${Number(myClaim.house_id)}? It goes back up for anyone to claim, including
+      you — but if you want it back, someone else might get there first.</p>
+      <button class="primary" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
+        ${unclaiming ? "unclaiming…" : `yes, unclaim home #${Number(myClaim.house_id)}`}</button>
+      <div class="err" id="authErr"></div>
+      <button class="linkish" id="doCancelUnclaim">never mind</button>`;
+    document.getElementById("doConfirmUnclaim").onclick = attemptUnclaim;
+    document.getElementById("doCancelUnclaim").onclick = () => { confirmingUnclaim = false; renderAuthCard(); };
+    return;
+  }
+  const homesMarkup = myClaims.map(claim => {
+    const houseId = Number(claim.house_id);
+    const active = houseId === Number(myClaim?.house_id);
+    return `<div class="owned-home-card ${active ? "active" : ""}" data-owned-home="${houseId}">
+      <div class="owned-home-title">Home #${houseId}${active ? "<span>selected</span>" : ""}</div>
+      <div class="owned-home-actions">
+        <button class="home-action" data-home-action="visit" data-house-id="${houseId}">go home</button>
+        <button class="home-action" data-home-action="customize" data-house-id="${houseId}">customize</button>
+        <button class="home-action danger" data-home-action="unclaim" data-house-id="${houseId}">unclaim this home</button>
+      </div>
+    </div>`;
+  }).join("");
   authCard.innerHTML = `
     <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
-    <button class="primary" id="doGoHome">go to my home</button>
+    <p class="owned-home-summary">You own ${myClaims.length} of ${claimLimit} allowed ${claimLimit === 1 ? "home" : "homes"}. Select either home below.</p>
+    ${canClaimAnotherHome() ? '<button class="primary" id="doStartClaim">claim second home</button>' : ""}
+    <div class="owned-home-list">${homesMarkup}</div>
     <div class="err" id="authErr"></div>
     <button class="linkish" id="doSignout">log out</button>`;
-  document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
+  const startClaim = document.getElementById("doStartClaim");
+  if (startClaim) startClaim.onclick = () => { closeModal(); claimHomeBtn.click(); };
+  authCard.querySelectorAll("[data-home-action]").forEach(button => {
+    button.onclick = () => {
+      if (!selectOwnedHome(button.dataset.houseId)) return;
+      if (button.dataset.homeAction === "visit") { closeModal(); goHomeBtn.click(); }
+      else if (button.dataset.homeAction === "customize") openHomeCustomizer();
+      else { confirmingUnclaim = true; renderAuthCard(); }
+    };
+  });
   wireSignout();
 }
 
@@ -1743,7 +2675,11 @@ function setErr(msg){
 }
 function wireSignout(){
   const el = document.getElementById("doSignout");
-  if (el) el.onclick = async () => { await sb.auth.signOut(); closeModal(); };
+  if (el) el.onclick = async () => {
+    await endLoggedPlayerSession();
+    await sb.auth.signOut();
+    closeModal();
+  };
 }
 
 function renderAuthForms(mode){
@@ -1799,25 +2735,418 @@ function renderAuthForms(mode){
   }
 }
 
+/* ── lightweight multiplayer, presence and town chat ── */
+const MULTIPLAYER_TOPIC = "followville-town-v1";
+let multiplayerChannel = null, multiplayerSubscribed = false;
+let multiplayerSessionId = null, multiplayerHeartbeat = null;
+let multiplayerGeneration = 0, lastPositionBroadcast = 0;
+const multiplayerPlayers = new Map();
+const multiplayerPresenceIds = new Set();
+const multiplayerTrustedHandles = new Map();
+const seenChatIds = new Set();
+const multiplayerLayer = new THREE.Group();
+multiplayerLayer.name = "WEB_multiplayer_players";
+scene.add(multiplayerLayer);
+const multiplayerDirection = new THREE.Vector3();
+
+function getMultiplayerClientId(){
+  const makeId = () => crypto.randomUUID ? crypto.randomUUID() :
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+      return (c === "x" ? r : (r & 3) | 8).toString(16);
+    });
+  try {
+    let id = sessionStorage.getItem("followville_multiplayer_client");
+    if (!id){
+      id = makeId();
+      sessionStorage.setItem("followville_multiplayer_client", id);
+    }
+    return id;
+  } catch (_) {
+    return makeId();
+  }
+}
+const multiplayerClientId = getMultiplayerClientId();
+
+function cleanPresence(raw){
+  if (!raw || typeof raw.client_id !== "string") return null;
+  const x = Number(raw.x), z = Number(raw.z), yaw = Number(raw.yaw || 0);
+  if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 5000 || Math.abs(z) > 5000) return null;
+  const trusted = multiplayerTrustedHandles.get(raw.client_id);
+  const loggedIn = typeof trusted === "string";
+  const handle = loggedIn ? trusted : "visitor-" + raw.client_id.slice(0, 4);
+  return { client_id: raw.client_id, x, z, yaw, logged_in: loggedIn, handle };
+}
+
+function playerColor(id){
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  return new THREE.Color().setHSL(Math.abs(hash % 360) / 360, .52, .58);
+}
+
+function disposeSprite(sprite){
+  if (!sprite) return;
+  sprite.material?.map?.dispose();
+  sprite.material?.dispose();
+}
+
+function setPlayerLabel(player, presence){
+  if (player.label) {
+    player.group.remove(player.label);
+    disposeSprite(player.label);
+  }
+  const label = makeTagSprite(presence.logged_in ? "@" + presence.handle : presence.handle);
+  label.scale.set(4.8, 1.2, 1);
+  label.position.y = 2.38;
+  player.group.add(label);
+  player.label = label;
+  player.handle = presence.handle;
+  player.logged_in = presence.logged_in;
+}
+
+function createRemotePlayer(presence){
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({
+    color:playerColor(presence.client_id), roughness:.74, metalness:0
+  });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.34, .42, 1.22, 10), material);
+  body.position.y = .72;
+  body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 7), material);
+  head.position.y = 1.58;
+  head.castShadow = true;
+  const facePanelMaterial = new THREE.MeshBasicMaterial({ color:0xffedb0, side:THREE.DoubleSide });
+  const facePanel = new THREE.Mesh(new THREE.CircleGeometry(.235, 18), facePanelMaterial);
+  facePanel.position.set(0, 1.58, .318);
+  const faceMaterial = new THREE.MeshBasicMaterial({ color:0x1c2b45 });
+  const eyeGeometry = new THREE.SphereGeometry(.047, 8, 6);
+  const leftEye = new THREE.Mesh(eyeGeometry, faceMaterial);
+  leftEye.position.set(-.09, 1.65, .328);
+  const rightEye = new THREE.Mesh(eyeGeometry.clone(), faceMaterial);
+  rightEye.position.set(.09, 1.65, .328);
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(.11, .025, 7, 18, Math.PI), faceMaterial
+  );
+  smile.position.set(0, 1.54, .331);
+  smile.rotation.z = Math.PI;
+  group.add(body, head, facePanel, leftEye, rightEye, smile);
+  group.position.set(presence.x, 0, presence.z);
+  multiplayerLayer.add(group);
+  const player = {
+    group, material, facePanelMaterial, faceMaterial, label:null, bubble:null, bubbleTimer:null,
+    target:new THREE.Vector3(presence.x, 0, presence.z),
+    targetYaw:presence.yaw, handle:"", logged_in:false
+  };
+  setPlayerLabel(player, presence);
+  multiplayerPlayers.set(presence.client_id, player);
+  return player;
+}
+
+function upsertRemotePlayer(raw){
+  const presence = cleanPresence(raw);
+  if (!presence || presence.client_id === multiplayerClientId) return;
+  let player = multiplayerPlayers.get(presence.client_id);
+  if (!player) player = createRemotePlayer(presence);
+  if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
+    setPlayerLabel(player, presence);
+  player.target.set(presence.x, 0, presence.z);
+  player.targetYaw = presence.yaw;
+}
+
+function removeRemotePlayer(clientId){
+  const player = multiplayerPlayers.get(clientId);
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  disposeSprite(player.label);
+  disposeSprite(player.bubble);
+  player.group.traverse(obj => obj.geometry?.dispose?.());
+  player.material.dispose();
+  player.facePanelMaterial.dispose();
+  player.faceMaterial.dispose();
+  multiplayerLayer.remove(player.group);
+  multiplayerPlayers.delete(clientId);
+}
+
+async function refreshTrustedPlayerHandles(){
+  if (!sb) return;
+  const cutoff = new Date(Date.now() - 90000).toISOString();
+  const { data, error } = await sb.from("active_player_identities")
+    .select("client_id,instagram_handle,last_seen_at")
+    .gt("last_seen_at", cutoff);
+  if (error || !Array.isArray(data)) return;
+  multiplayerTrustedHandles.clear();
+  for (const row of data){
+    const id = String(row.client_id || "");
+    const handle = String(row.instagram_handle || "").toLowerCase();
+    if (id && /^[a-z0-9._]{1,30}$/.test(handle))
+      multiplayerTrustedHandles.set(id, handle);
+  }
+}
+
+async function syncMultiplayerPresence(){
+  if (!multiplayerChannel) return;
+  await refreshTrustedPlayerHandles();
+  const state = multiplayerChannel.presenceState();
+  const active = new Set();
+  for (const entries of Object.values(state)){
+    for (const raw of (Array.isArray(entries) ? entries : [entries])){
+      const presence = cleanPresence(raw);
+      if (!presence) continue;
+      active.add(presence.client_id);
+      upsertRemotePlayer(presence);
+    }
+  }
+  multiplayerPresenceIds.clear();
+  for (const id of active) multiplayerPresenceIds.add(id);
+  for (const id of Array.from(multiplayerPlayers.keys()))
+    if (!active.has(id)) removeRemotePlayer(id);
+  onlineCount.textContent = active.size + (active.size === 1 ? " player online" : " players online");
+}
+
+function showPlayerChatBubble(row){
+  const player = multiplayerPlayers.get(String(row.client_id || ""));
+  if (!player) return;
+  clearTimeout(player.bubbleTimer);
+  if (player.bubble){
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+  }
+  const body = String(row.body || "");
+  const shortBody = body.length > 58 ? body.slice(0, 55) + "..." : body;
+  player.bubble = makeTagSprite(shortBody);
+  player.bubble.scale.set(6.2, 1.55, 1);
+  player.bubble.position.y = 3.72;
+  player.group.add(player.bubble);
+  player.bubbleTimer = setTimeout(() => {
+    if (!player.bubble) return;
+    player.group.remove(player.bubble);
+    disposeSprite(player.bubble);
+    player.bubble = null;
+  }, 6500);
+}
+
+function addChatMessage(row, showBubble){
+  if (!row || row.id == null || seenChatIds.has(String(row.id))) return;
+  seenChatIds.add(String(row.id));
+  const item = document.createElement("div");
+  item.className = "chat-message";
+  const who = document.createElement("span");
+  who.className = "chat-who";
+  who.textContent = "@" + String(row.sender_handle || "unknown");
+  const body = document.createElement("span");
+  body.textContent = String(row.body || "");
+  const time = document.createElement("span");
+  time.className = "chat-time";
+  const parsed = new Date(row.created_at);
+  time.textContent = Number.isNaN(parsed.getTime()) ? "" :
+    parsed.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
+  item.append(who, body, time);
+  chatMessages.appendChild(item);
+  while (chatMessages.children.length > 80) chatMessages.firstElementChild.remove();
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (showBubble) showPlayerChatBubble(row);
+}
+
+async function loadChatHistory(){
+  if (!sb) return;
+  const { data, error } = await sb.from("chat_messages")
+    .select("id,sender_handle,client_id,body,created_at")
+    .order("created_at", { ascending:false }).limit(50);
+  if (!error && data) for (const row of data.reverse()) addChatMessage(row, false);
+}
+
+function updateChatAuthState(){
+  const canChat = !!(session && myProfile);
+  chatInput.disabled = !canChat;
+  chatSend.disabled = !canChat;
+  chatInput.placeholder = canChat ? "Say something..." : "Sign in to chat";
+  chatNote.textContent = canChat
+    ? "Enter sends and returns to the game · messages are saved"
+    : "You can see chat now. Sign in to send messages.";
+}
+
+async function sendTownChat(){
+  if (!sb || !session || !myProfile){
+    chatNote.textContent = "Sign in before sending a message.";
+    openModal();
+    return;
+  }
+  const body = chatInput.value.trim();
+  if (!body) return;
+  chatSend.disabled = true;
+  chatInput.value = "";
+  closeChat();
+  const { data, error } = await sb.rpc("send_chat_message", {
+    p_body:body, p_client_id:multiplayerClientId
+  });
+  chatSend.disabled = false;
+  if (error){
+    chatInput.value = body;
+    openChat();
+    chatNote.textContent = (error.message || "").includes("chat_rate_limited")
+      ? "Slow down — wait a second between messages."
+      : "Message failed. Please try again.";
+    return;
+  }
+  chatInput.value = "";
+  chatNote.textContent = "Enter sends and returns to the game · messages are saved";
+  addChatMessage(data, true);
+}
+
+async function startLoggedPlayerSession(){
+  if (!sb || !session || !myProfile) return;
+  const { data, error } = await sb.rpc("start_player_session", { p_client_id:multiplayerClientId });
+  if (error || !data){
+    console.warn("multiplayer session log did not start", error);
+    return;
+  }
+  multiplayerSessionId = data;
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = setInterval(async () => {
+    if (!multiplayerSessionId || !session) return;
+    const { error: heartbeatError } = await sb.rpc("heartbeat_player_session", {
+      p_session_id:multiplayerSessionId
+    });
+    if (heartbeatError) console.warn("multiplayer heartbeat failed", heartbeatError);
+  }, 30000);
+}
+
+async function endLoggedPlayerSession(){
+  clearInterval(multiplayerHeartbeat);
+  multiplayerHeartbeat = null;
+  const id = multiplayerSessionId;
+  multiplayerSessionId = null;
+  if (id && sb && session) await sb.rpc("end_player_session", { p_session_id:id });
+}
+
+async function shutdownMultiplayer(endSession){
+  if (endSession) await endLoggedPlayerSession();
+  else {
+    clearInterval(multiplayerHeartbeat);
+    multiplayerHeartbeat = null;
+    multiplayerSessionId = null;
+  }
+  multiplayerSubscribed = false;
+  if (multiplayerChannel && sb) await sb.removeChannel(multiplayerChannel);
+  multiplayerChannel = null;
+  multiplayerPresenceIds.clear();
+  multiplayerTrustedHandles.clear();
+  for (const id of Array.from(multiplayerPlayers.keys())) removeRemotePlayer(id);
+}
+
+async function restartMultiplayer(){
+  const generation = ++multiplayerGeneration;
+  await shutdownMultiplayer(true);
+  if (!sb || previewMode || generation !== multiplayerGeneration) return;
+  updateChatAuthState();
+  await loadChatHistory();
+  if (generation !== multiplayerGeneration) return;
+  await startLoggedPlayerSession();
+  await refreshTrustedPlayerHandles();
+  if (generation !== multiplayerGeneration) return;
+
+  multiplayerChannel = sb.channel(MULTIPLAYER_TOPIC, {
+    config:{
+      presence:{ key:multiplayerClientId },
+      broadcast:{ self:false, ack:false }
+    }
+  });
+  multiplayerChannel
+    .on("presence", { event:"sync" }, syncMultiplayerPresence)
+    .on("broadcast", { event:"player_move" }, ({ payload }) => {
+      if (!payload || !multiplayerPresenceIds.has(payload.client_id)) return;
+      const current = multiplayerPlayers.get(payload.client_id);
+      upsertRemotePlayer({
+        client_id:payload.client_id, x:payload.x, z:payload.z, yaw:payload.yaw,
+        logged_in:current?.logged_in, handle:current?.handle
+      });
+    })
+    .on("postgres_changes", {
+      event:"INSERT", schema:"public", table:"chat_messages"
+    }, payload => addChatMessage(payload.new, true))
+    .subscribe(async status => {
+      if (status !== "SUBSCRIBED" || generation !== multiplayerGeneration) return;
+      multiplayerSubscribed = true;
+      camera.getWorldDirection(multiplayerDirection);
+      await multiplayerChannel.track({
+        client_id:multiplayerClientId,
+        handle:myProfile?.instagram_handle || "",
+        logged_in:!!myProfile,
+        x:camera.position.x, z:camera.position.z,
+        yaw:Math.atan2(multiplayerDirection.x, multiplayerDirection.z),
+        joined_at:new Date().toISOString()
+      });
+      syncMultiplayerPresence();
+    });
+}
+
+function updateMultiplayer(dt){
+  for (const player of multiplayerPlayers.values()){
+    player.group.position.lerp(player.target, Math.min(1, dt * 9));
+    let delta = player.targetYaw - player.group.rotation.y;
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+    player.group.rotation.y += delta * Math.min(1, dt * 9);
+  }
+  const now = performance.now();
+  const interval = gameRunning ? 120 : 1500;
+  if (!multiplayerSubscribed || !multiplayerChannel || now - lastPositionBroadcast < interval) return;
+  lastPositionBroadcast = now;
+  camera.getWorldDirection(multiplayerDirection);
+  multiplayerChannel.send({
+    type:"broadcast", event:"player_move",
+    payload:{
+      client_id:multiplayerClientId,
+      x:Number(camera.position.x.toFixed(3)),
+      z:Number(camera.position.z.toFixed(3)),
+      yaw:Number(Math.atan2(multiplayerDirection.x, multiplayerDirection.z).toFixed(4))
+    }
+  });
+}
+
+window.addEventListener("pagehide", () => {
+  if (!multiplayerSessionId || !session?.access_token) return;
+  fetch(SUPABASE_URL + "/rest/v1/rpc/end_player_session", {
+    method:"POST", keepalive:true,
+    headers:{
+      apikey:SUPABASE_ANON_KEY,
+      Authorization:"Bearer " + session.access_token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ p_session_id:multiplayerSessionId })
+  }).catch(() => {});
+});
+
 /* ── boot ── */
 async function initSupabase(){
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;   // feature off — page unchanged
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    onlineCount.textContent = "multiplayer unavailable";
+    return;
+  }
   try {
     const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
     sb = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e){
     console.warn("supabase-js failed to load — claiming disabled this visit", e);
     sb = null;
+    onlineCount.textContent = "multiplayer unavailable";
     return;
   }
   const { data } = await sb.auth.getSession();
   session = data?.session ?? null;
   sb.auth.onAuthStateChange((_evt, s) => {
+    const priorUser = session?.user?.id ?? null;
+    const nextUser = s?.user?.id ?? null;
     session = s;
-    refreshMyStatus().then(updateAccountUI);
+    setTimeout(async () => {
+      await refreshMyStatus();
+      updateAccountUI();
+      updateChatAuthState();
+      if (priorUser !== nextUser) await restartMultiplayer();
+    }, 0);
   });
   await Promise.all([refreshHouses(), refreshClaims(), refreshMyStatus()]);
   updateAccountUI();
+  updateChatAuthState();
   // live updates: any claim anywhere refreshes every visitor's map instantly
   sb.channel("claims-live")
     .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => {
@@ -1825,11 +3154,11 @@ async function initSupabase(){
       refreshMyStatus().then(updateAccountUI);
     })
     .subscribe();
+  await restartMultiplayer();
   if (location.hash === "#home" && myClaim){
     goHome();               // arriving from the landing page's "Go to my home"
   } else if (location.hash === "#claim"){
-    if (myClaim) { /* already claimed — no modal nagging, buttons say it all */ }
-    else openModal();
+    if (canClaimAnotherHome()) openModal();
   }
 }
 
@@ -1848,10 +3177,10 @@ function loadFromGLB(buildings){
     const root = gltf.scene;
     loadedTownRoot = root;
     scene.add(root);
+    indexHouseVisuals(root, buildings);
+    buildGLBColliders(root);
 
-    // collision colliders: one per top-level object Blender exported
-    // (each building/tree/car/streetlight ends up as its own top-level node).
-    // Also build the "real town" bounding box from just these reasonably-sized
+    // Build the "real town" bounding box from reasonably-sized top-level
     // objects — Blender's export includes a 4000x4000 ground plane as part of
     // the same scene, and letting that into the framing math would put the
     // spawn point in the middle of a giant empty field instead of the town.
@@ -1869,14 +3198,6 @@ function loadFromGLB(buildings){
       if (radius > 200) continue; // the giant ground/road-spanning plane(s) — ignore for framing
       full.union(box);
       sawAny = true;
-      // Only flat, walkable stuff (roads, lane dashes, the ground plane) is
-      // under ~1 unit tall; everything meant to be bumped into (a house, a
-      // tree, a car) stands well above that. Use height, not footprint, to
-      // decide what collides — a thin road can still be 70+ units LONG,
-      // which a horizontal-radius check alone was wrongly treating as a
-      // giant circular wall.
-      if (size.y > 1.0 && radius > 0.3 && radius < 40)
-        colliders.push({ x: center.x, z: center.z, radius: radius * 0.85 });
     }
     if (!sawAny) full.setFromObject(root); // fallback if every object got filtered out
 
@@ -1967,19 +3288,9 @@ function animate(){
       controls.moveForward(dir.z * speed);
       controls.moveRight(dir.x * speed);
     }
-    // simple push-out collision against building footprints
+    // Shape-aware push-out against building/car footprints and tree trunks.
     const p = camera.position;
-    for (const col of colliders){
-      const dx = p.x - col.x, dz = p.z - col.z;
-      const distSq = dx*dx + dz*dz;
-      const r = col.radius + 0.6;
-      if (distSq < r*r && distSq > 0.0001){
-        const dist = Math.sqrt(distSq);
-        const push = (r - dist);
-        p.x += (dx/dist) * push;
-        p.z += (dz/dist) * push;
-      }
-    }
+    for (const col of colliders) resolvePlayerCollision(p, col);
     camera.position.y = 1.7;
 
     // name tags on claimed houses: only visible when you're near that house
@@ -1992,7 +3303,7 @@ function animate(){
     // its FRONT/door side, and LOOKING at it — then exactly one house is the
     // target, marked by a floating tag right above it.
     let target = null;
-    if (sb && session && myProfile?.verification_status === "verified" && !myClaim && claimSpots.length){
+    if (sb && canClaimAnotherHome() && claimSpots.length){
       camera.getWorldDirection(_camDir);
       let bestLook = 0.5;   // must be within ~60° of screen center
       for (const s of claimSpots){
@@ -2026,6 +3337,8 @@ function animate(){
       targetTag.visible = false;
     }
   }
+
+  updateMultiplayer(dt);
 
   renderer.render(scene, camera);
 }
