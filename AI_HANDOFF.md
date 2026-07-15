@@ -28,6 +28,18 @@ Desktop chat opens with `T`, `/`, or Enter and Enter sends/returns to walking.
 The marker smiley is on local +Z, matching the broadcast yaw convention, so it
 must stay on that side if the placeholder player mesh is redesigned.
 
+## Homeowner Mode (2026-07-15)
+
+Claimed-house owners can customize exterior, roof/accent, and door colors plus
+one yard piece from the account modal or start screen. `town.html` reads the
+existing `claims.customization` JSONB through `public_claims`; the normal
+`claims` Realtime channel applies saves to every visitor. Saves must continue
+to use `update_my_customization(jsonb)`, which derives the target owner from
+`auth.uid()` and accepts only the hard-coded palette IDs. Never grant direct
+client UPDATE on `claims`. The browser clones materials per claimed house before
+recoloring, preserving shared GLB batching and preventing neighboring houses
+from changing. This is web/backend-only and must not rewrite building seeds.
+
 ## Current suburban house system (2026-07-13)
 
 Ordinary `house` and park `ringhouse` buildings share 15 detailed suburban

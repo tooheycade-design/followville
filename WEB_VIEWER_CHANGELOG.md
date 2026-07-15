@@ -287,6 +287,26 @@ Kept here (rather than just in chat) so it survives across sessions.
 - `check_town_glb.py` confirms the final model is not squashed and still matches
   `world_state.json` at Day 13 / population 226 / 229 buildings.
 
+## 17. Homeowner Mode: realtime claimed-house customization
+
+- Added a responsive claimed-owner picker for exterior, roof/accent, and door
+  colors plus one yard piece. Owners can preview before saving and reset to the
+  original house look.
+- Added the strictly validated `update_my_customization(jsonb)` Supabase RPC.
+  It derives the target from `auth.uid()`, accepts only approved palette IDs,
+  and leaves direct claims-table writes blocked. Existing claims are untouched.
+- `public_claims.customization` now drives the current claim Realtime stream,
+  so every open town applies saved changes without a refresh.
+- Recolors clone materials per individual home before editing them; shared GLB
+  materials and the optimized 15-house library remain batched for uncustomized
+  homes. Founder landmarks receive matching wall/roof-accent/door material roles.
+- Yard choices are tiny Three.js primitives (flowers, tree, bench, or flag),
+  avoiding extra downloads and keeping the static site smooth.
+- Verified the module parses, the local town loads without browser errors, all
+  226 home visuals map, the picker works at desktop/mobile sizes, and anonymous
+  RPC execution is rejected. Blender, `world_state.json`, and `town.glb` did not
+  change.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

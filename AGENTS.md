@@ -8,6 +8,16 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 Homeowner Mode (Cade via Codex): every signed-in claimed-house
+  owner can now open `customize my home`, choose an exterior color, roof/accent
+  color, door color, and one lightweight yard piece (flowers, tree, bench, or
+  flag), preview the result, and save it. The approved palette IDs live in the
+  existing `claims.customization` JSONB field; the owner-only
+  `update_my_customization(jsonb)` RPC validates/normalizes every value and
+  updates only the `auth.uid()` caller's claim. Existing claim Realtime updates
+  make saved looks visible to all visitors. Web materials are cloned per house
+  before recoloring so shared Blender materials cannot recolor neighbors.
+  All 27 existing claims remain unchanged and no Blender/state/GLB data moved.
 - Day 13, population 226, 229 buildings (grown 2026-07-14 via Cade's
   Codex: +40 ordinary houses at planned addresses 53-92). Creekside Bend
   completed with the final two Pebble Court homes; Willow Hills began with

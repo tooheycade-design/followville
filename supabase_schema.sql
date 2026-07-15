@@ -193,11 +193,69 @@ as $$
   );
 $$;
 
+-- Homeowner Mode: the signed-in owner may change only the approved visual
+-- options on their own claim.  Keeping this behind a narrow RPC means the
+-- browser never receives UPDATE permission on claims, and the normalized
+-- palette IDs keep arbitrary JSON/CSS values out of the public town view.
+create or replace function public.update_my_customization(p_customization jsonb)
+returns json
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_input jsonb := coalesce(p_customization, '{}'::jsonb);
+  v_customization jsonb;
+  v_row public.claims;
+begin
+  if v_uid is null then
+    raise exception 'not_authenticated';
+  end if;
+  if jsonb_typeof(v_input) <> 'object' or octet_length(v_input::text) > 512 then
+    raise exception 'bad_customization';
+  end if;
+  if exists (
+    select 1 from jsonb_object_keys(v_input) as k(key)
+    where k.key not in ('version', 'wall', 'roof', 'door', 'yard')
+  ) then
+    raise exception 'bad_customization';
+  end if;
+  if coalesce(v_input->>'version', '1') <> '1'
+     or coalesce(v_input->>'wall', 'original') not in
+        ('original', 'butter', 'sage', 'sky', 'blush', 'lavender', 'cream')
+     or coalesce(v_input->>'roof', 'original') not in
+        ('original', 'charcoal', 'cedar', 'slate', 'forest', 'plum')
+     or coalesce(v_input->>'door', 'original') not in
+        ('original', 'red', 'navy', 'teal', 'yellow', 'white')
+     or coalesce(v_input->>'yard', 'none') not in
+        ('none', 'flowers', 'tree', 'bench', 'flag') then
+    raise exception 'bad_customization';
+  end if;
+
+  v_customization := jsonb_build_object(
+    'version', 1,
+    'wall', coalesce(v_input->>'wall', 'original'),
+    'roof', coalesce(v_input->>'roof', 'original'),
+    'door', coalesce(v_input->>'door', 'original'),
+    'yard', coalesce(v_input->>'yard', 'none')
+  );
+
+  update public.claims
+     set customization = v_customization
+   where user_id = v_uid
+   returning * into v_row;
+  if not found then
+    raise exception 'no_claim';
+  end if;
+  return row_to_json(v_row);
+end $$;
+
 grant execute on function public.setup_profile(text)  to authenticated;
 grant execute on function public.claim_house(bigint)  to authenticated;
 grant execute on function public.unclaim_house()      to authenticated;
 grant execute on function public.my_status()          to authenticated;
-revoke execute on function public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status() from anon;
+grant execute on function public.update_my_customization(jsonb) to authenticated;
+revoke execute on function public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(),
+  public.my_status(), public.update_my_customization(jsonb) from public, anon;
 
 -- ───────────────────────────── REALTIME ─────────────────────────────
 -- Broadcast claim inserts/deletes to every connected town.html.
@@ -373,7 +431,8 @@ revoke execute on function
   public.admin_revoke_claim(bigint), public.caller_is_admin(),
   public.admin_list_pending(), public.admin_list_claims(),
   public.admin_list_verified_unclaimed(),
-  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status()
+  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status(),
+  public.update_my_customization(jsonb)
 from public, anon, authenticated;
 
 grant execute on function
@@ -381,7 +440,8 @@ grant execute on function
   public.admin_revoke_claim(bigint), public.caller_is_admin(),
   public.admin_list_pending(), public.admin_list_claims(),
   public.admin_list_verified_unclaimed(),
-  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status()
+  public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(), public.my_status(),
+  public.update_my_customization(jsonb)
 to authenticated, service_role;
 
 -- ───────────────────────────── NOTES ─────────────────────────────

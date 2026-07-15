@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Built Homeowner Mode: claimed owners can preview/save approved exterior, roof/accent, and door colors plus one lightweight yard piece; added a validated owner-only Supabase RPC and realtime town updates, preserved all 27 existing claims, mapped all 226 homes with per-house material isolation, and left Blender/state/GLB unchanged.
+
 2026-07-14 - Cade (via Windows Codex) - [BOTH] Completed Day 13 from 186 to 226 followers with 40 validated houses at plan IDs 53-92, finished Creekside Bend and began Willow Hills, added reusable newest-district/newest-street cameras, cleared procedural nature from newly revealed roads/lots, rendered and reviewed static street plus house-appearance plus static overhead videos, rebuilt/validated the 6.1 MB GLB, matched all 40 new Supabase rows, and emailed the three videos to zachkehler@gmail.com.
 
 2026-07-14 - Cade (via Windows Codex) - [WEB] Made the temporary multiplayer smiley faces unmistakable at gameplay distance by adding a light circular face panel, larger dark eyes, and a thicker forward-facing smile to every player marker.

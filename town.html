@@ -186,6 +186,51 @@
   }
   #authCard .badge.pending { background:#f6e3b4; color:#7a5b12; }
   #authCard .badge.verified { background:#cdeccc; color:#20621f; }
+  #authCard.customizer-card { width:min(520px, 94vw); padding:24px 24px 20px; }
+  .customizer-head { display:flex; align-items:flex-start; gap:12px; }
+  .customizer-head > div { flex:1; }
+  .customizer-home-icon { font-size:30px; line-height:1; }
+  .custom-section { margin-top:17px; }
+  .custom-section-title {
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  }
+  .custom-section-title span { font-size:10.5px; font-weight:600; opacity:.55; letter-spacing:0; text-transform:none; }
+  .custom-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(62px,1fr)); gap:8px; margin-top:8px; }
+  .custom-option {
+    min-width:0; padding:8px 5px 7px; border:1px solid #d6d8dc; border-radius:11px;
+    background:#fff; color:#1c2b45; font-family:inherit; font-size:10.5px;
+    font-weight:600; line-height:1.15; cursor:pointer;
+    text-align:center; transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;
+  }
+  .custom-option:hover { transform:translateY(-1px); border-color:#8aa0b8; }
+  .custom-option.selected { border-color:#1c2b45; box-shadow:0 0 0 2px rgba(28,43,69,.14); }
+  .custom-option:focus-visible { outline:3px solid rgba(43,106,148,.28); outline-offset:2px; }
+  .custom-swatch {
+    display:block; width:27px; height:27px; margin:0 auto 5px; border-radius:50%;
+    border:1px solid rgba(28,43,69,.2); box-shadow:inset 0 0 0 2px rgba(255,255,255,.42);
+  }
+  .custom-swatch.original {
+    background:linear-gradient(135deg,#f2d49c 0 49%,#728093 50% 100%);
+  }
+  .yard-options { grid-template-columns:repeat(5,1fr); }
+  .yard-option { font-size:19px; padding:9px 3px 7px; }
+  .yard-option small { display:block; margin-top:3px; font-size:9.5px; font-weight:700; }
+  .customizer-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:18px; }
+  #authCard .customizer-actions .primary { margin-top:0; }
+  #authCard .secondary {
+    width:100%; padding:12px; border:1px solid #c9d1dc; border-radius:12px;
+    background:#fff; color:#1c2b45; font-family:inherit; font-size:14px;
+    font-weight:700; cursor:pointer;
+  }
+  #authCard .secondary:disabled, .custom-option:disabled { opacity:.55; cursor:default; }
+  @media (max-width:520px){
+    #authCard.customizer-card { padding:20px 16px 16px; }
+    .custom-options { grid-template-columns:repeat(4,1fr); gap:6px; }
+    .yard-options { grid-template-columns:repeat(5,1fr); }
+    .custom-option { font-size:9.5px; }
+    .yard-option small { font-size:8.5px; }
+  }
 
   /* lightweight multiplayer + town chat */
   #multiplayerStatus {
@@ -252,6 +297,7 @@
     <div class="btn" id="enterBtn">click to enter</div>
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
     <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
+    <div class="btn alt" id="customizeHomeBtn" style="display:none;">customize my home</div>
   </div>
 </div>
 
@@ -1538,9 +1584,12 @@ function addBuildings(buildings){
     inst.position.z += y;
     if (b.face && FACE_ANGLE[b.face] !== undefined) inst.rotation.y = FACE_ANGLE[b.face];
     world.add(inst);
+    if (HOME_MATERIAL_ROLES[b.type])
+      houseVisuals.set(Number(b.seed), { building:b, root:inst, isolated:false, materials:[] });
     colliders.push({ x, z: y, radius: inst.userData.radius || 4.2 });
   }
   scene.add(world);
+  applyAllHomeCustomizations();
 }
 
 /* ═══════════════════════ ACCOUNTS + HOME CLAIMING ═══════════════════════
@@ -1557,13 +1606,22 @@ let sb = null;                  // supabase client (null = feature off/unavailab
 let session = null, myProfile = null, myClaim = null;
 let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
 let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
+let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
 let worldBuildings = [];        // from world_state.json (geometry truth)
 let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
 let unclaiming = false, confirmingUnclaim = false;
+let customizingHome = false, savingCustomization = false, customizationDraft = null;
+let customizationPreview = null;
 const nameTags = new THREE.Group();
 scene.add(nameTags);
+const customizationLayer = new THREE.Group();
+customizationLayer.name = "homeowner-customizations";
+scene.add(customizationLayer);
+const houseVisuals = new Map();
+const customizedHouseIds = new Set();
+const yardDecorations = new Map();
 
 /* Rough roof-top heights per building type, so tags/markers sit just above
    the house instead of floating in the sky (or inside a tall tower). */
@@ -1572,6 +1630,220 @@ const TAG_HEIGHT = {
   eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
   beachhouse: 8, cottagehouse: 8.5, ringhouse: 9.2, lanehouse: 6.5,
 };
+
+const HOME_OPTIONS = {
+  wall: [
+    ["original", "original", null], ["butter", "butter", "#e7c875"],
+    ["sage", "sage", "#8faa83"], ["sky", "sky", "#82acc4"],
+    ["blush", "blush", "#d39a98"], ["lavender", "lavender", "#a39ac4"],
+    ["cream", "cream", "#e8ddbd"]
+  ],
+  roof: [
+    ["original", "original", null], ["charcoal", "charcoal", "#384150"],
+    ["cedar", "cedar", "#8a4c34"], ["slate", "slate", "#5e6e87"],
+    ["forest", "forest", "#355b49"], ["plum", "plum", "#5e405f"]
+  ],
+  door: [
+    ["original", "original", null], ["red", "red", "#a13b34"],
+    ["navy", "navy", "#294563"], ["teal", "teal", "#307875"],
+    ["yellow", "yellow", "#dbae3d"], ["white", "white", "#f2eee4"]
+  ],
+  yard: [
+    ["none", "none", "&mdash;"], ["flowers", "flowers", "&#127800;"],
+    ["tree", "tree", "&#127795;"], ["bench", "bench", "&#129681;"],
+    ["flag", "flag", "&#128681;"]
+  ]
+};
+const HOME_DEFAULTS = { version:1, wall:"original", roof:"original", door:"original", yard:"none" };
+const HOME_COLORS = Object.fromEntries(
+  ["wall", "roof", "door"].flatMap(key => HOME_OPTIONS[key].map(([id, , color]) => [`${key}:${id}`, color]))
+);
+
+function normalizeCustomization(value){
+  const input = value && typeof value === "object" ? value : {};
+  const out = { ...HOME_DEFAULTS };
+  for (const key of ["wall", "roof", "door", "yard"]){
+    if (HOME_OPTIONS[key].some(([id]) => id === input[key])) out[key] = input[key];
+  }
+  return out;
+}
+
+/* Material roles for both the standard suburban library and the ten founder
+   landmark houses. Materials are cloned per claimed building before any color
+   change, so a shared Blender material can never recolor neighboring homes. */
+const HOME_MATERIAL_ROLES = {
+  house: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  ringhouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  lanehouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  mushroomhouse: { wall:["NB_mush_stem"], roof:["NB_mush_cap"], door:["NB_door"] },
+  casinohouse: { wall:["NB_cas_wall"], roof:["NB_cas_gold"], door:["NB_door"] },
+  cathouse: { wall:["NB_cat_fur"], roof:["NB_cat_dark"], door:["NB_door"] },
+  castlehouse: { wall:["NB_cast_stone"], roof:["NB_cast_blue"], door:["NB_door"] },
+  eiffelhouse: { wall:["NB_eif_home"], roof:["NB_eif_bronze"], door:["NB_door"] },
+  flowerhouse: { wall:["NB_flw_stem"], roof:["NB_flw_p"], door:["NB_door"] },
+  burjhouse: { wall:["NB_burj_glass"], roof:["NB_burj_trim"], door:["NB_door"] },
+  toilethouse: { wall:["NB_wc_white"], roof:["NB_wc_seat"], door:["NB_door"] },
+  beachhouse: { wall:["NB_bch_wall"], roof:["NB_bch_roof"], door:["NB_door"] },
+  cottagehouse: { wall:["NB_cot_wall"], roof:["NB_cot_roof"], door:["NB_door"] }
+};
+
+function materialRoleFor(building, material){
+  const name = material?.name || "";
+  const roles = HOME_MATERIAL_ROLES[building.type] || HOME_MATERIAL_ROLES.house;
+  for (const role of ["wall", "roof", "door"]){
+    if ((roles[role] || []).some(prefix => name.startsWith(prefix))) return role;
+  }
+  return null;
+}
+
+function ensureHouseMaterialsIsolated(entry){
+  if (!entry || entry.isolated) return;
+  const clones = new Map();
+  entry.root.traverse(obj => {
+    if (!obj.isMesh || !obj.material) return;
+    const source = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isolated = source.map(material => {
+      if (!material) return material;
+      if (!clones.has(material.uuid)){
+        const copy = material.clone();
+        copy.userData = { ...(copy.userData || {}) };
+        if (copy.color) copy.userData.fvOriginalColor = copy.color.getHex();
+        clones.set(material.uuid, copy);
+      }
+      return clones.get(material.uuid);
+    });
+    obj.material = Array.isArray(obj.material) ? isolated : isolated[0];
+  });
+  entry.materials = [...clones.values()];
+  entry.isolated = true;
+}
+
+function resetHouseColors(entry){
+  if (!entry?.isolated) return;
+  for (const material of entry.materials || []){
+    if (material.color && Number.isInteger(material.userData?.fvOriginalColor)){
+      material.color.setHex(material.userData.fvOriginalColor);
+      material.needsUpdate = true;
+    }
+  }
+}
+
+function disposeObject(root){
+  root.traverse(obj => {
+    if (obj.geometry) obj.geometry.dispose();
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const material of materials) if (material?.dispose) material.dispose();
+  });
+}
+
+function decorationMaterial(color, roughness=.82){
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness:.02 });
+}
+function decorationMesh(geometry, material, x, y, z){
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeYardDecoration(kind, building, groundY=0){
+  const group = new THREE.Group();
+  group.name = `yard-${kind}-${building.seed}`;
+  if (kind === "flowers"){
+    const stem = decorationMaterial(0x4e7f48), petals = [0xf39ab6, 0xf3c36b, 0xc59ee8];
+    for (let i=0; i<5; i++){
+      const x = (i-2)*.42, z = (i%2 ? .22 : -.18), h = .42 + (i%3)*.08;
+      group.add(decorationMesh(new THREE.CylinderGeometry(.035,.045,h,6), stem, x, h/2, z));
+      group.add(decorationMesh(new THREE.DodecahedronGeometry(.16,0), decorationMaterial(petals[i%3]), x, h+.1, z));
+    }
+  } else if (kind === "tree"){
+    group.add(decorationMesh(new THREE.CylinderGeometry(.22,.3,2.0,8), decorationMaterial(0x765137), 0, 1, 0));
+    group.add(decorationMesh(new THREE.ConeGeometry(1.25,2.6,9), decorationMaterial(0x4f8250), 0, 2.85, 0));
+    group.add(decorationMesh(new THREE.ConeGeometry(.95,2.0,9), decorationMaterial(0x5e9258), 0, 4.05, 0));
+  } else if (kind === "bench"){
+    const wood = decorationMaterial(0x9a6741), metal = decorationMaterial(0x3d4650,.45);
+    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.22,.62), wood, 0,.72,0));
+    group.add(decorationMesh(new THREE.BoxGeometry(2.2,.95,.18), wood, 0,1.18,.3));
+    for (const x of [-.8,.8]) for (const z of [-.2,.2])
+      group.add(decorationMesh(new THREE.BoxGeometry(.14,.72,.14), metal, x,.36,z));
+  } else if (kind === "flag"){
+    group.add(decorationMesh(new THREE.CylinderGeometry(.045,.06,4.1,8), decorationMaterial(0xd5d9dc,.35), 0,2.05,0));
+    const flag = decorationMesh(new THREE.BoxGeometry(1.45,.8,.07), decorationMaterial(0xe45a5d), .72,3.45,0);
+    group.add(flag);
+    group.add(decorationMesh(new THREE.SphereGeometry(.09,8,6), decorationMaterial(0xe5c45e,.3), 0,4.18,0));
+  }
+  const [x,z] = buildingWorldXZ(building);
+  const f = frontDirsFor(building)[0] || [0,1];
+  const side = [f[1], -f[0]];
+  const frontOffset = ["beachhouse", "eiffelhouse", "burjhouse"].includes(building.type) ? 6.2 : 4.7;
+  group.position.set(x + f[0]*frontOffset + side[0]*2.7, groundY+.04,
+                     z + f[1]*frontOffset + side[1]*2.7);
+  group.rotation.y = Math.atan2(f[0], f[1]);
+  return group;
+}
+
+function clearYardDecoration(houseId){
+  const old = yardDecorations.get(houseId);
+  if (!old) return;
+  customizationLayer.remove(old);
+  disposeObject(old);
+  yardDecorations.delete(houseId);
+}
+
+function applyCustomizationToHouse(houseId, value){
+  const entry = houseVisuals.get(Number(houseId));
+  if (!entry) return;
+  const custom = normalizeCustomization(value);
+  ensureHouseMaterialsIsolated(entry);
+  resetHouseColors(entry);
+  for (const material of entry.materials || []){
+    const role = materialRoleFor(entry.building, material);
+    const color = role ? HOME_COLORS[`${role}:${custom[role]}`] : null;
+    if (color && material.color){ material.color.set(color); material.needsUpdate = true; }
+  }
+  clearYardDecoration(Number(houseId));
+  if (custom.yard !== "none"){
+    const decor = makeYardDecoration(custom.yard, entry.building, entry.root.position.y);
+    customizationLayer.add(decor);
+    yardDecorations.set(Number(houseId), decor);
+  }
+  customizedHouseIds.add(Number(houseId));
+}
+
+function applyAllHomeCustomizations(){
+  for (const houseId of customizedHouseIds){
+    resetHouseColors(houseVisuals.get(houseId));
+    clearYardDecoration(houseId);
+  }
+  customizedHouseIds.clear();
+  for (const [houseId, value] of claimCustomizations){
+    const shown = customizationPreview?.houseId === Number(houseId)
+      ? customizationPreview.value : value;
+    if (shown) applyCustomizationToHouse(houseId, shown);
+  }
+}
+
+function indexHouseVisuals(root, buildings){
+  houseVisuals.clear();
+  const used = new Set();
+  const homes = buildings.filter(building => HOME_MATERIAL_ROLES[building.type]);
+  for (const building of homes){
+    const [x,z] = buildingWorldXZ(building);
+    let best = null, bestDistance = Infinity;
+    for (const child of root.children){
+      if (used.has(child) || !child.name.startsWith(building.type + "_d")) continue;
+      const distance = Math.hypot(child.position.x-x, child.position.z-z);
+      if (distance < bestDistance){ best = child; bestDistance = distance; }
+    }
+    if (best && bestDistance < 1){
+      used.add(best);
+      houseVisuals.set(Number(building.seed), { building, root:best, isolated:false, materials:[] });
+    }
+  }
+  console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} home visuals.`);
+  applyAllHomeCustomizations();
+}
 
 /* Which way does the front door face? Mirrors neighborhood_blender.py's
    "face the front door toward the nearest road edge of the block" logic
@@ -1604,6 +1876,7 @@ function frontDirsFor(b){
 const accountBtn = document.getElementById("accountBtn");
 const claimHomeBtn = document.getElementById("claimHomeBtn");
 const goHomeBtn = document.getElementById("goHomeBtn");
+const customizeHomeBtn = document.getElementById("customizeHomeBtn");
 const claimPrompt = document.getElementById("claimPrompt");
 const claimPromptText = document.getElementById("claimPromptText");
 const authModal = document.getElementById("authModal");
@@ -1619,7 +1892,15 @@ function showToast(msg, ms = 4200){
 }
 function modalOpen(){ return authModal.style.display === "flex"; }
 function openModal(){ authModal.style.display = "flex"; renderAuthCard(); }
-function closeModal(){ authModal.style.display = "none"; confirmingUnclaim = false; }
+function closeModal(){
+  authModal.style.display = "none";
+  confirmingUnclaim = false;
+  customizingHome = false;
+  savingCustomization = false;
+  customizationDraft = null;
+  if (customizationPreview){ customizationPreview = null; applyAllHomeCustomizations(); }
+  authCard.classList.remove("customizer-card");
+}
 authModal.addEventListener("mousedown", e => { if (e.target === authModal) closeModal(); });
 
 /* ── data refresh ── */
@@ -1628,11 +1909,13 @@ async function refreshHouses(){
   if (!error && data) houseRows = new Map(data.map(h => [h.id, h]));
 }
 async function refreshClaims(){
-  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle");
+  const { data, error } = await sb.from("public_claims").select("house_id,instagram_handle,customization");
   if (!error && data){
     claimedBy = new Map(data.map(r => [r.house_id, r.instagram_handle]));
+    claimCustomizations = new Map(data.map(r => [Number(r.house_id), r.customization]));
     rebuildNameTags();
     rebuildClaimSpots();
+    applyAllHomeCustomizations();
   }
 }
 async function refreshMyStatus(){
@@ -1770,6 +2053,7 @@ function updateAccountUI(){
   const verified = myProfile?.verification_status === "verified";
   claimHomeBtn.style.display = (session && verified && !myClaim) ? "" : "none";
   goHomeBtn.style.display = (session && myClaim) ? "" : "none";
+  customizeHomeBtn.style.display = (session && myClaim) ? "" : "none";
   if (modalOpen()) renderAuthCard();
 }
 accountBtn.addEventListener("click", openModal);
@@ -1787,12 +2071,118 @@ goHomeBtn.addEventListener("click", e => {
   goHome();
   if (isTouch) beginWalking(); else controls.lock();
 });
+customizeHomeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  openHomeCustomizer();
+});
 
 /* ── auth modal panels ── */
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch])); }
 
+function customOptionMarkup(key, selected){
+  if (key === "yard"){
+    return HOME_OPTIONS.yard.map(([id, label, icon]) => `
+      <button type="button" class="custom-option yard-option ${id === selected ? "selected" : ""}"
+        data-custom-key="yard" data-custom-value="${id}" aria-pressed="${id === selected}">
+        ${icon}<small>${label}</small></button>`).join("");
+  }
+  return HOME_OPTIONS[key].map(([id, label, color]) => `
+    <button type="button" class="custom-option ${id === selected ? "selected" : ""}"
+      data-custom-key="${key}" data-custom-value="${id}" aria-pressed="${id === selected}">
+      <span class="custom-swatch ${id === "original" ? "original" : ""}"
+        ${color ? `style="background:${color}"` : ""}></span>${label}</button>`).join("");
+}
+
+function previewCustomizationDraft(){
+  if (!myClaim || !customizationDraft) return;
+  customizationPreview = { houseId:Number(myClaim.house_id), value:{ ...customizationDraft } };
+  applyAllHomeCustomizations();
+}
+
+function openHomeCustomizer(){
+  if (!myClaim){ showToast("Claim a home before customizing it."); return; }
+  customizingHome = true;
+  customizationDraft = normalizeCustomization(myClaim.customization);
+  previewCustomizationDraft();
+  authModal.style.display = "flex";
+  renderAuthCard();
+}
+
+async function saveHomeCustomization(){
+  if (!sb || !session || !myClaim || !customizationDraft || savingCustomization) return;
+  savingCustomization = true;
+  renderHomeCustomizer();
+  const payload = normalizeCustomization(customizationDraft);
+  const { data, error } = await sb.rpc("update_my_customization", { p_customization:payload });
+  savingCustomization = false;
+  if (error){
+    renderHomeCustomizer();
+    setErr(error.message?.includes("bad_customization")
+      ? "That combination wasn't accepted. Try choosing the options again."
+      : "Couldn't save your home yet. " + (error.message || "Please try again."));
+    return;
+  }
+  if (data) myClaim = data;
+  customizationPreview = null;
+  await Promise.all([refreshClaims(), refreshMyStatus()]);
+  customizingHome = false;
+  customizationDraft = null;
+  updateAccountUI();
+  if (modalOpen()) renderAuthCard();
+  showToast("Your home was updated - everyone in town can see it now!");
+}
+
+function renderHomeCustomizer(){
+  if (!myClaim) return;
+  authCard.classList.add("customizer-card");
+  customizationDraft = normalizeCustomization(customizationDraft || myClaim.customization);
+  authCard.innerHTML = `
+    <div class="customizer-head">
+      <div class="customizer-home-icon">&#127969;</div>
+      <div><h2>Customize home #${Number(myClaim.house_id)}</h2>
+      <p class="muted">Make it yours. Your saved colors and one yard piece appear for every visitor.</p></div>
+    </div>
+    <div class="custom-section"><div class="custom-section-title">Exterior <span>wall or main body</span></div>
+      <div class="custom-options">${customOptionMarkup("wall", customizationDraft.wall)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Roof <span>roof or landmark accent</span></div>
+      <div class="custom-options">${customOptionMarkup("roof", customizationDraft.roof)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Door <span>front-door color</span></div>
+      <div class="custom-options">${customOptionMarkup("door", customizationDraft.door)}</div></div>
+    <div class="custom-section"><div class="custom-section-title">Yard piece <span>choose one</span></div>
+      <div class="custom-options yard-options">${customOptionMarkup("yard", customizationDraft.yard)}</div></div>
+    <div class="customizer-actions">
+      <button class="secondary" id="doCancelCustomize" ${savingCustomization ? "disabled" : ""}>cancel</button>
+      <button class="primary" id="doSaveCustomize" ${savingCustomization ? "disabled" : ""}>
+        ${savingCustomization ? "saving..." : "save my home"}</button>
+    </div>
+    <div class="err" id="authErr"></div>
+    <button class="linkish" id="doResetCustomize" ${savingCustomization ? "disabled" : ""}>reset to original</button>`;
+  authCard.querySelectorAll("[data-custom-key]").forEach(button => {
+    button.disabled = savingCustomization;
+    button.onclick = () => {
+      customizationDraft = { ...customizationDraft, [button.dataset.customKey]:button.dataset.customValue };
+      previewCustomizationDraft();
+      renderHomeCustomizer();
+    };
+  });
+  document.getElementById("doSaveCustomize").onclick = saveHomeCustomization;
+  document.getElementById("doCancelCustomize").onclick = () => {
+    customizationPreview = null;
+    applyAllHomeCustomizations();
+    customizingHome = false;
+    customizationDraft = null;
+    renderAuthCard();
+  };
+  document.getElementById("doResetCustomize").onclick = () => {
+    customizationDraft = { ...HOME_DEFAULTS };
+    previewCustomizationDraft();
+    renderHomeCustomizer();
+  };
+}
+
 function renderAuthCard(){
   if (!sb) return;
+  authCard.classList.toggle("customizer-card", customizingHome && !!myClaim);
   if (!session){
     authCard.innerHTML = `
       <h2>Claim your home</h2>
@@ -1861,6 +2251,7 @@ function renderAuthCard(){
     wireSignout();
     return;
   }
+  if (customizingHome){ renderHomeCustomizer(); return; }
   if (confirmingUnclaim){
     authCard.innerHTML = `
       <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
@@ -1876,10 +2267,13 @@ function renderAuthCard(){
   }
   authCard.innerHTML = `
     <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
-    <button class="primary" id="doGoHome">go to my home</button>
+    <p class="muted">Home #${Number(myClaim.house_id)} is yours. Change its colors or add one yard piece whenever you want.</p>
+    <button class="primary" id="doCustomize">customize my home</button>
+    <button class="secondary" id="doGoHome" style="margin-top:9px;">go to my home</button>
     <button class="linkish" id="doUnclaim">unclaim this house</button>
     <div class="err" id="authErr"></div>
     <button class="linkish" id="doSignout">log out</button>`;
+  document.getElementById("doCustomize").onclick = openHomeCustomizer;
   document.getElementById("doGoHome").onclick = () => { closeModal(); goHomeBtn.click(); };
   document.getElementById("doUnclaim").onclick = () => { confirmingUnclaim = true; renderAuthCard(); };
   wireSignout();
@@ -2397,6 +2791,7 @@ function loadFromGLB(buildings){
     const root = gltf.scene;
     loadedTownRoot = root;
     scene.add(root);
+    indexHouseVisuals(root, buildings);
 
     // collision colliders: one per top-level object Blender exported
     // (each building/tree/car/streetlight ends up as its own top-level node).

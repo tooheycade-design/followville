@@ -35,6 +35,15 @@ sessions are stored in `player_sessions`; safe public handle/client mappings in
 RLS and column grants keep account UUIDs private. `admin_list_multiplayer()`
 checks the existing admin flag before returning online/session/chat logs.
 
+**Homeowner Mode (added 2026-07-15):** once a follower has a claim, the account
+panel and start screen expose `customize my home`. Owners can preview and save
+approved exterior, roof/accent, and door colors plus one yard piece. The data
+uses the existing `claims.customization` JSONB column. Browser code never gets
+direct UPDATE access: `update_my_customization(jsonb)` derives the claim from
+`auth.uid()`, rejects unknown keys/values, normalizes the payload, and updates
+only that owner's row. The existing `claims` Realtime subscription makes saved
+looks appear for every open visitor.
+
 ---
 
 ## 1. One-time setup (~15 minutes, Cade)
@@ -151,12 +160,21 @@ Sources from the research: [Meta webhook docs](https://developers.facebook.com/d
 [business_discovery limits](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery/),
 [app-review reality check](https://developers.chatwoot.com/self-hosted/instagram-app-review).
 
-## 5. Future: house customization
+## 5. House customization (shipped 2026-07-15)
 
-`claims.customization` (jsonb) is already in the schema, null for now. When the
-feature ships: add an `update_my_customization()` RPC that only touches the
-caller's own claim row, and read the json in `town.html` when building name
-tags / recoloring. No migration needed.
+`claims.customization` stores only normalized palette IDs in this shape:
+
+```json
+{"version":1,"wall":"sage","roof":"charcoal","door":"red","yard":"flowers"}
+```
+
+Allowed values are defined in both `supabase_schema.sql` (the authoritative
+security validation) and `town.html` (the picker/render palette). Keep those two
+lists synchronized when adding an option. Never accept arbitrary CSS colors or
+arbitrary decoration/model URLs from a client. `update_my_customization()` is
+intentionally executable only by `authenticated` and updates the row matching
+`auth.uid()`; `anon` and `PUBLIC` have no execute grant. Re-running the complete
+schema safely creates/replaces the RPC without changing existing claim rows.
 
 ## 6. How the pieces fit (for future AI sessions)
 

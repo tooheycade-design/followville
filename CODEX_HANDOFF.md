@@ -19,6 +19,13 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   ordinary houses at suburban plan IDs 53-92. The batch finished Creekside
   Bend (2 Pebble Court homes) and started Willow Hills (20 Willow Rise and 18
   Foxglove Court homes). Supabase has all 229 rows and the 40 Day 13 IDs match.
+- Homeowner Mode is live in the code/database as of 2026-07-15: every claimed
+  owner can preview and save an exterior, roof/accent, and door color plus one
+  yard piece. Saved palette IDs use the existing `claims.customization` field
+  and flow to all open visitors over the current claim Realtime subscription.
+  The owner-only RPC validates every option and cannot target another claim.
+  All 27 pre-existing claims remain attached and unchanged; Blender/state/GLB
+  were not modified.
 - `--cam newgrowth` frames the newest day's largest district for rise videos;
   `--cam newstreet` follows the newest day's busiest curved street. The street
   path keys every road sample, uses local tangent aiming, and avoids roof/house
