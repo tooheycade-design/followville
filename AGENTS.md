@@ -20,12 +20,14 @@ you go looking for it here.**
   `town.html` mirrors the hill/ramp height for local and multiplayer walkers;
   preserve `data-storybook-walkable="pass"` and its Playwright regression when
   adding raised walkable terrain. All 15 Supabase rows are present/claimable.
-  The Day 15 delivery camera is `--cam wholeoverhead`, with all 15 newest homes
-  rising while the whole developed town remains in frame. Aerial cameras use
+  The approved Day 15 delivery is three standalone MP4s, not a combined edit:
+  `--cam wholeoverhead` with all 15 newest homes rising and the full town in
+  frame; `--cam newgrowth --focus-type storybookhouse` with only the ten
+  Kaleidoscope Crest homes rising; and `--cam storybookstreet --focus-type
+  finished` with every feature home present from frame one. Aerial cameras use
   a 10m near clip to prevent thin roads and ponds flashing from lost depth
-  precision; do not restore Blender's 0.1m default for aerial modes. The final
-  corrected MP4 was reviewed and delivered in separate emails to
-  `tooheycade@gmail.com` and `zachkehler@gmail.com`.
+  precision; do not restore Blender's 0.1m default for aerial modes. All three
+  files were reviewed and emailed as separate attachments to Cade and Zach.
 - 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until

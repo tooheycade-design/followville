@@ -16,11 +16,15 @@ old grid, widens through a muted transition, then becomes bright pink; its
 center markings follow the road's 3D climb. `town.html` mirrors the hill/ramp
 height for local and multiplayer walkers. Keep the
 `data-storybook-walkable="pass"` browser check whenever raised terrain changes.
-Use `--cam wholeoverhead` for the Day 15 whole-town rise shot. Aerial cameras
-must keep their 10m near clip; that prevents moving roads and ponds from
-flashing due to depth-precision loss. All 15 Day 15 Supabase rows were
-validated. Repo-based Windows growth still skips the legacy iCloud `wip`
-auto-share hook so the authoritative clone remains on `main`.
+The approved Day 15 delivery is three separate MP4s: `--cam wholeoverhead` for
+the whole-town/all-15 rise, `--cam newgrowth --focus-type storybookhouse` for
+the close ten-home rise, and `--cam storybookstreet --focus-type finished` for
+the completed road-level tour. Do not stitch these into one long video. Aerial
+cameras must keep their 10m near clip; that prevents moving roads and ponds
+from flashing due to depth-precision loss. All three clips passed visual QA and
+were emailed as distinct attachments to Cade and Zach. All 15 Day 15 Supabase
+rows were validated. Repo-based Windows growth still skips the legacy iCloud
+`wip` auto-share hook so the authoritative clone remains on `main`.
 
 ## Website landing experience (2026-07-15)
 

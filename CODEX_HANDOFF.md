@@ -25,10 +25,14 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   conform to the ramp. Website walking mirrors the raised hill/ramp surface
   for local and remote players and is guarded by
   `data-storybook-walkable="pass"`. All 15 database rows are claimable.
-  `--cam wholeoverhead` is the Day 15 all-new-homes rise shot. Keep the 10m
-  near plane on all aerial cameras: it fixed the prior moving-shot road/pond
-  flashing caused by depth-precision loss. The corrected video was reviewed
-  and delivered in separate emails to Cade and Zach.
+  The approved Day 15 delivery is three standalone videos, never one combined
+  edit: `--cam wholeoverhead` for the full-town/all-15 rise;
+  `--cam newgrowth --focus-type storybookhouse` for the close ten-home feature
+  rise; and `--cam storybookstreet --focus-type finished` for the completed
+  street-level tour with every home present from frame one. Keep the 10m near
+  plane on all aerial cameras: it fixed the prior moving-shot road/pond
+  flashing caused by depth-precision loss. All three were visually reviewed
+  and emailed as separate MP4 attachments to Cade and Zach.
 - Website backdrop mountains now move outward independently when town growth
   approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
   Circle Houses #230-247; `addTownAtmosphere()` now gives every current building
