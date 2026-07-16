@@ -24,8 +24,8 @@ you go looking for it here.**
   rising while the whole developed town remains in frame. Aerial cameras use
   a 10m near clip to prevent thin roads and ponds flashing from lost depth
   precision; do not restore Blender's 0.1m default for aerial modes. The final
-  corrected MP4 was reviewed and emailed to `tooheycade@gmail.com` with
-  `zachkehler@gmail.com` copied.
+  corrected MP4 was reviewed and delivered in separate emails to
+  `tooheycade@gmail.com` and `zachkehler@gmail.com`.
 - 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until

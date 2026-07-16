@@ -28,7 +28,7 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   `--cam wholeoverhead` is the Day 15 all-new-homes rise shot. Keep the 10m
   near plane on all aerial cameras: it fixed the prior moving-shot road/pond
   flashing caused by depth-precision loss. The corrected video was reviewed
-  and emailed to Cade with Zach copied.
+  and delivered in separate emails to Cade and Zach.
 - Website backdrop mountains now move outward independently when town growth
   approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
   Circle Houses #230-247; `addTownAtmosphere()` now gives every current building
