@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed the live map revealing the older in-town start screen after being opened from the redesigned homepage: a `town.html#map` entry now returns to `index.html` when the map is closed with its button, Escape, or backdrop, while selecting Visit still enters the 3D town and in-game map close behavior remains unchanged. No world, house, claim, or account data changed.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Restyled the organized homepage to feel authored rather than AI-generated: removed oversized pill badges, rounded icon tiles, stacked cream cards, and pervasive glass blur; replaced them with a restrained editorial headline, plain ruled Walk/Claim links, unboxed stats, a nearly square paper-plan map frame, simpler copy, and compact mobile navigation while preserving the live map, routes, cache safeguards, background loop, account behavior, and all world data.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed intermittent old homepage versions on computer browsers after proving Vercel's bare `/` and `/index.html` routes were serving different deployments: bare `/` now redirects to the uncached `/index.html`, both routes receive `no-store`/`no-cache` headers, matching HTML directives remain, and a targeted `pageshow` reload handles Chrome/Safari back/forward memory; the dashboard/map UI and all world data remain unchanged.

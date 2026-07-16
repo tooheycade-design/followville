@@ -1472,6 +1472,10 @@ const townMapMyHome = document.getElementById("townMapMyHome");
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
 let resumeWalkingAfterMap = false;
+// A map opened as the page's initial route came from the public homepage. If
+// the visitor closes it without choosing a place to visit, return to that same
+// homepage instead of exposing the older in-town start/pause screen beneath it.
+let mapRouteReturnsHome = location.hash === "#map";
 const useStaticIntro = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
   navigator.connection?.saveData;
 
@@ -3015,7 +3019,10 @@ function openTownMap(){
 }
 function closeTownMap(forceWalking=false){
   if (!townMapOpen()) return;
+  const returnToHomepage=mapRouteReturnsHome&&!forceWalking&&!resumeWalkingAfterMap;
+  if(forceWalking)mapRouteReturnsHome=false;
   townMapPanel.classList.remove("open");townMapSearch.blur();
+  if(returnToHomepage){location.replace("index.html");return;}
   if (location.hash==="#map") history.replaceState(null,"",location.pathname+location.search);
   const shouldWalk=forceWalking||resumeWalkingAfterMap;
   resumeWalkingAfterMap=false;

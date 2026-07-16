@@ -29,6 +29,10 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   rounded icon cards. The same live,
   lightweight isometric 3D map opens from the town start screen, the in-game
   `town map` button, or `M`; it supports rotate, pan, zoom, and fit-to-town.
+  When opened through the homepage's `town.html#map` deep-link, closing it,
+  pressing Escape, or clicking its backdrop returns to the redesigned homepage
+  instead of exposing the older in-town start screen. Visiting a selected map
+  result still enters the town and disables that return-home behavior.
   It searches house IDs, claimed handles, streets/districts, newest homes,
   landmarks, and signed-in owned homes, and its Visit action teleports to the
   location. Instanced map geometry must remain derived from the current

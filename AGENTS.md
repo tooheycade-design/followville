@@ -23,10 +23,12 @@ you go looking for it here.**
   unboxed stats, minimal blur, and no oversized pills or icon-card dashboard UI.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
-  rotate, pan, zoom, and fit-to-town controls. It opens from the start screen,
-  the in-town button, or desktop `M`. Visitors
-  can find a house number, claimed handle, street, newest homes, the school,
-  or their own home, then visit/teleport to it. The map derives homes,
+  rotate, pan, zoom, and fit-to-town controls. It opens from the town start
+  screen, the in-town button, or desktop `M`. Homepage map deep-links return to
+  the redesigned homepage when closed rather than revealing the legacy in-town
+  start screen, while visiting a result still enters the 3D town normally.
+  Visitors can find a house number, claimed handle, street, newest homes, the
+  school, or their own home, then visit/teleport to it. The map derives homes,
   landmarks, district zones, the established Founder Park roads, and only
   currently revealed planned-road centerlines from `world_state.json`; claim
   names refresh from `public_claims`. Homes use instancing so this does not

@@ -511,6 +511,18 @@ Kept here (rather than just in chat) so it survives across sessions.
   routes, session-aware home/admin behavior, cache safeguards, video fallback,
   and all world data remain intact.
 
+## 29. Homepage map return-path fix
+
+- Fixed a route-state mismatch where opening the full map from the redesigned
+  homepage and then closing it exposed the older `town.html` start screen that
+  had been initialized underneath the map panel.
+- A page initially opened at `town.html#map` now returns to `index.html` when
+  the map is closed by its close button, Escape, or backdrop. Choosing Visit on
+  a map result still enters the 3D town; maps opened while already walking still
+  close back to the same walking session.
+- This is navigation-only. World data, homes, claims, accounts, map contents,
+  and multiplayer behavior are unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
