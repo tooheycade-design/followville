@@ -62,6 +62,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam newgrowthoverhead  top-down view of today's rising houses
 #   --cam wholeoverhead  whole-town sky view; all of today's houses rise
 #   --cam newstreet  finished eye-level glide through today's busiest street
+#   --cam storybookstreet  finished road-level tour of Kaleidoscope Crest
 #   --cam housefront  sidewalk view of a current house with passing cars
 #   --cam football   temporary England v Argentina supporter vignette
 #   --scatter        use the old pure-radial lot order instead of the
@@ -3102,6 +3103,59 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(car):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
+    elif cam == "storybookstreet":
+        # Standalone completed-state tour for the Day 15 feature district.
+        # The camera stays on the authored access/loop centerline, climbs with
+        # the road, then follows the lower oval past the ten preserved homes.
+        # Pair with --focus-type finished on replay to keep every house fully
+        # built for the entire clip.
+        if not any(b.get("feature_id") == STORYBOOK_FEATURE_ID for b in buildings):
+            raise RuntimeError("storybookstreet camera needs Kaleidoscope Crest homes")
+        route = [(201.0, 72.0, .05), (205.0, 71.0, .28),
+                 (211.0, 69.0, 1.55), (215.0, 68.0, 2.62),
+                 (229.0, 65.0, 2.74), (239.0, 60.0, 2.98)]
+        cx_story, cy_story = STORYBOOK_CENTER
+        for i in range(11):
+            angle = math.pi + math.pi * .92 * i / 10.0
+            route.append((cx_story + 31.0 * math.cos(angle),
+                          cy_story + 22.0 * math.sin(angle), 2.98))
+
+        distances = [0.0]
+        for a, b in zip(route, route[1:]):
+            distances.append(distances[-1] + math.sqrt(
+                (b[0]-a[0])**2 + (b[1]-a[1])**2 + (b[2]-a[2])**2))
+        total_distance = max(distances[-1], .001)
+
+        cam_data = bpy.data.cameras.new("StorybookStreetCam")
+        cam_data.lens = 25
+        cam_data.dof.use_dof = False
+        cam_data.clip_start = .15
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        aim = bpy.data.objects.new("StorybookStreetAim", None)
+        world_col.objects.link(cam_obj)
+        world_col.objects.link(aim)
+        bpy.context.scene.camera = cam_obj
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        for i, point in enumerate(route):
+            frame = 1 + int(round((frame_end - 1) * distances[i] / total_distance))
+            if i < len(route) - 1:
+                target = route[min(len(route) - 1, i + 2)]
+            else:
+                previous = route[-2]
+                target = (point[0] + (point[0]-previous[0]),
+                          point[1] + (point[1]-previous[1]), point[2])
+            cam_obj.location = (point[0], point[1], point[2] + 1.68)
+            aim.location = (target[0], target[1], target[2] + 2.20)
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
     elif cam == "newstreet":
         # Finished street-level showcase of the newest ordinary homes. Pick
         # the latest day's busiest planned street, then animate both camera
@@ -3671,7 +3725,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "housefront", "park", "overhead", "wholeoverhead"):
+    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
