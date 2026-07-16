@@ -15,6 +15,9 @@ you go looking for it here.**
   lightweight 2D canvas derived from the same `world_state.json` fetch as the
   day/population counters, including built grid, planned, and Founder Park
   roads, so it updates with growth without another image or data file.
+  `vercel.json` sends `no-store` for `/` and `/index.html`, and the page reloads
+  when restored from browser back/forward memory, preventing intermittent old
+  homepage versions after deployments. Preserve both cache safeguards.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the start screen,

@@ -5,6 +5,9 @@
 <title>Followville</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="description" content="A town where every follower is a house — walk it in your browser." />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <style>
   :root{
     --cream:#f2e9da;
@@ -369,6 +372,13 @@
 </main>
 
 <script>
+  // Chrome and Safari can restore a previous homepage from their in-memory
+  // back/forward cache without making a request. Reload only in that specific
+  // case so a returning visitor never sees an older deployed dashboard.
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) window.location.reload();
+  });
+
   const landingVideo = document.getElementById("landingVideo");
   const useStaticLanding = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
     navigator.connection?.saveData;

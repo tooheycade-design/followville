@@ -33,6 +33,10 @@ than stacked buttons. Desktop shows Walk/Claim cards beside a large live town
 preview; mobile keeps the preview and both actions compact above the fold. The
 preview redraws from the same `world_state.json` request as the counters and
 must remain self-updating rather than becoming a screenshot or second data file.
+`vercel.json` applies `no-store` to the homepage routes, while the homepage's
+`pageshow` handler reloads only back/forward-cache restorations. Preserve both:
+they prevent an already-open computer browser from intermittently reviving an
+older deployed homepage.
 
 ## Live town map (2026-07-15)
 

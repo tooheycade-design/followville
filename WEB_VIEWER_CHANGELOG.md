@@ -481,6 +481,18 @@ Kept here (rather than just in chat) so it survives across sessions.
   browser errors. Web-only; Blender, GLB, state, population, buildings, seeds,
   and claims did not change.
 
+## 27. Prevent stale homepage restoration
+
+- Added `vercel.json` response headers for `/` and `/index.html` with
+  `no-store`, `no-cache`, `must-revalidate`, and immediate expiration. Matching
+  HTML cache directives provide the same intent to browsers before all response
+  metadata is processed.
+- Added a narrowly scoped `pageshow` safeguard: when a browser restores the
+  homepage from its in-memory back/forward cache, the page reloads once from the
+  current deployment. Normal page loads and navigation are not reloaded.
+- This is web/deployment-only. The dashboard layout, map behavior, Blender,
+  GLB, state, population, buildings, seeds, and claims did not change.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
