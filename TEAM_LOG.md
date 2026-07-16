@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed intermittent old homepage versions on computer browsers by adding Vercel `no-store`/`no-cache` response headers for `/` and `/index.html`, matching HTML cache directives, and a targeted `pageshow` reload only when Chrome/Safari restores the page from back/forward memory; the dashboard/map UI and all world data remain unchanged.
+2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed intermittent old homepage versions on computer browsers after proving Vercel's bare `/` and `/index.html` routes were serving different deployments: bare `/` now redirects to the uncached `/index.html`, both routes receive `no-store`/`no-cache` headers, matching HTML directives remain, and a targeted `pageshow` reload handles Chrome/Safari back/forward memory; the dashboard/map UI and all world data remain unchanged.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Reorganized the homepage from a narrow vertical button stack into a responsive destination dashboard: desktop now places Walk/Claim cards beside a large live isometric town preview, mobile keeps all choices compact above the fold, and the preview redraws built homes, landmarks, and currently visible roads from the existing `world_state.json` stats request so growth updates it automatically; no Blender, GLB, state, population, building, claim, or new image/data source changes.
 

@@ -487,6 +487,10 @@ Kept here (rather than just in chat) so it survives across sessions.
   `no-store`, `no-cache`, `must-revalidate`, and immediate expiration. Matching
   HTML cache directives provide the same intent to browsers before all response
   metadata is processed.
+- Bare `/` and `/index.html` were observed serving different deployment HTML
+  from separate CDN cache keys. Bare `/` now uses a temporary redirect to the
+  canonical, uncached `/index.html` route so only one homepage representation
+  can reach visitors.
 - Added a narrowly scoped `pageshow` safeguard: when a browser restores the
   homepage from its in-memory back/forward cache, the page reloads once from the
   current deployment. Normal page loads and navigation are not reloaded.
