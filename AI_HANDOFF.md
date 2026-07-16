@@ -18,6 +18,16 @@ The Day 14 GLB and all 18 new Supabase rows were validated. On Windows, running
 `grow_windows.ps1` from the authoritative repo intentionally skips the old
 iCloud `wip` auto-share hook so the clone stays on `main` after growth.
 
+## Website landing experience (2026-07-15)
+
+`index.html` and the `town.html` loading/start screen use the same optimized
+12-second `assets/town-loop.mp4`: a current Day 14 Overlook Circle house seen
+from the sidewalk while two cars pass at separate times. The static companion
+poster is the fallback for reduced-motion, data-saver, blocked autoplay, and
+initial loading. Generate a replacement with `--cam housefront`; that camera
+and its traffic are render-only and must not alter `world_state.json`, the
+permanent blend, GLB, population, buildings, or claims.
+
 ## Website multiplayer (2026-07-14)
 
 `town.html` has Supabase Realtime multiplayer independent of daily Blender

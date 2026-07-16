@@ -8,6 +8,14 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 landing experience (Cade via Codex): `index.html` and the
+  `town.html` loading/start screen use a lightweight looping Day 14 sidewalk
+  shot aimed at a current Overlook Circle house, with two staggered passing
+  cars. `--cam housefront` generates this render-only 12-second view without
+  changing world state. A static poster replaces motion for reduced-motion or
+  data-saver visitors; the town intro pauses while walking or while the tab is
+  hidden. No permanent car, house, road, claim, population, GLB, or blend
+  content was added by this website background.
 - Day 14, population 244, 247 buildings (grown 2026-07-15 via Cade's
   Codex: +18 ordinary houses at planned addresses 93-110). The final three
   Foxglove Court homes completed that cul-de-sac and 15 homes began Overlook

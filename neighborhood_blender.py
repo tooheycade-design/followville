@@ -61,6 +61,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam newgrowth  frame the largest cluster of today's rising houses
 #   --cam newgrowthoverhead  top-down view of today's rising houses
 #   --cam newstreet  finished eye-level glide through today's busiest street
+#   --cam housefront  sidewalk view of a current house with passing cars
 #   --cam football   temporary England v Argentina supporter vignette
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -2519,7 +2520,81 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
 
-    if cam == "newstreet":
+    if cam == "housefront":
+        # Landing-page loop: stand on the opposite sidewalk and look across
+        # the road at a representative house from the newest developed street.
+        # Two temporary cars pass between the lens and house; none of this is
+        # saved to world_state.
+        latest_day = max((b.get("day", 0) for b in buildings
+                          if b.get("type") == "house" and b.get("street")), default=0)
+        latest_houses = [b for b in buildings
+                         if b.get("type") == "house" and b.get("street")
+                         and b.get("day", 0) == latest_day]
+        street_groups = {}
+        for b in latest_houses:
+            street_groups.setdefault((b.get("district"), b.get("street")), []).append(b)
+        if not street_groups:
+            raise RuntimeError("housefront camera needs planned houses with street metadata")
+        street_houses = max(street_groups.values(), key=len)
+        street_houses.sort(key=lambda b: b.get("plan_id", 0))
+        subject = street_houses[len(street_houses) // 2]
+        hx, hy = build_pos(subject)
+        rot = subject.get("rot", 0.0)
+        # House assets face local -Y; planned-house rot points that front at
+        # the road. Local +X therefore supplies the road tangent.
+        front = Vector((math.sin(rot), -math.cos(rot), 0))
+        tangent = Vector((math.cos(rot), math.sin(rot), 0))
+
+        aim = bpy.data.objects.new("HouseFrontAim", None)
+        # Keep the full facade and a strip of road in the portrait frame. A
+        # lower aim avoids wasting the upper half of the reel on empty sky.
+        aim.location = (hx, hy, 2.2)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("HouseFrontCam")
+        cam_data.lens = 27
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        across = Vector((hx, hy, 1.65)) + front * 13.0
+        cam_obj.location = across - tangent * 0.6
+        cam_obj.keyframe_insert("location", frame=1)
+        cam_obj.location = across + tangent * 0.6
+        cam_obj.keyframe_insert("location", frame=frame_end // 2)
+        cam_obj.location = across - tangent * 0.6
+        cam_obj.keyframe_insert("location", frame=frame_end)
+        for fc in obj_fcurves(cam_obj):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+
+        road_center = Vector((hx, hy, .05)) + front * 8.5
+        for i, (direction, lane_offset) in enumerate(((1, -1.25), (-1, -0.45))):
+            car_data = {"type": "car", "gx": 0, "gy": 0,
+                        "seed": 9100 + subject.get("seed", 0) + i}
+            car = place_instance(world_col, car_data, "housefront_traffic")
+            # These cars pass close to a portrait lens. Keep their apparent
+            # size comfortable and stagger the crossings so the house never
+            # vanishes behind two vehicles at once.
+            car.scale = (0.58, 0.58, 0.58)
+            lane_center = road_center + front * lane_offset
+            start = lane_center - tangent * (32.0 * direction)
+            finish = lane_center + tangent * (32.0 * direction)
+            car.location = start
+            car.rotation_euler = (0, 0, math.atan2(tangent.y, tangent.x) +
+                                  (0 if direction > 0 else math.pi))
+            start_frame = 1 if i == 0 else frame_end // 3
+            end_frame = frame_end * 2 // 3 if i == 0 else frame_end
+            car.keyframe_insert("location", frame=start_frame)
+            car.location = finish
+            car.keyframe_insert("location", frame=end_frame)
+            for fc in obj_fcurves(car):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+    elif cam == "newstreet":
         # Finished street-level showcase of the newest ordinary homes. Pick
         # the latest day's busiest planned street, then animate both camera
         # and look target along its revealed road centerline. This follows
@@ -3055,7 +3130,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "park", "overhead"):
+    if cfg.get("cam") in ("street", "newstreet", "housefront", "park", "overhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)

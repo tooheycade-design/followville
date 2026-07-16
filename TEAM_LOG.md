@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [BOTH] Replaced the plain landing/loading screens with an optimized 12-second Day 14 sidewalk loop aimed at a current Overlook Circle house while two staggered cars drive past, added poster/reduced-motion/data-saver fallbacks and pause-on-walk/tab behavior, and added a reusable render-only `housefront` camera without changing the saved world, GLB, population, buildings, or claims.
+
 2026-07-15 - Cade (via Windows Codex) - [WORLD] Completed Day 14 from 226 to 244 followers with 18 validated houses at plan IDs 93-110, finished Foxglove Court and began Overlook Circle without revealing its future cul-de-sac, synced all 18 homes to claiming, rendered/reviewed rise-overhead plus static-town-overhead plus a temporary England v Argentina #10 supporter scene and a combined 30.13-second Reel cut, emailed all four videos to tooheycade@gmail.com in two messages, kept the fan set out of the saved Blender/web model, and guarded repo-based Windows growth from leaving `main` for stale `wip`.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Temporarily removed homeowner yard decorations from the town and customizer while preserving every saved yard choice in Supabase for a future redesign; house colors, claims, Blender/GLB, state, population, and buildings remain unchanged.

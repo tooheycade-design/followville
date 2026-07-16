@@ -20,6 +20,13 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   IDs 96-110 began Overlook Circle. Its road is revealed only as far as those
   homes and its future turnaround remains hidden. The 18 new claimable rows
   were inserted into Supabase.
+- The landing page and in-town loading/start screen use
+  `assets/town-loop.mp4`, a 12-second Day 14 sidewalk view of a current
+  Overlook Circle house with two staggered passing cars. Its poster is
+  `assets/town-loop-poster.jpg`. The source comes from render-only camera mode
+  `--cam housefront`; it does not mutate the blend, GLB, state, or claims.
+  Reduced-motion/data-saver visitors receive the poster, and the intro video
+  pauses during walking and on hidden tabs.
 - `--cam newgrowthoverhead` is the preferred tight top-down daily rise shot.
   `--cam football` builds the temporary England v Argentina fan vignette used
   on Day 14. That set must remain render-only: do not export or save it into the

@@ -423,6 +423,22 @@ Kept here (rather than just in chat) so it survives across sessions.
   destructively clearing claim data. No Blender, GLB, world-state, population,
   building, seed, or claim changes.
 
+## 24. Street-level video landing and start experience
+
+- Replaced the plain landing background with a compact 12-second portrait loop
+  of a current Day 14 Overlook Circle house viewed from the sidewalk. Two cars
+  cross the foreground at separate times; the camera makes only a very slow
+  lateral move, keeping the screen calm and readable.
+- Reused the loop on the in-town loading/start screen and moved its glass start
+  card into the open sky so the house and road remain visible. The video pauses
+  as soon as walking begins and whenever its page is hidden.
+- Added a compressed poster fallback for initial loading, blocked autoplay,
+  reduced-motion preferences, and data-saver connections. Both pages remain
+  usable if video playback is unavailable.
+- Added reusable Blender camera mode `--cam housefront`. Its camera and two
+  traffic cars exist only for the render; `world_state.json`, the permanent
+  blend, GLB, population, buildings, seeds, and claims remain unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

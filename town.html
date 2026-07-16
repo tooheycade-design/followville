@@ -59,9 +59,24 @@
   }
 
   #startScreen {
-    position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 40%, #6fb4e0, #3f7fb0 70%);
+    position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:flex-start;
+    background:#3f7fb0 url("assets/town-loop-poster.jpg") center 54% / cover no-repeat;
     color:#fff; text-align:center; flex-direction:column; cursor:pointer;
+    isolation:isolate; overflow:hidden; padding-top:max(44px,8vh);
+  }
+  #startScreen::after {
+    content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:linear-gradient(180deg,rgba(8,20,34,.30),rgba(8,20,34,.66));
+  }
+  #startScreenVideo {
+    position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover;
+    object-position:center 54%; pointer-events:none; filter:saturate(.88) contrast(1.03);
+  }
+  #startScreenContent {
+    width:min(400px,calc(100vw - 36px)); padding:28px 24px 24px;
+    border-radius:26px; border:1px solid rgba(255,255,255,.24);
+    background:rgba(8,20,34,.43); backdrop-filter:blur(10px);
+    box-shadow:0 18px 46px rgba(0,0,0,.28);
   }
   #startScreen h1 { font-size:28px; margin:0 0 8px; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
   #startScreen p { margin:4px 0; opacity:0.9; font-size:14px; }
@@ -70,7 +85,10 @@
     font-weight:700; font-size:15px; box-shadow:0 4px 14px rgba(0,0,0,0.25);
   }
   #loading { position:fixed; inset:0; z-index:20; display:flex; align-items:center;
-    justify-content:center; background:#3f7fb0; color:#fff; font-size:16px; }
+    justify-content:center; color:#fff; font-size:16px; font-weight:700;
+    text-shadow:0 2px 8px rgba(0,0,0,.65);
+    background:linear-gradient(rgba(8,20,34,.48),rgba(8,20,34,.62)),
+      #3f7fb0 url("assets/town-loop-poster.jpg") center 54% / cover no-repeat; }
 
   #hint {
     position:fixed; bottom:14px; left:50%; transform:translateX(-50%); z-index:5;
@@ -111,6 +129,9 @@
     #startScreen .btn { padding:11px 24px; font-size:14px; }
     #hud { font-size:13px; }
     #homeLink { font-size:12px; padding:6px 12px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #startScreenVideo { display:none; }
   }
 
   /* ─── accounts + home claiming ─── */
@@ -304,6 +325,11 @@
 <a id="homeLink" href="index.html">← Followville</a>
 
 <div id="startScreen" style="display:none;">
+  <video id="startScreenVideo" muted loop playsinline preload="metadata"
+         poster="assets/town-loop-poster.jpg" tabindex="-1" aria-hidden="true">
+    <source src="assets/town-loop.mp4" type="video/mp4" />
+  </video>
+  <div id="startScreenContent">
   <h1>Followville</h1>
   <p id="startSub">a town where every follower is a house</p>
   <p id="startHint">WASD or arrows to walk · T or / to chat · shift to run</p>
@@ -312,6 +338,7 @@
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
     <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
     <div class="btn alt" id="customizeHomeBtn" style="display:none;">customize my home</div>
+  </div>
   </div>
 </div>
 
@@ -1263,6 +1290,7 @@ const controls = new PointerLockControls(camera, document.body);
 const isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 
 const startScreen = document.getElementById("startScreen");
+const startScreenVideo = document.getElementById("startScreenVideo");
 const loadingEl = document.getElementById("loading");
 const hud = document.getElementById("hud");
 const hudSub = document.getElementById("hudSub");
@@ -1286,9 +1314,21 @@ const chatNote = document.getElementById("chatNote");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
+const useStaticIntro = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+  navigator.connection?.saveData;
+
+function playIntroVideo(){
+  if (!useStaticIntro) startScreenVideo.play().catch(() => {});
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) startScreenVideo.pause();
+  else if (!gameRunning && startScreen.style.display !== "none") playIntroVideo();
+});
 
 function beginWalking(){
   gameRunning = true;
+  startScreenVideo.pause();
   startScreen.style.display = "none";
   crosshair.style.display = isTouch ? "none" : "block";
   hint.style.display = "block";
@@ -1301,6 +1341,7 @@ function beginWalking(){
 function stopWalking(){
   gameRunning = false;
   startScreen.style.display = "flex";
+  playIntroVideo();
   crosshair.style.display = "none";
   hint.style.display = "none";
   lookZone.style.display = "none";
@@ -3264,6 +3305,7 @@ fetch("world_state.json")
         hudSub.textContent = `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length} · ${buildings.length} buildings`;
         loadingEl.style.display = "none";
         startScreen.style.display = "flex";
+        playIntroVideo();
         hud.style.display = "block";
         if (previewMode) frameFounderPreview();
         animate();
