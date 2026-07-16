@@ -8,6 +8,19 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-16 roleplay-ready public places (Cade via Codex): the homepage now
+  has a self-updating `Today in Followville` activity derived from the newest
+  build day in `world_state.json`. `/today` opens those homes in the live 3D
+  map, highlights them, summarizes their current district/streets, and lets a
+  visitor enter the town at one. Every home also has a stable share address at
+  `/house/:id`; the selection panel uses native Share when available and a
+  clipboard fallback. Vercel rewrites both clean routes to `town.html`, whose
+  root base path keeps GLB/state/assets correct under nested URLs. Treat these
+  stable place IDs plus reusable activity routes as the foundation for future
+  interiors, jobs, events, and roleplay actions; do not build parallel location
+  tables or hard-coded coordinates. Five Playwright browser regressions now run
+  in CI for homepage data, Today, house share/visit, invalid addresses, and the
+  chat/map/Escape walking flow. Run `pnpm test:e2e` after public navigation work.
 - 2026-07-15 organized homepage (Cade via Codex): `index.html` is now a
   destination dashboard instead of a vertical button stack. Desktop places
   Walk/Claim navigation beside a large live isometric town preview; mobile

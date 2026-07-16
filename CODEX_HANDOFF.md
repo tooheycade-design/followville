@@ -1,6 +1,6 @@
 # Codex handoff -- current through Day 14
 
-Updated 2026-07-15 for Cade's next Claude/Codex session.
+Updated 2026-07-16 for Cade's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -15,6 +15,16 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- The public website now has stable roleplay-ready place/activity routes.
+  `Today in Followville` is computed from the latest day in
+  `world_state.json`; `/today` opens that day's homes in the live map with a
+  current district/street summary and visual highlight. Every home can be
+  shared at `/house/:id` from its selection card. These routes reuse building
+  seeds, world data, and `public_claims`; future interiors/jobs/events should
+  attach to those identities instead of creating parallel coordinates or a
+  second place table. Vercel rewrites both clean routes to `town.html`, and its
+  root `<base>` is required for assets under `/house/:id`. Browser regressions
+  live in `tests/` and run in CI; use `pnpm test:e2e` after navigation changes.
 - The homepage is an organized destination dashboard: desktop places compact
   Walk/Claim cards beside a large isometric town preview, while mobile keeps
   all three destinations above the fold. That preview redraws from

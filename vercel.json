@@ -7,6 +7,16 @@
       "permanent": false
     }
   ],
+  "rewrites": [
+    {
+      "source": "/today",
+      "destination": "/town.html?activity=today"
+    },
+    {
+      "source": "/house/:id",
+      "destination": "/town.html?house=:id"
+    }
+  ],
   "headers": [
     {
       "source": "/",
@@ -39,6 +49,33 @@
         {
           "key": "Expires",
           "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/town.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/today",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/house/:id",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
         }
       ]
     }

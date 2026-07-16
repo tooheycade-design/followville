@@ -65,3 +65,8 @@ admin.bat
 # got swept in by an early "git add -A" during testing on 2026-07-09; cleaned
 # up in the same commit that added this line).
 .pull_backups/
+
+# Browser regression artifacts and installed dependencies are local/CI output.
+node_modules/
+playwright-report/
+test-results/

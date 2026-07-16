@@ -546,6 +546,31 @@ Kept here (rather than just in chat) so it survives across sessions.
 - This is navigation-only. World state, homes, claims, accounts, multiplayer,
   Blender assets, and map content are unchanged.
 
+## 32. Today activity, permanent house links, and browser regressions
+
+- Added `Today in Followville` to the homepage. It derives the latest home
+  count, district, and streets directly from `world_state.json`, subtly marks
+  those homes in the preview, and links to `/today`. The clean route opens the
+  existing live 3D map filtered to the latest homes with an update summary and
+  selected address ready to visit; the next normal growth day updates it with
+  no manual copy or second data file.
+- Added stable `/house/:id` addresses for every home and a responsive Share
+  action in the map selection card. Native Web Share is used where available;
+  desktop browsers receive a clipboard fallback and an explicit status. Unknown
+  house IDs show a complete, searchable `Address unavailable` state rather than
+  a broken page.
+- Added same-app Vercel rewrites for both route families and a root document
+  base so the static `town.html` app continues to load `town.glb`,
+  `world_state.json`, video, and other assets from nested clean URLs. The routes
+  inherit the project's no-store deployment safeguards.
+- Added exact-version Playwright infrastructure and five browser regressions:
+  live homepage values/preview, Today entry/return, house copy/visit, invalid
+  address handling, and desktop chat/map/Escape movement recovery. GitHub
+  Actions now runs these alongside the existing GLB and 366-address audits.
+- Desktop and 390x844 phone layouts were visually reviewed. This is web and CI
+  infrastructure only; Blender, GLB, world state, population, building seeds,
+  claims, and Supabase schema were not changed.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

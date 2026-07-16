@@ -5,7 +5,7 @@
 # and turns red if town.glb is broken, empty, or out of sync with
 # world_state.json. Move this file to .github/workflows/ in the repo.
 
-name: Check town.glb
+name: Check Followville
 
 on:
   push:
@@ -30,3 +30,26 @@ jobs:
 
       - name: Validate the 366-house suburban reserve
         run: python neighborhood_plan.py
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install browser test dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run public experience regression checks
+        run: pnpm test:e2e

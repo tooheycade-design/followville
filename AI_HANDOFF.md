@@ -64,6 +64,24 @@ map is intentionally self-updating: it rebuilds from `world_state.json` and
 implied by already built planned houses. Do not add manual map coordinates, a
 second source of truth, or a second copy of the full town GLB.
 
+## Public places and Today activity (2026-07-16)
+
+The homepage's `Today in Followville` row is dynamic: it finds the newest day
+in `world_state.json`, counts that day's homes, names their current district and
+streets, and links to `/today`. That clean route opens the same live 3D map with
+the newest-home filter, update summary, highlighted roofs, and a selected place
+ready to visit. It must roll forward automatically on future growth days.
+
+Each home has a permanent `/house/<seed>` address and a Share control in the map
+selection. The route uses the existing seed, building data, and `public_claims`;
+do not create a second place table or duplicate coordinates. These permanent
+place identities and reusable activities are the intended foundation for later
+roleplay systems such as interiors, jobs, events, and location actions. Vercel
+rewrites `/today` and `/house/:id` to `town.html`; keep the document's root
+`<base>` so `town.glb`, state, video, and other assets still load beneath clean
+nested URLs. Run `pnpm install` once, then `pnpm test:e2e` after navigation or
+map changes. The five-test Playwright suite also runs in GitHub Actions.
+
 ## Website multiplayer (2026-07-14)
 
 `town.html` has Supabase Realtime multiplayer independent of daily Blender

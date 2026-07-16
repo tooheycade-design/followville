@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<base href="/" />
 <title>Followville — Walk the Town</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <style>
@@ -190,6 +191,18 @@
     font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 5px 18px rgba(28,43,69,.14);
   }
   #townMapSidebar { min-height:0; padding:14px; display:flex; flex-direction:column; background:#fbf8f1; }
+  #townMapRouteIntro {
+    display:none; margin:0 0 11px; padding:13px 14px; border:1px solid #d5d8d6;
+    border-radius:14px; background:#f2eadb; color:#1c2b45;
+  }
+  #townMapRouteIntro.active { display:block; }
+  #townMapRouteIntro.today { border-color:#dfb17c; background:#f7e8d2; }
+  #townMapRouteKicker {
+    margin:0 0 4px; color:#9b543c; font-size:9.5px; font-weight:850;
+    letter-spacing:.09em; text-transform:uppercase;
+  }
+  #townMapRouteTitle { margin:0; font:700 18px/1.15 Georgia,"Times New Roman",serif; }
+  #townMapRouteCopy { margin:6px 0 0; color:#48566a; font-size:10.5px; line-height:1.45; }
   #townMapSearch {
     width:100%; padding:12px 13px; border:1px solid #c8d0d5; border-radius:12px;
     background:#fff; color:#1c2b45; font:600 13px inherit; touch-action:auto;
@@ -217,10 +230,14 @@
   #townMapSelection.active { display:block; }
   #townMapSelectionTitle { font-size:14px; font-weight:800; }
   #townMapSelectionSub { margin-top:3px; font-size:11px; opacity:.72; line-height:1.35; }
-  #townMapVisit {
-    width:100%; margin-top:10px; padding:10px; border:0; border-radius:10px;
+  .town-map-selection-actions { display:grid; grid-template-columns:1fr auto; gap:7px; margin-top:10px; }
+  #townMapVisit, #townMapShare {
+    min-width:0; padding:10px; border:0; border-radius:10px;
     background:#f2e9da; color:#1c2b45; font:800 12px inherit; cursor:pointer;
   }
+  #townMapShare { border:1px solid rgba(255,255,255,.38); background:transparent; color:#fff; }
+  #townMapShare[hidden] { display:none; }
+  #townMapShareStatus { min-height:14px; margin-top:5px; font-size:9.5px; opacity:.7; overflow-wrap:anywhere; }
   .map-search-count { margin:0 2px 8px; font-size:10.5px; opacity:.52; }
   @media (max-width:760px){
     #mapToggle { top:132px; right:10px; }
@@ -469,7 +486,7 @@
   <div id="chatNote"></div>
 </section>
 
-<section id="townMapPanel" role="dialog" aria-modal="true" aria-labelledby="townMapTitle">
+<section id="townMapPanel" role="dialog" aria-modal="true" aria-labelledby="townMapTitle" aria-hidden="true">
   <div id="townMapShell">
     <header id="townMapHeader">
       <div id="townMapHeaderText">
@@ -491,6 +508,11 @@
         </div>
       </div>
       <aside id="townMapSidebar">
+        <section id="townMapRouteIntro" aria-live="polite">
+          <p id="townMapRouteKicker"></p>
+          <h3 id="townMapRouteTitle"></h3>
+          <p id="townMapRouteCopy"></p>
+        </section>
         <input id="townMapSearch" type="search" autocomplete="off"
                placeholder="Search house #, owner, street…" aria-label="Search the town map" />
         <div id="townMapQuick">
@@ -503,7 +525,11 @@
         <div id="townMapSelection">
           <div id="townMapSelectionTitle"></div>
           <div id="townMapSelectionSub"></div>
-          <button id="townMapVisit" type="button">visit this location</button>
+          <div class="town-map-selection-actions">
+            <button id="townMapVisit" type="button">visit this location</button>
+            <button id="townMapShare" type="button">share</button>
+          </div>
+          <div id="townMapShareStatus" role="status" aria-live="polite"></div>
         </div>
       </aside>
     </div>
@@ -537,6 +563,13 @@ const pageParams = new URLSearchParams(location.search);
 const previewView = pageParams.get("preview");
 const previewMode = previewView === "founders" || previewView === "buildings";
 const classicGraphics = pageParams.get("graphics") === "classic";
+const routeHousePath = location.pathname.match(/^\/house\/(\d+)\/?$/i);
+const routeHouseParam = pageParams.get("house") || routeHousePath?.[1] || null;
+const routeHouseId = /^\d+$/.test(routeHouseParam || "") && Number(routeHouseParam) > 0
+  ? Number(routeHouseParam) : null;
+const routeActivity = pageParams.get("activity") || (/^\/today\/?$/i.test(location.pathname) ? "today" : null);
+const todayRoute = routeActivity === "today";
+const mapRouteRequested = todayRoute || routeHouseId !== null;
 
 /* ══════════════════════════ WORLD LAYOUT CONSTANTS ══════════════════════════
    Mirrors neighborhood_blender.py so the web town matches the Blender town. */
@@ -1466,8 +1499,14 @@ const townMapResults = document.getElementById("townMapResults");
 const townMapSelection = document.getElementById("townMapSelection");
 const townMapSelectionTitle = document.getElementById("townMapSelectionTitle");
 const townMapSelectionSub = document.getElementById("townMapSelectionSub");
+const townMapShare = document.getElementById("townMapShare");
+const townMapShareStatus = document.getElementById("townMapShareStatus");
 const townMapStatus = document.getElementById("townMapStatus");
 const townMapMyHome = document.getElementById("townMapMyHome");
+const townMapRouteIntro = document.getElementById("townMapRouteIntro");
+const townMapRouteKicker = document.getElementById("townMapRouteKicker");
+const townMapRouteTitle = document.getElementById("townMapRouteTitle");
+const townMapRouteCopy = document.getElementById("townMapRouteCopy");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
@@ -1478,7 +1517,9 @@ const directWalkRoute = location.hash === "#walk";
 // A map opened as the page's initial route came from the public homepage. If
 // the visitor closes it without choosing a place to visit, return to that same
 // homepage instead of exposing the older in-town start/pause screen beneath it.
-let mapRouteReturnsHome = location.hash === "#map";
+let mapRouteReturnsHome = location.hash === "#map" || mapRouteRequested;
+let mapRouteApplied = false;
+let mapPreviouslyFocused = null;
 const useStaticIntro = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
   navigator.connection?.saveData;
 
@@ -1514,7 +1555,7 @@ function resumeWalkingWithoutPointerLock(){
 function returnToHomepage(){
   gameRunning = false;
   startScreenVideo.pause();
-  location.replace("index.html");
+  location.replace("/index.html");
 }
 
 function chatOpen(){ return chatPanel.classList.contains("open"); }
@@ -2509,6 +2550,46 @@ function rebuildTownMapItems(){
   mapState.bounds = {minX:minX-24,maxX:maxX+24,minZ:minZ-24,maxZ:maxZ+24};
 }
 
+function latestTownHomes(){
+  const latestDay = Math.max(0,...mapState.items.map(item => Number(item.building.day)||0));
+  return mapState.items.filter(item => item.isHome && Number(item.building.day) === latestDay);
+}
+
+function joinPlaceNames(values){
+  const unique = [...new Set(values.filter(Boolean))];
+  if (unique.length < 2) return unique[0] || "the neighborhood";
+  if (unique.length === 2) return `${unique[0]} and ${unique[1]}`;
+  return `${unique.slice(0,-1).join(", ")}, and ${unique.at(-1)}`;
+}
+
+function renderTownMapRouteIntro(){
+  townMapRouteIntro.classList.toggle("active",mapRouteRequested);
+  townMapRouteIntro.classList.toggle("today",todayRoute);
+  if (!mapRouteRequested) return;
+  if (todayRoute){
+    const homes = latestTownHomes();
+    const day = Math.max(0,...homes.map(item => Number(item.building.day)||0));
+    const districts = joinPlaceNames(homes.map(item => item.building.district));
+    const streets = joinPlaceNames(homes.map(item => item.building.street));
+    townMapRouteKicker.textContent = `Day ${day || townMapMeta.day || "?"} update`;
+    townMapRouteTitle.textContent = `${homes.length} new ${homes.length===1?"home":"homes"}`;
+    townMapRouteCopy.textContent = homes.length
+      ? `${districts} grew along ${streets}. Choose a home below, then visit it in the 3D town.`
+      : "The latest town update will appear here after the next build.";
+    document.getElementById("townMapTitle").textContent = "Today in Followville";
+    document.title = `Today in Followville · Day ${day || townMapMeta.day || "?"}`;
+    return;
+  }
+  const item = mapState.byKey.get(`building-${routeHouseId}`);
+  townMapRouteKicker.textContent = "Shared Followville address";
+  townMapRouteTitle.textContent = item?.title || `House #${routeHouseId}`;
+  townMapRouteCopy.textContent = item
+    ? `${item.subtitle}. Visit it in the 3D town or copy its address to share.`
+    : "This address is not in the current town build. Explore another location below.";
+  document.getElementById("townMapTitle").textContent = item ? `House #${routeHouseId}` : "Address unavailable";
+  document.title = item ? `House #${routeHouseId} · Followville` : "Address unavailable · Followville";
+}
+
 function townMapFilteredItems(){
   const query = townMapSearch.value.trim().toLowerCase().replace(/^[@#]/,"");
   const latestDay = Math.max(0,...mapState.items.map(item => Number(item.building.day)||0));
@@ -2564,6 +2645,7 @@ function refreshTownMap(){
   const landmarkCount = mapState.items.length-homeCount;
   townMapStatus.textContent = `day ${townMapMeta.day ?? "?"} · ${townMapMeta.population ?? homeCount} residents · ${homeCount} homes · ${landmarkCount} landmarks`;
   townMapMyHome.style.display = myClaims.length ? "" : "none";
+  renderTownMapRouteIntro();
   renderTownMapResults();
   renderTownMapSelection();
   drawTownMap();
@@ -2780,6 +2862,7 @@ function rebuildTownMap3D(){
     const roofs=new THREE.InstancedMesh(roofGeo,roofMat,homes.length);
     const mapWallColors=[0xf0d7a8,0xd6e9ef,0xecc6bd,0xd8e6c8,0xe0d4eb,0xf4e6c7];
     const mapRoofColors=[0xa15d4e,0x72865e,0x587a91,0x98705d,0x78698e,0xa47b55];
+    const latestMapDay=Math.max(0,...homes.map(item=>Number(item.building.day)||0));
     const dummy=new THREE.Object3D();
     for(let i=0;i<homes.length;i++){
       const item=homes[i],seed=Math.abs(item.houseId||i),height=3.35+(seed%5)*.5;
@@ -2789,7 +2872,10 @@ function rebuildTownMap3D(){
       const wallColor=item.owner?new THREE.Color(0xe77b55):new THREE.Color(mapWallColors[seed%mapWallColors.length]);
       walls.setColorAt(i,wallColor);
       dummy.position.set(item.x,height+1.0+.25,item.z);dummy.rotation.set(0,yaw+Math.PI/4,0);dummy.scale.set(3.75,1.8,3.25);dummy.updateMatrix();
-      roofs.setMatrixAt(i,dummy.matrix);roofs.setColorAt(i,new THREE.Color(mapRoofColors[seed%mapRoofColors.length]));
+      roofs.setMatrixAt(i,dummy.matrix);
+      const roofColor=todayRoute&&Number(item.building.day)===latestMapDay
+        ? new THREE.Color(0xd28a42) : new THREE.Color(mapRoofColors[seed%mapRoofColors.length]);
+      roofs.setColorAt(i,roofColor);
     }
     walls.instanceMatrix.needsUpdate=true;roofs.instanceMatrix.needsUpdate=true;
     if(walls.instanceColor)walls.instanceColor.needsUpdate=true;if(roofs.instanceColor)roofs.instanceColor.needsUpdate=true;
@@ -2999,6 +3085,8 @@ function renderTownMapSelection(){
   if (!item) return;
   townMapSelectionTitle.textContent=item.title;
   townMapSelectionSub.textContent=item.subtitle;
+  townMapShare.hidden=!item.isHome;
+  townMapShareStatus.textContent="";
 }
 function selectTownMapItem(item,center=true){
   if (!item) return;
@@ -3021,31 +3109,55 @@ function pauseWalkingForMap(){
   crosshair.style.display="none";hint.style.display="none";
   lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";
 }
+function applyTownMapRoute(){
+  if (mapRouteApplied || !mapRouteRequested) return;
+  mapRouteApplied=true;
+  if (todayRoute){
+    mapState.filter="newest";
+    townMapSearch.value="";
+    renderTownMapResults();
+    const first=townMapFilteredItems()[0];
+    if(first)selectTownMapItem(first);
+    return;
+  }
+  townMapSearch.value=String(routeHouseId);
+  mapState.filter="";
+  renderTownMapResults();
+  const item=mapState.byKey.get(`building-${routeHouseId}`);
+  if(item)selectTownMapItem(item);
+}
 function openTownMap(){
   if (townMapOpen()) return;
   if (chatOpen()) closeChat(false);
   if (modalOpen()) closeModal();
   resumeWalkingAfterMap=gameRunning||controls.isLocked;
+  mapPreviouslyFocused=document.activeElement;
   townMapPanel.classList.add("open");
+  townMapPanel.setAttribute("aria-hidden","false");
   pauseWalkingForMap();
   if (!isTouch&&controls.isLocked) controls.unlock();
+  if (mapRouteRequested) mapRouteApplied=false;
   mapState.filter="";townMapSearch.value="";
   refreshTownMap();
-  requestAnimationFrame(()=>{sizeTownMapCanvas();fitTownMap();});
+  requestAnimationFrame(()=>{
+    sizeTownMapCanvas();fitTownMap();applyTownMapRoute();
+    (mapRouteRequested ? document.getElementById("townMapClose") : townMapSearch).focus({preventScroll:true});
+  });
 }
 function closeTownMap(forceWalking=false, withoutPointerLock=false){
   if (!townMapOpen()) return;
   const returnMapToHomepage=mapRouteReturnsHome&&!forceWalking&&!resumeWalkingAfterMap;
   if(forceWalking)mapRouteReturnsHome=false;
-  townMapPanel.classList.remove("open");townMapSearch.blur();
-  if(returnMapToHomepage){location.replace("index.html");return;}
+  townMapPanel.classList.remove("open");townMapPanel.setAttribute("aria-hidden","true");townMapSearch.blur();
+  if(returnMapToHomepage){location.replace("/index.html");return;}
   if (location.hash==="#map") history.replaceState(null,"",location.pathname+location.search);
   const shouldWalk=forceWalking||resumeWalkingAfterMap;
   resumeWalkingAfterMap=false;
   if (shouldWalk){
     if (isTouch || withoutPointerLock) resumeWalkingWithoutPointerLock();
     else resumeDesktopWalking();
-  }
+  } else if (mapPreviouslyFocused instanceof HTMLElement) mapPreviouslyFocused.focus({preventScroll:true});
+  mapPreviouslyFocused=null;
 }
 function visitTownMapSelection(){
   const item=mapState.selected;if (!item) return;
@@ -3056,11 +3168,41 @@ function visitTownMapSelection(){
   closeTownMap(true);showToast(`Visiting ${item.title}`);
 }
 
+function fallbackCopyText(value){
+  const area=document.createElement("textarea");
+  area.value=value;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";
+  document.body.appendChild(area);area.select();
+  const copied=document.execCommand("copy");area.remove();return copied;
+}
+async function shareTownMapSelection(){
+  const item=mapState.selected;if(!item?.isHome)return;
+  const url=new URL(`/house/${item.houseId}`,location.origin).href;
+  const title=`House #${item.houseId} in Followville`;
+  const text=item.owner ? `Visit @${item.owner}'s home in Followville.` : `Visit House #${item.houseId} in Followville.`;
+  if(navigator.share){
+    try{
+      await navigator.share({title,text,url});
+      townMapShareStatus.textContent="Shared.";return;
+    }catch(error){
+      if(error?.name==="AbortError")return;
+    }
+  }
+  try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(url);
+    else if(!fallbackCopyText(url))throw new Error("copy unavailable");
+    townMapShareStatus.textContent="Address copied.";showToast("House address copied");
+  }catch(error){
+    townMapShareStatus.textContent=url;
+    showToast("Copy this house address from the map panel.");
+  }
+}
+
 mapToggle.addEventListener("click",e=>{e.stopPropagation();openTownMap();});
 startMapBtn.addEventListener("click",e=>{e.stopPropagation();openTownMap();});
 document.getElementById("townMapClose").addEventListener("click",()=>closeTownMap());
 document.getElementById("townMapReset").addEventListener("click",fitTownMap);
 document.getElementById("townMapVisit").addEventListener("click",visitTownMapSelection);
+townMapShare.addEventListener("click",shareTownMapSelection);
 townMapPanel.addEventListener("mousedown",e=>{if(e.target===townMapPanel)closeTownMap();});
 townMapSearch.addEventListener("input",()=>{mapState.filter="";renderTownMapResults();});
 document.getElementById("townMapQuick").addEventListener("click",e=>{
@@ -4167,6 +4309,8 @@ fetch("world_state.json")
         if (directWalkRoute){
           history.replaceState(null,"",location.pathname+location.search);
           resumeWalkingWithoutPointerLock();
+        }else if (mapRouteRequested || location.hash === "#map"){
+          startScreen.style.display = "none";
         }else{
           startScreen.style.display = "flex";
           playIntroVideo();
@@ -4174,7 +4318,7 @@ fetch("world_state.json")
         hud.style.display = "block";
         if (previewMode) frameFounderPreview();
         animate();
-        if (location.hash === "#map") requestAnimationFrame(openTownMap);
+        if (location.hash === "#map" || mapRouteRequested) requestAnimationFrame(openTownMap);
       });
   })
   .catch(err => {

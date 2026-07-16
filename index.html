@@ -204,6 +204,11 @@
   .destination-card:hover { color:#ffd1bb; padding-left:5px; }
   .destination-card:active { opacity:.72; }
   .destination-card.walk,.destination-card.claim,.destination-card.admin { background:none; }
+  .destination-card.today .destination-copy strong { color:#f1b091; }
+  .destination-card.today::before {
+    content:""; width:7px; height:7px; flex:0 0 auto; border-radius:50%;
+    background:#df825f; box-shadow:0 0 0 4px rgba(223,130,95,.13);
+  }
   .destination-icon { display:none; }
   .destination-copy { min-width:0; flex:1; }
   .destination-copy strong { display:block; font-size:16px; font-weight:680; }
@@ -271,6 +276,8 @@
     .action-list { display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:0; }
     .destination-card { padding:15px 10px 15px 0; min-height:76px; border-radius:0; gap:9px; }
     .destination-card + .destination-card { padding-left:14px; border-left:1px solid rgba(255,255,255,.25); }
+    .destination-card.today { grid-column:1/-1; min-height:62px; padding-left:0; }
+    .destination-card.today + .destination-card { padding-left:0; border-left:0; }
     .destination-icon { display:none; }
     .destination-copy strong { font-size:13px; }
     .destination-copy small { font-size:10px; }
@@ -332,6 +339,13 @@
       <p class="panel-kicker">Start here</p>
       <h2>A town built one follower at a time.</h2>
       <nav class="action-list" aria-label="Followville destinations">
+        <a class="destination-card today" id="todayBtn" href="/today">
+          <span class="destination-copy">
+            <strong>Today in Followville</strong>
+            <small id="todaySummary">See the newest homes and visit today&rsquo;s streets.</small>
+          </span>
+          <span class="destination-arrow" aria-hidden="true">&rarr;</span>
+        </a>
         <a class="destination-card walk" href="town.html#walk">
           <span class="destination-icon" aria-hidden="true">3D</span>
           <span class="destination-copy">
@@ -452,9 +466,13 @@
     });
   }
 
-  function drawPreviewHome(ctx,x,y,seed,size,landmark){
+  function drawPreviewHome(ctx,x,y,seed,size,landmark,latest=false){
     const half=Math.max(3.2,Math.min(7.4,size));
     const halfY=half*.43,drop=landmark?half*1.25:half*.8;
+    if(latest){
+      ctx.beginPath();ctx.ellipse(x,y+1,half*1.55,half*.62,0,0,Math.PI*2);
+      ctx.fillStyle="rgba(213,117,73,.28)";ctx.fill();
+    }
     const centerY=y-drop-halfY;
     const top=[x,centerY-halfY],right=[x+half,centerY],bottom=[x,centerY+halfY],left=[x-half,centerY];
     ctx.beginPath();ctx.ellipse(x,y+1,half*.9,half*.32,0,0,Math.PI*2);
@@ -568,11 +586,13 @@
       drawPath();ctx.strokeStyle="#69797d";ctx.lineWidth=Math.max(3.5,PREVIEW_ROAD*scale);ctx.stroke();
     }
 
+    const latestDay=Math.max(0,...buildings.map(building=>Number(building.day)||0));
     entries.sort((a,b)=>previewIso(a.position)[1]-previewIso(b.position)[1]);
     for(const entry of entries){
       const [x,y]=project(entry.position),seed=Math.abs(Number(entry.building.seed)||0);
       const landmark=PREVIEW_LANDMARK_TYPES.has(entry.building.type);
-      drawPreviewHome(ctx,x,y,seed,Math.max(3.5,3.1*scale)*(landmark?1.5:1),landmark);
+      const latest=!landmark&&Number(entry.building.day)===latestDay;
+      drawPreviewHome(ctx,x,y,seed,Math.max(3.5,3.1*scale)*(landmark?1.5:1),landmark,latest);
     }
     const homeCount=buildings.filter(building=>PREVIEW_HOME_TYPES.has(building.type)).length;
     mapPreviewMeta.textContent=`day ${state.day??"?"} · ${homeCount} homes`;
@@ -596,6 +616,14 @@
       const popEl = document.getElementById("statPop");
       if (typeof state.day === "number") setStat(dayEl, state.day);
       if (typeof state.pop === "number") setStat(popEl, state.pop);
+      const latestHomes=state.buildings.filter(building=>
+        PREVIEW_HOME_TYPES.has(building.type)&&Number(building.day)===Number(state.day));
+      const districts=[...new Set(latestHomes.map(building=>building.district).filter(Boolean))];
+      const streets=[...new Set(latestHomes.map(building=>building.street).filter(Boolean))];
+      const place=districts[0]||streets[0]||"the neighborhood";
+      document.getElementById("todaySummary").textContent=latestHomes.length
+        ? `${latestHomes.length} new ${latestHomes.length===1?"home":"homes"} in ${place}${streets.length?` · ${streets.join(" + ")}`:""}.`
+        : "See the newest homes and visit today’s streets.";
       requestAnimationFrame(()=>drawMapPreview(state));
     } catch (err) {
       console.warn("couldn't load world_state.json for live stats", err);

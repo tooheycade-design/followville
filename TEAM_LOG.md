@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [WEB] Added a self-updating Today in Followville activity and clean permanent `/house/:id` share addresses on top of the existing live world/map data, highlighted the newest homes, added native-share/clipboard visit cards, and installed five Playwright browser regressions in GitHub Actions for homepage, Today, shared/invalid houses, and chat/map/Escape navigation; this establishes stable place/activity IDs for future roleplay without changing Blender, GLB, state, population, buildings, or claims.
+
 2026-07-16 - Cade (via Windows Codex) - [WEB] Removed the last legacy-home path from normal desktop walking: pressing Escape or otherwise leaving pointer-lock now returns to the redesigned `index.html` rather than revealing the old in-town intro. Escape inside the town map or chat still closes that overlay and remains in the rendered town without pointer-lock; clicking the canvas recaptures mouse-look. No world, house, claim, account, map, multiplayer, or Blender data changed.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed the redesigned homepage's Walk action opening the legacy in-town intro: it now routes through `town.html#walk`, removes the route marker after load, and starts directly in the rendered neighborhood. Desktop visitors can click the town canvas for mouse-look; mobile keeps the existing joystick/look controls. No world, house, claim, account, map, or multiplayer data changed.
