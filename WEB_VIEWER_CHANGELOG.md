@@ -439,6 +439,29 @@ Kept here (rather than just in chat) so it survives across sessions.
   traffic cars exist only for the render; `world_state.json`, the permanent
   blend, GLB, population, buildings, seeds, and claims remain unchanged.
 
+## 25. Self-updating town map and house finder
+
+- Added `Explore the map` to the homepage and matching access from the town
+  start screen, the in-town map control, and desktop `M` key.
+- Built a responsive isometric 3D map with drag-to-rotate, pan, wheel/pinch
+  zoom, fit-to-town, lit terrain zones, raised colored homes, established grid
+  and Founder Park roads, currently revealed planned-road centerlines,
+  landmarks, selection rings, and a live player marker. Houses are instanced
+  in a small dedicated scene instead of duplicating the full town GLB; the
+  original flat canvas renderer remains as a WebGL fallback.
+- Added search by exact house number, claimed Instagram handle, street,
+  district, and building type. Quick filters cover the newest daily homes,
+  school, claimed homes, and the signed-in visitor's owned home(s).
+- Selecting a result centers and highlights it; Visit moves the player to the
+  correct frontage and enters walking mode. Direct `town.html#map` links open
+  the map after the real GLB/state load completes.
+- The map rebuilds from `world_state.json` and the existing `public_claims`
+  feed. It has no separate source of truth: future houses, landmarks, and road
+  extensions appear through the normal growth pipeline, while unbuilt future
+  roads remain absent. Current QA mapped 244 homes, three landmarks, 18 Day 14
+  homes, and 15 built Overlook Circle homes. Web-only; no Blender, GLB, state,
+  population, building, seed, or claim changes.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

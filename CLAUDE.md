@@ -8,6 +8,20 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
+  `Explore the map` route and `town.html` has a lightweight isometric map with
+  rotate, pan, zoom, and fit-to-town controls. It opens from the start screen,
+  the in-town button, or desktop `M`. Visitors
+  can find a house number, claimed handle, street, newest homes, the school,
+  or their own home, then visit/teleport to it. The map derives homes,
+  landmarks, district zones, the established Founder Park roads, and only
+  currently revealed planned-road centerlines from `world_state.json`; claim
+  names refresh from `public_claims`. Homes use instancing so this does not
+  duplicate the full GLB, and a flat fallback remains for failed WebGL. Never
+  create or maintain a separate map data file. Current QA resolves 244 homes,
+  three landmarks, 18 Day 14 homes, and all 15 built Overlook Circle homes.
+  Web-only: Blender, GLB, state, population, buildings, and claims did not
+  change.
 - 2026-07-15 landing experience (Cade via Codex): `index.html` and the
   `town.html` loading/start screen use a lightweight looping Day 14 sidewalk
   shot aimed at a current Overlook Circle house, with two staggered passing

@@ -24,6 +24,8 @@
   body.preview-mode #runBtn,
   body.preview-mode #claimPrompt,
   body.preview-mode #multiplayerStatus,
+  body.preview-mode #mapToggle,
+  body.preview-mode #townMapPanel,
   body.preview-mode #chatToggle,
   body.preview-mode #chatPanel { display:none !important; }
 
@@ -132,6 +134,106 @@
   }
   @media (prefers-reduced-motion: reduce){
     #startScreenVideo { display:none; }
+  }
+
+  /* ─── live town map + house finder ─── */
+  #mapToggle {
+    position:fixed; top:134px; right:14px; z-index:6; border:1px solid rgba(255,255,255,.28);
+    color:#fff; background:rgba(12,27,43,.55); padding:8px 14px; border-radius:20px;
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    text-shadow:0 1px 4px rgba(0,0,0,.5); backdrop-filter:blur(7px);
+  }
+  #townMapPanel {
+    position:fixed; inset:0; z-index:45; display:none; align-items:center; justify-content:center;
+    padding:clamp(10px,2vw,24px); background:rgba(7,16,28,.72); backdrop-filter:blur(8px);
+    color:#1c2b45; touch-action:auto;
+  }
+  #townMapPanel.open { display:flex; }
+  #townMapShell {
+    width:min(1120px,100%); height:min(760px,100%); border-radius:26px; overflow:hidden;
+    display:flex; flex-direction:column; background:#f6f0e5;
+    border:1px solid rgba(255,255,255,.65); box-shadow:0 28px 80px rgba(0,0,0,.42);
+  }
+  #townMapHeader {
+    display:flex; align-items:center; gap:14px; padding:16px 18px;
+    background:#17273d; color:#fff; border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  #townMapHeaderText { flex:1; min-width:0; }
+  #townMapHeader h2 { margin:0; font-size:21px; letter-spacing:-.3px; }
+  #townMapStatus { margin-top:3px; font-size:11.5px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #townMapClose {
+    width:38px; height:38px; border:1px solid rgba(255,255,255,.25); border-radius:50%;
+    background:rgba(255,255,255,.1); color:#fff; font-size:24px; line-height:1;
+    font-family:inherit; cursor:pointer;
+  }
+  #townMapBody { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 330px; }
+  #townMapViewport {
+    position:relative; min-width:0; min-height:0; overflow:hidden;
+    background:linear-gradient(145deg,#d9e9d5,#bfd8cc); border-right:1px solid rgba(28,43,69,.12);
+  }
+  #townMapCanvas { width:100%; height:100%; cursor:grab; }
+  #townMapCanvas.dragging { cursor:grabbing; }
+  #townMapLegend {
+    position:absolute; left:12px; bottom:12px; display:flex; flex-wrap:wrap; gap:7px 11px;
+    max-width:calc(100% - 24px); padding:8px 10px; border-radius:12px;
+    background:rgba(247,242,232,.88); box-shadow:0 5px 18px rgba(28,43,69,.14);
+    font-size:10.5px; font-weight:700; pointer-events:none;
+  }
+  .map-legend-dot { display:inline-block; width:9px; height:9px; margin-right:4px; border-radius:3px; vertical-align:-1px; }
+  .map-legend-dot.home { background:#f8e7c5; border:1px solid #7a5f42; }
+  .map-legend-dot.claimed { background:#cf7150; }
+  .map-legend-dot.landmark { background:#e3b64c; }
+  .map-legend-dot.you { background:#2b6a94; border-radius:50%; }
+  #townMapReset {
+    position:absolute; top:12px; left:12px; border:0; border-radius:12px; padding:8px 11px;
+    background:rgba(247,242,232,.92); color:#1c2b45; font-family:inherit;
+    font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 5px 18px rgba(28,43,69,.14);
+  }
+  #townMapSidebar { min-height:0; padding:14px; display:flex; flex-direction:column; background:#fbf8f1; }
+  #townMapSearch {
+    width:100%; padding:12px 13px; border:1px solid #c8d0d5; border-radius:12px;
+    background:#fff; color:#1c2b45; font:600 13px inherit; touch-action:auto;
+  }
+  #townMapSearch:focus { outline:3px solid rgba(43,106,148,.18); border-color:#2b6a94; }
+  #townMapQuick { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 11px; }
+  .map-quick {
+    border:1px solid #cbd2d6; border-radius:20px; padding:6px 9px; background:#fff;
+    color:#2f435c; font:700 10.5px inherit; cursor:pointer;
+  }
+  .map-quick:hover { border-color:#7d93a9; }
+  #townMapResults { flex:1; min-height:90px; overflow:auto; display:grid; align-content:start; gap:7px; padding-right:2px; }
+  .map-result {
+    width:100%; border:1px solid #dde0e1; border-radius:12px; padding:10px 11px;
+    background:#fff; color:#1c2b45; text-align:left; font-family:inherit; cursor:pointer;
+  }
+  .map-result:hover, .map-result.selected { border-color:#2b6a94; box-shadow:0 0 0 2px rgba(43,106,148,.1); }
+  .map-result-title { display:block; font-size:12.5px; font-weight:800; }
+  .map-result-sub { display:block; margin-top:2px; font-size:10.5px; opacity:.62; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #townMapEmpty { padding:20px 8px; text-align:center; font-size:12px; opacity:.6; }
+  #townMapSelection {
+    display:none; margin-top:11px; padding:12px; border-radius:14px; color:#fff;
+    background:linear-gradient(140deg,#1c2b45,#2d4868); box-shadow:0 8px 22px rgba(28,43,69,.18);
+  }
+  #townMapSelection.active { display:block; }
+  #townMapSelectionTitle { font-size:14px; font-weight:800; }
+  #townMapSelectionSub { margin-top:3px; font-size:11px; opacity:.72; line-height:1.35; }
+  #townMapVisit {
+    width:100%; margin-top:10px; padding:10px; border:0; border-radius:10px;
+    background:#f2e9da; color:#1c2b45; font:800 12px inherit; cursor:pointer;
+  }
+  .map-search-count { margin:0 2px 8px; font-size:10.5px; opacity:.52; }
+  @media (max-width:760px){
+    #mapToggle { top:132px; right:10px; }
+    #townMapPanel { padding:7px; align-items:stretch; }
+    #townMapShell { height:100%; border-radius:20px; }
+    #townMapHeader { padding:12px 14px; }
+    #townMapHeader h2 { font-size:18px; }
+    #townMapBody { grid-template-columns:1fr; grid-template-rows:minmax(290px,52%) minmax(0,48%); }
+    #townMapViewport { border-right:0; border-bottom:1px solid rgba(28,43,69,.12); }
+    #townMapSidebar { padding:10px; }
+    #townMapQuick { margin:7px 0 8px; }
+    #townMapResults { min-height:65px; }
+    #townMapSelection { margin-top:7px; padding:10px; }
   }
 
   /* ─── accounts + home claiming ─── */
@@ -335,6 +437,7 @@
   <p id="startHint">WASD or arrows to walk · T or / to chat · shift to run</p>
   <div id="startBtns">
     <div class="btn" id="enterBtn">click to enter</div>
+    <div class="btn alt" id="startMapBtn">explore the map</div>
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
     <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
     <div class="btn alt" id="customizeHomeBtn" style="display:none;">customize my home</div>
@@ -348,6 +451,7 @@
 </div>
 
 <button id="accountBtn"></button>
+<button id="mapToggle" type="button">town map <span aria-hidden="true">M</span></button>
 <div id="claimPrompt"><span class="key">E</span><span id="claimPromptText">claim this house</span></div>
 <div id="toast"></div>
 <div id="authModal"><div id="authCard"></div></div>
@@ -363,6 +467,47 @@
     <button id="chatSend" type="submit">send</button>
   </form>
   <div id="chatNote"></div>
+</section>
+
+<section id="townMapPanel" role="dialog" aria-modal="true" aria-labelledby="townMapTitle">
+  <div id="townMapShell">
+    <header id="townMapHeader">
+      <div id="townMapHeaderText">
+        <h2 id="townMapTitle">Followville map</h2>
+        <div id="townMapStatus">loading the town…</div>
+      </div>
+      <button id="townMapClose" type="button" aria-label="Close map">&times;</button>
+    </header>
+    <div id="townMapBody">
+      <div id="townMapViewport">
+        <canvas id="townMapCanvas" aria-label="Interactive map of Followville"></canvas>
+        <button id="townMapReset" type="button">fit town</button>
+        <div id="townMapLegend" aria-hidden="true">
+          <span><i class="map-legend-dot home"></i>home</span>
+          <span><i class="map-legend-dot claimed"></i>claimed</span>
+          <span><i class="map-legend-dot landmark"></i>landmark</span>
+          <span><i class="map-legend-dot you"></i>you</span>
+          <span>drag to rotate · scroll/pinch to zoom</span>
+        </div>
+      </div>
+      <aside id="townMapSidebar">
+        <input id="townMapSearch" type="search" autocomplete="off"
+               placeholder="Search house #, owner, street…" aria-label="Search the town map" />
+        <div id="townMapQuick">
+          <button class="map-quick" type="button" data-map-quick="newest">newest homes</button>
+          <button class="map-quick" type="button" data-map-quick="school">school</button>
+          <button class="map-quick" type="button" data-map-quick="claimed">claimed homes</button>
+          <button class="map-quick" id="townMapMyHome" type="button" data-map-quick="mine" style="display:none;">my home</button>
+        </div>
+        <div id="townMapResults"></div>
+        <div id="townMapSelection">
+          <div id="townMapSelectionTitle"></div>
+          <div id="townMapSelectionSub"></div>
+          <button id="townMapVisit" type="button">visit this location</button>
+        </div>
+      </aside>
+    </div>
+  </div>
 </section>
 
 <div id="lookZone"></div>
@@ -385,6 +530,7 @@
 <script type="module">
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const pageParams = new URLSearchParams(location.search);
@@ -1311,9 +1457,21 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatSend = document.getElementById("chatSend");
 const chatNote = document.getElementById("chatNote");
+const mapToggle = document.getElementById("mapToggle");
+const startMapBtn = document.getElementById("startMapBtn");
+const townMapPanel = document.getElementById("townMapPanel");
+const townMapCanvas = document.getElementById("townMapCanvas");
+const townMapSearch = document.getElementById("townMapSearch");
+const townMapResults = document.getElementById("townMapResults");
+const townMapSelection = document.getElementById("townMapSelection");
+const townMapSelectionTitle = document.getElementById("townMapSelectionTitle");
+const townMapSelectionSub = document.getElementById("townMapSelectionSub");
+const townMapStatus = document.getElementById("townMapStatus");
+const townMapMyHome = document.getElementById("townMapMyHome");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
+let resumeWalkingAfterMap = false;
 const useStaticIntro = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
   navigator.connection?.saveData;
 
@@ -1383,25 +1541,35 @@ chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); }
 
 if (isTouch){
   enterBtn.textContent = "tap to enter";
-  startHint.textContent = "drag to look · joystick to walk · RUN to sprint";
+  startHint.textContent = "drag to look · joystick to walk · map button to navigate";
   hint.textContent = "drag anywhere to look around";
   enterBtn.addEventListener("touchend", e => { e.preventDefault(); beginWalking(); });
 } else {
+  startHint.textContent = "WASD to walk · T or / to chat · M for map · shift to run";
   startScreen.addEventListener("click", () => controls.lock());
   controls.addEventListener("lock", beginWalking);
-  controls.addEventListener("unlock", () => { if (!chatOpen()) stopWalking(); });
+  controls.addEventListener("unlock", () => { if (!chatOpen() && !townMapOpen()) stopWalking(); });
 }
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
+  if (townMapOpen()){
+    if (e.code === "Escape"){
+      e.preventDefault(); closeTownMap();
+    }
+    return;
+  }
   if (chatOpen()){
     if (e.code === "Escape"){
       e.preventDefault();
       closeChat();
     }
     return;
+  }
+  if (!modalOpen() && e.code === "KeyM"){
+    e.preventDefault(); openTownMap(); return;
   }
   if (!modalOpen() && (e.code === "KeyT" || e.code === "Slash" || e.key === "/" || e.code === "Enter")){
     e.preventDefault(); openChat(); return;
@@ -1867,6 +2035,7 @@ let houseRows = new Map();      // house_id -> {gx, gy, claimable}   (DB truth)
 let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
 let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
 let worldBuildings = [];        // from world_state.json (geometry truth)
+let townMapMeta = { day:null, population:null };
 let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
@@ -2265,6 +2434,668 @@ function frontDirsFor(b){
   return Object.keys(dists).filter(k => dists[k] === best).map(k => FACE_DIR[k]);
 }
 
+/* ─── self-updating town map ───
+   Geometry comes from world_state.json and ownership comes from the same live
+   claims feed as the 3D name tags. A normal growth/export therefore updates
+   the map without a second map file or any hand-maintained coordinates. */
+const MAP_LANDMARK_NAMES = {
+  elementaryschool:"Followville Elementary", parkdistrict:"Founder Park",
+  park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
+  stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
+  skyscraper:"Downtown tower"
+};
+const mapState = {
+  items:[], byKey:new Map(), selected:null, filter:"", bounds:null,
+  width:0, height:0, pointer:null, pickMeshes:[]
+};
+let townMapRenderer=null, townMapScene=null, townMapCamera=null, townMapControls=null;
+let townMapRoot=null, townMapPlayer=null, townMapSelectionRing=null;
+const townMapRaycaster=new THREE.Raycaster();
+const townMapPointerNdc=new THREE.Vector2();
+
+function townMapOpen(){ return townMapPanel.classList.contains("open"); }
+function mapEsc(value){
+  return String(value ?? "").replace(/[&<>"']/g, ch =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function mapItemForBuilding(building){
+  const isHome = !!HOME_MATERIAL_ROLES[building.type];
+  const landmark = MAP_LANDMARK_NAMES[building.type];
+  if (!isHome && !landmark) return null;
+  const [x,z] = buildingWorldXZ(building);
+  const houseId = Number(building.seed);
+  const owner = isHome ? claimedBy.get(houseId) : null;
+  const place = [building.street, building.district].filter(Boolean).join(" · ") ||
+    `Built on day ${building.day ?? "?"}`;
+  const title = isHome ? (owner ? `@${owner}` : `House #${houseId}`) : landmark;
+  const subtitle = isHome && owner ? `House #${houseId} · ${place}` : place;
+  return {
+    key:`building-${houseId}`, building, x, z, houseId, owner,
+    isHome, isLandmark:!isHome, title, subtitle,
+    search:`${title} ${subtitle} house ${houseId} #${houseId} ${building.type}`.toLowerCase()
+  };
+}
+
+function rebuildTownMapItems(){
+  mapState.items = worldBuildings.map(mapItemForBuilding).filter(Boolean);
+  mapState.byKey = new Map(mapState.items.map(item => [item.key,item]));
+  if (mapState.selected) mapState.selected = mapState.byKey.get(mapState.selected.key) || null;
+  if (!mapState.items.length){ mapState.bounds = null; return; }
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for (const item of mapState.items){
+    minX=Math.min(minX,item.x); maxX=Math.max(maxX,item.x);
+    minZ=Math.min(minZ,item.z); maxZ=Math.max(maxZ,item.z);
+  }
+  mapState.bounds = {minX:minX-24,maxX:maxX+24,minZ:minZ-24,maxZ:maxZ+24};
+}
+
+function townMapFilteredItems(){
+  const query = townMapSearch.value.trim().toLowerCase().replace(/^[@#]/,"");
+  const latestDay = Math.max(0,...mapState.items.map(item => Number(item.building.day)||0));
+  let items;
+  if (query){
+    const terms = query.split(/\s+/).filter(Boolean);
+    items = /^\d+$/.test(query)
+      ? mapState.items.filter(item => item.isHome && item.houseId === Number(query))
+      : mapState.items.filter(item => terms.every(term => item.search.includes(term)));
+    items.sort((a,b) => {
+      const exactA = String(a.houseId) === query || a.owner?.toLowerCase() === query;
+      const exactB = String(b.houseId) === query || b.owner?.toLowerCase() === query;
+      return Number(exactB)-Number(exactA) || Number(b.building.day||0)-Number(a.building.day||0);
+    });
+  } else if (mapState.filter === "newest"){
+    items = mapState.items
+      .filter(item => item.isHome && Number(item.building.day) === latestDay)
+      .sort((a,b) => Number(b.building.plan_id||b.houseId)-Number(a.building.plan_id||a.houseId));
+  } else if (mapState.filter === "school"){
+    items = mapState.items.filter(item => item.building.type === "elementaryschool");
+  } else if (mapState.filter === "claimed"){
+    items = mapState.items.filter(item => item.isHome && item.owner);
+  } else if (mapState.filter === "mine"){
+    const mine = new Set(myClaims.map(claim => Number(claim.house_id)));
+    items = mapState.items.filter(item => mine.has(item.houseId));
+  } else {
+    const newest = mapState.items
+      .filter(item => item.isHome && Number(item.building.day) === latestDay)
+      .sort((a,b) => Number(b.building.plan_id||b.houseId)-Number(a.building.plan_id||a.houseId));
+    const landmarks = mapState.items.filter(item => item.isLandmark);
+    items = [...newest,...landmarks];
+  }
+  return items.slice(0,60);
+}
+
+function renderTownMapResults(){
+  const items = townMapFilteredItems();
+  const selectedKey = mapState.selected?.key;
+  townMapResults.innerHTML = items.length ?
+    `<div class="map-search-count">${items.length} ${items.length===1?"location":"locations"}</div>` +
+    items.map(item => `
+      <button type="button" class="map-result ${item.key===selectedKey?"selected":""}" data-map-key="${item.key}">
+        <span class="map-result-title">${mapEsc(item.title)}</span>
+        <span class="map-result-sub">${mapEsc(item.subtitle)}</span>
+      </button>`).join("") :
+    `<div id="townMapEmpty">No locations match that search.</div>`;
+}
+
+function refreshTownMap(){
+  rebuildTownMapItems();
+  rebuildTownMap3D();
+  const homeCount = mapState.items.filter(item => item.isHome).length;
+  const landmarkCount = mapState.items.length-homeCount;
+  townMapStatus.textContent = `day ${townMapMeta.day ?? "?"} · ${townMapMeta.population ?? homeCount} residents · ${homeCount} homes · ${landmarkCount} landmarks`;
+  townMapMyHome.style.display = myClaims.length ? "" : "none";
+  renderTownMapResults();
+  renderTownMapSelection();
+  drawTownMap();
+}
+
+function ensureTownMap3D(){
+  if (townMapRenderer) return true;
+  try {
+    townMapRenderer=new THREE.WebGLRenderer({canvas:townMapCanvas,antialias:true,alpha:false,powerPreference:"high-performance"});
+    townMapRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+    townMapRenderer.outputColorSpace=THREE.SRGBColorSpace;
+    townMapRenderer.toneMapping=THREE.ACESFilmicToneMapping;
+    townMapRenderer.toneMappingExposure=1.1;
+    townMapRenderer.shadowMap.enabled=true;
+    townMapRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+    townMapScene=new THREE.Scene();
+    townMapScene.background=new THREE.Color(0xc4ddd4);
+    townMapScene.fog=new THREE.Fog(0xc4ddd4,760,1600);
+    townMapCamera=new THREE.PerspectiveCamera(38,1,.1,3000);
+    townMapControls=new OrbitControls(townMapCamera,townMapCanvas);
+    townMapControls.enableDamping=true;
+    townMapControls.dampingFactor=.08;
+    townMapControls.screenSpacePanning=true;
+    townMapControls.minPolarAngle=.28;
+    townMapControls.maxPolarAngle=1.32;
+    townMapControls.minDistance=20;
+    townMapControls.maxDistance=1300;
+    townMapControls.addEventListener("change",drawTownMap);
+
+    const hemi=new THREE.HemisphereLight(0xeaf7ff,0x78936d,2.0);
+    townMapScene.add(hemi);
+    const sun=new THREE.DirectionalLight(0xfff1cf,3.1);
+    sun.position.set(180,260,110);sun.castShadow=true;
+    sun.shadow.mapSize.set(1024,1024);
+    sun.shadow.camera.left=-420;sun.shadow.camera.right=420;
+    sun.shadow.camera.top=420;sun.shadow.camera.bottom=-420;
+    sun.shadow.camera.near=10;sun.shadow.camera.far=850;
+    townMapScene.add(sun);
+    townMapRoot=new THREE.Group();townMapRoot.name="live-map-model";townMapScene.add(townMapRoot);
+    return true;
+  } catch (error){
+    console.warn("3D map unavailable; using the lightweight flat fallback.",error);
+    townMapRenderer=null;townMapScene=null;townMapCamera=null;townMapControls=null;townMapRoot=null;
+    return false;
+  }
+}
+
+function disposeTownMapModel(){
+  if (!townMapRoot) return;
+  townMapRoot.traverse(object=>{
+    object.geometry?.dispose?.();
+    const materials=Array.isArray(object.material)?object.material:[object.material];
+    for(const material of materials){material?.map?.dispose?.();material?.dispose?.();}
+  });
+  townMapRoot.clear();
+  mapState.pickMeshes=[];
+}
+
+function addTownMapRoad(x1,z1,x2,z2,width=ROAD){
+  if (!townMapRoot) return;
+  const dx=x2-x1,dz=z2-z1,length=Math.hypot(dx,dz);
+  if (length<.1) return;
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(length,.26,width),
+    new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94,metalness:.02}));
+  mesh.position.set((x1+x2)/2,.13,(z1+z2)/2);
+  mesh.rotation.y=-Math.atan2(dz,dx);
+  mesh.receiveShadow=true;townMapRoot.add(mesh);
+}
+
+function makeTownMapLabel(text){
+  const canvas=document.createElement("canvas");canvas.width=512;canvas.height=128;
+  const ctx=canvas.getContext("2d");
+  ctx.font="800 42px -apple-system,'Segoe UI',sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillStyle="rgba(242,247,238,.9)";
+  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(16,22,480,84,30);ctx.fill();}
+  else ctx.fillRect(16,22,480,84);
+  ctx.fillStyle="#29453f";ctx.fillText(text,256,65,440);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));
+  sprite.scale.set(42,10.5,1);sprite.renderOrder=8;return sprite;
+}
+
+function rebuildTownMap3D(){
+  if (!ensureTownMap3D()||!mapState.bounds) return;
+  disposeTownMapModel();
+  const bounds=mapState.bounds;
+  const width=bounds.maxX-bounds.minX,depth=bounds.maxZ-bounds.minZ;
+  const centerX=(bounds.minX+bounds.maxX)/2,centerZ=(bounds.minZ+bounds.maxZ)/2;
+
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(width+90,depth+90),
+    new THREE.MeshStandardMaterial({color:0xa9cb9e,roughness:1,metalness:0}));
+  ground.rotation.x=-Math.PI/2;ground.position.set(centerX,-.13,centerZ);
+  ground.receiveShadow=true;townMapRoot.add(ground);
+
+  const districts=new Map();
+  for(const item of mapState.items){
+    const district=item.building.district;if(!district)continue;
+    if(!districts.has(district))districts.set(district,[]);
+    districts.get(district).push(item);
+  }
+  const districtColors=[0x8ebc83,0x80b5b2,0xc2ae79];let districtIndex=0;
+  for(const [name,items] of districts){
+    const xs=items.map(item=>item.x),zs=items.map(item=>item.z);
+    const minX=Math.min(...xs)-19,maxX=Math.max(...xs)+19,minZ=Math.min(...zs)-19,maxZ=Math.max(...zs)+19;
+    const zone=new THREE.Mesh(new THREE.CircleGeometry(1,64),new THREE.MeshStandardMaterial({
+      color:districtColors[districtIndex++%districtColors.length],transparent:true,opacity:.34,
+      roughness:1,depthWrite:false
+    }));
+    zone.rotation.x=-Math.PI/2;zone.scale.set((maxX-minX)/2,(maxZ-minZ)/2,1);
+    zone.position.set((minX+maxX)/2,-.04,(minZ+maxZ)/2);zone.renderOrder=0;townMapRoot.add(zone);
+    const label=makeTownMapLabel(name);
+    label.position.set(items.reduce((s,i)=>s+i.x,0)/items.length,11,
+      items.reduce((s,i)=>s+i.z,0)/items.length);townMapRoot.add(label);
+  }
+
+  let gridRoadEdgeX=null;
+  const grid=worldBuildings.filter(b=>typeof b.px!=="number"&&
+    (HOME_MATERIAL_ROLES[b.type]||MAP_LANDMARK_NAMES[b.type]));
+  if(grid.length){
+    const bxs=grid.map(b=>Math.floor(b.gx/BLOCK_N)),bys=grid.map(b=>Math.floor(b.gy/BLOCK_N));
+    const minBx=Math.min(...bxs),maxBx=Math.max(...bxs),minBy=Math.min(...bys),maxBy=Math.max(...bys);
+    gridRoadEdgeX=(maxBx+1)*PITCH-ROAD/2;
+    for(let bx=minBx;bx<=maxBx+1;bx++){
+      const x=bx*PITCH-ROAD/2;
+      addTownMapRoad(x,-(minBy*PITCH-ROAD),x,-((maxBy+1)*PITCH));
+    }
+    for(let by=minBy;by<=maxBy+1;by++){
+      const z=-(by*PITCH-ROAD/2);
+      addTownMapRoad(minBx*PITCH-ROAD,z,(maxBx+1)*PITCH,z);
+    }
+  }
+
+  const streets=new Map();
+  for(const building of worldBuildings){
+    if(!building.street||typeof building.px!=="number")continue;
+    const key=`${building.district||""}|${building.street}`;
+    if(!streets.has(key))streets.set(key,[]);
+    const [x,z]=buildingWorldXZ(building),front=frontDirsFor(building)[0];
+    streets.get(key).push({x:x+front[0]*8.5,z:z+front[1]*8.5,order:Number(building.plan_id)||0});
+  }
+  for(const points of streets.values()){
+    points.sort((a,b)=>a.order-b.order);
+    for(let i=1;i<points.length;i++)addTownMapRoad(points[i-1].x,points[i-1].z,points[i].x,points[i].z);
+    for(const joint of points){
+      const cap=new THREE.Mesh(new THREE.CylinderGeometry(ROAD/2,ROAD/2,.27,24),
+        new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94}));
+      cap.position.set(joint.x,.135,joint.z);townMapRoot.add(cap);
+    }
+  }
+
+  // The founder park predates named streets, so its two built rings have no
+  // street key in world_state.json. Reconstruct them from the homes that are
+  // already present. A substantially filled ring gets the same smooth road as
+  // the world; a partial future ring would reveal only local frontage pieces.
+  const founderPark=worldBuildings.find(building=>building.type==="parkdistrict"&&typeof building.px==="number");
+  const ringHomes=worldBuildings.filter(building=>building.type==="ringhouse"&&typeof building.px==="number");
+  if(founderPark&&ringHomes.length){
+    const [parkX,parkZ]=buildingWorldXZ(founderPark),rings=new Map();
+    for(const building of ringHomes){
+      const [homeX,homeZ]=buildingWorldXZ(building),front=frontDirsFor(building)[0];
+      const point={x:homeX+front[0]*10,z:homeZ+front[1]*10};
+      const ringKey=Math.round(Math.hypot(homeX-parkX,homeZ-parkZ)/10);
+      if(!rings.has(ringKey))rings.set(ringKey,[]);
+      rings.get(ringKey).push(point);
+    }
+    for(const points of rings.values()){
+      points.sort((a,b)=>Math.atan2(a.z-parkZ,a.x-parkX)-Math.atan2(b.z-parkZ,b.x-parkX));
+      const roadRadius=points.reduce((sum,point)=>sum+Math.hypot(point.x-parkX,point.z-parkZ),0)/points.length;
+      let largestGap=0;
+      for(let i=0;i<points.length;i++){
+        const angleA=Math.atan2(points[i].z-parkZ,points[i].x-parkX);
+        let angleB=Math.atan2(points[(i+1)%points.length].z-parkZ,points[(i+1)%points.length].x-parkX);
+        if(i===points.length-1)angleB+=Math.PI*2;
+        largestGap=Math.max(largestGap,angleB-angleA);
+      }
+      if(points.length>=8&&Math.PI*2-largestGap>Math.PI*1.5){
+        const road=new THREE.Mesh(new THREE.RingGeometry(roadRadius-ROAD/2,roadRadius+ROAD/2,96),
+          new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94,metalness:.02,side:THREE.DoubleSide}));
+        road.rotation.x=-Math.PI/2;road.position.set(parkX,.29,parkZ);road.receiveShadow=true;townMapRoot.add(road);
+        continue;
+      }
+      const maxNeighborGap=Math.max(18,ROAD*2.8);
+      for(let i=0;i<points.length;i++){
+        const current=points[i],next=points[(i+1)%points.length];
+        if(points.length>1&&Math.hypot(next.x-current.x,next.z-current.z)<=maxNeighborGap){
+          addTownMapRoad(current.x,current.z,next.x,next.z);
+        }
+        const cap=new THREE.Mesh(new THREE.CylinderGeometry(ROAD/2,ROAD/2,.27,24),
+          new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94}));
+        cap.position.set(current.x,.135,current.z);townMapRoot.add(cap);
+      }
+    }
+    if(gridRoadEdgeX!==null){
+      const outerRadius=Math.max(...ringHomes.map(building=>{
+        const [x,z]=buildingWorldXZ(building);return Math.hypot(x-parkX,z-parkZ)-10;
+      }));
+      const connectorEnd=parkX-Math.min(10,outerRadius);
+      if(gridRoadEdgeX<connectorEnd)addTownMapRoad(gridRoadEdgeX,parkZ,connectorEnd,parkZ);
+    }
+  }
+
+  const homes=mapState.items.filter(item=>item.isHome);
+  if(homes.length){
+    const wallGeo=new THREE.BoxGeometry(1,1,1),roofGeo=new THREE.ConeGeometry(1,1,4);
+    const wallMat=new THREE.MeshStandardMaterial({
+      color:0xffffff,roughness:.78,emissive:0x292b28,emissiveIntensity:.06
+    });
+    const roofMat=new THREE.MeshStandardMaterial({
+      color:0xffffff,roughness:.86,emissive:0x241f1d,emissiveIntensity:.05
+    });
+    const walls=new THREE.InstancedMesh(wallGeo,wallMat,homes.length);
+    const roofs=new THREE.InstancedMesh(roofGeo,roofMat,homes.length);
+    const mapWallColors=[0xf0d7a8,0xd6e9ef,0xecc6bd,0xd8e6c8,0xe0d4eb,0xf4e6c7];
+    const mapRoofColors=[0xa15d4e,0x72865e,0x587a91,0x98705d,0x78698e,0xa47b55];
+    const dummy=new THREE.Object3D();
+    for(let i=0;i<homes.length;i++){
+      const item=homes[i],seed=Math.abs(item.houseId||i),height=3.35+(seed%5)*.5;
+      const yaw=typeof item.building.rot==="number"?-item.building.rot:0;
+      dummy.position.set(item.x,height/2+.25,item.z);dummy.rotation.set(0,yaw,0);dummy.scale.set(5.3,height,4.2);dummy.updateMatrix();
+      walls.setMatrixAt(i,dummy.matrix);
+      const wallColor=item.owner?new THREE.Color(0xe77b55):new THREE.Color(mapWallColors[seed%mapWallColors.length]);
+      walls.setColorAt(i,wallColor);
+      dummy.position.set(item.x,height+1.0+.25,item.z);dummy.rotation.set(0,yaw+Math.PI/4,0);dummy.scale.set(3.75,1.8,3.25);dummy.updateMatrix();
+      roofs.setMatrixAt(i,dummy.matrix);roofs.setColorAt(i,new THREE.Color(mapRoofColors[seed%mapRoofColors.length]));
+    }
+    walls.instanceMatrix.needsUpdate=true;roofs.instanceMatrix.needsUpdate=true;
+    if(walls.instanceColor)walls.instanceColor.needsUpdate=true;if(roofs.instanceColor)roofs.instanceColor.needsUpdate=true;
+    walls.castShadow=true;walls.receiveShadow=true;roofs.castShadow=true;
+    walls.userData.mapItems=homes;mapState.pickMeshes.push(walls);
+    townMapRoot.add(walls,roofs);
+  }
+
+  for(const item of mapState.items.filter(item=>item.isLandmark)){
+    let geometry,material;
+    if(item.building.type==="parkdistrict"){
+      geometry=new THREE.CylinderGeometry(8,8,1.1,32);material=new THREE.MeshStandardMaterial({color:0x6ca366,roughness:.95});
+    }else if(item.building.type==="pond"){
+      geometry=new THREE.CylinderGeometry(7,7,.5,32);material=new THREE.MeshStandardMaterial({color:0x4f9bc2,roughness:.45,metalness:.05});
+    }else{
+      geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
+      material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});
+    }
+    const landmarkY=item.building.type==="parkdistrict"?.55:item.building.type==="pond"?.25:2.4;
+    const mesh=new THREE.Mesh(geometry,material);mesh.position.set(item.x,landmarkY,item.z);
+    mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.mapItem=item;
+    mapState.pickMeshes.push(mesh);townMapRoot.add(mesh);
+    const label=makeTownMapLabel(item.title);label.scale.set(32,8,1);label.position.set(item.x,9,item.z);townMapRoot.add(label);
+  }
+
+  townMapSelectionRing=new THREE.Mesh(new THREE.RingGeometry(5.4,6.7,48),
+    new THREE.MeshBasicMaterial({color:0x2876a6,transparent:true,opacity:.92,side:THREE.DoubleSide,depthTest:false}));
+  townMapSelectionRing.rotation.x=-Math.PI/2;townMapSelectionRing.position.y=.38;
+  townMapSelectionRing.renderOrder=9;townMapSelectionRing.visible=false;townMapRoot.add(townMapSelectionRing);
+  townMapPlayer=new THREE.Mesh(new THREE.ConeGeometry(2.4,5.5,16),
+    new THREE.MeshStandardMaterial({color:0x2b6a94,roughness:.55,emissive:0x0b2233,emissiveIntensity:.18}));
+  townMapPlayer.castShadow=true;townMapRoot.add(townMapPlayer);
+}
+
+function fitTownMap(){
+  if (!mapState.bounds) return;
+  if(townMapRenderer&&townMapControls&&townMapCamera){
+    const centerX=(mapState.bounds.minX+mapState.bounds.maxX)/2;
+    const centerZ=(mapState.bounds.minZ+mapState.bounds.maxZ)/2;
+    const span=Math.max(mapState.bounds.maxX-mapState.bounds.minX,mapState.bounds.maxZ-mapState.bounds.minZ);
+    const aspect=mapState.width&&mapState.height?mapState.width/mapState.height:1;
+    const compactViewport=aspect<1.05;
+    const distance=span*(compactViewport?1.12:.98)+28;
+    townMapControls.target.set(centerX,0,centerZ);
+    townMapCamera.position.set(centerX+distance*.67,distance*.72,centerZ+distance*.67);
+    townMapCamera.near=.1;townMapCamera.far=Math.max(1800,distance*5);townMapCamera.updateProjectionMatrix();
+    townMapControls.maxDistance=Math.max(600,span*4);townMapControls.update();drawTownMap();
+    return;
+  }
+  mapState.centerX=(mapState.bounds.minX+mapState.bounds.maxX)/2;
+  mapState.centerZ=(mapState.bounds.minZ+mapState.bounds.maxZ)/2;
+  mapState.zoom=1;
+  drawTownMap();
+}
+
+function updateTownMapScale(){
+  if (!mapState.bounds || !mapState.width || !mapState.height) return;
+  const spanX=Math.max(1,mapState.bounds.maxX-mapState.bounds.minX);
+  const spanZ=Math.max(1,mapState.bounds.maxZ-mapState.bounds.minZ);
+  mapState.baseScale=Math.min((mapState.width-34)/spanX,(mapState.height-34)/spanZ);
+}
+function worldToTownMap(x,z){
+  const scale=mapState.baseScale*mapState.zoom;
+  return [(x-mapState.centerX)*scale+mapState.width/2,
+          (z-mapState.centerZ)*scale+mapState.height/2];
+}
+
+function drawTownMap(){
+  if (!townMapOpen() || !mapState.bounds || !mapState.width || !mapState.height) return;
+  if(townMapRenderer&&townMapScene&&townMapCamera){
+    if(townMapPlayer)townMapPlayer.position.set(camera.position.x,2.75,camera.position.z);
+    if(townMapSelectionRing){
+      townMapSelectionRing.visible=!!mapState.selected;
+      if(mapState.selected)townMapSelectionRing.position.set(mapState.selected.x,.38,mapState.selected.z);
+    }
+    townMapRenderer.render(townMapScene,townMapCamera);return;
+  }
+  updateTownMapScale();
+  const ctx=townMapCanvas.getContext("2d");
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,mapState.width,mapState.height);
+  const scale=mapState.baseScale*mapState.zoom;
+
+  // Soft terrain zones are derived from built homes carrying district names.
+  const districts=new Map();
+  for (const item of mapState.items){
+    const district=item.building.district;
+    if (!district) continue;
+    if (!districts.has(district)) districts.set(district,[]);
+    districts.get(district).push(item);
+  }
+  let districtIndex=0;
+  for (const [name,items] of districts){
+    const xs=items.map(item=>item.x), zs=items.map(item=>item.z);
+    const [x1,y1]=worldToTownMap(Math.min(...xs)-18,Math.min(...zs)-18);
+    const [x2,y2]=worldToTownMap(Math.max(...xs)+18,Math.max(...zs)+18);
+    ctx.beginPath();
+    ctx.ellipse((x1+x2)/2,(y1+y2)/2,Math.max(22,Math.abs(x2-x1)/2),
+      Math.max(18,Math.abs(y2-y1)/2),0,0,Math.PI*2);
+    ctx.fillStyle=["rgba(124,169,112,.18)","rgba(91,151,170,.15)","rgba(188,151,93,.13)"][districtIndex++%3];
+    ctx.fill();
+    ctx.strokeStyle="rgba(62,96,82,.16)"; ctx.lineWidth=1; ctx.stroke();
+    const cx=items.reduce((sum,item)=>sum+item.x,0)/items.length;
+    const cz=items.reduce((sum,item)=>sum+item.z,0)/items.length;
+    const [lx,ly]=worldToTownMap(cx,cz);
+    ctx.font="800 11px -apple-system,'Segoe UI',sans-serif";
+    ctx.textAlign="center"; ctx.fillStyle="rgba(35,67,62,.55)";
+    ctx.fillText(name,lx,ly-12);
+  }
+
+  // Established grid roads grow from the extent of current grid buildings.
+  const grid=worldBuildings.filter(b => typeof b.px !== "number" &&
+    (HOME_MATERIAL_ROLES[b.type] || MAP_LANDMARK_NAMES[b.type]));
+  if (grid.length){
+    const bxs=grid.map(b=>Math.floor(b.gx/BLOCK_N));
+    const bys=grid.map(b=>Math.floor(b.gy/BLOCK_N));
+    const minBx=Math.min(...bxs),maxBx=Math.max(...bxs),minBy=Math.min(...bys),maxBy=Math.max(...bys);
+    ctx.strokeStyle="rgba(76,90,98,.72)"; ctx.lineCap="round";
+    ctx.lineWidth=Math.max(2,Math.min(10,ROAD*scale));
+    for (let bx=minBx;bx<=maxBx+1;bx++){
+      const x=bx*PITCH-ROAD/2;
+      const [sx,sy]=worldToTownMap(x,-(minBy*PITCH-ROAD));
+      const [ex,ey]=worldToTownMap(x,-((maxBy+1)*PITCH));
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    }
+    for (let by=minBy;by<=maxBy+1;by++){
+      const z=-(by*PITCH-ROAD/2);
+      const [sx,sy]=worldToTownMap(minBx*PITCH-ROAD,z);
+      const [ex,ey]=worldToTownMap((maxBx+1)*PITCH,z);
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    }
+  }
+
+  // Planned-road points sit 8.5m in front of each built house. Connecting
+  // only current houses means future empty roads stay absent from the map.
+  const streets=new Map();
+  for (const building of worldBuildings){
+    if (!building.street || typeof building.px !== "number") continue;
+    const key=`${building.district||""}|${building.street}`;
+    if (!streets.has(key)) streets.set(key,[]);
+    const [x,z]=buildingWorldXZ(building), front=frontDirsFor(building)[0];
+    streets.get(key).push({x:x+front[0]*8.5,z:z+front[1]*8.5,order:Number(building.plan_id)||0});
+  }
+  ctx.strokeStyle="rgba(70,84,94,.82)"; ctx.lineWidth=Math.max(3,Math.min(11,ROAD*scale));
+  ctx.lineJoin="round"; ctx.lineCap="round";
+  for (const points of streets.values()){
+    points.sort((a,b)=>a.order-b.order);
+    if (!points.length) continue;
+    ctx.beginPath();
+    const first=worldToTownMap(points[0].x,points[0].z); ctx.moveTo(first[0],first[1]);
+    for (let i=1;i<points.length;i++){
+      const point=worldToTownMap(points[i].x,points[i].z); ctx.lineTo(point[0],point[1]);
+    }
+    ctx.stroke();
+  }
+
+  mapState.hits=[];
+  for (const item of mapState.items){
+    const [x,y]=worldToTownMap(item.x,item.z);
+    if (x<-20||x>mapState.width+20||y<-20||y>mapState.height+20) continue;
+    const size=item.isLandmark?Math.max(8,Math.min(13,8*mapState.zoom)):
+      Math.max(4.5,Math.min(9,5.5*mapState.zoom));
+    ctx.save();ctx.translate(x,y);
+    if (item.isLandmark){
+      ctx.rotate(Math.PI/4);ctx.fillStyle="#e3b64c";ctx.strokeStyle="#75572a";
+      ctx.lineWidth=1.3;ctx.fillRect(-size/2,-size/2,size,size);ctx.strokeRect(-size/2,-size/2,size,size);
+    } else {
+      ctx.fillStyle=item.owner?"#cf7150":"#f8e7c5";ctx.strokeStyle="#765f48";ctx.lineWidth=1;
+      ctx.fillRect(-size/2,-size*.36,size,size*.72);ctx.strokeRect(-size/2,-size*.36,size,size*.72);
+    }
+    if (mapState.selected?.key===item.key){
+      ctx.beginPath();ctx.arc(0,0,size*.9+4,0,Math.PI*2);ctx.strokeStyle="#2b6a94";ctx.lineWidth=3;ctx.stroke();
+    }
+    ctx.restore();
+    mapState.hits.push({item,x,y,r:Math.max(10,size)});
+  }
+
+  // Current player position always comes from the live Three.js camera.
+  const [px,py]=worldToTownMap(camera.position.x,camera.position.z);
+  ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.fillStyle="#2b6a94";ctx.fill();
+  ctx.lineWidth=2.5;ctx.strokeStyle="#fff";ctx.stroke();
+}
+
+function sizeTownMapCanvas(){
+  const rect=document.getElementById("townMapViewport").getBoundingClientRect();
+  if (rect.width<10||rect.height<10) return;
+  mapState.width=rect.width;mapState.height=rect.height;
+  if(townMapRenderer&&townMapCamera){
+    townMapRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+    townMapRenderer.setSize(rect.width,rect.height,false);
+    townMapCamera.aspect=rect.width/rect.height;townMapCamera.updateProjectionMatrix();
+    drawTownMap();return;
+  }
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  townMapCanvas.width=Math.round(rect.width*dpr);
+  townMapCanvas.height=Math.round(rect.height*dpr);
+  drawTownMap();
+}
+if (window.ResizeObserver){
+  new ResizeObserver(sizeTownMapCanvas).observe(document.getElementById("townMapViewport"));
+}
+
+function renderTownMapSelection(){
+  const item=mapState.selected;
+  townMapSelection.classList.toggle("active",!!item);
+  if (!item) return;
+  townMapSelectionTitle.textContent=item.title;
+  townMapSelectionSub.textContent=item.subtitle;
+}
+function selectTownMapItem(item,center=true){
+  if (!item) return;
+  mapState.selected=item;
+  if(center&&townMapControls&&townMapCamera){
+    const direction=townMapCamera.position.clone().sub(townMapControls.target).normalize();
+    const span=mapState.bounds?Math.max(mapState.bounds.maxX-mapState.bounds.minX,mapState.bounds.maxZ-mapState.bounds.minZ):180;
+    const distance=Math.max(38,span*.22);
+    townMapControls.target.set(item.x,0,item.z);
+    townMapCamera.position.copy(townMapControls.target).add(direction.multiplyScalar(distance));
+    townMapControls.update();
+  }else if(center){
+    mapState.centerX=item.x;mapState.centerZ=item.z;mapState.zoom=Math.max(1.45,mapState.zoom);
+  }
+  renderTownMapResults();renderTownMapSelection();drawTownMap();
+}
+
+function pauseWalkingForMap(){
+  clearMovementInput();gameRunning=false;
+  crosshair.style.display="none";hint.style.display="none";
+  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";
+}
+function openTownMap(){
+  if (townMapOpen()) return;
+  if (chatOpen()) closeChat(false);
+  if (modalOpen()) closeModal();
+  resumeWalkingAfterMap=gameRunning||controls.isLocked;
+  townMapPanel.classList.add("open");
+  pauseWalkingForMap();
+  if (!isTouch&&controls.isLocked) controls.unlock();
+  mapState.filter="";townMapSearch.value="";
+  refreshTownMap();
+  requestAnimationFrame(()=>{sizeTownMapCanvas();fitTownMap();});
+}
+function closeTownMap(forceWalking=false){
+  if (!townMapOpen()) return;
+  townMapPanel.classList.remove("open");townMapSearch.blur();
+  if (location.hash==="#map") history.replaceState(null,"",location.pathname+location.search);
+  const shouldWalk=forceWalking||resumeWalkingAfterMap;
+  resumeWalkingAfterMap=false;
+  if (shouldWalk){ if (isTouch) beginWalking(); else controls.lock(); }
+}
+function visitTownMapSelection(){
+  const item=mapState.selected;if (!item) return;
+  const front=frontDirsFor(item.building)[0]||[0,1];
+  const distance=item.isHome?12:18;
+  camera.position.set(item.x+front[0]*distance,1.7,item.z+front[1]*distance);
+  camera.rotation.order="YXZ";camera.rotation.y=Math.atan2(front[0],front[1]);camera.rotation.x=0;
+  closeTownMap(true);showToast(`Visiting ${item.title}`);
+}
+
+mapToggle.addEventListener("click",e=>{e.stopPropagation();openTownMap();});
+startMapBtn.addEventListener("click",e=>{e.stopPropagation();openTownMap();});
+document.getElementById("townMapClose").addEventListener("click",()=>closeTownMap());
+document.getElementById("townMapReset").addEventListener("click",fitTownMap);
+document.getElementById("townMapVisit").addEventListener("click",visitTownMapSelection);
+townMapPanel.addEventListener("mousedown",e=>{if(e.target===townMapPanel)closeTownMap();});
+townMapSearch.addEventListener("input",()=>{mapState.filter="";renderTownMapResults();});
+document.getElementById("townMapQuick").addEventListener("click",e=>{
+  const button=e.target.closest("[data-map-quick]");if(!button)return;
+  townMapSearch.value="";mapState.filter=button.dataset.mapQuick;renderTownMapResults();
+  const first=townMapFilteredItems()[0];if(first)selectTownMapItem(first);
+});
+townMapResults.addEventListener("click",e=>{
+  const button=e.target.closest("[data-map-key]");if(!button)return;
+  selectTownMapItem(mapState.byKey.get(button.dataset.mapKey));
+});
+townMapCanvas.addEventListener("wheel",e=>{
+  if(townMapRenderer)return;
+  e.preventDefault();mapState.zoom=Math.max(.75,Math.min(4,mapState.zoom*(e.deltaY<0?1.14:.88)));drawTownMap();
+},{passive:false});
+townMapCanvas.addEventListener("pointerdown",e=>{
+  if(townMapRenderer){
+    mapState.pointer={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false};return;
+  }
+  townMapCanvas.setPointerCapture(e.pointerId);townMapCanvas.classList.add("dragging");
+  mapState.pointer={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};
+});
+townMapCanvas.addEventListener("pointermove",e=>{
+  const pointer=mapState.pointer;if(!pointer||pointer.id!==e.pointerId)return;
+  if(townMapRenderer){
+    if(Math.hypot(e.clientX-pointer.startX,e.clientY-pointer.startY)>5)pointer.moved=true;
+    return;
+  }
+  const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
+  if(Math.hypot(e.clientX-pointer.startX,e.clientY-pointer.startY)>4)pointer.moved=true;
+  if(pointer.moved){
+    const scale=mapState.baseScale*mapState.zoom;
+    mapState.centerX-=dx/scale;mapState.centerZ-=dy/scale;drawTownMap();
+  }
+  pointer.x=e.clientX;pointer.y=e.clientY;
+});
+function finishTownMapPointer(e){
+  const pointer=mapState.pointer;if(!pointer||pointer.id!==e.pointerId)return;
+  if(townMapRenderer&&townMapCamera){
+    if(!pointer.moved){
+      const rect=townMapCanvas.getBoundingClientRect();
+      townMapPointerNdc.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      townMapRaycaster.setFromCamera(townMapPointerNdc,townMapCamera);
+      const hit=townMapRaycaster.intersectObjects(mapState.pickMeshes,false)[0];
+      const item=hit?.object?.isInstancedMesh?hit.object.userData.mapItems?.[hit.instanceId]:hit?.object?.userData?.mapItem;
+      if(item)selectTownMapItem(item,false);
+    }
+    mapState.pointer=null;return;
+  }
+  townMapCanvas.classList.remove("dragging");
+  if(!pointer.moved){
+    const rect=townMapCanvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;
+    let best=null,bestD=Infinity;
+    for(const hit of mapState.hits){const d=Math.hypot(x-hit.x,y-hit.y);if(d<hit.r&&d<bestD){best=hit.item;bestD=d;}}
+    if(best)selectTownMapItem(best,false);
+  }
+  mapState.pointer=null;
+}
+townMapCanvas.addEventListener("pointerup",finishTownMapPointer);
+townMapCanvas.addEventListener("pointercancel",finishTownMapPointer);
+
 const accountBtn = document.getElementById("accountBtn");
 const claimHomeBtn = document.getElementById("claimHomeBtn");
 const goHomeBtn = document.getElementById("goHomeBtn");
@@ -2308,6 +3139,7 @@ async function refreshClaims(){
     rebuildNameTags();
     rebuildClaimSpots();
     applyAllHomeCustomizations();
+    if (townMapOpen()) refreshTownMap();
   }
 }
 async function refreshMyStatus(){
@@ -2451,6 +3283,7 @@ function goHome(){
 
 /* ── account button + start-screen routing ── */
 function updateAccountUI(){
+  townMapMyHome.style.display = myClaims.length ? "" : "none";
   if (!sb){ accountBtn.style.display = "none"; return; }
   accountBtn.style.display = "block";
   if (!session)            accountBtn.textContent = "sign in · claim a home";
@@ -3271,6 +4104,7 @@ fetch("world_state.json")
   .then(state => {
     const buildings = state.buildings || [];
     worldBuildings = buildings;
+    townMapMeta = { day:state.day ?? null, population:state.pop ?? null };
     initSupabase();   // accounts + claiming; no-op until configured
     loadFromGLB(buildings)
       .catch(err => {
@@ -3309,6 +4143,7 @@ fetch("world_state.json")
         hud.style.display = "block";
         if (previewMode) frameFounderPreview();
         animate();
+        if (location.hash === "#map") requestAnimationFrame(openTownMap);
       });
   })
   .catch(err => {
@@ -3382,7 +4217,8 @@ function animate(){
 
   updateMultiplayer(dt);
 
-  renderer.render(scene, camera);
+  if(townMapOpen()){townMapControls?.update();drawTownMap();}
+  else renderer.render(scene,camera);
 }
 </script>
 </body>

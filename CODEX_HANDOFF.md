@@ -15,6 +15,17 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- The homepage `Explore the map` button opens `town.html#map`. The same live,
+  lightweight isometric 3D map opens from the town start screen, the in-game
+  `town map` button, or `M`; it supports rotate, pan, zoom, and fit-to-town.
+  It searches house IDs, claimed handles, streets/districts, newest homes,
+  landmarks, and signed-in owned homes, and its Visit action teleports to the
+  location. Instanced map geometry must remain derived from the current
+  `world_state.json`; planned road lines use only built houses, so future empty
+  roads remain hidden, while the already-built Founder Park rings and connector
+  are reconstructed from their existing homes. `public_claims` supplies live
+  owner names. Do not add a separate map JSON/database table, manual
+  coordinates, or a second copy of the full town GLB.
 - Day 14 is complete: population/followers 244, 247 buildings, and 18 new
   ordinary homes at plan IDs 93-110. IDs 93-95 completed Foxglove Court;
   IDs 96-110 began Overlook Circle. Its road is revealed only as far as those

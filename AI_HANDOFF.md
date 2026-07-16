@@ -28,6 +28,19 @@ initial loading. Generate a replacement with `--cam housefront`; that camera
 and its traffic are render-only and must not alter `world_state.json`, the
 permanent blend, GLB, population, buildings, or claims.
 
+## Live town map (2026-07-15)
+
+The homepage, start screen, in-town map button, and desktop `M` all reach the
+same responsive isometric 3D map. It uses a small instanced scene rather than
+loading a second full town GLB, supports rotate/pan/zoom, and keeps a flat
+fallback for unavailable WebGL. Search supports house number, live claimed handle,
+street/district, newest homes, the school, claimed homes, and the signed-in
+user's homes; Visit teleports the player outside the selected location. The
+map is intentionally self-updating: it rebuilds from `world_state.json` and
+`public_claims`, including the established Founder Park rings and only roads
+implied by already built planned houses. Do not add manual map coordinates, a
+second source of truth, or a second copy of the full town GLB.
+
 ## Website multiplayer (2026-07-14)
 
 `town.html` has Supabase Realtime multiplayer independent of daily Blender
