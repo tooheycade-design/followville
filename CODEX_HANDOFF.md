@@ -21,9 +21,12 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   `world_state.json` whenever the existing live stats refresh; do not replace
   it with a stale screenshot or separate map file. Its `Explore the map` card
   opens `town.html#map`. `vercel.json` redirects bare `/` to `/index.html`,
-  deliberately sends `no-store` on both routes, and `index.html` reloads when restored from browser
-  back/forward memory; keep both safeguards so deployments do not
-  intermittently show the prior homepage. Preserve all three safeguards. The same live,
+  deliberately sends `no-store` on both routes, and `index.html` reloads when
+  restored from browser back/forward memory. Preserve all three safeguards so
+  deployments do not intermittently show the prior homepage. Homepage styling
+  should stay restrained and editorial: a sharp paper map, ruled text links,
+  unboxed stats, and almost no glass blur or pill UI. Avoid returning to generic
+  rounded icon cards. The same live,
   lightweight isometric 3D map opens from the town start screen, the in-game
   `town map` button, or `M`; it supports rotate, pan, zoom, and fit-to-town.
   It searches house IDs, claimed handles, streets/districts, newest homes,

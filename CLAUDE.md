@@ -18,7 +18,9 @@ you go looking for it here.**
   `vercel.json` redirects bare `/` to the uncached `/index.html`, sends
   `no-store` for both routes, and the page reloads when restored from browser
   back/forward memory, preventing intermittent old homepage versions after
-  deployments. Preserve all cache safeguards.
+  deployments. Preserve all cache safeguards. The visual style is intentionally
+  restrained and editorial: sharp paper/map framing, plain ruled navigation,
+  unboxed stats, minimal blur, and no oversized pills or icon-card dashboard UI.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the start screen,

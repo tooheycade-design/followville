@@ -39,6 +39,11 @@ back/forward-cache restorations. Preserve all three: they prevent different CDN
 route caches or an already-open computer browser from intermittently reviving
 an older deployed homepage.
 
+The landing composition intentionally avoids generic generated-dashboard
+styling: the map is framed like a flat paper plan, navigation uses simple ruled
+text rows, stats are unboxed, corners are nearly square, and blur/pill/icon-card
+treatments are minimal. Preserve this restraint in future homepage changes.
+
 ## Live town map (2026-07-15)
 
 The homepage, start screen, in-town map button, and desktop `M` all reach the

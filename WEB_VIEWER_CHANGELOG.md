@@ -497,6 +497,20 @@ Kept here (rather than just in chat) so it survives across sessions.
 - This is web/deployment-only. The dashboard layout, map behavior, Blender,
   GLB, state, population, buildings, seeds, and claims did not change.
 
+## 28. Restrained editorial homepage styling
+
+- Removed the visual patterns that made the destination dashboard feel
+  generated: large rounded cards, pill-shaped map badges, boxed stat widgets,
+  icon tiles, heavy shadows, and widespread glass blur.
+- Reworked the same structure into a flatter, more authored composition with a
+  serif neighborhood statement, simple ruled Walk/Claim links, unboxed stats,
+  minimal corner rounding, and a cream paper-plan frame around the live map.
+  Copy is shorter and more literal throughout.
+- The phone layout keeps the map above two compact text destinations without
+  reverting to a long stack. Functionality is unchanged: live map rendering,
+  routes, session-aware home/admin behavior, cache safeguards, video fallback,
+  and all world data remain intact.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
