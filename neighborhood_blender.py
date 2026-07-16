@@ -60,6 +60,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --replay         re-animate the last day, change nothing
 #   --cam newgrowth  frame the largest cluster of today's rising houses
 #   --cam newgrowthoverhead  top-down view of today's rising houses
+#   --cam wholeoverhead  whole-town sky view; all of today's houses rise
 #   --cam newstreet  finished eye-level glide through today's busiest street
 #   --cam housefront  sidewalk view of a current house with passing cars
 #   --cam football   temporary England v Argentina supporter vignette
@@ -79,7 +80,7 @@ def _cli():
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
-            "--mushrooms": "mushrooms"}
+            "--mushrooms": "mushrooms", "--storybook-houses": "storybook_houses"}
     skeys = {"--time": "time", "--season": "season", "--cam": "cam", "--tag": "tag",
              "--focus-type": "focus_type"}
     out, i = {}, 0
@@ -119,6 +120,36 @@ GREENS = [(0.31, 0.54, 0.31), (0.36, 0.61, 0.33), (0.25, 0.49, 0.27)]
 # bolder pastels for the day-8 park-ring homes (mint/peach/lilac/butter/sky)
 RING_WALLS = WALLS + [(0.78, 0.91, 0.82), (0.99, 0.86, 0.72), (0.84, 0.80, 0.94),
                       (0.99, 0.94, 0.70), (0.74, 0.87, 0.95), (0.97, 0.78, 0.84)]
+
+# Day-15 feature neighborhood. These are original Followville names and forms:
+# no protected character, title, signage, or copy is used. The houses sit on
+# the flat crown of a permanent landscaped hill and face the revealed loop.
+STORYBOOK_CENTER = (270.0, 60.0)
+STORYBOOK_GROUND_Z = 2.82
+STORYBOOK_DISTRICT = "Kaleidoscope Crest"
+STORYBOOK_STREET = "Wanderlight Loop"
+STORYBOOK_FEATURE_ID = "kaleidoscope_crest_day15"
+
+
+def _storybook_slots():
+    slots = []
+    # Keep a generous west-side opening for the winding access road.
+    gap = .92
+    start = math.pi + gap / 2
+    span = math.tau - gap
+    for index in range(10):
+        angle = start + span * (index + .5) / 10
+        slots.append({
+            "x": round(STORYBOOK_CENTER[0] + 43.0 * math.cos(angle), 3),
+            "y": round(STORYBOOK_CENTER[1] + 33.0 * math.sin(angle), 3),
+            "z": STORYBOOK_GROUND_Z,
+            "rot": round(angle - math.pi / 2, 5),
+            "index": index,
+        })
+    return slots
+
+
+STORYBOOK_SLOTS = _storybook_slots()
 
 # ═══════════════════════════════ STATE PERSISTENCE ══════════════════════════════
 
@@ -241,6 +272,45 @@ def add_ngon_cone(col, name, r_bot, r_top, h, sides, x, y, z, material, rot=0.0)
     obj = bpy.data.objects.new(name, me)
     obj.location = (x, y, z)
     obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+
+def add_tapered_box(col, name, w0, d0, w1, d1, h, x, y, z,
+                    top_dx, top_dy, material):
+    """A four-sided story whose upper floor can taper and lean off-center."""
+    verts = [(-w0/2, -d0/2, 0), (w0/2, -d0/2, 0),
+             (w0/2, d0/2, 0), (-w0/2, d0/2, 0),
+             (top_dx-w1/2, top_dy-d1/2, h),
+             (top_dx+w1/2, top_dy-d1/2, h),
+             (top_dx+w1/2, top_dy+d1/2, h),
+             (top_dx-w1/2, top_dy+d1/2, h)]
+    faces = [(0, 3, 2, 1), (4, 5, 6, 7),
+             (0, 1, 5, 4), (1, 2, 6, 5),
+             (2, 3, 7, 6), (3, 0, 4, 7)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (x, y, z)
+    col.objects.link(obj)
+    return obj
+
+
+def add_offset_pyramid(col, name, w, d, h, x, y, z, apex_dx, apex_dy, material):
+    """Asymmetric four-sided roof with a deliberately off-center peak."""
+    verts = [(-w/2, -d/2, 0), (w/2, -d/2, 0),
+             (w/2, d/2, 0), (-w/2, d/2, 0),
+             (apex_dx, apex_dy, h)]
+    faces = [(0, 3, 2, 1), (0, 1, 4), (1, 2, 4),
+             (2, 3, 4), (3, 0, 4)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (x, y, z)
     col.objects.link(obj)
     return obj
 
@@ -680,6 +750,210 @@ def build_suburban_house(col, variant):
                 obj.location.y += structure_setback
 
     _merge_asset_meshes(col, "suburban_%02d_%s" % (variant, name))
+
+
+STORYBOOK_PALETTES = [
+    ((0.96, .48, .36), (.30, .10, .42), (.08, .51, .58)),
+    ((.24, .68, .77), (.94, .31, .45), (.94, .70, .18)),
+    ((.92, .70, .22), (.13, .48, .50), (.72, .17, .42)),
+    ((.52, .37, .78), (.96, .51, .20), (.18, .61, .40)),
+    ((.41, .75, .47), (.39, .14, .56), (.94, .39, .32)),
+    ((.96, .57, .68), (.13, .44, .68), (.84, .66, .12)),
+    ((.28, .60, .91), (.84, .19, .34), (.95, .59, .19)),
+    ((.95, .42, .19), (.18, .55, .48), (.52, .24, .71)),
+    ((.72, .77, .25), (.48, .17, .55), (.10, .52, .72)),
+    ((.50, .71, .84), (.89, .27, .55), (.91, .61, .12)),
+]
+
+
+def build_storybook_house(col, variant):
+    """One of ten original crooked-storybook homes for Wanderlight Loop.
+
+    The silhouettes share a coherent material system but change height,
+    tower count, lean, roof language, window rhythm, chimney, garden, and
+    trim. Everything is merged to one multi-material mesh so the richer art
+    direction does not turn ten homes into hundreds of web draw objects.
+    """
+    variant %= 10
+    rng = random.Random(15150 + variant)
+    m = std_mats()
+    wall_c, roof_c, door_c = STORYBOOK_PALETTES[variant]
+    wall = mat("NB_story_wall_%02d" % variant, wall_c, .80)
+    wall2 = mat("NB_story_wall2_%02d" % variant,
+                tuple(min(1.0, c * .82 + .18) for c in wall_c), .84)
+    roof = mat("NB_story_roof_%02d" % variant, roof_c, .86)
+    roof2 = mat("NB_story_roof2_%02d" % variant,
+                tuple(min(1.0, c * .72 + .14) for c in roof_c), .88)
+    door = mat("NB_story_door_%02d" % variant, door_c, .70)
+    trim = mat("NB_story_trim", (.97, .90, .66), .76)
+    glass = mat("NB_story_glass", (.09, .25, .37), .22)
+    lawn = mat("NB_story_lawn", (.35, .68, .27), 1.0)
+    path = mat("NB_story_path", (.92, .76, .48), .94)
+    fence = mat("NB_story_fence", (.89, .77, .56), .88)
+    flower_mats = [
+        mat("NB_story_flower_pink", (.97, .34, .55), .78),
+        mat("NB_story_flower_gold", (.98, .72, .14), .78),
+        mat("NB_story_flower_blue", (.27, .61, .92), .78),
+    ]
+
+    widths = (7.2, 8.4, 6.8, 6.5, 7.8, 8.8, 7.4, 6.6, 8.6, 6.2)
+    depths = (6.1, 5.8, 6.5, 5.9, 6.3, 5.7, 6.4, 5.8, 6.0, 6.2)
+    lower_heights = (3.8, 4.0, 4.2, 3.6, 4.1, 3.7, 3.9, 3.8, 3.7, 4.0)
+    upper_levels = (1, 0, 1, 2, 1, 0, 1, 2, 0, 2)
+    leans = (-.55, .35, .62, -.48, .44, -.30, -.62, .52, .27, -.42)
+    w, d, lower_h = widths[variant], depths[variant], lower_heights[variant]
+    lean = leans[variant]
+    foundation_z = .30
+
+    # Complete authored lot: clipped oval-like lawn, stepping path, planting
+    # beds, side fences, and a curb-side mailbox. The front edge stops before
+    # the colored asphalt, so these details cannot repeat the old road-overlap
+    # failure of the optional homeowner yard pieces.
+    add_box(col, "yard", 10.6, 13.0, .14, 0, -.15, 0, lawn)
+    add_box(col, "foundation", w + .30, d + .24, .34,
+            0, .45, .13, m["cap"])
+    add_tapered_box(col, "lower_body", w, d, w * .91, d * .93,
+                    lower_h, 0, .45, foundation_z, lean * .30, .10, wall)
+    add_box(col, "lower_belt", w * .94, .18, .18,
+            lean * .15, -d/2 + .38, foundation_z + lower_h * .58, trim)
+
+    # A broad side wing changes the street silhouette on alternating lots.
+    if variant in (1, 2, 4, 5, 6, 8):
+        side = -1 if variant in (2, 5, 8) else 1
+        wing_w = 3.5 + (variant % 3) * .35
+        wing_h = 2.85 + (variant % 2) * .38
+        wing_x = side * (w/2 + wing_w/2 - .72)
+        add_tapered_box(col, "wing", wing_w, d * .72, wing_w * .88, d * .66,
+                        wing_h, wing_x, .28, .25, side * .22, -.10, wall2)
+        add_offset_pyramid(col, "wing_roof", wing_w + .75, d * .76 + .72,
+                           1.65 + (variant % 3) * .22, wing_x, .20,
+                           .25 + wing_h, side * .55, -.12, roof2)
+        _sub_window(col, "wing_window", wing_x, -d * .30 - .04,
+                    1.15, trim, glass, None, .92, 1.02)
+
+    current_z = foundation_z + lower_h
+    current_x = lean * .30
+    upper_w = w * (.62 if variant not in (3, 7, 9) else .70)
+    upper_d = d * .66
+    for level in range(upper_levels[variant]):
+        story_h = 2.75 + .25 * ((variant + level) % 3)
+        level_lean = lean * (1.0 if level == 0 else -.72)
+        add_tapered_box(col, "upper_%d" % level,
+                        upper_w, upper_d, upper_w * .84, upper_d * .88,
+                        story_h, current_x, .48, current_z,
+                        level_lean, -.05 + .08 * level, wall2 if level % 2 == 0 else wall)
+        add_box(col, "upper_belt_%d" % level, upper_w * .94, .17, .16,
+                current_x + level_lean * .45,
+                .48 - upper_d/2 - .06, current_z + story_h * .53, trim)
+        # Window rows deliberately vary between one, two, and three openings.
+        count = 1 + ((variant + level) % 3)
+        spacing = upper_w * .54 / max(count - 1, 1)
+        for wi in range(count):
+            wx = current_x + level_lean * .35 + (wi - (count - 1)/2) * spacing
+            _sub_window(col, "upper_%d_win_%d" % (level, wi), wx,
+                        .48 - upper_d/2 - .08, current_z + .82,
+                        trim, glass, roof2 if count == 1 else None, .76, .94)
+        current_x += level_lean
+        current_z += story_h
+        upper_w *= .82
+        upper_d *= .88
+
+    # The roof language changes across the ten variants: pointed crooked
+    # pyramids, flared polygonal caps, and split twin roofs.
+    if upper_levels[variant]:
+        roof_w = max(3.3, upper_w + 1.55)
+        roof_d = max(3.1, upper_d + 1.35)
+        if variant in (2, 4, 9):
+            cap = add_ngon_cone(col, "tower_cap", 1.0, 0.0,
+                                2.7 + .28 * variant, 9,
+                                current_x, .48, current_z, roof, .18)
+            cap.scale = (roof_w/2, roof_d/2, 1)
+        else:
+            add_offset_pyramid(col, "crooked_roof", roof_w, roof_d,
+                               2.5 + .22 * (variant % 4), current_x, .48,
+                               current_z, -lean * 1.4, -.38, roof)
+    else:
+        add_offset_pyramid(col, "broad_roof", w + 1.30, d + 1.22,
+                           2.15 + .24 * variant, lean * .30, .45,
+                           current_z, -lean * 1.8, -.42, roof)
+
+    # Twin-turret variants get a second, deliberately mismatched vertical.
+    if variant in (1, 4, 6):
+        side = -1 if variant != 4 else 1
+        tx = side * (w * .34)
+        tr = 1.45 + .12 * variant
+        th = 4.6 + .35 * (variant % 3)
+        turret = add_ngon_cone(col, "turret", tr, tr * .82, th, 10,
+                               tx, .72, foundation_z + lower_h * .40, wall2, .12)
+        turret.scale.y = .92
+        tcap = add_ngon_cone(col, "turret_cap", tr * 1.34, 0, 2.35,
+                             9, tx, .72, foundation_z + lower_h * .40 + th,
+                             roof2, .18)
+        tcap.scale.y = .92
+        _sub_window(col, "turret_window", tx, -.72,
+                    foundation_z + lower_h * .40 + 1.45,
+                    trim, glass, None, .70, .88)
+
+    front_y = -d/2 + .36
+    door_x = (-.72, .85, -.62, .74, -.88, .58, -.68, .82, -.56, .62)[variant]
+    _sub_door(col, "entry", door_x, front_y, .42, trim, door, glass, m)
+    _sub_porch(col, "porch", door_x, front_y - .05, .42,
+               "small" if variant % 3 else "stoop", trim, roof2, m)
+    for i, wx in enumerate((-w * .28, w * .28)):
+        if abs(wx - door_x) > 1.15:
+            _sub_window(col, "lower_window_%d" % i, wx, front_y - .08,
+                        1.18, trim, glass, roof2 if i == variant % 2 else None,
+                        .92 + .08 * (variant % 2), 1.08)
+
+    # A segmented bent chimney makes the facing readable from overhead while
+    # keeping every segment fully connected to the next.
+    chimney_x = (-1 if variant % 2 else 1) * w * .27
+    chimney_base = foundation_z + lower_h + .55
+    p0 = (chimney_x, 1.25, chimney_base)
+    p1 = (chimney_x + lean * .34, 1.20, chimney_base + 1.20)
+    p2 = (chimney_x - lean * .14, 1.18, chimney_base + 2.18)
+    add_beam_between(col, "chimney_low", p0, p1, .48, roof2)
+    add_beam_between(col, "chimney_high", p1, p2, .43, roof2)
+    add_box(col, "chimney_cap", .76, .72, .17, p2[0], p2[1], p2[2], m["cap"])
+
+    # Curved-looking stepping stones and dense but collision-safe flower beds.
+    for i in range(5):
+        sy = front_y - 1.10 - i * .72
+        sx = door_x * max(0, 1 - i/5) + math.sin(i * .85 + variant) * .18
+        stone = add_box(col, "stepstone_%d" % i, 1.18, .62, .09,
+                        sx, sy, .14, path)
+        stone.rotation_euler.z = math.radians((-7, 5, -4, 7, -3)[i])
+    for side in (-1, 1):
+        bed_x = side * 3.65
+        add_box(col, "flowerbed", 1.35, 3.25, .12,
+                bed_x, -2.25, .14, m["trunk"])
+        for fi in range(5):
+            fx = bed_x + (fi % 2 - .5) * .48
+            fy = -3.45 + fi * .57
+            add_ngon_cone(col, "flower_stem", .055, .045, .30, 6,
+                          fx, fy, .26, m["trunk"])
+            add_uv_sphere(col, "flower_head", .18, fx, fy, .60,
+                          flower_mats[(fi + variant + (0 if side < 0 else 1)) % 3], 5, 7)
+
+    # Side/back picket fencing frames each lot without blocking the entrance.
+    for side in (-1, 1):
+        fx = side * 5.0
+        for fy in (-1.8, .1, 2.0, 3.9, 5.4):
+            add_box(col, "fence_post", .18, .18, 1.05, fx, fy, .14, fence)
+            add_offset_pyramid(col, "fence_cap", .28, .28, .24,
+                               fx, fy, 1.19, 0, 0, roof2)
+        for fy in (-.85, 1.05, 2.95, 4.65):
+            add_box(col, "fence_rail", .14, 1.78, .15, fx, fy, .55, fence)
+            add_box(col, "fence_rail", .14, 1.78, .13, fx, fy, .91, fence)
+
+    mailbox_x = -4.20 if door_x > 0 else 4.20
+    add_box(col, "mailpost", .16, .16, 1.08, mailbox_x, -6.05, .14, fence)
+    add_tapered_box(col, "mailbox", .54, .72, .48, .62, .42,
+                    mailbox_x, -6.05, 1.12, .05, 0, roof2)
+    add_offset_pyramid(col, "mailbox_roof", .70, .88, .34,
+                       mailbox_x + .03, -6.05, 1.54, .12, -.08, roof)
+
+    _merge_asset_meshes(col, "storybook_%02d" % variant)
 
 
 def build_house(col, seed):
@@ -1523,8 +1797,14 @@ SUBURBAN_ASSET_VARIANTS = [
     for i in range(len(SUBURBAN_STYLES) * len(SUBURBAN_PALETTES))
 ]
 
+STORYBOOK_ASSET_VARIANTS = [
+    ("AST_storybook_%02d" % i, lambda c, i=i: build_storybook_house(c, i))
+    for i in range(10)
+]
+
 ASSET_VARIANTS = {
     "house":       SUBURBAN_ASSET_VARIANTS,
+    "storybookhouse": STORYBOOK_ASSET_VARIANTS,
     "apartment":   [("AST_apart_%d" % i, lambda c, i=i: build_apartment(c, 200 + i)) for i in range(3)],
     "shop":        [("AST_shop_%d" % i, lambda c, i=i: build_shop(c, 300 + i)) for i in range(3)],
     "park":        [("AST_park_%d" % i, lambda c, i=i: build_park(c, 400 + i)) for i in range(3)],
@@ -1572,6 +1852,7 @@ def build_pos(b):
 
 # building footprint in lots (per side); milestone buildings can span a whole block
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
+        "storybookhouse": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
@@ -1584,7 +1865,7 @@ MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 def footprint(b):
     # Planned suburban houses use exact world positions on curving roads, not
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
-    if b.get("plan_id"):
+    if b.get("plan_id") or b.get("feature_id"):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -1734,7 +2015,7 @@ def block_extent(buildings):
     shows the exact streets that houses will later appear on. Off-grid park
     districts (and their ring houses) don't extend the grid."""
     buildings = [b for b in buildings if b["type"] not in ("parkdistrict", "ringhouse")
-                 and not b.get("plan_id")]
+                 and not b.get("plan_id") and not b.get("feature_id")]
     if not buildings:
         return -1, 1, -1, 1
     bxs = [b["gx"] // BLOCK_N for b in buildings]
@@ -1880,7 +2161,8 @@ def build_suburban_terrain(world_col, m):
                               feature["sx"], feature["sy"], .025, meadow_mat)
 
 
-def _add_road_strip(world_col, name, points, material):
+def _add_road_strip(world_col, name, points, material, width=ROAD,
+                    bottom_offset=.01, top_offset=.19):
     """One continuous, shallow road mesh with mitered bends.
 
     The previous implementation rotated a separate rectangle for every five
@@ -1889,7 +2171,7 @@ def _add_road_strip(world_col, name, points, material):
     """
     if len(points) < 2:
         return None
-    half = ROAD / 2
+    half = width / 2
     edges = []
     for a, b in zip(points, points[1:]):
         dx, dy = b[0] - a[0], b[1] - a[1]
@@ -1912,10 +2194,11 @@ def _add_road_strip(world_col, name, points, material):
             scale = min(half * 1.6, half / max(.35, mx * n1[0] + my * n1[1]))
         offsets.append((mx * scale, my * scale))
     verts = []
-    for z in (0.01, 0.19):
+    for z_offset in (bottom_offset, top_offset):
         for point, offset in zip(points, offsets):
-            verts.extend(((point[0] + offset[0], point[1] + offset[1], z),
-                          (point[0] - offset[0], point[1] - offset[1], z)))
+            point_z = point[2] if len(point) > 2 else 0.0
+            verts.extend(((point[0] + offset[0], point[1] + offset[1], point_z + z_offset),
+                          (point[0] - offset[0], point[1] - offset[1], point_z + z_offset)))
     n = len(points)
     faces = []
     for i in range(n - 1):
@@ -1978,6 +2261,184 @@ def build_suburban_roads(world_col, buildings, m):
             # that surface so overlapping faces never depth-fight.
             _add_ellipse_pad(world_col, "culdesac", bulb["center"][0], bulb["center"][1],
                              8.2, 8.2, .012, .186, m["road"], 32)
+
+
+def _add_ellipse_ring_pad(col, name, rx_outer, ry_outer, rx_inner, ry_inner,
+                          z, height, material, sides=64):
+    """Shallow solid elliptical ring with explicitly separated top quads."""
+    verts = []
+    for level_z in (0.0, height):
+        for rx, ry in ((rx_outer, ry_outer), (rx_inner, ry_inner)):
+            for i in range(sides):
+                angle = math.tau * i / sides
+                verts.append((rx * math.cos(angle), ry * math.sin(angle), level_z))
+    ob, ib, ot, it = 0, sides, sides * 2, sides * 3
+    faces = []
+    for i in range(sides):
+        j = (i + 1) % sides
+        faces.extend(((ot+i, ot+j, it+j, it+i),       # top
+                      (ob+j, ob+i, ib+i, ib+j),       # bottom
+                      (ob+i, ob+j, ot+j, ot+i),       # outer wall
+                      (ib+j, ib+i, it+i, it+j)))      # inner wall
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location.z = z
+    col.objects.link(obj)
+    return obj
+
+
+def _add_storybook_plateau(col, material):
+    """Terraced, flat-topped hill sized for all ten lots without clipping."""
+    sides = 48
+    rings = ((64.0, 50.0, .02), (61.0, 48.0, .72),
+             (58.0, 46.0, 1.72), (56.0, 44.0, 2.60))
+    verts = []
+    for rx, ry, z in rings:
+        for i in range(sides):
+            angle = math.tau * i / sides
+            ripple = 1 + .018 * math.sin(i * 2.31)
+            verts.append((rx * ripple * math.cos(angle),
+                          ry * ripple * math.sin(angle), z))
+    verts.append((0, 0, rings[-1][2]))
+    center = len(verts) - 1
+    faces = []
+    for ring in range(len(rings) - 1):
+        a0, b0 = ring * sides, (ring + 1) * sides
+        for i in range(sides):
+            j = (i + 1) % sides
+            faces.append((a0+i, a0+j, b0+j, b0+i))
+    for i in range(sides):
+        faces.append(((len(rings)-1)*sides+i,
+                      (len(rings)-1)*sides+(i+1)%sides, center))
+    mesh = bpy.data.meshes.new("storybook_hill_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new("storybook_hill", mesh)
+    col.objects.link(obj)
+    return obj
+
+
+def _build_storybook_street_asset(col):
+    """Permanent hill, colored road, bespoke lamps, garden, and access road."""
+    m = std_mats()
+    hill = mat("NB_story_hill", (.31, .54, .28), 1.0)
+    hill_top = mat("NB_story_hilltop", (.42, .71, .30), 1.0)
+    road = mat("NB_story_road", (.73, .16, .31), .88)
+    curb = mat("NB_story_curb", (.97, .66, .16), .84)
+    dash = mat("NB_story_dash", (1.0, .91, .54), .76)
+    pole = mat("NB_story_pole", (.12, .40, .48), .58)
+    banner_a = mat("NB_story_banner_a", (.95, .36, .52), .72)
+    banner_b = mat("NB_story_banner_b", (.40, .69, .90), .72)
+    island = mat("NB_story_island", (.28, .61, .25), 1.0)
+    flower_mats = [
+        mat("NB_story_public_flower_a", (.96, .30, .54), .78),
+        mat("NB_story_public_flower_b", (.99, .76, .15), .78),
+        mat("NB_story_public_flower_c", (.48, .35, .88), .78),
+    ]
+    _add_storybook_plateau(col, hill)
+    _add_ellipse_pad(col, "storybook_hilltop", 0, 0, 54.5, 42.3,
+                     2.60, .20, hill_top, 48)
+
+    # Wind around the north side of Founder Park, then rise naturally through
+    # the hill shoulder. The centerline is fully continuous with shared road
+    # vertices, so bends cannot open into gaps.
+    cx, cy = STORYBOOK_CENTER
+    absolute_access = [(69, 33, 0.0), (92, 56, .02), (126, 72, .02),
+                       (168, 74, .03), (201, 72, .05), (205, 71, .28),
+                       (208, 70, .80), (211, 69, 1.55), (213, 68, 2.30),
+                       (215, 68, 2.62), (219, 67, 2.74),
+                       (229, 65, 2.74), (239, 60, 2.74)]
+    access = [(x-cx, y-cy, z) for x, y, z in absolute_access]
+    _add_road_strip(col, "storybook_access", access, road, 7.0, .02, .24)
+
+    # Main road and its raised golden curbs are solid rings at distinct
+    # elevations; they remain stable in long-lens aerial renders.
+    _add_ellipse_ring_pad(col, "storybook_loop_road",
+                          34.5, 25.5, 27.5, 18.5, 2.76, .22, road, 72)
+    _add_ellipse_ring_pad(col, "storybook_outer_curb",
+                          35.15, 26.15, 34.45, 25.45, 2.96, .18, curb, 72)
+    _add_ellipse_ring_pad(col, "storybook_inner_curb",
+                          27.55, 18.55, 26.85, 17.85, 2.96, .18, curb, 72)
+
+    for i in range(28):
+        angle = math.tau * (i + .5) / 28
+        x, y = 31.0 * math.cos(angle), 22.0 * math.sin(angle)
+        tangent = math.atan2(22.0 * math.cos(angle), -31.0 * math.sin(angle))
+        mark = add_box(col, "storybook_lane_dash", 2.15, .40, .075,
+                       x, y, 2.995, dash)
+        mark.rotation_euler.z = tangent
+
+    # Access-road center dashes follow the actual bends and climb.
+    for a, b in zip(access, access[1:]):
+        dx, dy, dz = b[0]-a[0], b[1]-a[1], b[2]-a[2]
+        length = math.hypot(dx, dy)
+        count = max(1, int(length // 8))
+        angle = math.atan2(dy, dx)
+        for j in range(count):
+            t = (j + .5) / count
+            x, y, z = a[0]+dx*t, a[1]+dy*t, a[2]+dz*t
+            mark = add_box(col, "storybook_access_dash", 2.15, .40, .075,
+                           x, y, z + .255, dash)
+            mark.rotation_euler.z = angle
+
+    # Oval garden in the center makes the turnaround feel authored rather
+    # than empty. It is walkable open space, not another building.
+    _add_ellipse_pad(col, "storybook_island", 0, 0, 24.8, 15.8,
+                     2.81, .13, island, 48)
+    for i in range(34):
+        angle = math.tau * i / 34
+        radius_x = 17.0 + 2.4 * math.sin(i * 1.7)
+        radius_y = 9.8 + 1.4 * math.cos(i * 1.3)
+        x, y = radius_x * math.cos(angle), radius_y * math.sin(angle)
+        add_ngon_cone(col, "public_flower_stem", .06, .045, .34, 6,
+                      x, y, 2.94, m["trunk"])
+        add_uv_sphere(col, "public_flower", .20, x, y, 3.34,
+                      flower_mats[i % len(flower_mats)], 5, 7)
+    # A sculptural three-trunk tree anchors the island from every camera angle.
+    for base_x, top_x, height in ((-.55, -1.15, 5.1), (0, .35, 6.2), (.55, 1.45, 4.8)):
+        add_beam_between(col, "island_tree_trunk",
+                         (base_x, 0, 2.94), (top_x, .15, 2.94 + height),
+                         .42, m["trunk"])
+        add_uv_sphere(col, "island_tree_crown", 2.15,
+                      top_x, .15, 2.94 + height + .55,
+                      mat("NB_story_tree", (.22, .54, .30), 1.0), 7, 10)
+
+    # Crooked teal lamps with alternating fabric banners. Their warm globes
+    # echo the house windows at sunset without using readable branding.
+    for i in range(10):
+        angle = math.tau * (i + .25) / 10
+        x, y = 25.8 * math.cos(angle), 17.1 * math.sin(angle)
+        base_z = 2.94
+        bend = .38 if i % 2 else -.38
+        p0, p1 = (x, y, base_z), (x+bend, y, base_z+2.55)
+        p2 = (x-bend*.25, y-.22, base_z+4.55)
+        add_beam_between(col, "storybook_lamp_low", p0, p1, .18, pole)
+        add_beam_between(col, "storybook_lamp_high", p1, p2, .16, pole)
+        add_uv_sphere(col, "storybook_lamp_globe", .34,
+                      p2[0], p2[1], p2[2]+.10, m["bulb"], 6, 9)
+        banner = add_box(col, "storybook_banner", .82, .08, 1.18,
+                         p1[0] + (.48 if bend > 0 else -.48), p1[1],
+                         p1[2] + .12, banner_a if i % 2 else banner_b)
+        banner.rotation_euler.z = angle + math.pi/2
+
+    _merge_asset_meshes(col, "kaleidoscope_crest_street")
+
+
+def build_storybook_street(world_col, buildings):
+    """Reveal the feature hill/street only once one of its homes exists."""
+    if not any(b.get("feature_id") == STORYBOOK_FEATURE_ID for b in buildings):
+        return None
+    asset = get_asset("AST_kaleidoscope_crest_street", _build_storybook_street_asset)
+    empty = bpy.data.objects.new("kaleidoscope_crest_street", None)
+    empty.instance_type = "COLLECTION"
+    empty.instance_collection = asset
+    empty.location = (STORYBOOK_CENTER[0], STORYBOOK_CENTER[1], 0)
+    world_col.objects.link(empty)
+    return empty
 
 def animate_ring_traffic(world_col, buildings, frame_end):
     """A couple of cars slowly loop each park district's ring roads."""
@@ -2497,6 +2958,13 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # a map.
         pol_deg, dist = 36, ext * 1.15 + 60
         orbit_deg = 55
+    elif cam == "wholeoverhead":
+        # Day-15 release camera: keep every developed edge inside frame while
+        # all new homes rise. The shallower orbit avoids clipping a far suburb
+        # during the move and still preserves enough parallax to read as a sky
+        # shot rather than a flat map.
+        pol_deg, dist, fstop = 28, ext * 1.32 + 100, 7.0
+        orbit_deg = 18
     if hero:  # close-up on a special building / batch
         cx, cy, hdist = hero
         dist, pol_deg, fstop = hdist, 64, 2.0
@@ -2762,6 +3230,15 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
 
         cam_data = bpy.data.cameras.new("Cam")
         cam_data.lens = 45
+        # Thin roads and ponds are only centimetres above the ground. At an
+        # aerial distance of 500m+, Blender's default 0.1m near plane spends
+        # almost all depth precision beside the lens, making those surfaces
+        # alternate between full polygons, wedges, and invisibility as the
+        # camera moves. Raising the near plane for sky shots restores stable
+        # depth separation without clipping anything near the town.
+        if cam in ("overhead", "wholeoverhead", "newgrowthoverhead"):
+            cam_data.clip_start = 10.0
+            cam_data.clip_end = 4000.0
         cam_data.dof.use_dof = True
         cam_data.dof.focus_object = rig
         cam_data.dof.aperture_fstop = fstop
@@ -2993,6 +3470,18 @@ def main(cfg=None):
         if cfg.get("parkring") and gained > 0:
             parkring_n, house_gained = gained, 0
 
+        storybook_requested = max(0, cfg.get("storybook_houses", 0))
+        existing_storybook = len([b for b in state["buildings"]
+                                  if b.get("feature_id") == STORYBOOK_FEATURE_ID])
+        storybook_n = min(storybook_requested,
+                          max(0, len(STORYBOOK_SLOTS) - existing_storybook))
+        if storybook_requested > gained:
+            raise RuntimeError("--storybook-houses cannot exceed today's follower gain")
+        if storybook_requested != storybook_n:
+            raise RuntimeError("Wanderlight Loop has only %d unbuilt feature lots"
+                               % (len(STORYBOOK_SLOTS) - existing_storybook))
+        house_gained -= storybook_n
+
         additions = specials + pond_extras + [("house", house_gained, None),
                                 ("mushroomhouse", n_mush, None),
                                 ("apartment", n_apart, None), ("park", n_parks, None),
@@ -3056,6 +3545,17 @@ def main(cfg=None):
                     state["seed_counter"] += 1
                     state["buildings"].append(hb)
                     new_batch.append(hb)
+        if storybook_n:
+            for slot in STORYBOOK_SLOTS[existing_storybook:existing_storybook + storybook_n]:
+                hb = {"type": "storybookhouse", "gx": 0, "gy": 0,
+                      "px": slot["x"], "py": slot["y"], "pz": slot["z"],
+                      "rot": slot["rot"], "feature_index": slot["index"],
+                      "feature_id": STORYBOOK_FEATURE_ID,
+                      "district": STORYBOOK_DISTRICT, "street": STORYBOOK_STREET,
+                      "seed": state["seed_counter"], "day": state["day"]}
+                state["seed_counter"] += 1
+                state["buildings"].append(hb)
+                new_batch.append(hb)
         for btype, n, target in additions:
             size = SIZE.get(btype, 1)
             if n <= 0:
@@ -3122,6 +3622,7 @@ def main(cfg=None):
     build_district_roads(world_col, keep or state["buildings"], m)
     build_suburban_terrain(world_col, m)
     build_suburban_roads(world_col, keep or state["buildings"], m)
+    build_storybook_street(world_col, keep or state["buildings"])
     scatter_nature(world_col, occupied, keep or state["buildings"])
 
     # animation timing: sinks first, then rises
@@ -3130,7 +3631,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "housefront", "park", "overhead"):
+    if cfg.get("cam") in ("street", "newstreet", "housefront", "park", "overhead", "wholeoverhead"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)

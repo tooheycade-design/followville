@@ -2190,6 +2190,7 @@ function normalizeCustomization(value){
    change, so a shared Blender material can never recolor neighboring homes. */
 const HOME_MATERIAL_ROLES = {
   house: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
+  storybookhouse: { wall:["NB_story_wall_","NB_story_wall2_"], roof:["NB_story_roof_","NB_story_roof2_"], door:["NB_story_door_"] },
   ringhouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
   lanehouse: { wall:["NB_sub_wall_"], roof:["NB_sub_roof_"], door:["NB_sub_door_"] },
   mushroomhouse: { wall:["NB_mush_stem"], roof:["NB_mush_cap"], door:["NB_door"] },
@@ -2730,12 +2731,12 @@ function disposeTownMapModel(){
   mapState.pickMeshes=[];
 }
 
-function addTownMapRoad(x1,z1,x2,z2,width=ROAD){
+function addTownMapRoad(x1,z1,x2,z2,width=ROAD,color=0x59666d){
   if (!townMapRoot) return;
   const dx=x2-x1,dz=z2-z1,length=Math.hypot(dx,dz);
   if (length<.1) return;
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(length,.26,width),
-    new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94,metalness:.02}));
+    new THREE.MeshStandardMaterial({color,roughness:.94,metalness:.02}));
   mesh.position.set((x1+x2)/2,.13,(z1+z2)/2);
   mesh.rotation.y=-Math.atan2(dz,dx);
   mesh.receiveShadow=true;townMapRoot.add(mesh);
@@ -2808,6 +2809,7 @@ function rebuildTownMap3D(){
   const streets=new Map();
   for(const building of worldBuildings){
     if(!building.street||typeof building.px!=="number")continue;
+    if(building.feature_id==="kaleidoscope_crest_day15")continue;
     const key=`${building.district||""}|${building.street}`;
     if(!streets.has(key))streets.set(key,[]);
     const [x,z]=buildingWorldXZ(building),front=frontDirsFor(building)[0];
@@ -2821,6 +2823,24 @@ function rebuildTownMap3D(){
         new THREE.MeshStandardMaterial({color:0x59666d,roughness:.94}));
       cap.position.set(joint.x,.135,joint.z);townMapRoot.add(cap);
     }
+  }
+
+  const storyHomes=worldBuildings.filter(building=>
+    building.feature_id==="kaleidoscope_crest_day15"&&typeof building.px==="number");
+  if(storyHomes.length){
+    const loop=storyHomes.sort((a,b)=>(Number(a.feature_index)||0)-(Number(b.feature_index)||0))
+      .map(building=>{
+        const [x,z]=buildingWorldXZ(building),front=frontDirsFor(building)[0];
+        return {x:x+front[0]*11,z:z+front[1]*11};
+      });
+    for(let i=0;i<loop.length;i++){
+      if(i||loop.length>2){
+        const next=loop[(i+1)%loop.length];
+        addTownMapRoad(loop[i].x,loop[i].z,next.x,next.z,7,0xb52f50);
+      }
+    }
+    const access=[[69,-33],[92,-56],[126,-72],[168,-74],[201,-72],[205,-71],[208,-70],[211,-69],[213,-68],[215,-68],[219,-67],[229,-65],[239,-60]];
+    for(let i=1;i<access.length;i++)addTownMapRoad(...access[i-1],...access[i],7,0xb52f50);
   }
 
   // The founder park predates named streets, so its two built rings have no
@@ -3040,6 +3060,7 @@ function drawTownMap(){
   const streets=new Map();
   for (const building of worldBuildings){
     if (!building.street || typeof building.px !== "number") continue;
+    if (building.feature_id === "kaleidoscope_crest_day15") continue;
     const key=`${building.district||""}|${building.street}`;
     if (!streets.has(key)) streets.set(key,[]);
     const [x,z]=buildingWorldXZ(building), front=frontDirsFor(building)[0];
@@ -3056,6 +3077,27 @@ function drawTownMap(){
       const point=worldToTownMap(points[i].x,points[i].z); ctx.lineTo(point[0],point[1]);
     }
     ctx.stroke();
+  }
+
+  const flatStoryHomes=worldBuildings.filter(building=>
+    building.feature_id==="kaleidoscope_crest_day15"&&typeof building.px==="number");
+  if(flatStoryHomes.length){
+    const loop=flatStoryHomes.sort((a,b)=>(Number(a.feature_index)||0)-(Number(b.feature_index)||0))
+      .map(building=>{
+        const [x,z]=buildingWorldXZ(building),front=frontDirsFor(building)[0];
+        return [x+front[0]*11,z+front[1]*11];
+      });
+    ctx.strokeStyle="#b52f50";ctx.lineWidth=Math.max(3,Math.min(12,7*scale));
+    ctx.beginPath();
+    loop.forEach((point,index)=>{
+      const [x,y]=worldToTownMap(...point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);
+    });
+    if(loop.length>2){const [x,y]=worldToTownMap(...loop[0]);ctx.lineTo(x,y);}
+    ctx.stroke();
+    const access=[[69,-33],[92,-56],[126,-72],[168,-74],[201,-72],[205,-71],[208,-70],[211,-69],[213,-68],[215,-68],[219,-67],[229,-65],[239,-60]];
+    ctx.beginPath();access.forEach((point,index)=>{
+      const [x,y]=worldToTownMap(...point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);
+    });ctx.stroke();
   }
 
   mapState.hits=[];

@@ -428,7 +428,7 @@
   const mapPreviewMeta = document.getElementById("mapPreviewMeta");
   let latestWorldState = null;
   const PREVIEW_HOME_TYPES = new Set([
-    "house","ringhouse","lanehouse","mushroomhouse","casinohouse","cathouse",
+    "house","ringhouse","lanehouse","storybookhouse","mushroomhouse","casinohouse","cathouse",
     "castlehouse","eiffelhouse","flowerhouse","burjhouse","toilethouse",
     "beachhouse","cottagehouse"
   ]);
@@ -524,6 +524,7 @@
     const streets=new Map();
     for(const building of buildings){
       if(!building.street||typeof building.px!=="number"||typeof building.rot!=="number")continue;
+      if(building.feature_id==="kaleidoscope_crest_day15")continue;
       const key=`${building.district||""}|${building.street}`;
       if(!streets.has(key))streets.set(key,[]);
       const [x,z]=previewPosition(building);
@@ -531,6 +532,20 @@
     }
     for(const street of streets.values()){
       street.sort((a,b)=>a.order-b.order);roadPaths.push(street.map(entry=>entry.point));
+    }
+
+    const storyHomes=buildings.filter(building=>
+      building.feature_id==="kaleidoscope_crest_day15"&&typeof building.rot==="number");
+    if(storyHomes.length){
+      storyHomes.sort((a,b)=>(Number(a.feature_index)||0)-(Number(b.feature_index)||0));
+      const loop=storyHomes.map(building=>{
+        const [x,z]=previewPosition(building);
+        return [x+Math.sin(building.rot)*11,z+Math.cos(building.rot)*11];
+      });
+      if(loop.length>2)loop.push(loop[0]);
+      loop.feature=true;roadPaths.push(loop);
+      const access=[[69,-33],[92,-56],[126,-72],[168,-74],[201,-72],[205,-71],[208,-70],[211,-69],[213,-68],[215,-68],[219,-67],[229,-65],[239,-60]];
+      access.feature=true;roadPaths.push(access);
     }
 
     const founder=buildings.find(building=>building.type==="parkdistrict"&&typeof building.px==="number");
@@ -583,7 +598,7 @@
       if(path.length<2)continue;
       const drawPath=()=>{ctx.beginPath();path.forEach((point,index)=>{const [x,y]=project(point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);});};
       drawPath();ctx.strokeStyle="rgba(237,224,199,.9)";ctx.lineWidth=Math.max(5,PREVIEW_ROAD*scale*1.32);ctx.stroke();
-      drawPath();ctx.strokeStyle="#69797d";ctx.lineWidth=Math.max(3.5,PREVIEW_ROAD*scale);ctx.stroke();
+      drawPath();ctx.strokeStyle=path.feature?"#b52f50":"#69797d";ctx.lineWidth=Math.max(3.5,PREVIEW_ROAD*scale);ctx.stroke();
     }
 
     const latestDay=Math.max(0,...buildings.map(building=>Number(building.day)||0));
