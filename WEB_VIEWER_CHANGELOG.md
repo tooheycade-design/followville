@@ -534,6 +534,18 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Other town entry states remain intact, including claims, owned-home routing,
   map deep-links, the in-game map, chat, accounts, and multiplayer.
 
+## 31. Escape returns to the redesigned homepage
+
+- Replaced the desktop pointer-lock exit fallback that displayed the legacy
+  in-town intro with a return to `index.html`, using history replacement so the
+  browser Back button cannot immediately revive that old town state.
+- Escape while the town map or chat is open remains scoped to that overlay and
+  resumes the rendered town without pointer-lock; clicking the canvas recaptures
+  mouse-look. This avoids a browser race caused by requesting pointer-lock from
+  inside the same Escape keystroke that just released it.
+- This is navigation-only. World state, homes, claims, accounts, multiplayer,
+  Blender assets, and map content are unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

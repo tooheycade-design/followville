@@ -46,7 +46,10 @@ treatments are minimal. Preserve this restraint in future homepage changes.
 The Walk destination intentionally links to `town.html#walk`, which removes the
 route hash and enters the rendered neighborhood without exposing the older
 in-town start screen. Desktop users can click the town canvas to capture
-mouse-look; mobile begins with the existing touch controls.
+mouse-look; mobile begins with the existing touch controls. Once walking on
+desktop, Escape returns to the redesigned homepage instead of displaying the
+legacy in-town intro. Escape still closes map/chat overlays in place, resuming
+the rendered town without mouse capture until the canvas is clicked again.
 
 ## Live town map (2026-07-15)
 

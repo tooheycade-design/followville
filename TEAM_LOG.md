@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [WEB] Removed the last legacy-home path from normal desktop walking: pressing Escape or otherwise leaving pointer-lock now returns to the redesigned `index.html` rather than revealing the old in-town intro. Escape inside the town map or chat still closes that overlay and remains in the rendered town without pointer-lock; clicking the canvas recaptures mouse-look. No world, house, claim, account, map, multiplayer, or Blender data changed.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed the redesigned homepage's Walk action opening the legacy in-town intro: it now routes through `town.html#walk`, removes the route marker after load, and starts directly in the rendered neighborhood. Desktop visitors can click the town canvas for mouse-look; mobile keeps the existing joystick/look controls. No world, house, claim, account, map, or multiplayer data changed.
 
 2026-07-15 - Cade (via Windows Codex) - [WEB] Fixed the live map revealing the older in-town start screen after being opened from the redesigned homepage: a `town.html#map` entry now returns to `index.html` when the map is closed with its button, Escape, or backdrop, while selecting Visit still enters the 3D town and in-game map close behavior remains unchanged. No world, house, claim, or account data changed.

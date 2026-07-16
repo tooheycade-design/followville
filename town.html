@@ -1503,15 +1503,18 @@ function beginWalking(){
     runBtn.style.display = "flex";
   }
 }
-function stopWalking(){
+function resumeDesktopWalking(){
+  beginWalking();
+  controls.lock();
+}
+function resumeWalkingWithoutPointerLock(){
+  if (!isTouch) hint.textContent = "click the town for mouse look · WASD to walk · ESC for home";
+  beginWalking();
+}
+function returnToHomepage(){
   gameRunning = false;
-  startScreen.style.display = "flex";
-  playIntroVideo();
-  crosshair.style.display = "none";
-  hint.style.display = "none";
-  lookZone.style.display = "none";
-  joystickZone.style.display = "none";
-  runBtn.style.display = "none";
+  startScreenVideo.pause();
+  location.replace("index.html");
 }
 
 function chatOpen(){ return chatPanel.classList.contains("open"); }
@@ -1531,14 +1534,14 @@ function openChat(){
   if (!isTouch && controls.isLocked) controls.unlock();
   setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
 }
-function closeChat(resumeWalking = true){
+function closeChat(resumeWalking = true, withoutPointerLock = false){
   chatPanel.classList.remove("open");
   chatInput.blur();
   const shouldResume = resumeWalking && resumeWalkingAfterChat;
   resumeWalkingAfterChat = false;
   if (!shouldResume) return;
-  if (isTouch) beginWalking();
-  else controls.lock();
+  if (isTouch || withoutPointerLock) resumeWalkingWithoutPointerLock();
+  else resumeDesktopWalking();
 }
 chatToggle.addEventListener("click", openChat);
 chatClose.addEventListener("click", closeChat);
@@ -1560,7 +1563,9 @@ if (isTouch){
     }
   });
   controls.addEventListener("lock", beginWalking);
-  controls.addEventListener("unlock", () => { if (!chatOpen() && !townMapOpen()) stopWalking(); });
+  controls.addEventListener("unlock", () => {
+    if (!chatOpen() && !townMapOpen() && !modalOpen()) returnToHomepage();
+  });
 }
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
@@ -1569,16 +1574,19 @@ const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
   if (townMapOpen()){
     if (e.code === "Escape"){
-      e.preventDefault(); closeTownMap();
+      e.preventDefault(); closeTownMap(false, true);
     }
     return;
   }
   if (chatOpen()){
     if (e.code === "Escape"){
       e.preventDefault();
-      closeChat();
+      closeChat(true, true);
     }
     return;
+  }
+  if (!modalOpen() && e.code === "Escape" && gameRunning){
+    e.preventDefault(); returnToHomepage(); return;
   }
   if (!modalOpen() && e.code === "KeyM"){
     e.preventDefault(); openTownMap(); return;
@@ -3025,16 +3033,19 @@ function openTownMap(){
   refreshTownMap();
   requestAnimationFrame(()=>{sizeTownMapCanvas();fitTownMap();});
 }
-function closeTownMap(forceWalking=false){
+function closeTownMap(forceWalking=false, withoutPointerLock=false){
   if (!townMapOpen()) return;
-  const returnToHomepage=mapRouteReturnsHome&&!forceWalking&&!resumeWalkingAfterMap;
+  const returnMapToHomepage=mapRouteReturnsHome&&!forceWalking&&!resumeWalkingAfterMap;
   if(forceWalking)mapRouteReturnsHome=false;
   townMapPanel.classList.remove("open");townMapSearch.blur();
-  if(returnToHomepage){location.replace("index.html");return;}
+  if(returnMapToHomepage){location.replace("index.html");return;}
   if (location.hash==="#map") history.replaceState(null,"",location.pathname+location.search);
   const shouldWalk=forceWalking||resumeWalkingAfterMap;
   resumeWalkingAfterMap=false;
-  if (shouldWalk){ if (isTouch) beginWalking(); else controls.lock(); }
+  if (shouldWalk){
+    if (isTouch || withoutPointerLock) resumeWalkingWithoutPointerLock();
+    else resumeDesktopWalking();
+  }
 }
 function visitTownMapSelection(){
   const item=mapState.selected;if (!item) return;
@@ -4155,8 +4166,7 @@ fetch("world_state.json")
         loadingEl.style.display = "none";
         if (directWalkRoute){
           history.replaceState(null,"",location.pathname+location.search);
-          if (!isTouch) hint.textContent = "click the town for mouse look · WASD to walk · ESC to pause";
-          beginWalking();
+          resumeWalkingWithoutPointerLock();
         }else{
           startScreen.style.display = "flex";
           playIntroVideo();

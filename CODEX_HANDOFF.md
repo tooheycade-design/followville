@@ -32,6 +32,9 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   The homepage Walk link is `town.html#walk`; this explicitly bypasses the
   legacy in-town start screen and starts in the rendered neighborhood. Desktop
   canvas clicks capture mouse-look, and mobile retains its touch controls.
+  Desktop Escape while walking returns to the redesigned `index.html`; Escape
+  inside map/chat continues to close that overlay rather than leaving town. It
+  resumes without pointer-lock so a canvas click is required for mouse-look.
   When opened through the homepage's `town.html#map` deep-link, closing it,
   pressing Escape, or clicking its backdrop returns to the redesigned homepage
   instead of exposing the older in-town start screen. Visiting a selected map

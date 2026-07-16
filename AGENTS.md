@@ -22,7 +22,10 @@ you go looking for it here.**
   restrained and editorial: sharp paper/map framing, plain ruled navigation,
   unboxed stats, minimal blur, and no oversized pills or icon-card dashboard UI.
   The homepage Walk action must target `town.html#walk`; that route bypasses the
-  legacy in-town intro and enters the rendered neighborhood immediately.
+  legacy in-town intro and enters the rendered neighborhood immediately. On
+  desktop, Escape from walking returns to the redesigned `index.html`; map and
+  chat Escape behavior remains local to those overlays and resumes the town
+  without pointer-lock until the visitor clicks the canvas again.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start
