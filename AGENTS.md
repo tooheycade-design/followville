@@ -8,6 +8,13 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-15 organized homepage (Cade via Codex): `index.html` is now a
+  destination dashboard instead of a vertical button stack. Desktop places
+  Walk/Claim navigation beside a large live isometric town preview; mobile
+  keeps the preview and two actions compact above the fold. The preview is a
+  lightweight 2D canvas derived from the same `world_state.json` fetch as the
+  day/population counters, including built grid, planned, and Founder Park
+  roads, so it updates with growth without another image or data file.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the start screen,
@@ -393,8 +400,8 @@ CLAIMING_SETUP.md §3 (SQL editor, `select admin_verify('handle');`).
 500 fountain plaza | 2,000 skyscraper | 10,000 stadium
 
 ## Web viewer (Followville)
-index.html = the landing/home page (logo, tagline, live day/population stats, "Walk the
-town" button). town.html = the actual first-person walkable town (Three.js GLTFLoader);
+index.html = the landing/home dashboard (logo, live day/population stats, Walk/Claim
+cards, and a self-updating isometric map preview). town.html = the actual first-person walkable town (Three.js GLTFLoader);
 town.glb = exported geometry. Landing page stats are pulled straight from world_state.json's
 own `day`/`pop` fields on a ~45s poll — no calendar/date math anywhere, since day/pop should
 ONLY change when the town is actually regrown via grow.sh, never on a timer. Population is

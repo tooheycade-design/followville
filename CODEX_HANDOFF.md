@@ -15,7 +15,12 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
-- The homepage `Explore the map` button opens `town.html#map`. The same live,
+- The homepage is an organized destination dashboard: desktop places compact
+  Walk/Claim cards beside a large isometric town preview, while mobile keeps
+  all three destinations above the fold. That preview redraws from
+  `world_state.json` whenever the existing live stats refresh; do not replace
+  it with a stale screenshot or separate map file. Its `Explore the map` card
+  opens `town.html#map`. The same live,
   lightweight isometric 3D map opens from the town start screen, the in-game
   `town map` button, or `M`; it supports rotate, pan, zoom, and fit-to-town.
   It searches house IDs, claimed handles, streets/districts, newest homes,

@@ -462,6 +462,25 @@ Kept here (rather than just in chat) so it survives across sessions.
   homes, and 15 built Overlook Circle homes. Web-only; no Blender, GLB, state,
   population, building, seed, or claim changes.
 
+## 26. Organized homepage with live map preview
+
+- Replaced the narrow vertical homepage button stack with a responsive
+  destination dashboard. Desktop uses the screen horizontally: Walk and Claim
+  are grouped in one navigation panel while the live map receives the larger
+  visual panel. Mobile places the preview first and keeps both action cards in
+  one compact row so the main choices remain above the fold.
+- Added a lightweight isometric canvas preview that draws the current 244 homes,
+  landmarks, established grid and Founder Park roads, and only the currently
+  revealed portions of planned streets. It uses the existing
+  `world_state.json` request and redraws on both live-stat refresh and resize,
+  so normal town growth updates the homepage without a screenshot, new asset,
+  or second map source of truth.
+- Preserved session-aware Go to my home, admin visibility, reduced-motion and
+  data-saver behavior, the 12-second background loop, and all Walk/Map/Claim
+  destinations. Verified at desktop, laptop, tablet, and phone sizes with no
+  browser errors. Web-only; Blender, GLB, state, population, buildings, seeds,
+  and claims did not change.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

@@ -145,6 +145,137 @@
   @media (prefers-reduced-motion: reduce){
     .landing-media video { display:none; }
   }
+
+  /* Organized destination dashboard. Desktop uses the otherwise empty right
+     half of the screen for a live map preview; mobile keeps the same choices
+     compact enough to remain useful without a long button stack. */
+  body {
+    justify-content:center; padding:max(22px,env(safe-area-inset-top)) 22px max(22px,env(safe-area-inset-bottom));
+  }
+  .content { max-width:1080px; align-items:stretch; gap:18px; }
+  .brand-row { display:flex; align-items:center; gap:18px; padding:0 4px; }
+  .brand-identity { display:flex; align-items:center; gap:15px; flex:1; min-width:0; }
+  .logo-ring { width:82px; height:82px; margin:0; flex:0 0 auto; box-shadow:0 10px 28px rgba(4,12,22,.38); }
+  .brand-copy { min-width:0; }
+  h1 { text-align:left; font-size:36px; margin:0 0 3px; }
+  .tagline { margin:0; text-align:left; max-width:none; font-size:14px; opacity:.82; }
+  .stats { width:auto; margin:0; gap:9px; flex:0 0 auto; }
+  .stat { min-width:104px; padding:13px 16px; border-radius:15px; background:rgba(8,20,34,.58); }
+  .stat .num { font-size:24px; }
+  .stat .label { font-size:9.5px; margin-top:4px; }
+
+  .destination-grid {
+    display:grid; grid-template-columns:minmax(290px,.82fr) minmax(440px,1.35fr);
+    gap:18px; min-height:420px;
+  }
+  .action-panel {
+    display:flex; flex-direction:column; padding:24px; border-radius:24px;
+    background:rgba(10,23,39,.78); border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 22px 55px rgba(4,12,22,.28); backdrop-filter:blur(14px);
+  }
+  .panel-kicker {
+    margin:0 0 6px; color:#ffd1bb; font-size:10px; font-weight:800;
+    letter-spacing:.13em; text-transform:uppercase;
+  }
+  .action-panel h2 { margin:0 0 18px; font-size:23px; line-height:1.12; letter-spacing:-.35px; }
+  .action-list { display:grid; gap:11px; flex:1; }
+  .destination-card {
+    position:relative; display:flex; align-items:center; gap:14px; min-width:0;
+    padding:17px; border-radius:17px; text-decoration:none; color:inherit;
+    border:1px solid rgba(255,255,255,.17); transition:transform .18s ease,border-color .18s ease,background .18s ease;
+  }
+  .destination-card:hover { transform:translateY(-2px); border-color:rgba(255,255,255,.48); }
+  .destination-card:active { transform:scale(.985); }
+  .destination-card.walk { background:var(--cream); color:var(--navy); border-color:rgba(255,255,255,.75); }
+  .destination-card.claim { background:rgba(255,255,255,.09); }
+  .destination-card.admin { background:rgba(201,107,74,.22); }
+  .destination-icon {
+    display:grid; place-items:center; width:43px; height:43px; flex:0 0 auto;
+    border-radius:13px; background:rgba(28,43,69,.1); font-size:19px; font-weight:900;
+  }
+  .claim .destination-icon,.admin .destination-icon { background:rgba(255,255,255,.12); }
+  .destination-copy { min-width:0; flex:1; }
+  .destination-copy strong { display:block; font-size:15px; }
+  .destination-copy small { display:block; margin-top:3px; font-size:11.5px; line-height:1.35; opacity:.67; }
+  .destination-arrow { font-size:20px; font-weight:800; transition:transform .18s ease; }
+  .destination-card:hover .destination-arrow { transform:translateX(3px); }
+
+  .map-preview-card {
+    position:relative; display:block; min-height:420px; overflow:hidden;
+    border-radius:24px; color:var(--navy); text-decoration:none;
+    background:linear-gradient(145deg,#dcebd8,#a9cbc2);
+    border:1px solid rgba(255,255,255,.7); box-shadow:0 22px 55px rgba(4,12,22,.3);
+    isolation:isolate;
+  }
+  #mapPreview { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .map-preview-card::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg,rgba(245,241,230,.18),transparent 33%,rgba(14,31,44,.18));
+  }
+  .map-preview-top {
+    position:absolute; z-index:2; top:16px; left:16px; right:16px;
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+  }
+  .map-live,.map-day {
+    display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border-radius:20px;
+    background:rgba(247,243,233,.9); box-shadow:0 5px 18px rgba(28,43,69,.12);
+    font-size:10.5px; font-weight:800; backdrop-filter:blur(8px);
+  }
+  .map-live-dot { width:7px; height:7px; border-radius:50%; background:#4f9c70; box-shadow:0 0 0 4px rgba(79,156,112,.14); }
+  .map-preview-cta {
+    position:absolute; z-index:2; left:16px; right:16px; bottom:16px;
+    display:flex; align-items:center; gap:14px; padding:15px 16px; border-radius:17px;
+    background:rgba(247,243,233,.94); box-shadow:0 9px 28px rgba(28,43,69,.2); backdrop-filter:blur(9px);
+  }
+  .map-preview-cta div { min-width:0; flex:1; }
+  .map-preview-cta strong { display:block; font-size:16px; }
+  .map-preview-cta small { display:block; margin-top:3px; opacity:.62; font-size:11.5px; }
+  .map-preview-cta span { font-size:22px; font-weight:900; transition:transform .18s ease; }
+  .map-preview-card:hover .map-preview-cta span { transform:translateX(3px); }
+  .map-preview-card:focus-visible,.destination-card:focus-visible { outline:3px solid #ffd1bb; outline-offset:3px; }
+
+  .home-footer {
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:0 5px; min-height:22px;
+  }
+  .home-footer .hint,.home-footer .account-line { margin:0; text-align:left; }
+
+  @media (max-width:820px){
+    body { justify-content:flex-start; padding:15px 12px max(14px,env(safe-area-inset-bottom)); }
+    .content { gap:11px; }
+    .brand-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px 12px; }
+    .logo-ring { width:66px; height:66px; }
+    h1 { font-size:28px; }
+    .tagline { font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .stats { grid-column:1/-1; width:100%; gap:8px; }
+    .stat { min-width:0; padding:9px 12px; border-radius:13px; }
+    .stat .num { font-size:21px; }
+    .destination-grid { display:flex; flex-direction:column; min-height:0; gap:11px; }
+    .map-preview-card { order:1; min-height:230px; border-radius:20px; }
+    .action-panel { order:2; padding:13px; border-radius:20px; }
+    .panel-kicker,.action-panel h2 { display:none; }
+    .action-list { grid-template-columns:1fr 1fr; gap:9px; }
+    .destination-card { padding:12px; min-height:78px; border-radius:15px; gap:9px; }
+    .destination-icon { width:36px; height:36px; border-radius:11px; font-size:16px; }
+    .destination-copy strong { font-size:13px; }
+    .destination-copy small { font-size:10px; }
+    .destination-arrow { display:none; }
+    .destination-card.admin { grid-column:1/-1; min-height:58px; }
+    .map-preview-top { top:11px; left:11px; right:11px; }
+    .map-live,.map-day { padding:7px 9px; font-size:9.5px; }
+    .map-preview-cta { left:11px; right:11px; bottom:11px; padding:11px 13px; border-radius:14px; }
+    .map-preview-cta strong { font-size:14px; }
+    .map-preview-cta small { font-size:10px; }
+    .home-footer { display:block; padding:0 3px; }
+    .home-footer .hint { font-size:10.5px; }
+    .home-footer .account-line { margin-top:4px; font-size:11px; }
+  }
+
+  @media (max-width:370px){
+    .map-preview-card { min-height:205px; }
+    .destination-card { padding:10px; }
+    .destination-copy small { display:none; }
+  }
 </style>
 </head>
 <body>
@@ -158,42 +289,84 @@
 <div class="landing-shade" aria-hidden="true"></div>
 <div class="bg-grid"></div>
 
-<div class="content">
-  <div class="logo-ring">
-    <img src="logo.png" alt="Followville" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-fallback',textContent:'🏠'}))" />
-  </div>
-
-  <h1>Followville</h1>
-  <p class="tagline">Walk it yourself, right in your browser.</p>
-
-  <div class="stats">
-    <div class="stat">
-      <div class="num" id="statDay">–</div>
-      <div class="label">Day</div>
+<main class="content">
+  <header class="brand-row">
+    <div class="brand-identity">
+      <div class="logo-ring">
+        <img src="logo.png" alt="Followville" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-fallback',textContent:'FV'}))" />
+      </div>
+      <div class="brand-copy">
+        <h1>Followville</h1>
+        <p class="tagline">Every follower becomes part of the town.</p>
+      </div>
     </div>
-    <div class="stat">
-      <div class="num" id="statPop">–</div>
-      <div class="label">Population</div>
+    <div class="stats" aria-label="Current town statistics">
+      <div class="stat">
+        <div class="num" id="statDay">&ndash;</div>
+        <div class="label">Day</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statPop">&ndash;</div>
+        <div class="label">Population</div>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <a class="enter-btn" href="town.html">
-    Walk the town <span class="arrow">→</span>
-  </a>
-  <a class="enter-btn map" id="mapBtn" href="town.html#map">
-    Explore the map <span class="arrow">→</span>
-  </a>
-  <a class="enter-btn claim" id="claimBtn" href="town.html#claim">
-    Claim your home <span class="arrow">→</span>
-  </a>
-  <a class="enter-btn claim" id="adminBtn" href="admin.html" style="display:none;">
-    Admin <span class="arrow">→</span>
-  </a>
-  <p class="hint">first-person · WASD or touch controls · desktop &amp; mobile</p>
-  <p class="account-line" id="accountLine" style="display:none;">
-    logged in as <b id="accountHandle"></b> · <a href="#" id="logoutLink">log out</a>
-  </p>
-</div>
+  <section class="destination-grid" aria-label="Choose where to go">
+    <div class="action-panel">
+      <p class="panel-kicker">Choose your view</p>
+      <h2>Where do you want to go?</h2>
+      <nav class="action-list" aria-label="Followville destinations">
+        <a class="destination-card walk" href="town.html">
+          <span class="destination-icon" aria-hidden="true">3D</span>
+          <span class="destination-copy">
+            <strong>Walk the town</strong>
+            <small>Explore the streets in first person.</small>
+          </span>
+          <span class="destination-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="destination-card claim" id="claimBtn" href="town.html#claim">
+          <span class="destination-icon" aria-hidden="true">#</span>
+          <span class="destination-copy">
+            <strong>Claim your home</strong>
+            <small>Find your address and make it yours.</small>
+          </span>
+          <span class="destination-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="destination-card admin" id="adminBtn" href="admin.html" style="display:none;">
+          <span class="destination-icon" aria-hidden="true">A</span>
+          <span class="destination-copy">
+            <strong>Admin</strong>
+            <small>Open town activity and moderation.</small>
+          </span>
+          <span class="destination-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </nav>
+    </div>
+
+    <a class="map-preview-card" id="mapBtn" href="town.html#map" aria-label="Explore the live Followville map">
+      <canvas id="mapPreview" aria-hidden="true"></canvas>
+      <div class="map-preview-top">
+        <span class="map-live"><i class="map-live-dot"></i> live town map</span>
+        <span class="map-day" id="mapPreviewMeta">loading town</span>
+      </div>
+      <div class="map-preview-cta">
+        <div>
+          <strong>Explore the town map</strong>
+          <small>Find houses, streets, owners and landmarks.</small>
+        </div>
+        <span aria-hidden="true">&rarr;</span>
+      </div>
+    </a>
+  </section>
+
+  <footer class="home-footer">
+    <p class="hint">first-person walking &middot; live map &middot; desktop and mobile</p>
+    <p class="account-line" id="accountLine" style="display:none;">
+      logged in as <b id="accountHandle"></b> &middot; <a href="#" id="logoutLink">log out</a>
+    </p>
+  </footer>
+</main>
 
 <script>
   const landingVideo = document.getElementById("landingVideo");
@@ -215,7 +388,173 @@
   // population only ever change when the town itself is actually regrown
   // (via grow.sh), so polling the same source of truth is all "live" means
   // here. No guessing what day it "should" be.
-  let lastDay = null, lastPop = null;
+  const mapPreview = document.getElementById("mapPreview");
+  const mapPreviewMeta = document.getElementById("mapPreviewMeta");
+  let latestWorldState = null;
+  const PREVIEW_HOME_TYPES = new Set([
+    "house","ringhouse","lanehouse","mushroomhouse","casinohouse","cathouse",
+    "castlehouse","eiffelhouse","flowerhouse","burjhouse","toilethouse",
+    "beachhouse","cottagehouse"
+  ]);
+  const PREVIEW_LANDMARK_TYPES = new Set(["elementaryschool","parkdistrict","pond"]);
+  const PREVIEW_WALLS = ["#edcf9f","#c8e1e7","#e7bdb5","#cbdcb9","#d8c9e4","#f0dfbc"];
+  const PREVIEW_ROOFS = ["#a55e4d","#71825e","#55758a","#94705d","#76668b","#a77d55"];
+  const PREVIEW_LOT = 10, PREVIEW_BLOCK = 3, PREVIEW_ROAD = 6;
+  const PREVIEW_PITCH = PREVIEW_LOT * PREVIEW_BLOCK + PREVIEW_ROAD;
+
+  function previewPosition(building){
+    if (typeof building.px === "number") return [building.px,-building.py];
+    const bx=Math.floor(building.gx/PREVIEW_BLOCK);
+    const by=Math.floor(building.gy/PREVIEW_BLOCK);
+    const ix=((building.gx%PREVIEW_BLOCK)+PREVIEW_BLOCK)%PREVIEW_BLOCK;
+    const iy=((building.gy%PREVIEW_BLOCK)+PREVIEW_BLOCK)%PREVIEW_BLOCK;
+    return [bx*PREVIEW_PITCH+ix*PREVIEW_LOT+PREVIEW_LOT/2,
+      -(by*PREVIEW_PITCH+iy*PREVIEW_LOT+PREVIEW_LOT/2)];
+  }
+
+  function previewIso(point){ return [point[0]-point[1],(point[0]+point[1])*.47]; }
+
+  function drawPreviewShape(ctx,points,project,fill,stroke=null,lineWidth=1){
+    if(!points.length)return;
+    ctx.beginPath();
+    points.forEach((point,index)=>{
+      const [x,y]=project(point); if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);
+    });
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lineWidth;ctx.stroke();}
+  }
+
+  function previewCircle(cx,cz,radius,steps=64){
+    return Array.from({length:steps+1},(_,index)=>{
+      const angle=index/steps*Math.PI*2;return [cx+Math.cos(angle)*radius,cz+Math.sin(angle)*radius];
+    });
+  }
+
+  function drawPreviewHome(ctx,x,y,seed,size,landmark){
+    const half=Math.max(3.2,Math.min(7.4,size));
+    const halfY=half*.43,drop=landmark?half*1.25:half*.8;
+    const centerY=y-drop-halfY;
+    const top=[x,centerY-halfY],right=[x+half,centerY],bottom=[x,centerY+halfY],left=[x-half,centerY];
+    ctx.beginPath();ctx.ellipse(x,y+1,half*.9,half*.32,0,0,Math.PI*2);
+    ctx.fillStyle="rgba(38,61,56,.14)";ctx.fill();
+    ctx.beginPath();ctx.moveTo(...left);ctx.lineTo(...bottom);ctx.lineTo(bottom[0],bottom[1]+drop);
+    ctx.lineTo(left[0],left[1]+drop);ctx.closePath();
+    ctx.fillStyle=landmark?"#c99236":PREVIEW_WALLS[seed%PREVIEW_WALLS.length];ctx.fill();
+    ctx.beginPath();ctx.moveTo(...right);ctx.lineTo(...bottom);ctx.lineTo(bottom[0],bottom[1]+drop);
+    ctx.lineTo(right[0],right[1]+drop);ctx.closePath();
+    ctx.fillStyle=landmark?"#e5b44a":PREVIEW_WALLS[(seed+2)%PREVIEW_WALLS.length];ctx.fill();
+    ctx.beginPath();ctx.moveTo(...top);ctx.lineTo(...right);ctx.lineTo(...bottom);ctx.lineTo(...left);ctx.closePath();
+    ctx.fillStyle=landmark?"#f3cf73":PREVIEW_ROOFS[seed%PREVIEW_ROOFS.length];ctx.fill();
+  }
+
+  function drawMapPreview(state){
+    if(!state?.buildings?.length||!mapPreview)return;
+    const rect=mapPreview.getBoundingClientRect();
+    if(rect.width<20||rect.height<20)return;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const pixelWidth=Math.max(1,Math.round(rect.width*dpr));
+    const pixelHeight=Math.max(1,Math.round(rect.height*dpr));
+    if(mapPreview.width!==pixelWidth||mapPreview.height!==pixelHeight){
+      mapPreview.width=pixelWidth;mapPreview.height=pixelHeight;
+    }
+    const ctx=mapPreview.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+    const width=rect.width,height=rect.height;
+    const buildings=state.buildings.filter(building=>
+      PREVIEW_HOME_TYPES.has(building.type)||PREVIEW_LANDMARK_TYPES.has(building.type));
+    const entries=buildings.map(building=>({building,position:previewPosition(building)}));
+    const roadPaths=[];
+
+    const grid=buildings.filter(building=>typeof building.px!=="number");
+    let gridRoadEdgeX=null;
+    if(grid.length){
+      const bxs=grid.map(building=>Math.floor(building.gx/PREVIEW_BLOCK));
+      const bys=grid.map(building=>Math.floor(building.gy/PREVIEW_BLOCK));
+      const minBx=Math.min(...bxs),maxBx=Math.max(...bxs),minBy=Math.min(...bys),maxBy=Math.max(...bys);
+      gridRoadEdgeX=(maxBx+1)*PREVIEW_PITCH-PREVIEW_ROAD/2;
+      for(let bx=minBx;bx<=maxBx+1;bx++){
+        const x=bx*PREVIEW_PITCH-PREVIEW_ROAD/2;
+        roadPaths.push([[x,-(minBy*PREVIEW_PITCH-PREVIEW_ROAD)],[x,-((maxBy+1)*PREVIEW_PITCH)]]);
+      }
+      for(let by=minBy;by<=maxBy+1;by++){
+        const z=-(by*PREVIEW_PITCH-PREVIEW_ROAD/2);
+        roadPaths.push([[minBx*PREVIEW_PITCH-PREVIEW_ROAD,z],[(maxBx+1)*PREVIEW_PITCH,z]]);
+      }
+    }
+
+    const streets=new Map();
+    for(const building of buildings){
+      if(!building.street||typeof building.px!=="number"||typeof building.rot!=="number")continue;
+      const key=`${building.district||""}|${building.street}`;
+      if(!streets.has(key))streets.set(key,[]);
+      const [x,z]=previewPosition(building);
+      streets.get(key).push({point:[x+Math.sin(building.rot)*8.5,z+Math.cos(building.rot)*8.5],order:Number(building.plan_id)||0});
+    }
+    for(const street of streets.values()){
+      street.sort((a,b)=>a.order-b.order);roadPaths.push(street.map(entry=>entry.point));
+    }
+
+    const founder=buildings.find(building=>building.type==="parkdistrict"&&typeof building.px==="number");
+    const ringHomes=buildings.filter(building=>building.type==="ringhouse");
+    if(founder&&ringHomes.length){
+      const [cx,cz]=previewPosition(founder);
+      roadPaths.push(previewCircle(cx,cz,20.5),previewCircle(cx,cz,40.5));
+      if(gridRoadEdgeX!==null)roadPaths.push([[gridRoadEdgeX,cz],[cx-10,cz]]);
+    }
+
+    const boundsPoints=[...entries.map(entry=>entry.position),...roadPaths.flat()];
+    if(founder){const [cx,cz]=previewPosition(founder);boundsPoints.push(...previewCircle(cx,cz,58,24));}
+    const raw=boundsPoints.map(previewIso);
+    const minX=Math.min(...raw.map(point=>point[0])),maxX=Math.max(...raw.map(point=>point[0]));
+    const minY=Math.min(...raw.map(point=>point[1])),maxY=Math.max(...raw.map(point=>point[1]));
+    const topSpace=48,bottomSpace=72,sideSpace=24;
+    const scale=Math.min((width-sideSpace*2)/Math.max(1,maxX-minX),(height-topSpace-bottomSpace)/Math.max(1,maxY-minY));
+    const contentWidth=(maxX-minX)*scale,contentHeight=(maxY-minY)*scale;
+    const offsetX=(width-contentWidth)/2-minX*scale;
+    const offsetY=topSpace+(height-topSpace-bottomSpace-contentHeight)/2-minY*scale;
+    const project=point=>{const iso=previewIso(point);return [iso[0]*scale+offsetX,iso[1]*scale+offsetY];};
+
+    const gradient=ctx.createLinearGradient(0,0,width,height);
+    gradient.addColorStop(0,"#d9ead5");gradient.addColorStop(1,"#a9c9bd");
+    ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
+
+    const districts=new Map();
+    for(const entry of entries){
+      const name=entry.building.district;if(!name)continue;
+      if(!districts.has(name))districts.set(name,[]);districts.get(name).push(entry.position);
+    }
+    const zoneColors=["rgba(115,172,116,.16)","rgba(93,166,169,.15)","rgba(189,157,93,.14)"];
+    let zoneIndex=0;
+    for(const points of districts.values()){
+      const xs=points.map(point=>point[0]),zs=points.map(point=>point[1]);
+      const cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2;
+      const rx=(Math.max(...xs)-Math.min(...xs))/2+18,rz=(Math.max(...zs)-Math.min(...zs))/2+18;
+      const zone=Array.from({length:48},(_,index)=>{
+        const angle=index/48*Math.PI*2;return [cx+Math.cos(angle)*rx,cz+Math.sin(angle)*rz];
+      });
+      drawPreviewShape(ctx,zone,project,zoneColors[zoneIndex++%zoneColors.length]);
+    }
+    if(founder){
+      const [cx,cz]=previewPosition(founder);
+      drawPreviewShape(ctx,previewCircle(cx,cz,58),project,"rgba(126,171,107,.18)");
+    }
+
+    ctx.lineCap="round";ctx.lineJoin="round";
+    for(const path of roadPaths){
+      if(path.length<2)continue;
+      const drawPath=()=>{ctx.beginPath();path.forEach((point,index)=>{const [x,y]=project(point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);});};
+      drawPath();ctx.strokeStyle="rgba(237,224,199,.9)";ctx.lineWidth=Math.max(5,PREVIEW_ROAD*scale*1.32);ctx.stroke();
+      drawPath();ctx.strokeStyle="#69797d";ctx.lineWidth=Math.max(3.5,PREVIEW_ROAD*scale);ctx.stroke();
+    }
+
+    entries.sort((a,b)=>previewIso(a.position)[1]-previewIso(b.position)[1]);
+    for(const entry of entries){
+      const [x,y]=project(entry.position),seed=Math.abs(Number(entry.building.seed)||0);
+      const landmark=PREVIEW_LANDMARK_TYPES.has(entry.building.type);
+      drawPreviewHome(ctx,x,y,seed,Math.max(3.5,3.1*scale)*(landmark?1.5:1),landmark);
+    }
+    const homeCount=buildings.filter(building=>PREVIEW_HOME_TYPES.has(building.type)).length;
+    mapPreviewMeta.textContent=`day ${state.day??"?"} · ${homeCount} homes`;
+  }
 
   function setStat(el, value){
     if (el.textContent !== String(value)){
@@ -230,10 +569,12 @@
     try {
       const res = await fetch("world_state.json", { cache: "no-store" });
       const state = await res.json();
+      latestWorldState = state;
       const dayEl = document.getElementById("statDay");
       const popEl = document.getElementById("statPop");
       if (typeof state.day === "number") setStat(dayEl, state.day);
       if (typeof state.pop === "number") setStat(popEl, state.pop);
+      requestAnimationFrame(()=>drawMapPreview(state));
     } catch (err) {
       console.warn("couldn't load world_state.json for live stats", err);
     }
@@ -241,6 +582,7 @@
 
   refreshStats();
   setInterval(refreshStats, 45000); // just re-checks the same file; harmless if nothing changed
+  new ResizeObserver(()=>drawMapPreview(latestWorldState)).observe(mapPreview);
 </script>
 
 <script type="module">
@@ -268,7 +610,8 @@
       if (status?.claim){
         const btn = document.getElementById("claimBtn");
         btn.href = "town.html#home";
-        btn.innerHTML = 'Go to my home <span class="arrow">→</span>';
+        btn.querySelector("strong").textContent = "Go to my home";
+        btn.querySelector("small").textContent = "Jump directly to your claimed address.";
       }
       // admins-only button; the admin page itself is also server-side gated,
       // so hiding this is cosmetic, not the security boundary

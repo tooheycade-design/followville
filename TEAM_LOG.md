@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-15 - Cade (via Windows Codex) - [WEB] Reorganized the homepage from a narrow vertical button stack into a responsive destination dashboard: desktop now places Walk/Claim cards beside a large live isometric town preview, mobile keeps all choices compact above the fold, and the preview redraws built homes, landmarks, and currently visible roads from the existing `world_state.json` stats request so growth updates it automatically; no Blender, GLB, state, population, building, claim, or new image/data source changes.
+
 2026-07-15 - Cade (via Windows Codex) - [WEB] Added a responsive, lightweight isometric 3D town map reachable from the homepage, start screen, in-town button, and desktop M key, with rotate/pan/zoom, instanced colored homes, built-road geometry, search by house/owner/street, newest/school/claimed/my-home filters, and visit teleport; it automatically derives 244 homes, three landmarks, established Founder Park roads, only currently revealed planned roads, and live owner names from existing world/claim data, retains a flat WebGL fallback, and changes no Blender, GLB, state, population, buildings, or claims.
 
 2026-07-15 - Cade (via Windows Codex) - [BOTH] Replaced the plain landing/loading screens with an optimized 12-second Day 14 sidewalk loop aimed at a current Overlook Circle house while two staggered cars drive past, added poster/reduced-motion/data-saver fallbacks and pause-on-walk/tab behavior, and added a reusable render-only `housefront` camera without changing the saved world, GLB, population, buildings, or claims.

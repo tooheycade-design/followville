@@ -28,6 +28,12 @@ initial loading. Generate a replacement with `--cam housefront`; that camera
 and its traffic are render-only and must not alter `world_state.json`, the
 permanent blend, GLB, population, buildings, or claims.
 
+The homepage overlays that loop with an organized destination dashboard rather
+than stacked buttons. Desktop shows Walk/Claim cards beside a large live town
+preview; mobile keeps the preview and both actions compact above the fold. The
+preview redraws from the same `world_state.json` request as the counters and
+must remain self-updating rather than becoming a screenshot or second data file.
+
 ## Live town map (2026-07-15)
 
 The homepage, start screen, in-town map button, and desktop `M` all reach the
