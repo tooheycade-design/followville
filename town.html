@@ -574,6 +574,14 @@ const mapRouteRequested = todayRoute || routeHouseId !== null;
 /* ══════════════════════════ WORLD LAYOUT CONSTANTS ══════════════════════════
    Mirrors neighborhood_blender.py so the web town matches the Blender town. */
 const LOT = 10, BLOCK_N = 3, ROAD = 6, PITCH = BLOCK_N * LOT + ROAD;
+const STORYBOOK_CENTER_WEB = [270, -60];
+const STORYBOOK_ACCESS_WEB = [
+  [69,-33,0],[92,-56,.02],[126,-72,.02],[168,-74,.03],[201,-72,.05],
+  [205,-71,.28],[208,-70,.80],[211,-69,1.55],[213,-68,2.30],
+  [215,-68,2.62],[219,-67,2.74],[229,-65,2.74],[239,-60,2.74]
+];
+const STORYBOOK_ACCESS_WIDTHS = [6,6.3,6.7,7,7,7,7,7,7,7,7,7,7];
+const STORYBOOK_ROAD_COLORS = { established:0x59666d, transition:0x75404f, feature:0xb52f50 };
 
 const WALLS = [[0.96,0.90,0.81],[0.91,0.84,0.77],[0.97,0.82,0.79],
                [0.85,0.89,0.87],[0.90,0.89,0.94],[0.98,0.93,0.82],[0.86,0.91,0.96]];
@@ -1776,6 +1784,53 @@ if (isTouch){
    yards, roads, and landscaping remain walkable. */
 const colliders = [];
 const PLAYER_COLLIDER_RADIUS = 0.6;
+
+/* The permanent hill is real Blender geometry, but the first-person walker
+   historically forced the camera back to y=1.7 every frame. Mirror the
+   authored hill/ramp profile here so feet follow its surface instead of
+   passing underneath it. Coordinates are the glTF/Three.js form of the same
+   points used by _build_storybook_street_asset(). */
+function storybookHillSurfaceHeight(x,z){
+  const dx=x-STORYBOOK_CENTER_WEB[0], dz=z-STORYBOOK_CENTER_WEB[1];
+  const radial=Math.hypot(dx/64,dz/50);
+  const profile=[[.85,2.80],[.875,2.60],[.906,1.72],[.953,.72],[1.02,0]];
+  let height=0;
+  if(radial<=profile[0][0]) height=profile[0][1];
+  else{
+    for(let i=1;i<profile.length;i++){
+      if(radial>profile[i][0]) continue;
+      const [r0,h0]=profile[i-1],[r1,h1]=profile[i];
+      height=THREE.MathUtils.lerp(h0,h1,(radial-r0)/(r1-r0));
+      break;
+    }
+  }
+  const loopOuter=Math.hypot(dx/34.5,dz/25.5);
+  const loopInner=Math.hypot(dx/27.5,dz/18.5);
+  if(loopOuter<=1.01&&loopInner>=.99) height=Math.max(height,2.98);
+  if(Math.hypot(dx/24.8,dz/15.8)<=1) height=Math.max(height,2.94);
+  return height;
+}
+
+function storybookAccessSurfaceHeight(x,z){
+  let height=0;
+  for(let i=1;i<STORYBOOK_ACCESS_WEB.length;i++){
+    const a=STORYBOOK_ACCESS_WEB[i-1],b=STORYBOOK_ACCESS_WEB[i];
+    const dx=b[0]-a[0],dz=b[1]-a[1],lengthSq=dx*dx+dz*dz;
+    const t=THREE.MathUtils.clamp(((x-a[0])*dx+(z-a[1])*dz)/lengthSq,0,1);
+    const nearX=a[0]+dx*t,nearZ=a[1]+dz*t;
+    const halfWidth=THREE.MathUtils.lerp(STORYBOOK_ACCESS_WIDTHS[i-1],STORYBOOK_ACCESS_WIDTHS[i],t)/2+.18;
+    if(Math.hypot(x-nearX,z-nearZ)>halfWidth) continue;
+    height=Math.max(height,THREE.MathUtils.lerp(a[2],b[2],t)+.18);
+  }
+  return height;
+}
+
+function walkSurfaceHeight(x,z){
+  return Math.max(0,storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z));
+}
+document.body.dataset.storybookWalkable =
+  walkSurfaceHeight(270,-60)>2.7 && walkSurfaceHeight(211,-69)>1.5 ? "pass" : "fail";
+
 const SUBURBAN_FOOTPRINTS = [
   [7.9,5.7], [8.5,5.4], [7.7,5.8], [8.3,5.7], [7.1,5.7],
   [7.8,5.8], [7.5,5.9], [7.2,5.5], [7.4,5.8], [7.8,5.6],
@@ -2742,6 +2797,13 @@ function addTownMapRoad(x1,z1,x2,z2,width=ROAD,color=0x59666d){
   mesh.receiveShadow=true;townMapRoot.add(mesh);
 }
 
+function addTownMapRoadCap(x,z,width=ROAD,color=0x59666d){
+  if(!townMapRoot)return;
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(width/2,width/2,.27,24),
+    new THREE.MeshStandardMaterial({color,roughness:.94,metalness:.02}));
+  cap.position.set(x,.135,z);cap.receiveShadow=true;townMapRoot.add(cap);
+}
+
 function makeTownMapLabel(text){
   const canvas=document.createElement("canvas");canvas.width=512;canvas.height=128;
   const ctx=canvas.getContext("2d");
@@ -2839,8 +2901,16 @@ function rebuildTownMap3D(){
         addTownMapRoad(loop[i].x,loop[i].z,next.x,next.z,7,0xb52f50);
       }
     }
-    const access=[[69,-33],[92,-56],[126,-72],[168,-74],[201,-72],[205,-71],[208,-70],[211,-69],[213,-68],[215,-68],[219,-67],[229,-65],[239,-60]];
-    for(let i=1;i<access.length;i++)addTownMapRoad(...access[i-1],...access[i],7,0xb52f50);
+    for(let i=1;i<STORYBOOK_ACCESS_WEB.length;i++){
+      const a=STORYBOOK_ACCESS_WEB[i-1],b=STORYBOOK_ACCESS_WEB[i];
+      const width=(STORYBOOK_ACCESS_WIDTHS[i-1]+STORYBOOK_ACCESS_WIDTHS[i])/2;
+      const color=i===1?STORYBOOK_ROAD_COLORS.established:
+        i===2?STORYBOOK_ROAD_COLORS.transition:STORYBOOK_ROAD_COLORS.feature;
+      addTownMapRoad(a[0],a[1],b[0],b[1],width,color);
+      addTownMapRoadCap(b[0],b[1],STORYBOOK_ACCESS_WIDTHS[i],color);
+    }
+    addTownMapRoadCap(STORYBOOK_ACCESS_WEB[0][0],STORYBOOK_ACCESS_WEB[0][1],
+      STORYBOOK_ACCESS_WIDTHS[0],STORYBOOK_ROAD_COLORS.established);
   }
 
   // The founder park predates named streets, so its two built rings have no
@@ -3094,10 +3164,14 @@ function drawTownMap(){
     });
     if(loop.length>2){const [x,y]=worldToTownMap(...loop[0]);ctx.lineTo(x,y);}
     ctx.stroke();
-    const access=[[69,-33],[92,-56],[126,-72],[168,-74],[201,-72],[205,-71],[208,-70],[211,-69],[213,-68],[215,-68],[219,-67],[229,-65],[239,-60]];
-    ctx.beginPath();access.forEach((point,index)=>{
-      const [x,y]=worldToTownMap(...point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);
-    });ctx.stroke();
+    for(let i=1;i<STORYBOOK_ACCESS_WEB.length;i++){
+      const a=worldToTownMap(STORYBOOK_ACCESS_WEB[i-1][0],STORYBOOK_ACCESS_WEB[i-1][1]);
+      const b=worldToTownMap(STORYBOOK_ACCESS_WEB[i][0],STORYBOOK_ACCESS_WEB[i][1]);
+      ctx.strokeStyle=i===1?"rgba(70,84,94,.82)":i===2?"#75404f":"#b52f50";
+      const width=(STORYBOOK_ACCESS_WIDTHS[i-1]+STORYBOOK_ACCESS_WIDTHS[i])/2;
+      ctx.lineWidth=Math.max(3,Math.min(12,width*scale));
+      ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
+    }
   }
 
   mapState.hits=[];
@@ -3939,11 +4013,12 @@ function createRemotePlayer(presence){
   smile.position.set(0, 1.54, .331);
   smile.rotation.z = Math.PI;
   group.add(body, head, facePanel, leftEye, rightEye, smile);
-  group.position.set(presence.x, 0, presence.z);
+  const surfaceHeight=walkSurfaceHeight(presence.x,presence.z);
+  group.position.set(presence.x, surfaceHeight, presence.z);
   multiplayerLayer.add(group);
   const player = {
     group, material, facePanelMaterial, faceMaterial, label:null, bubble:null, bubbleTimer:null,
-    target:new THREE.Vector3(presence.x, 0, presence.z),
+    target:new THREE.Vector3(presence.x, surfaceHeight, presence.z),
     targetYaw:presence.yaw, handle:"", logged_in:false
   };
   setPlayerLabel(player, presence);
@@ -3958,7 +4033,7 @@ function upsertRemotePlayer(raw){
   if (!player) player = createRemotePlayer(presence);
   if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
     setPlayerLabel(player, presence);
-  player.target.set(presence.x, 0, presence.z);
+  player.target.set(presence.x, walkSurfaceHeight(presence.x,presence.z), presence.z);
   player.targetYaw = presence.yaw;
 }
 
@@ -4410,7 +4485,7 @@ function animate(){
     // Shape-aware push-out against building/car footprints and tree trunks.
     const p = camera.position;
     for (const col of colliders) resolvePlayerCollision(p, col);
-    camera.position.y = 1.7;
+    camera.position.y = 1.7 + walkSurfaceHeight(p.x,p.z);
 
     // name tags on claimed houses: only visible when you're near that house
     for (const spr of nameTags.children){

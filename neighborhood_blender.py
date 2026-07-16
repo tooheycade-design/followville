@@ -2162,7 +2162,8 @@ def build_suburban_terrain(world_col, m):
 
 
 def _add_road_strip(world_col, name, points, material, width=ROAD,
-                    bottom_offset=.01, top_offset=.19):
+                    bottom_offset=.01, top_offset=.19, widths=None,
+                    segment_materials=None):
     """One continuous, shallow road mesh with mitered bends.
 
     The previous implementation rotated a separate rectangle for every five
@@ -2171,7 +2172,13 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
     """
     if len(points) < 2:
         return None
-    half = width / 2
+    point_widths = list(widths) if widths is not None else [width] * len(points)
+    if len(point_widths) != len(points):
+        raise ValueError("road-strip widths must match the point count")
+    materials_by_segment = (list(segment_materials) if segment_materials is not None
+                            else [material] * (len(points) - 1))
+    if len(materials_by_segment) != len(points) - 1:
+        raise ValueError("road-strip materials must match the segment count")
     edges = []
     for a, b in zip(points, points[1:]):
         dx, dy = b[0] - a[0], b[1] - a[1]
@@ -2182,6 +2189,7 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
             edges.append((dx / length, dy / length))
     offsets = []
     for i in range(len(points)):
+        half = point_widths[i] / 2
         before = edges[max(0, i - 1)]
         after = edges[min(len(edges) - 1, i)]
         n0, n1 = (-before[1], before[0]), (-after[1], after[0])
@@ -2201,17 +2209,27 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
                           (point[0] - offset[0], point[1] - offset[1], point_z + z_offset)))
     n = len(points)
     faces = []
+    face_materials = []
     for i in range(n - 1):
         # bottom, top, left wall, right wall
         faces.extend(((2*i, 2*i+1, 2*i+3, 2*i+2),
                       (2*n+2*i, 2*n+2*i+2, 2*n+2*i+3, 2*n+2*i+1),
                       (2*i, 2*i+2, 2*n+2*i+2, 2*n+2*i),
                       (2*i+1, 2*n+2*i+1, 2*n+2*i+3, 2*i+3)))
+        face_materials.extend([materials_by_segment[i]] * 4)
     faces.extend(((0, 2*n, 2*n+1, 1),
                   (2*n-2, 2*n-1, 4*n-1, 4*n-2)))
+    face_materials.extend((materials_by_segment[0], materials_by_segment[-1]))
     mesh = bpy.data.meshes.new(name + "_mesh")
     mesh.from_pydata(verts, [], faces)
-    mesh.materials.append(material)
+    material_slots = []
+    for face_material in face_materials:
+        if face_material not in material_slots:
+            material_slots.append(face_material)
+    for slot_material in material_slots:
+        mesh.materials.append(slot_material)
+    for polygon, face_material in zip(mesh.polygons, face_materials):
+        polygon.material_index = material_slots.index(face_material)
     mesh.update()
     obj = bpy.data.objects.new(name, mesh)
     world_col.objects.link(obj)
@@ -2328,6 +2346,7 @@ def _build_storybook_street_asset(col):
     hill = mat("NB_story_hill", (.31, .54, .28), 1.0)
     hill_top = mat("NB_story_hilltop", (.42, .71, .30), 1.0)
     road = mat("NB_story_road", (.73, .16, .31), .88)
+    transition = mat("NB_story_transition", (.46, .24, .31), .91)
     curb = mat("NB_story_curb", (.97, .66, .16), .84)
     dash = mat("NB_story_dash", (1.0, .91, .54), .76)
     pole = mat("NB_story_pole", (.12, .40, .48), .58)
@@ -2353,7 +2372,14 @@ def _build_storybook_street_asset(col):
                        (215, 68, 2.62), (219, 67, 2.74),
                        (229, 65, 2.74), (239, 60, 2.74)]
     access = [(x-cx, y-cy, z) for x, y, z in absolute_access]
-    _add_road_strip(col, "storybook_access", access, road, 7.0, .02, .24)
+    # The access starts as the established asphalt at the existing grid
+    # intersection, widens gradually, then transitions into the feature-road
+    # color. This avoids laying a bright diagonal slab across the old road.
+    access_widths = [6.0, 6.3, 6.7] + [7.0] * (len(access) - 3)
+    access_materials = [m["road"], transition] + [road] * (len(access) - 3)
+    _add_road_strip(col, "storybook_access", access, road, 7.0, .01, .18,
+                    widths=access_widths,
+                    segment_materials=access_materials)
 
     # Main road and its raised golden curbs are solid rings at distinct
     # elevations; they remain stable in long-lens aerial renders.
@@ -2372,18 +2398,32 @@ def _build_storybook_street_asset(col):
                        x, y, 2.995, dash)
         mark.rotation_euler.z = tangent
 
-    # Access-road center dashes follow the actual bends and climb.
-    for a, b in zip(access, access[1:]):
-        dx, dy, dz = b[0]-a[0], b[1]-a[1], b[2]-a[2]
-        length = math.hypot(dx, dy)
-        count = max(1, int(length // 8))
-        angle = math.atan2(dy, dx)
-        for j in range(count):
-            t = (j + .5) / count
+    # Access-road center dashes keep one continuous eight-metre rhythm across
+    # every control segment. Requiring at least one dash per segment bunched a
+    # zig-zag cluster into the deliberately dense hill-climb controls.
+    access_total = sum(math.hypot(b[0]-a[0], b[1]-a[1])
+                       for a, b in zip(access, access[1:]))
+    dash_distance = 4.0
+    while dash_distance < access_total - 2.0:
+        remaining = dash_distance
+        for segment_index, (a, b) in enumerate(zip(access, access[1:])):
+            dx, dy, dz = b[0]-a[0], b[1]-a[1], b[2]-a[2]
+            length = math.hypot(dx, dy)
+            if remaining > length:
+                remaining -= length
+                continue
+            t = remaining / max(length, .001)
             x, y, z = a[0]+dx*t, a[1]+dy*t, a[2]+dz*t
-            mark = add_box(col, "storybook_access_dash", 2.15, .40, .075,
-                           x, y, z + .255, dash)
-            mark.rotation_euler.z = angle
+            dash_material = m["dash"] if segment_index == 0 else dash
+            mark = add_box(col, "storybook_access_dash", 2.15, .40, .04,
+                           x, y, z + .205, dash_material)
+            # Align the dash's long local X axis to the full 3D road tangent,
+            # including its climb. Yaw-only marks visibly floated sideways
+            # through the steep shoulder of the hill.
+            mark.rotation_mode = 'QUATERNION'
+            mark.rotation_quaternion = Vector((dx, dy, dz)).normalized().to_track_quat('X', 'Z')
+            break
+        dash_distance += 8.0
 
     # Oval garden in the center makes the turnaround feel authored rather
     # than empty. It is walkable open space, not another building.
