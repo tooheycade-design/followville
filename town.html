@@ -1472,6 +1472,9 @@ const townMapMyHome = document.getElementById("townMapMyHome");
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
 let resumeWalkingAfterMap = false;
+// The public Walk link uses an explicit route so it can enter the rendered town
+// without briefly reviving the older in-town start screen.
+const directWalkRoute = location.hash === "#walk";
 // A map opened as the page's initial route came from the public homepage. If
 // the visitor closes it without choosing a place to visit, return to that same
 // homepage instead of exposing the older in-town start/pause screen beneath it.
@@ -1551,6 +1554,11 @@ if (isTouch){
 } else {
   startHint.textContent = "WASD to walk · T or / to chat · M for map · shift to run";
   startScreen.addEventListener("click", () => controls.lock());
+  renderer.domElement.addEventListener("click", () => {
+    if (gameRunning && !controls.isLocked && !chatOpen() && !townMapOpen() && !modalOpen()){
+      controls.lock();
+    }
+  });
   controls.addEventListener("lock", beginWalking);
   controls.addEventListener("unlock", () => { if (!chatOpen() && !townMapOpen()) stopWalking(); });
 }
@@ -4145,8 +4153,14 @@ fetch("world_state.json")
           `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length}`;
         hudSub.textContent = `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length} · ${buildings.length} buildings`;
         loadingEl.style.display = "none";
-        startScreen.style.display = "flex";
-        playIntroVideo();
+        if (directWalkRoute){
+          history.replaceState(null,"",location.pathname+location.search);
+          if (!isTouch) hint.textContent = "click the town for mouse look · WASD to walk · ESC to pause";
+          beginWalking();
+        }else{
+          startScreen.style.display = "flex";
+          playIntroVideo();
+        }
         hud.style.display = "block";
         if (previewMode) frameFounderPreview();
         animate();

@@ -21,6 +21,8 @@ you go looking for it here.**
   deployments. Preserve all cache safeguards. The visual style is intentionally
   restrained and editorial: sharp paper/map framing, plain ruled navigation,
   unboxed stats, minimal blur, and no oversized pills or icon-card dashboard UI.
+  The homepage Walk action must target `town.html#walk`; that route bypasses the
+  legacy in-town intro and enters the rendered neighborhood immediately.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start

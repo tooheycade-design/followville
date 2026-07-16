@@ -43,6 +43,10 @@ The landing composition intentionally avoids generic generated-dashboard
 styling: the map is framed like a flat paper plan, navigation uses simple ruled
 text rows, stats are unboxed, corners are nearly square, and blur/pill/icon-card
 treatments are minimal. Preserve this restraint in future homepage changes.
+The Walk destination intentionally links to `town.html#walk`, which removes the
+route hash and enters the rendered neighborhood without exposing the older
+in-town start screen. Desktop users can click the town canvas to capture
+mouse-look; mobile begins with the existing touch controls.
 
 ## Live town map (2026-07-15)
 

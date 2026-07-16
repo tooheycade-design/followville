@@ -523,6 +523,17 @@ Kept here (rather than just in chat) so it survives across sessions.
 - This is navigation-only. World data, homes, claims, accounts, map contents,
   and multiplayer behavior are unchanged.
 
+## 30. Direct Walk route
+
+- Changed the redesigned homepage's Walk destination from plain `town.html` to
+  `town.html#walk`, giving it an explicit direct-entry state instead of loading
+  the older in-town intro screen.
+- Once the world is ready, the route marker is removed and walking begins in
+  the rendered neighborhood. Desktop users can click the town canvas to capture
+  mouse-look; mobile uses the existing touch look and joystick controls.
+- Other town entry states remain intact, including claims, owned-home routing,
+  map deep-links, the in-game map, chat, accounts, and multiplayer.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
