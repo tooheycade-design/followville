@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 14
+# Codex handoff -- current through Day 15
 
 Updated 2026-07-16 for Cade's next Claude/Codex session.
 
@@ -15,6 +15,20 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Day 15 is population 259 with 262 total buildings. It added 15 claimable
+  homes: ten `storybookhouse` seeds 248-257 on Wanderlight Loop in the new
+  Kaleidoscope Crest feature district, plus five ordinary seeds 258-262 at
+  Overlook Circle plan IDs 111-115 in Willow Hills. The feature hill, garden,
+  road, lamps, and flowers are permanent Blender/GLB content and appear only
+  once feature homes exist. The access road now joins the old grid as matching
+  asphalt, widens through a muted transition, then becomes pink; its dashes
+  conform to the ramp. Website walking mirrors the raised hill/ramp surface
+  for local and remote players and is guarded by
+  `data-storybook-walkable="pass"`. All 15 database rows are claimable.
+  `--cam wholeoverhead` is the Day 15 all-new-homes rise shot. Keep the 10m
+  near plane on all aerial cameras: it fixed the prior moving-shot road/pond
+  flashing caused by depth-precision loss. The corrected video was reviewed
+  and emailed to Cade with Zach copied.
 - Website backdrop mountains now move outward independently when town growth
   approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
   Circle Houses #230-247; `addTownAtmosphere()` now gives every current building

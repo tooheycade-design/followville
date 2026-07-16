@@ -4,19 +4,23 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
-## Current town (Day 14, 2026-07-15)
+## Current town (Day 15, 2026-07-16)
 
-Population is 244 with 247 buildings. Day 14 added 18 ordinary suburban houses
-at plan IDs 93-110: three completed Foxglove Court and 15 began Overlook Circle.
-Its future turnaround is still hidden. Use `--cam newgrowthoverhead` for the one
-top-down video where today's houses rise and `--cam newstreet` for a
-completed-state glide along today's busiest street. `--cam football` is a
-temporary Day 14 fan-video mode and must never be used for the permanent GLB.
-Nature scatter automatically clears from road/cul-de-sac geometry and occupied
-planned lots as development reveals them; do not remove that clearance logic.
-The Day 14 GLB and all 18 new Supabase rows were validated. On Windows, running
-`grow_windows.ps1` from the authoritative repo intentionally skips the old
-iCloud `wip` auto-share hook so the clone stays on `main` after growth.
+Population is 259 with 262 buildings. Day 15 added 15 claimable homes: ten
+original `storybookhouse` seeds 248-257 around Wanderlight Loop in the new
+Kaleidoscope Crest feature district, plus five ordinary seeds 258-262 at
+Overlook Circle plan IDs 111-115 in Willow Hills. The Kaleidoscope Crest hill,
+garden, lamps, flowers, loop, and access road are permanent Blender/GLB content
+and reveal only with their homes. The access starts as ordinary asphalt at the
+old grid, widens through a muted transition, then becomes bright pink; its
+center markings follow the road's 3D climb. `town.html` mirrors the hill/ramp
+height for local and multiplayer walkers. Keep the
+`data-storybook-walkable="pass"` browser check whenever raised terrain changes.
+Use `--cam wholeoverhead` for the Day 15 whole-town rise shot. Aerial cameras
+must keep their 10m near clip; that prevents moving roads and ponds from
+flashing due to depth-precision loss. All 15 Day 15 Supabase rows were
+validated. Repo-based Windows growth still skips the legacy iCloud `wip`
+auto-share hook so the authoritative clone remains on `main`.
 
 ## Website landing experience (2026-07-15)
 

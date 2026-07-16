@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [BOTH] Completed Day 15 from 244 to 259 followers with 15 claimable homes: ten original crooked-storybook houses on the landscaped Kaleidoscope Crest/Wanderlight Loop hill and five ordinary Overlook Circle houses; blended its bright access into the old road, made sloped markings conform and remain evenly spaced, made the hill/ramp walkable for local and multiplayer visitors, fixed aerial road/lake flashing with depth-safe cameras, rebuilt/validated the GLB and public maps, reviewed the corrected whole-town rise video, and emailed it to Cade with Zach copied.
+
 2026-07-16 - Cade (via Windows Codex) - [WEB] Fixed the newest Overlook Circle houses cutting through two website backdrop mountains by replacing the fixed hill ring with growth-aware per-hill clearance, visually checked Houses #239 and #247, and added a browser regression that requires every hill footprint to clear every current building; no house, road, Blender terrain, GLB, state, population, address, or claim changed.
 
 2026-07-16 - Cade (via Windows Codex) - [WEB] Added a self-updating Today in Followville activity and clean permanent `/house/:id` share addresses on top of the existing live world/map data, highlighted the newest homes, added native-share/clipboard visit cards, and installed five Playwright browser regressions in GitHub Actions for homepage, Today, shared/invalid houses, and chat/map/Escape navigation; this establishes stable place/activity IDs for future roleplay without changing Blender, GLB, state, population, buildings, or claims.

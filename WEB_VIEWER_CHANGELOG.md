@@ -589,6 +589,30 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Web-only. No Blender terrain, GLB geometry, house/road position, world state,
   day, population, address, claim, or Supabase data changed.
 
+## 34. Day 15 raised-terrain walking and feature-road integration
+
+- Added `storybookhouse` as a first-class home in the viewer, homepage preview,
+  Today route, claiming material roles, and both town maps. Kaleidoscope Crest
+  and Wanderlight Loop continue to derive from the canonical Day 15 building
+  records rather than a second map/state file.
+- Fixed first-person and multiplayer visitors passing underneath the terraced
+  hill. A deterministic web walk-surface profile mirrors the Blender plateau,
+  garden loop, and climbing access road, and the walking browser regression now
+  requires `body[data-storybook-walkable="pass"]`.
+- Blended the feature access into the established grid in Blender, the
+  homepage preview, the flat map, and the 3D map. The junction begins at the
+  old asphalt width/color, expands through a muted transition, and only then
+  becomes bright pink; map joints use fitted caps rather than exposed segment
+  corners.
+- Made the Blender access-road markings follow the full three-dimensional road
+  tangent and sample one continuous eight-metre rhythm. This removes both the
+  horizontal floating lines on the hill and the dash bunching created by its
+  dense ramp control points.
+- Updated browser expectations to derive the current day/population/newest
+  homes/districts/streets from `world_state.json`, so normal future growth does
+  not make the regression suite stale. All five Chromium flows passed after
+  the change.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

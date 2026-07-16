@@ -8,6 +8,24 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- Day 15, population 259, 262 buildings (grown 2026-07-16 via Cade's
+  Windows Codex: +15 claimable homes). Seeds 248-257 are ten original
+  `storybookhouse` designs around Wanderlight Loop in the new Kaleidoscope
+  Crest feature district; seeds 258-262 are ordinary houses at planned
+  Overlook Circle addresses 111-115 in Willow Hills. The permanent feature
+  asset includes a terraced hill, garden loop, lamps, flowers, and a winding
+  access road; it reveals only when its feature homes exist. The access begins
+  as established asphalt at the grid, widens through a muted transition, then
+  becomes the bright feature road. Its markings follow the 3D ramp tangent.
+  `town.html` mirrors the hill/ramp height for local and multiplayer walkers;
+  preserve `data-storybook-walkable="pass"` and its Playwright regression when
+  adding raised walkable terrain. All 15 Supabase rows are present/claimable.
+  The Day 15 delivery camera is `--cam wholeoverhead`, with all 15 newest homes
+  rising while the whole developed town remains in frame. Aerial cameras use
+  a 10m near clip to prevent thin roads and ponds flashing from lost depth
+  precision; do not restore Blender's 0.1m default for aerial modes. The final
+  corrected MP4 was reviewed and emailed to `tooheycade@gmail.com` with
+  `zachkehler@gmail.com` copied.
 - 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until
