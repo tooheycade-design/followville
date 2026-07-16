@@ -51,6 +51,14 @@ desktop, Escape returns to the redesigned homepage instead of displaying the
 legacy in-town intro. Escape still closes map/chat overlays in place, resuming
 the rendered town without mouse capture until the canvas is clicked again.
 
+The low-poly backdrop mountains are website atmosphere, not Blender terrain.
+Their distance is calculated against every current building on each load; a
+hill stays on its authored bearing but moves outward until its enclosing base
+has 18m of town clearance. Do not return `FV_distant_hills` to a fixed-radius
+ring: Day 14 Overlook Circle reached the old ring and Houses #230-247 intersected
+two hills. The walking browser regression requires
+`body[data-hill-clearance="pass"]`.
+
 ## Live town map (2026-07-15)
 
 The homepage, start screen, in-town map button, and desktop `M` all reach the

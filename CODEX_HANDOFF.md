@@ -15,6 +15,12 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- Website backdrop mountains now move outward independently when town growth
+  approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
+  Circle Houses #230-247; `addTownAtmosphere()` now gives every current building
+  at least 18m clearance from each hill's conservative footprint and exposes a
+  Playwright-checked runtime audit. This is web scenery only—do not move the
+  houses or edit Blender terrain to solve it.
 - The public website now has stable roleplay-ready place/activity routes.
   `Today in Followville` is computed from the latest day in
   `world_state.json`; `/today` opens that day's homes in the live map with a

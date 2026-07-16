@@ -571,6 +571,24 @@ Kept here (rather than just in chat) so it survives across sessions.
   infrastructure only; Blender, GLB, world state, population, building seeds,
   claims, and Supabase schema were not changed.
 
+## 33. Backdrop mountains clear growing suburbs
+
+- Fixed two low-poly website backdrop mountains intersecting Day 14's newest
+  Overlook Circle/Foxglove Court homes. The atmosphere had been authored as a
+  fixed 282-310m ring while House #247 now reaches roughly 297m from town
+  center, so the town had physically grown into the scenery.
+- Each hill now preserves its original bearing and preferred distance, but is
+  advanced outward in small steps whenever its conservative enclosing
+  footprint is within 18m of any current building. Only threatened hills move;
+  the rest of the skyline keeps its existing composition. Future normal growth
+  re-runs the same clearance automatically.
+- Added a runtime hill-clearance result and extended the walking Playwright
+  regression to require a pass. All five browser tests passed, and ground-level
+  views at Houses #239 and #247 were visually reviewed with clean open lots and
+  mountains behind the neighborhood.
+- Web-only. No Blender terrain, GLB geometry, house/road position, world state,
+  day, population, address, claim, or Supabase data changed.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

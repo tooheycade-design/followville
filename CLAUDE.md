@@ -8,6 +8,14 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
+  decorative `FV_distant_hills` no longer use a fixed ring that can be reached
+  by new suburbs. Each hill keeps its preferred bearing but moves outward until
+  its full conservative footprint has at least 18m clearance from every current
+  building. This fixed the two mountains intersecting Day 14 Houses #230-247
+  around Overlook Circle. A runtime `data-hill-clearance="pass"` audit is now
+  covered by Playwright. Web-only; Blender terrain, GLB, world state, addresses,
+  population, claims, and house positions did not change.
 - 2026-07-16 roleplay-ready public places (Cade via Codex): the homepage now
   has a self-updating `Today in Followville` activity derived from the newest
   build day in `world_state.json`. `/today` opens those homes in the live 3D

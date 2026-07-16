@@ -1427,21 +1427,46 @@ function addTownAtmosphere(){
   const hills = new THREE.Group();
   hills.name = "FV_distant_hills";
   const hillColors = [0x76947d, 0x7d9b84, 0x6f8d78, 0x86a18a];
+  const hillTownClearance = 18;
+  const occupiedTownPoints = worldBuildings.map(building => buildingWorldXZ(building));
+  let minimumHillClearance = Infinity;
   for (let i=0; i<18; i++){
     const a = i / 18 * Math.PI * 2;
-    const radius = 282 + (i % 3) * 14;
+    let radius = 282 + (i % 3) * 14;
     const h = 18 + (i * 11 % 22);
     const r = 34 + (i * 17 % 24);
+    const scaleX = 1.15 + (i % 3) * 0.12;
+    // Backdrop hills used to sit on one fixed ring. Once Willow Hills reached
+    // that ring, the bases of two mountains swallowed the newest houses. Keep
+    // each hill on its preferred bearing, but move only the threatened ones
+    // outward until its full (conservatively circular) footprint clears every
+    // current building. Normal growth therefore extends the skyline safely.
+    const footprintRadius = r * scaleX;
+    for (let attempt=0; attempt<16; attempt++){
+      const hx = Math.cos(a) * radius, hz = Math.sin(a) * radius;
+      const nearest = occupiedTownPoints.length
+        ? Math.min(...occupiedTownPoints.map(([x,z]) => Math.hypot(x-hx,z-hz)))
+        : Infinity;
+      if (nearest - footprintRadius >= hillTownClearance) break;
+      radius += 18;
+    }
     const material = new THREE.MeshStandardMaterial({
       color:hillColors[i % hillColors.length], roughness:1.0, flatShading:true,
       transparent:true, opacity:0.76
     });
     const hill = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), material);
     hill.position.set(Math.cos(a) * radius, h / 2 - 2, Math.sin(a) * radius);
-    hill.scale.x = 1.15 + (i % 3) * 0.12;
+    hill.scale.x = scaleX;
     hill.rotation.y = a * 0.37;
+    const nearest = occupiedTownPoints.length
+      ? Math.min(...occupiedTownPoints.map(([x,z]) => Math.hypot(x-hill.position.x,z-hill.position.z)))
+      : Infinity;
+    minimumHillClearance = Math.min(minimumHillClearance,nearest-footprintRadius);
     hills.add(hill);
   }
+  const hillsClearTown = minimumHillClearance >= hillTownClearance - 0.001;
+  document.body.dataset.hillClearance = hillsClearTown ? "pass" : "fail";
+  if (!hillsClearTown) console.error("Followville backdrop hill clearance audit failed.");
   scene.add(hills);
 
   const clouds = new THREE.Group();
