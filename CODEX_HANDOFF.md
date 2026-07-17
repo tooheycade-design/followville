@@ -88,9 +88,13 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   pressing Escape, or clicking its backdrop returns to the redesigned homepage
   instead of exposing the older in-town start screen. Visiting a selected map
   result still enters the town and disables that return-home behavior.
-  It searches house IDs, claimed handles, streets/districts, newest homes,
-  landmarks, and signed-in owned homes, and its Visit action teleports to the
-  location. Instanced map geometry must remain derived from the current
+  Its normal sidebar is an eight-row street directory (seven named streets plus
+  `Original town`), not a 259-house list. Street rows focus their part of the
+  existing 3D scene; clicking a rendered 3D house teleports immediately. Search
+  accepts `@owner`, house ID, and street/district, ranks exact and partial owner
+  matches well, and keeps individual Visit/Share results. Newest and claimed
+  filters group by street; landmarks and signed-in homes remain individual.
+  Instanced map geometry must remain derived from the current
   `world_state.json`; planned road lines use only built houses, so future empty
   roads remain hidden, while the already-built Founder Park rings and connector
   are reconstructed from their existing homes. `public_claims` supplies live

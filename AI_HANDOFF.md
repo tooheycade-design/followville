@@ -82,7 +82,7 @@ ring: Day 14 Overlook Circle reached the old ring and Houses #230-247 intersecte
 two hills. The walking browser regression requires
 `body[data-hill-clearance="pass"]`.
 
-## Live town map (2026-07-15)
+## Live town map (updated 2026-07-16)
 
 The homepage, start screen, in-town map button, and desktop `M` all reach the
 same responsive isometric 3D map. It uses a small instanced scene rather than
@@ -90,6 +90,11 @@ loading a second full town GLB, supports rotate/pan/zoom, and keeps a flat
 fallback for unavailable WebGL. Search supports house number, live claimed handle,
 street/district, newest homes, the school, claimed homes, and the signed-in
 user's homes; Visit teleports the player outside the selected location. The
+normal sidebar is now eight compact street groups, not one large house list.
+Clicking a street focuses its homes in the existing 3D scene; clicking a 3D house
+teleports directly. Search accepts explicit `@owner` handles (including partial
+handles), ranks exact owners first, and returns individual house cards with
+Visit/Share. Newest and claimed filters group their results by street. The
 map is intentionally self-updating: it rebuilds from `world_state.json` and
 `public_claims`, including the established Founder Park rings and only roads
 implied by already built planned houses. Do not add manual map coordinates, a

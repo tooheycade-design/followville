@@ -6,6 +6,8 @@ const newestHomes = worldState.buildings.filter(building =>
   String(building.type).endsWith("house") && Number(building.day) === Number(worldState.day));
 const newestDistricts = [...new Set(newestHomes.map(building => building.district).filter(Boolean))];
 const newestStreets = [...new Set(newestHomes.map(building => building.street).filter(Boolean))];
+const allHomes = worldState.buildings.filter(building => String(building.type).endsWith("house"));
+const mapStreetCount = new Set(allHomes.map(building => building.street || "Original town")).size;
 
 function watchPageErrors(page) {
   const errors = [];
@@ -63,7 +65,7 @@ test("shared house route can copy and visit a permanent address", async ({ page 
   await page.getByRole("button", { name: "share" }).click();
   await expect(page.locator("#townMapShareStatus")).toHaveText("Address copied.");
   expect(await page.evaluate(() => window.__copiedHouseAddress)).toBe("http://127.0.0.1:8765/house/29");
-  await page.getByRole("button", { name: "visit this location" }).click();
+  await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(page.locator("#pauseMenu")).toBeVisible();
@@ -88,6 +90,17 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("#chatPanel")).not.toHaveClass(/open/);
   await page.keyboard.press("KeyM");
   await expect(page.locator("#townMapPanel")).toBeVisible();
+  await expect(page.locator("#townMapCanvas")).toBeVisible();
+  await expect(page.locator("#townMapSearch")).toHaveAttribute("placeholder", /@owner/);
+  await expect(page.locator("[data-map-street]")).toHaveCount(mapStreetCount);
+  const newestStreet = newestStreets[0];
+  const newestStreetHomes = allHomes.filter(building => building.street === newestStreet).length;
+  await page.locator("#townMapSearch").fill(newestStreet);
+  await expect(page.locator("[data-map-key]")).toHaveCount(newestStreetHomes);
+  await page.locator("#townMapSearch").fill("#29");
+  await expect(page.locator("[data-map-key]").first()).toContainText("House #29");
+  await page.locator("#townMapSearch").fill("");
+  await expect(page.locator("[data-map-street]")).toHaveCount(mapStreetCount);
   await page.keyboard.press("Escape");
   await expect(page.locator("#townMapPanel")).toBeHidden();
   await page.keyboard.press("Escape");

@@ -86,20 +86,26 @@ you go looking for it here.**
   those overlays. Signed-in owners can reach the existing confirmed
   per-house unclaim flow from clear `manage my home(s) / unclaim` entry points
   on the town/start screen and from the pause menu.
-- 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
+- 2026-07-16 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start
   screen, the in-town button, or desktop `M`. Homepage map deep-links return to
   the redesigned homepage when closed rather than revealing the legacy in-town
   start screen, while visiting a result still enters the 3D town normally.
-  Visitors can find a house number, claimed handle, street, newest homes, the
-  school, or their own home, then visit/teleport to it. The map derives homes,
+  The default sidebar is an eight-row street directory (seven named streets plus
+  `Original town`) rather than a 259-house list. Choosing a street focuses that
+  part of the same 3D map, and clicking a visible 3D home teleports immediately.
+  Search accepts `@owner`, house number, or street; exact/partial owner handles
+  rank correctly, while selected search results keep their Visit/Share card.
+  Newest and claimed views are grouped by street; school and owned-home results
+  remain individual. The map derives homes,
   landmarks, district zones, the established Founder Park roads, and only
   currently revealed planned-road centerlines from `world_state.json`; claim
   names refresh from `public_claims`. Homes use instancing so this does not
   duplicate the full GLB, and a flat fallback remains for failed WebGL. Never
-  create or maintain a separate map data file. Current QA resolves 244 homes,
-  three landmarks, 18 Day 14 homes, and all 15 built Overlook Circle homes.
+  create or maintain a separate map data file. Current QA resolves 259 homes,
+  three landmarks, all eight street groups, and both admin-owned homes under one
+  exact owner search.
   Web-only: Blender, GLB, state, population, buildings, and claims did not
   change.
 - 2026-07-15 landing experience (Cade via Codex): `index.html` and the

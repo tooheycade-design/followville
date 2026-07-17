@@ -240,6 +240,7 @@
     color:#2f435c; font:700 10.5px inherit; cursor:pointer;
   }
   .map-quick:hover { border-color:#7d93a9; }
+  .map-quick.active { border-color:#2b6a94; background:#e7f0f4; color:#173d58; }
   #townMapResults { flex:1; min-height:90px; overflow:auto; display:grid; align-content:start; gap:7px; padding-right:2px; }
   .map-result {
     width:100%; border:1px solid #dde0e1; border-radius:12px; padding:10px 11px;
@@ -248,6 +249,10 @@
   .map-result:hover, .map-result.selected { border-color:#2b6a94; box-shadow:0 0 0 2px rgba(43,106,148,.1); }
   .map-result-title { display:block; font-size:12.5px; font-weight:800; }
   .map-result-sub { display:block; margin-top:2px; font-size:10.5px; opacity:.62; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .map-result-section {
+    margin:8px 2px 1px; color:#6b7480; font-size:9.5px; font-weight:850;
+    letter-spacing:.09em; text-transform:uppercase;
+  }
   #townMapEmpty { padding:20px 8px; text-align:center; font-size:12px; opacity:.6; }
   #townMapSelection {
     display:none; margin-top:11px; padding:12px; border-radius:14px; color:#fff;
@@ -543,7 +548,7 @@
           <span><i class="map-legend-dot claimed"></i>claimed</span>
           <span><i class="map-legend-dot landmark"></i>landmark</span>
           <span><i class="map-legend-dot you"></i>you</span>
-          <span>drag to rotate · scroll/pinch to zoom</span>
+          <span>click a house to visit · drag to rotate · scroll/pinch to zoom</span>
         </div>
       </div>
       <aside id="townMapSidebar">
@@ -553,8 +558,9 @@
           <p id="townMapRouteCopy"></p>
         </section>
         <input id="townMapSearch" type="search" autocomplete="off"
-               placeholder="Search house #, owner, street…" aria-label="Search the town map" />
+               placeholder="Search @owner, house #, or street…" aria-label="Search the town map" />
         <div id="townMapQuick">
+          <button class="map-quick active" type="button" data-map-quick="streets">streets</button>
           <button class="map-quick" type="button" data-map-quick="newest">newest homes</button>
           <button class="map-quick" type="button" data-map-quick="school">school</button>
           <button class="map-quick" type="button" data-map-quick="claimed">claimed homes</button>
@@ -1571,6 +1577,7 @@ const townMapResults = document.getElementById("townMapResults");
 const townMapSelection = document.getElementById("townMapSelection");
 const townMapSelectionTitle = document.getElementById("townMapSelectionTitle");
 const townMapSelectionSub = document.getElementById("townMapSelectionSub");
+const townMapVisit = document.getElementById("townMapVisit");
 const townMapShare = document.getElementById("townMapShare");
 const townMapShareStatus = document.getElementById("townMapShareStatus");
 const townMapStatus = document.getElementById("townMapStatus");
@@ -2710,7 +2717,8 @@ const MAP_LANDMARK_NAMES = {
   skyscraper:"Downtown tower"
 };
 const mapState = {
-  items:[], byKey:new Map(), selected:null, filter:"", bounds:null,
+  items:[], byKey:new Map(), streetGroups:new Map(), selected:null,
+  streetKey:null, filter:"streets", bounds:null,
   width:0, height:0, pointer:null, pickMeshes:[]
 };
 let townMapRenderer=null, townMapScene=null, townMapCamera=null, townMapControls=null;
@@ -2730,14 +2738,15 @@ function mapItemForBuilding(building){
   const [x,z] = buildingWorldXZ(building);
   const houseId = Number(building.seed);
   const owner = isHome ? claimedBy.get(houseId) : null;
+  const ownerKey = String(owner || "").trim().replace(/^@+/,"").toLowerCase();
   const place = [building.street, building.district].filter(Boolean).join(" · ") ||
     `Built on day ${building.day ?? "?"}`;
   const title = isHome ? (owner ? `@${owner}` : `House #${houseId}`) : landmark;
   const subtitle = isHome && owner ? `House #${houseId} · ${place}` : place;
   return {
-    key:`building-${houseId}`, building, x, z, houseId, owner,
+    key:`building-${houseId}`, building, x, z, houseId, owner, ownerKey,
     isHome, isLandmark:!isHome, title, subtitle,
-    search:`${title} ${subtitle} house ${houseId} #${houseId} ${building.type}`.toLowerCase()
+    search:`${title} ${subtitle} ${ownerKey} @${ownerKey} house ${houseId} #${houseId} ${building.type} ${building.street || "original town"}`.toLowerCase()
   };
 }
 
@@ -2795,18 +2804,26 @@ function renderTownMapRouteIntro(){
 }
 
 function townMapFilteredItems(){
-  const query = townMapSearch.value.trim().toLowerCase().replace(/^[@#]/,"");
+  const rawQuery = townMapSearch.value.trim().toLowerCase();
+  const query = rawQuery.replace(/^[@#]/,"");
   const latestDay = Math.max(0,...mapState.items.map(item => Number(item.building.day)||0));
   let items;
   if (query){
     const terms = query.split(/\s+/).filter(Boolean);
-    items = /^\d+$/.test(query)
-      ? mapState.items.filter(item => item.isHome && item.houseId === Number(query))
-      : mapState.items.filter(item => terms.every(term => item.search.includes(term)));
+    if (/^#?\d+$/.test(rawQuery)){
+      items = mapState.items.filter(item => item.isHome && item.houseId === Number(query));
+    }else if(rawQuery.startsWith("@")){
+      items = mapState.items.filter(item => item.isHome && item.ownerKey.includes(query));
+    }else{
+      items = mapState.items.filter(item => terms.every(term => item.search.includes(term)));
+    }
     items.sort((a,b) => {
-      const exactA = String(a.houseId) === query || a.owner?.toLowerCase() === query;
-      const exactB = String(b.houseId) === query || b.owner?.toLowerCase() === query;
-      return Number(exactB)-Number(exactA) || Number(b.building.day||0)-Number(a.building.day||0);
+      const score = item =>
+        (String(item.houseId) === query ? 100 : 0) +
+        (item.ownerKey === query ? 90 : 0) +
+        (item.ownerKey.startsWith(query) ? 50 : 0) +
+        (String(item.building.street || "").toLowerCase() === query ? 30 : 0);
+      return score(b)-score(a) || Number(b.building.day||0)-Number(a.building.day||0) || a.houseId-b.houseId;
     });
   } else if (mapState.filter === "newest"){
     items = mapState.items
@@ -2820,26 +2837,71 @@ function townMapFilteredItems(){
     const mine = new Set(myClaims.map(claim => Number(claim.house_id)));
     items = mapState.items.filter(item => mine.has(item.houseId));
   } else {
-    const newest = mapState.items
-      .filter(item => item.isHome && Number(item.building.day) === latestDay)
-      .sort((a,b) => Number(b.building.plan_id||b.houseId)-Number(a.building.plan_id||a.houseId));
-    const landmarks = mapState.items.filter(item => item.isLandmark);
-    items = [...newest,...landmarks];
+    items = mapState.items
+      .filter(item => item.isHome)
+      .sort((a,b) => String(a.building.street||"Original town").localeCompare(String(b.building.street||"Original town")) || a.houseId-b.houseId);
   }
-  return items.slice(0,60);
+  return items;
 }
 
-function renderTownMapResults(){
-  const items = townMapFilteredItems();
+function townMapStreetGroups(items){
+  const groups=new Map();
+  for(const item of items.filter(item => item.isHome)){
+    const street=item.building.street || "Original town";
+    const district=item.building.district || "Founding neighborhood";
+    const key=encodeURIComponent(`${district}\u241f${street}`);
+    if(!groups.has(key))groups.set(key,{key,street,district,items:[],claimed:0});
+    const group=groups.get(key);group.items.push(item);if(item.owner)group.claimed+=1;
+  }
+  return [...groups.values()].sort((a,b) =>
+    Number(a.street==="Original town")-Number(b.street==="Original town") ||
+    a.district.localeCompare(b.district) || a.street.localeCompare(b.street));
+}
+
+function townMapLocationMarkup(items,limit=24){
   const selectedKey = mapState.selected?.key;
-  townMapResults.innerHTML = items.length ?
-    `<div class="map-search-count">${items.length} ${items.length===1?"location":"locations"}</div>` +
-    items.map(item => `
+  return items.slice(0,limit).map(item => `
       <button type="button" class="map-result ${item.key===selectedKey?"selected":""}" data-map-key="${item.key}">
         <span class="map-result-title">${mapEsc(item.title)}</span>
         <span class="map-result-sub">${mapEsc(item.subtitle)}</span>
-      </button>`).join("") :
-    `<div id="townMapEmpty">No locations match that search.</div>`;
+      </button>`).join("");
+}
+
+function renderTownMapResults(){
+  const items=townMapFilteredItems();
+  const query=townMapSearch.value.trim();
+  const showLocations=!!query || mapState.filter==="school" || mapState.filter==="mine" ||
+    (todayRoute && mapState.filter==="newest");
+  for(const button of document.querySelectorAll("[data-map-quick]")){
+    button.classList.toggle("active",!query && button.dataset.mapQuick===mapState.filter);
+  }
+  if(!items.length){
+    mapState.streetGroups=new Map();
+    townMapResults.innerHTML=`<div id="townMapEmpty">No locations match that search.</div>`;
+    return;
+  }
+  if(showLocations){
+    const limit=24;
+    const shown=Math.min(items.length,limit);
+    const countCopy=items.length>limit
+      ? `${items.length} matches · showing the first ${shown}; keep typing to narrow it down`
+      : `${items.length} ${items.length===1?"location":"locations"}`;
+    mapState.streetGroups=new Map();
+    townMapResults.innerHTML=`<div class="map-search-count">${countCopy}</div>${townMapLocationMarkup(items,limit)}`;
+    return;
+  }
+  const groups=townMapStreetGroups(items);
+  mapState.streetGroups=new Map(groups.map(group => [group.key,group]));
+  const streetMarkup=groups.map(group => `
+    <button type="button" class="map-result ${group.key===mapState.streetKey?"selected":""}" data-map-street="${mapEsc(group.key)}">
+      <span class="map-result-title">${mapEsc(group.street)}</span>
+      <span class="map-result-sub">${mapEsc(group.district)} · ${group.items.length} ${group.items.length===1?"home":"homes"}${group.claimed?` · ${group.claimed} claimed`:""}</span>
+    </button>`).join("");
+  const landmarks=mapState.filter==="streets" ? mapState.items.filter(item => item.isLandmark) : [];
+  townMapResults.innerHTML=
+    `<div class="map-search-count">${groups.length} ${groups.length===1?"street":"streets"} · choose one to focus the 3D map</div>`+
+    `<div class="map-result-section">Streets</div>${streetMarkup}`+
+    (landmarks.length ? `<div class="map-result-section">Landmarks</div>${townMapLocationMarkup(landmarks,12)}` : "");
 }
 
 function refreshTownMap(){
@@ -3349,12 +3411,13 @@ function renderTownMapSelection(){
   if (!item) return;
   townMapSelectionTitle.textContent=item.title;
   townMapSelectionSub.textContent=item.subtitle;
+  townMapVisit.textContent=item.isHome?"go to this house":"visit this location";
   townMapShare.hidden=!item.isHome;
   townMapShareStatus.textContent="";
 }
 function selectTownMapItem(item,center=true){
   if (!item) return;
-  mapState.selected=item;
+  mapState.selected=item;mapState.streetKey=null;
   if(center&&townMapControls&&townMapCamera){
     const direction=townMapCamera.position.clone().sub(townMapControls.target).normalize();
     const span=mapState.bounds?Math.max(mapState.bounds.maxX-mapState.bounds.minX,mapState.bounds.maxZ-mapState.bounds.minZ):180;
@@ -3366,6 +3429,35 @@ function selectTownMapItem(item,center=true){
     mapState.centerX=item.x;mapState.centerZ=item.z;mapState.zoom=Math.max(1.45,mapState.zoom);
   }
   renderTownMapResults();renderTownMapSelection();drawTownMap();
+}
+
+function focusTownMapItems(items){
+  if(!items?.length)return;
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const item of items){
+    minX=Math.min(minX,item.x);maxX=Math.max(maxX,item.x);
+    minZ=Math.min(minZ,item.z);maxZ=Math.max(maxZ,item.z);
+  }
+  const centerX=(minX+maxX)/2,centerZ=(minZ+maxZ)/2;
+  const span=Math.max(maxX-minX,maxZ-minZ,32);
+  if(townMapControls&&townMapCamera){
+    const direction=townMapCamera.position.clone().sub(townMapControls.target).normalize();
+    townMapControls.target.set(centerX,0,centerZ);
+    townMapCamera.position.copy(townMapControls.target).add(direction.multiplyScalar(Math.max(54,span*1.55)));
+    townMapControls.update();
+  }else{
+    mapState.centerX=centerX;mapState.centerZ=centerZ;
+    const desiredScale=Math.min((mapState.width*.72)/(maxX-minX+30),(mapState.height*.72)/(maxZ-minZ+30));
+    mapState.zoom=Math.max(.75,Math.min(4,desiredScale/(mapState.baseScale||1)));
+  }
+  drawTownMap();
+}
+
+function focusTownMapStreet(group){
+  if(!group)return;
+  mapState.streetKey=group.key;mapState.selected=null;
+  focusTownMapItems(group.items);
+  renderTownMapResults();renderTownMapSelection();
 }
 
 function pauseWalkingForMap(){
@@ -3401,7 +3493,7 @@ function openTownMap(){
   pauseWalkingForMap();
   if (!isTouch&&controls.isLocked) controls.unlock();
   if (mapRouteRequested) mapRouteApplied=false;
-  mapState.filter="";townMapSearch.value="";
+  mapState.filter="streets";mapState.streetKey=null;mapState.selected=null;townMapSearch.value="";
   refreshTownMap();
   requestAnimationFrame(()=>{
     sizeTownMapCanvas();fitTownMap();applyTownMapRoute();
@@ -3423,14 +3515,15 @@ function closeTownMap(forceWalking=false, withoutPointerLock=false){
   } else if (mapPreviouslyFocused instanceof HTMLElement) mapPreviouslyFocused.focus({preventScroll:true});
   mapPreviouslyFocused=null;
 }
-function visitTownMapSelection(){
-  const item=mapState.selected;if (!item) return;
+function visitTownMapItem(item){
+  if(!item)return;
   const front=frontDirsFor(item.building)[0]||[0,1];
   const distance=item.isHome?12:18;
   camera.position.set(item.x+front[0]*distance,1.7,item.z+front[1]*distance);
   camera.rotation.order="YXZ";camera.rotation.y=Math.atan2(front[0],front[1]);camera.rotation.x=0;
   closeTownMap(true);showToast(`Visiting ${item.title}`);
 }
+function visitTownMapSelection(){ visitTownMapItem(mapState.selected); }
 
 function fallbackCopyText(value){
   const area=document.createElement("textarea");
@@ -3468,13 +3561,20 @@ document.getElementById("townMapReset").addEventListener("click",fitTownMap);
 document.getElementById("townMapVisit").addEventListener("click",visitTownMapSelection);
 townMapShare.addEventListener("click",shareTownMapSelection);
 townMapPanel.addEventListener("mousedown",e=>{if(e.target===townMapPanel)closeTownMap();});
-townMapSearch.addEventListener("input",()=>{mapState.filter="";renderTownMapResults();});
+townMapSearch.addEventListener("input",()=>{mapState.filter="streets";mapState.streetKey=null;renderTownMapResults();});
 document.getElementById("townMapQuick").addEventListener("click",e=>{
   const button=e.target.closest("[data-map-quick]");if(!button)return;
-  townMapSearch.value="";mapState.filter=button.dataset.mapQuick;renderTownMapResults();
-  const first=townMapFilteredItems()[0];if(first)selectTownMapItem(first);
+  townMapSearch.value="";mapState.filter=button.dataset.mapQuick;mapState.streetKey=null;mapState.selected=null;
+  renderTownMapResults();renderTownMapSelection();
+  const items=townMapFilteredItems();
+  if(mapState.filter==="streets")fitTownMap();
+  else if(mapState.filter==="school"||mapState.filter==="mine"){
+    if(items[0])selectTownMapItem(items[0]);
+  }else focusTownMapItems(items);
 });
 townMapResults.addEventListener("click",e=>{
+  const streetButton=e.target.closest("[data-map-street]");
+  if(streetButton){focusTownMapStreet(mapState.streetGroups.get(streetButton.dataset.mapStreet));return;}
   const button=e.target.closest("[data-map-key]");if(!button)return;
   selectTownMapItem(mapState.byKey.get(button.dataset.mapKey));
 });
@@ -3512,7 +3612,7 @@ function finishTownMapPointer(e){
       townMapRaycaster.setFromCamera(townMapPointerNdc,townMapCamera);
       const hit=townMapRaycaster.intersectObjects(mapState.pickMeshes,false)[0];
       const item=hit?.object?.isInstancedMesh?hit.object.userData.mapItems?.[hit.instanceId]:hit?.object?.userData?.mapItem;
-      if(item)selectTownMapItem(item,false);
+      if(item){if(item.isHome)visitTownMapItem(item);else selectTownMapItem(item,false);}
     }
     mapState.pointer=null;return;
   }
@@ -3521,7 +3621,7 @@ function finishTownMapPointer(e){
     const rect=townMapCanvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;
     let best=null,bestD=Infinity;
     for(const hit of mapState.hits){const d=Math.hypot(x-hit.x,y-hit.y);if(d<hit.r&&d<bestD){best=hit.item;bestD=d;}}
-    if(best)selectTownMapItem(best,false);
+    if(best){if(best.isHome)visitTownMapItem(best);else selectTownMapItem(best,false);}
   }
   mapState.pointer=null;
 }

@@ -669,6 +669,28 @@ Kept here (rather than just in chat) so it survives across sessions.
   annotated browser content/error/UI review. Day 15 state, population, 262
   building records, addresses, claimability, and ownership were unchanged.
 
+## 37. Street-first 3D map navigation
+
+- Preserved the existing responsive isometric 3D town, its instanced geometry,
+  built-road rules, camera controls, landmarks, and flat WebGL fallback.
+- Replaced the default 259-house sidebar with eight self-updating groups: the
+  seven named streets in current state plus one `Original town` group for the
+  134 founder-era homes that predate street metadata. No canonical addresses
+  were invented for those older homes.
+- Clicking a street now focuses that neighborhood in the 3D scene. Clicking a
+  rendered 3D house teleports directly into the walkable town; selecting a
+  search result still exposes its Visit and permanent Share actions.
+- Strengthened search for explicit `@owner` handles, partial handles, exact house
+  numbers, and streets. Exact owner/house matches rank first, and broad searches
+  show a bounded result set with a refinement hint instead of another huge list.
+- Grouped newest-home and claimed-home filters by street while leaving school,
+  landmark, and signed-in owned-home results as individual destinations.
+- Extended the world-derived Playwright coverage for street counts, street
+  search, `#29`, and the renamed house action. All five flows passed, and desktop
+  plus 390px mobile browser reviews confirmed the map remains 3D, legible, and
+  free of page/console errors. Blender, GLB, state, population, buildings,
+  addresses, claims, and ownership were unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [WEB] Kept the existing interactive 3D town map but replaced its default 259-house sidebar with eight self-updating street groups, made street rows focus the relevant 3D neighborhood and 3D house clicks teleport directly, strengthened exact/partial `@owner`, house-number, and street search, grouped newest/claimed views by street, and passed all five Playwright flows plus desktop/mobile visual browser QA without changing Blender, GLB, world state, population, claims, or ownership.
+
 2026-07-16 - Cade (via Windows Codex) - [WEB] Simplified the new in-town pause overlay to action choices only (resume, map, optional home management, and leave town), removing the unnecessary position-saved heading and explanation; behavior and camera preservation are unchanged.
 
 2026-07-16 - Cade (via Windows Codex) - [BOTH] Rebuilt all ten Kaleidoscope Crest lamps as uninterrupted curved shared-vertex posts with attached banner brackets, replaced the provisional center statue with a connected multi-angle-reviewed hero model whose striped hat/limbs/tail/details no longer float, matched its collider to the 2.18m pedestal, changed Escape into a true position-preserving pause with an explicit resume/leave choice, and exposed the safe confirmed per-house unclaim flow through clear manage-home buttons; GLB integrity, seven Blender proof views, final browser visual QA, and all five Playwright flows passed without changing Day 15 state, population, addresses, claims, or owners.
