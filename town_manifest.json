@@ -1,17 +1,17 @@
 {
   "base": {
-    "bytes": 470168,
+    "bytes": 481228,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "a7c4d7918b1be1aaad7132b5870118a56ad4c91bc9ef93a1c47aae4400711ae1"
+    "sha256": "3cd741062e9ffddea960f43e38598eec24cb9edb18b2df3c7dedb680ec6b6006"
   },
   "chunks": [
     {
       "asset": {
-        "bytes": 777396,
+        "bytes": 777568,
         "compression": "draco",
         "file": "town_chunks/creekside-bend.glb",
-        "sha256": "3c755905d316a94d5d895ef61b9dc1769d711dafab11311d6231e20c20c324dc"
+        "sha256": "7af974d8ce411c9fdde60a9a05c242b5f3a79f28a97c219d97f2cbda36858029"
       },
       "bounds": {
         "center": [
@@ -138,10 +138,10 @@
     },
     {
       "asset": {
-        "bytes": 717820,
+        "bytes": 717992,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "53f0452d192a0a416bc2387d01332674ac4e1fe47eb8ee861e2f8ddad19486ac"
+        "sha256": "7b7e76de97ea504606491f1b8d5e129acb1ae33406612c6606d528b3f5bc55f5"
       },
       "bounds": {
         "center": [
@@ -243,10 +243,10 @@
     },
     {
       "asset": {
-        "bytes": 235888,
+        "bytes": 236060,
         "compression": "draco",
         "file": "town_chunks/kaleidoscope-crest.glb",
-        "sha256": "42cbf59afca2461a271d29f6040c6db6015fe5a242ee22fee9d61bb76226facd"
+        "sha256": "31064b7f50e945cd805e073590e4b39fd8cf2c4be70c963a2246a4a47b10fcb0"
       },
       "bounds": {
         "center": [
@@ -285,10 +285,10 @@
     },
     {
       "asset": {
-        "bytes": 1317544,
+        "bytes": 1317716,
         "compression": "draco",
         "file": "town_chunks/original-town.glb",
-        "sha256": "a64962317b3dd101694a46dcb2fb3ceed9d2a745fd2f41fdb564e959e0aa6482"
+        "sha256": "c68b18285b946c3e700f570878958a0ca346d0ebf2d3c2d0cc74ef713c9ba6a8"
       },
       "bounds": {
         "center": [
@@ -495,17 +495,63 @@
     },
     {
       "asset": {
-        "bytes": 879560,
+        "bytes": 173848,
         "compression": "draco",
-        "file": "town_chunks/willow-hills.glb",
-        "sha256": "5cb9943bed35558d834a071981833d0b9fcb5b4046ff9173e617f6403c9d0003"
+        "file": "town_chunks/twin-oaks.glb",
+        "sha256": "1589c1e75b7427929aacf0a8e9d846d3537a703d6995175f5f25c4df7267e45f"
       },
       "bounds": {
         "center": [
-          -160.789,
-          -147.133
+          -114.731,
+          -7.254
         ],
-        "radius": 121.957
+        "radius": 52.378
+      },
+      "building_ids": [
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275
+      ],
+      "house_ids": [
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275
+      ],
+      "id": "twin-oaks",
+      "initial": false,
+      "label": "Twin Oaks"
+    },
+    {
+      "asset": {
+        "bytes": 895032,
+        "compression": "draco",
+        "file": "town_chunks/willow-hills.glb",
+        "sha256": "443f075c5c75e879f79d0319e742cf38bd31b53dce318f57b742ef6e6b5409a5"
+      },
+      "bounds": {
+        "center": [
+          -161.867,
+          -147.593
+        ],
+        "radius": 123.065
       },
       "building_ids": [
         192,
@@ -568,7 +614,8 @@
         259,
         260,
         261,
-        262
+        262,
+        263
       ],
       "house_ids": [
         192,
@@ -631,7 +678,8 @@
         259,
         260,
         261,
-        262
+        262,
+        263
       ],
       "id": "willow-hills",
       "initial": false,
@@ -639,15 +687,15 @@
     }
   ],
   "fallback": {
-    "bytes": 7916952,
+    "bytes": 7948588,
     "file": "town.glb",
-    "sha256": "d9fce9c9a457868c595fc630270add697b2bbca8e9ceb63b683a6c358ee12b03"
+    "sha256": "ec9187a8580df5f67e075c71e4f356bb8f8d684a4493f8feff8e48ed96e687a7"
   },
   "state": {
-    "building_count": 262,
-    "day": 15,
-    "population": 259,
-    "seed_counter": 263
+    "building_count": 275,
+    "day": 16,
+    "population": 272,
+    "seed_counter": 276
   },
   "streaming": {
     "detail_load_distance": 70,
