@@ -4535,6 +4535,14 @@ function updateMultiplayer(dt){
     let delta = player.targetYaw - player.group.rotation.y;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     player.group.rotation.y += delta * Math.min(1, dt * 9);
+    // First-person near clipping: multiple visitors share the same spawn and
+    // an avatar at camera distance zero otherwise fills the entire viewport.
+    // Hysteresis prevents flicker as two people pass close to each other.
+    const distance=Math.hypot(
+      player.group.position.x-camera.position.x,
+      player.group.position.z-camera.position.z);
+    if(player.group.visible&&distance<1.15)player.group.visible=false;
+    else if(!player.group.visible&&distance>1.65)player.group.visible=true;
   }
   const now = performance.now();
   const interval = gameRunning ? 120 : 1500;

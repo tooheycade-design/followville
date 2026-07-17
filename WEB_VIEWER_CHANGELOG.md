@@ -725,6 +725,10 @@ Kept here (rather than just in chat) so it survives across sessions.
   town, with only the intentional distant silhouettes differing. Day 15,
   population 259, 262 buildings, claims, owners, addresses, and visible Blender
   world content were unchanged.
+- Added a hysteretic first-person near-clipping guard for multiplayer markers.
+  Visitors still see every forward-facing smiley normally, but two players at
+  the shared spawn (or standing nearly inside each other) no longer have an
+  avatar fill the camera; it returns after they separate by 1.65m.
 
 ## Files touched
 - `index.html` — the web viewer itself
