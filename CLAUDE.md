@@ -31,17 +31,16 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
-- 2026-07-17 maintenance staging (production database/main push pending): the
+- 2026-07-17 maintenance pass (Cade via Windows Codex): the
   guarded growth/refresh workflow now treats Git as the only executable source
   and iCloud `neighborhood.blend` as the shared scene, rejects retired
   iCloud-only/`--no-git` paths, and locks direct GUI growth when the embedded
   generator hash differs. The expansion docs now reflect Day 15/address 115.
-  A one-row guarded repair transaction is prepared for unclaimed seed 73, whose live
-  Supabase metadata still reflects an abandoned Day 9 road experiment even
-  though every Git `main` state identifies it as a house. Do not describe that
-  database repair as live until its transaction and claim-preservation audit
-  complete. No town state, geometry, population, or generated asset belongs in
-  this maintenance diff.
+  Live seed 73 metadata now matches the canonical Day 9 house at `(-3,-3)` and
+  is publicly claimable; the guarded repair changed only that `houses` row.
+  The complete before/after claim snapshot was identical: 30 claims across 29
+  accounts, with no owner or customization change. World state, town geometry,
+  population 259, all 262 buildings, and generated web assets did not change.
 - 2026-07-16 scalable town delivery (Cade via Windows Codex): the canonical
   Blender world now exports a hashed `town_manifest.json`, a compressed shared
   `town_chunks/base.glb`, and five district GLBs in addition to the complete

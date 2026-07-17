@@ -47,11 +47,12 @@ were emailed as distinct attachments to Cade and Zach. All 15 Day 15 Supabase
 rows were validated. Guarded production growth no longer runs the legacy
 iCloud `wip` auto-share hook.
 
-Maintenance audit note: canonical seed 73 is a Day 9 house at grid `(-3,-3)`.
-A discarded road experiment left its Supabase row typed `lanestreet` at
-`(5,-9)` and nonclaimable; it has no claim. The guarded one-row repair is staged
-in `supabase_repairs/20260717_repair_seed_73.sql` but must not be described as
-live until the production transaction and unchanged-claims verification pass.
+Maintenance result: canonical seed 73 is a Day 9 house at grid `(-3,-3)`. Its
+live Supabase row was corrected from the discarded `lanestreet` metadata and is
+now publicly claimable. Only row 73 changed; all 30 claims across 29 accounts,
+including owner and customization data, matched exactly before and after. The
+guarded SQL and ownership-safe rollback remain documented in
+`supabase_repairs/20260717_repair_seed_73.sql`.
 
 Kaleidoscope Crest's merged house assets need material-based collision bounds:
 `town.html` intentionally uses only `NB_story_wall*` vertices at player height,

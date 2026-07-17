@@ -730,7 +730,7 @@ Kept here (rather than just in chat) so it survives across sessions.
   the shared spawn (or standing nearly inside each other) no longer have an
   avatar fill the camera; it returns after they separate by 1.65m.
 
-## 39. Guarded shared generator and claim-metadata maintenance (staged)
+## 39. Guarded shared generator and claim-metadata maintenance
 
 - Made the Git clone the only executable source for generator, exporter, state,
   and streamed/full web assets while retaining the shared iCloud
@@ -749,18 +749,18 @@ Kept here (rather than just in chat) so it survives across sessions.
   launchers were made independent of any generator beside the Blend.
 - Updated expansion and handoff documentation to Day 15, population 259, 262
   buildings, and consumed planned addresses through 115; address 116 is next.
-- Prepared, but did not apply, a guarded Supabase transaction for unclaimed
-  seed 73. Git history and canonical state identify it as the Day 9 house at
-  `(-3,-3)`; the live metadata still reflects a discarded `lanestreet` attempt.
-  The transaction is restricted to that row and contains a guarded rollback.
+- Applied the guarded Supabase repair for unclaimed seed 73. Git history and
+  canonical state identify it as the Day 9 house at `(-3,-3)`; its live row now
+  matches and is publicly claimable. Only house row 73 changed. All 30 claim
+  rows across 29 accounts, including owners and customizations, had identical
+  before/after hashes. The retained repair SQL contains a claim-safe rollback.
 - Temporary-Blend and authoritative-scene QA proved the refresh changed
   generator provenance but not object/collection/mesh/curve/material counts or
   the geometry digest. The refreshed repo/iCloud Blend hashes match. Windows
   and Mac-style preflights passed in isolated clean `main` clones with
   no shared generator present; a deliberately mismatched Blend was rejected.
-  Production database execution and any `main` push remain pending Cade's
-  approval. No
-  state, GLB, town geometry, population, claim, or owner changed in this stage.
+  No state, GLB, town geometry, population, claim, or owner changed in this
+  maintenance pass.
 
 ## Files touched
 - `index.html` — the web viewer itself

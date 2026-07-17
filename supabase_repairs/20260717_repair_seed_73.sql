@@ -2,6 +2,8 @@
 -- Approved scope: public.houses id 73 only. No claim/profile writes.
 -- Run only after comparing the live row and public claim snapshot.
 -- This is a reviewed one-off data repair, not a schema migration.
+-- Applied 2026-07-17 through the equivalent exact-filter single-row PostgREST
+-- update after snapshot verification; retained as the audited SQL/rollback.
 
 begin;
 

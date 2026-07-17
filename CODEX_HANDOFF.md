@@ -30,6 +30,11 @@ workflow.
   No population, building, geometry, state, or generated asset changes belong
   to this maintenance.
 
+- The seed 73 Supabase metadata repair is live. The row now matches canonical
+  state (`house`, `-3,-3`, Day 9, claimable) and is visible through the public
+  API. Only house row 73 changed; the exact before/after snapshot retained all
+  30 claims across 29 accounts with identical owners and customizations.
+
 - The website now streams deterministic Blender districts while keeping the
   complete town as a safety fallback. `town_manifest.json` hashes a compressed
   shared base and five `town_chunks/*.glb` district assets; the browser loads
