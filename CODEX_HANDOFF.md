@@ -79,7 +79,7 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   legacy in-town start screen and starts in the rendered neighborhood. Desktop
   canvas clicks capture mouse-look, and mobile retains its touch controls.
   Desktop Escape while walking opens a real pause overlay without changing the
-  camera position. `resume where I was` restores that exact location, while
+  camera position. `resume` restores that exact location, while
   `leave town` explicitly returns to `index.html`. Escape inside map/chat still
   closes that overlay rather than leaving town. Signed-in homeowners have
   visible `manage my home(s) / unclaim` entry points on the town/start screen

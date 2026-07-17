@@ -656,9 +656,10 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Preserved smooth shading when the full feature street is merged for GLB
   performance. The web pedestal collider now matches the modeled 2.18m base.
 - Changed desktop Escape from an implicit homepage teleport to a true pause.
-  The camera never moves; `resume where I was` continues at the same location,
+  The camera never moves; `resume` continues at the same location,
   while `leave town` is an explicit action. Map and chat keep their local
-  Escape behavior.
+  Escape behavior. The final pause card contains only those actions (plus map
+  and signed-in home management); it intentionally has no state explanation.
 - Made home relinquishment discoverable without weakening its safeguards.
   Signed-in owners now see `manage my home(s) / unclaim` on the town/start
   screen and a manage-home action in pause; admins select which of their two

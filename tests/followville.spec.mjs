@@ -92,9 +92,8 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("#townMapPanel")).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(page.locator("#pauseMenu")).toBeVisible();
-  await expect(page.locator("#pauseTitle")).toContainText("still right where you were");
   await expect(page.locator("#manageHomesBtn")).toContainText("manage my home");
-  await page.getByRole("button", { name: "resume where I was" }).click();
+  await page.getByRole("button", { name: "resume", exact: true }).click();
   await expect(page.locator("#pauseMenu")).toBeHidden();
   await expect(page).toHaveURL(/\/town\.html$/);
   await page.keyboard.press("Escape");

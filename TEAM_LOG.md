@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [WEB] Simplified the new in-town pause overlay to action choices only (resume, map, optional home management, and leave town), removing the unnecessary position-saved heading and explanation; behavior and camera preservation are unchanged.
+
 2026-07-16 - Cade (via Windows Codex) - [BOTH] Rebuilt all ten Kaleidoscope Crest lamps as uninterrupted curved shared-vertex posts with attached banner brackets, replaced the provisional center statue with a connected multi-angle-reviewed hero model whose striped hat/limbs/tail/details no longer float, matched its collider to the 2.18m pedestal, changed Escape into a true position-preserving pause with an explicit resume/leave choice, and exposed the safe confirmed per-house unclaim flow through clear manage-home buttons; GLB integrity, seven Blender proof views, final browser visual QA, and all five Playwright flows passed without changing Day 15 state, population, addresses, claims, or owners.
 
 2026-07-16 - Cade (via Windows Codex) - [BOTH] Tightened all ten Kaleidoscope Crest house hitboxes to the actual wall geometry so their merged lawns/paths/fences/flowers/mailboxes remain walkable, rebuilt the steep uphill lane markings as meshes that physically follow the road slope, connected every crooked center lamp with a solid joint and base, replaced the center tree with a detailed blocky Cat in the Hat statue on its own compact pedestal collider, and passed Blender close-view QA, GLB validation, browser runtime audits, and all five Playwright flows without changing Day 15 population, buildings, addresses, claims, or ownership.

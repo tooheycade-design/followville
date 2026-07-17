@@ -68,7 +68,7 @@ route hash and enters the rendered neighborhood without exposing the older
 in-town start screen. Desktop users can click the town canvas to capture
 mouse-look; mobile begins with the existing touch controls. Once walking on
 desktop, Escape opens a real pause menu while preserving the camera position.
-`resume where I was` continues from that same spot; only the explicit
+`resume` continues from that same spot; only the explicit
 `leave town` action returns to the homepage. Escape still closes map/chat
 overlays in place. Claimed homeowners can reach the safe confirmed per-house
 unclaim action through `manage my home(s) / unclaim` on the town/start screen

@@ -144,16 +144,10 @@
   }
   #pauseMenu.open { display:flex; }
   #pauseCard {
-    width:min(420px,calc(100vw - 36px)); padding:27px; border-radius:24px;
+    width:min(420px,calc(100vw - 36px)); padding:18px; border-radius:24px;
     background:#f8f2e7; border:1px solid rgba(255,255,255,.7);
     box-shadow:0 28px 78px rgba(0,0,0,.42); text-align:left;
   }
-  #pauseCard .eyebrow {
-    margin:0 0 6px; color:#9b543c; font-size:10px; font-weight:850;
-    letter-spacing:.12em; text-transform:uppercase;
-  }
-  #pauseCard h2 { margin:0; font:700 26px/1.1 Georgia,"Times New Roman",serif; }
-  #pauseCard p { margin:9px 0 20px; color:#536071; font-size:13px; line-height:1.5; }
   #pauseCard button { width:100%; border:0; border-radius:12px; padding:12px 13px;
     font:750 13px inherit; cursor:pointer; }
   #pauseResumeBtn { background:#1c2b45; color:#fff; font-size:14px !important; }
@@ -496,12 +490,9 @@
   </div>
 </div>
 
-<section id="pauseMenu" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" aria-hidden="true">
+<section id="pauseMenu" role="dialog" aria-modal="true" aria-label="Town paused" aria-hidden="true">
   <div id="pauseCard">
-    <p class="eyebrow">Town paused</p>
-    <h2 id="pauseTitle">You are still right where you were.</h2>
-    <p>Your place in town is saved. Resume to keep walking from this exact spot.</p>
-    <button id="pauseResumeBtn" type="button">resume where I was</button>
+    <button id="pauseResumeBtn" type="button">resume</button>
     <div class="pause-secondary-actions">
       <button class="pause-secondary" id="pauseMapBtn" type="button">open town map</button>
       <button class="pause-secondary" id="pauseHomesBtn" type="button" style="display:none;">manage my home</button>

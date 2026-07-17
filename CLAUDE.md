@@ -81,7 +81,7 @@ you go looking for it here.**
   The homepage Walk action must target `town.html#walk`; that route bypasses the
   legacy in-town intro and enters the rendered neighborhood immediately. On
   desktop, Escape opens an in-town pause menu without changing camera position.
-  `resume where I was` continues from that exact spot; `leave town` is the
+  `resume` continues from that exact spot; `leave town` is the
   explicit route to `index.html`. Map and chat Escape behavior remains local to
   those overlays. Signed-in owners can reach the existing confirmed
   per-house unclaim flow from clear `manage my home(s) / unclaim` entry points
