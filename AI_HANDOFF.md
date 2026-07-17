@@ -12,18 +12,27 @@ generator; any generator copy beside the Blend is ignored. Direct GUI growth,
 iCloud-only state, `--no-git`, and numbered conflict-copy scripts are not safe
 production paths.
 
-## Current town (Day 15, 2026-07-16)
+## Current town (Day 16, 2026-07-17)
+
+Population is 272 with 275 buildings. Day 16 added 13 ordinary claimable
+homes: seed 263 completed Willow Hills at Overlook Circle plan ID 116, and
+seeds 264-275 began Twin Oaks at Twin Oaks Drive plan IDs 117-128. Export now
+contains six district chunks, including the new `twin-oaks.glb`, plus the full
+GLB fallback. All 13 Supabase rows are present and claimable; the existing 30
+claims across 29 accounts were not changed. The reviewed delivery is two
+separate portrait MP4s: completed town overhead with no rise animation, then a
+whole-town overhead replay showing all 13 new houses appearing.
 
 The web build now uses production district streaming without changing the
 town. `export_web.py` always produces the complete `town.glb` fallback plus a
-hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and five
+hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and six
 district chunks. Public startup loads the base and two initial districts
 (2,800,996 bytes versus 7,916,952 bytes for the monolith), shows low-detail
 silhouettes elsewhere, then loads full homes within 70m or before any map/home
 teleport. If streaming fails, the full GLB loads automatically. Never deploy or
 commit only one of these outputs: `world_state.json`, `town.glb`,
 `town_manifest.json`, and `town_chunks/` must advance together. Both growth
-scripts do this now, and `check_town_glb.py` validates exact 262-building
+scripts do this now, and `check_town_glb.py` validates exact 275-building
 coverage plus every asset hash. Run `pnpm test:e2e` (eight flows) after loader,
 map, teleport, or mobile-control work.
 

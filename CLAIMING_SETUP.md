@@ -28,6 +28,11 @@ added the locking limit trigger and targeted RPC overloads, and preserved all
 handles as of the latest 2026-07-17 maintenance audit. `supabase_schema.sql` remains
 the re-runnable canonical schema.
 
+**Day 16 sync (2026-07-17):** the guarded growth pipeline inserted house rows
+263-275 after canonical growth to population 272. All 13 are ordinary Day 16
+claimable houses. The `claims` table remains at 30 rows across 29 accounts;
+growth did not modify any owner or customization.
+
 **Seed 73 maintenance (applied 2026-07-17):** Git history and canonical state
 identify seed 73 as a Day 9 `house` at grid `(-3,-3)`. A discarded concurrent
 Day 9 road experiment had left only its Supabase row at `(5,-9)`, typed

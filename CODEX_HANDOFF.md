@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 15
+# Codex handoff -- current through Day 16
 
 Updated 2026-07-17 for Cade's next Claude/Codex session.
 
@@ -17,6 +17,18 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 16 is population 272 with 275 total buildings. The +13 ordinary-home
+  batch used planned addresses 116-128: seed 263 completed Overlook Circle and
+  Willow Hills at address 116; seeds 264-275 opened Twin Oaks Drive at
+  addresses 117-128. All 13 Supabase house rows are present and claimable;
+  all 30 existing claims across 29 accounts remain unchanged. Export now has
+  six district chunks, including `twin-oaks.glb`, plus the complete fallback.
+  The reviewed delivery is two separate portrait MP4s: a completed-town
+  overhead with no rise animation and a whole-town overhead replay where all
+  13 new homes appear. Full/streamed validation passed, the live site reports
+  Day 16 / 272 / 275, and all eight Playwright stories passed (the two longest
+  local stories used a successful 180-second rerun).
 
 - A Day 15 maintenance pass hardens the shared Blender workflow before any new
   growth: production launchers require clean/current Git, match the repo and

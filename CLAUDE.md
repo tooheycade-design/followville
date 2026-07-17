@@ -31,6 +31,18 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 16, population 272, 275 buildings (grown 2026-07-17 via Cade's
+  Windows Codex: +13 ordinary claimable homes). Seed 263 completed Willow
+  Hills at Overlook Circle planned address 116; seeds 264-275 opened Twin
+  Oaks at Twin Oaks Drive addresses 117-128. The growth created and published
+  a sixth streamed district chunk (`twin-oaks.glb`) while preserving the full
+  `town.glb` fallback. Supabase received all 13 insert-only house rows; the 30
+  existing claims across 29 accounts remained untouched. The approved Day 16
+  delivery is two standalone portrait MP4s: a completed 12-second overhead
+  with no rise animation and a whole-town overhead replay in which all 13 new
+  homes appear. Both were frame-sampled before delivery. Full/streamed GLB
+  validation passed; all eight Playwright stories passed, with the two longest
+  local stories rerun successfully using a 180-second allowance.
 - 2026-07-17 maintenance pass (Cade via Windows Codex): the
   guarded growth/refresh workflow now treats Git as the only executable source
   and iCloud `neighborhood.blend` as the shared scene, rejects retired

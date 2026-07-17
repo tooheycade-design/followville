@@ -762,6 +762,26 @@ Kept here (rather than just in chat) so it survives across sessions.
   No state, GLB, town geometry, population, claim, or owner changed in this
   maintenance pass.
 
+## 40. Day 16 growth and Twin Oaks streaming expansion
+
+- Grew canonical state once from Day 15/population 259 to Day 16/population
+  272, adding 13 ordinary planned homes at addresses 116-128. Address 116
+  completes Willow Hills on Overlook Circle; addresses 117-128 begin Twin Oaks
+  Drive.
+- Regenerated the complete `town.glb`, hashed manifest, shared base, and
+  district chunks together. The manifest now covers all 275 building IDs
+  exactly once across six chunks and adds `town_chunks/twin-oaks.glb`; the full
+  GLB remains the automatic fallback.
+- Inserted house rows 263-275 through the guarded insert-only Supabase sync.
+  All are Day 16 ordinary claimable houses; the 30 existing claims across 29
+  accounts were unchanged.
+- Confirmed the production site serves Day 16/population 272/275 buildings,
+  passed full/streamed asset validation, and completed all eight Playwright
+  stories. Six passed in the normal local run; the two 90-second local timeout
+  cases passed on isolated 180-second reruns.
+- Rendered and frame-reviewed two standalone portrait deliveries: a completed
+  town overhead with no rise animation and an all-13 whole-town rise replay.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
