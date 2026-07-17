@@ -66,6 +66,9 @@ test("shared house route can copy and visit a permanent address", async ({ page 
   await page.getByRole("button", { name: "visit this location" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden();
   await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseMenu")).toBeVisible();
+  await expect(page).toHaveURL(/\/house\/29$/);
+  await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
 });
@@ -88,6 +91,15 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await page.keyboard.press("Escape");
   await expect(page.locator("#townMapPanel")).toBeHidden();
   await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseMenu")).toBeVisible();
+  await expect(page.locator("#pauseTitle")).toContainText("still right where you were");
+  await expect(page.locator("#manageHomesBtn")).toContainText("manage my home");
+  await page.getByRole("button", { name: "resume where I was" }).click();
+  await expect(page.locator("#pauseMenu")).toBeHidden();
+  await expect(page).toHaveURL(/\/town\.html$/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseMenu")).toBeVisible();
+  await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
 });

@@ -553,7 +553,7 @@ def _merge_asset_meshes(col, name):
     objects = [obj for obj in list(col.objects) if obj.type == "MESH"]
     if len(objects) < 2:
         return
-    vertices, faces, face_mats, materials = [], [], [], []
+    vertices, faces, face_mats, face_smooth, materials = [], [], [], [], []
     mat_index = {}
     for obj in objects:
         # Asset collections are intentionally unlinked from the scene until
@@ -571,6 +571,7 @@ def _merge_asset_meshes(col, name):
                 mat_index[source_mat] = len(materials)
                 materials.append(source_mat)
             face_mats.append(mat_index[source_mat])
+            face_smooth.append(poly.use_smooth)
     mesh = bpy.data.meshes.new(name + "_mesh")
     mesh.from_pydata(vertices, [], faces)
     mesh.update()
@@ -579,8 +580,9 @@ def _merge_asset_meshes(col, name):
     for material in materials:
         if material:
             mesh.materials.append(material)
-    for poly, index in zip(mesh.polygons, face_mats):
+    for poly, index, use_smooth in zip(mesh.polygons, face_mats, face_smooth):
         poly.material_index = index
+        poly.use_smooth = use_smooth
     for obj in objects:
         bpy.data.objects.remove(obj, do_unlink=True)
 
@@ -2396,7 +2398,125 @@ def _add_storybook_plateau(col, material):
     return obj
 
 
-def _build_cat_in_hat_statue(col, ground_z):
+def _smooth_object(obj):
+    """Mark a modeled prop smooth without affecting its flat end caps."""
+    for polygon in obj.data.polygons:
+        polygon.use_smooth = True
+    return obj
+
+
+def _add_connected_tube(col, name, points, radii, materials, sides=12):
+    """Build one capped, shared-ring tube through an arbitrary 3D path.
+
+    Unlike several rotated cubes or cylinders, adjacent bends share the exact
+    same ring of vertices. That prevents daylight gaps and floating-looking
+    joints in the web export, even when viewed up close from an oblique angle.
+    """
+    path = [Vector(point) for point in points]
+    if len(path) < 2:
+        raise ValueError("A connected tube needs at least two path points")
+    if isinstance(radii, (int, float)):
+        radius_pairs = [(float(radii), float(radii))] * len(path)
+    else:
+        radius_pairs = []
+        for radius in radii:
+            radius_pairs.append((float(radius), float(radius))
+                                if isinstance(radius, (int, float))
+                                else (float(radius[0]), float(radius[1])))
+        if len(radius_pairs) != len(path):
+            raise ValueError("Tube radii must match the number of path points")
+    tube_materials = list(materials) if isinstance(materials, (tuple, list)) else [materials]
+    if not tube_materials:
+        raise ValueError("A connected tube needs at least one material")
+
+    tangents = []
+    for index in range(len(path)):
+        if index == 0:
+            tangent = path[1] - path[0]
+        elif index == len(path) - 1:
+            tangent = path[-1] - path[-2]
+        else:
+            tangent = path[index + 1] - path[index - 1]
+        tangents.append(tangent.normalized())
+
+    # Parallel-transport one radial axis down the path. Computing an unrelated
+    # look quaternion at every ring can flip 180 degrees on a gentle bend,
+    # cross-stitching the next set of faces into an hourglass. Transport keeps
+    # vertex correspondence stable and produces a genuinely continuous tube.
+    reference = Vector((1, 0, 0))
+    if abs(reference.dot(tangents[0])) > .92:
+        reference = Vector((0, 1, 0))
+    radial = reference - tangents[0] * reference.dot(tangents[0])
+    radial.normalize()
+
+    vertices = []
+    for index, (point, radius) in enumerate(zip(path, radius_pairs)):
+        tangent = tangents[index]
+        if index:
+            transported = radial - tangent * radial.dot(tangent)
+            if transported.length_squared < 1e-8:
+                reference = Vector((0, 1, 0)) if abs(tangent.y) < .92 else Vector((1, 0, 0))
+                transported = reference - tangent * reference.dot(tangent)
+            radial = transported.normalized()
+        binormal = tangent.cross(radial).normalized()
+        for side in range(sides):
+            angle = math.tau * side / sides
+            offset = (radial * (math.cos(angle) * radius[0]) +
+                      binormal * (math.sin(angle) * radius[1]))
+            vertices.append(tuple(point + offset))
+
+    faces, face_materials, face_smooth = [], [], []
+    for segment in range(len(path) - 1):
+        material_index = min(segment, len(tube_materials) - 1)
+        for side in range(sides):
+            next_side = (side + 1) % sides
+            faces.append((segment * sides + side,
+                          segment * sides + next_side,
+                          (segment + 1) * sides + next_side,
+                          (segment + 1) * sides + side))
+            face_materials.append(material_index)
+            face_smooth.append(True)
+    faces.append(tuple(reversed(range(sides))))
+    face_materials.append(0)
+    face_smooth.append(False)
+    end_start = (len(path) - 1) * sides
+    faces.append(tuple(end_start + side for side in range(sides)))
+    face_materials.append(min(len(path) - 2, len(tube_materials) - 1))
+    face_smooth.append(False)
+
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    for material in tube_materials:
+        mesh.materials.append(material)
+    for polygon, material_index, use_smooth in zip(
+            mesh.polygons, face_materials, face_smooth):
+        polygon.material_index = material_index
+        polygon.use_smooth = use_smooth
+    obj = bpy.data.objects.new(name, mesh)
+    col.objects.link(obj)
+    return obj
+
+
+def _add_extruded_profile(col, name, xz_points, y_back, y_front, material):
+    """Create a solid front-facing silhouette with attached side walls."""
+    count = len(xz_points)
+    vertices = [(x, y_back, z) for x, z in xz_points]
+    vertices += [(x, y_front, z) for x, z in xz_points]
+    faces = [tuple(reversed(range(count))), tuple(range(count, count * 2))]
+    for index in range(count):
+        next_index = (index + 1) % count
+        faces.append((index, next_index, count + next_index, count + index))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    col.objects.link(obj)
+    return obj
+
+
+def _build_cat_in_hat_statue_legacy(col, ground_z):
     """Blocky, low-poly Cat in the Hat public-art figure for the center island."""
     black = mat("NB_cat_hat_statue_black", (.035, .045, .055), .72)
     white = mat("NB_cat_hat_statue_white", (.96, .95, .88), .82)
@@ -2521,6 +2641,251 @@ def _build_cat_in_hat_statue(col, ground_z):
         shrub.scale = (1.28, .88, .78)
 
 
+def _build_cat_in_hat_statue(col, ground_z):
+    """Connected hero-quality Cat in the Hat sculpture for the center island.
+
+    Major silhouettes use shared-ring meshes and every smaller feature embeds
+    into its parent. The result stays physically assembled from every camera
+    angle instead of relying on loose primitives that only line up head-on.
+    """
+    black = mat("NB_cat_hat_statue_black", (.025, .032, .042), .64)
+    charcoal = mat("NB_cat_hat_statue_charcoal", (.08, .10, .13), .70)
+    white = mat("NB_cat_hat_statue_white", (.97, .955, .88), .76)
+    red = mat("NB_cat_hat_statue_red", (.84, .025, .055), .62)
+    dark_red = mat("NB_cat_hat_statue_dark_red", (.46, .015, .028), .72)
+    gold = mat("NB_cat_hat_statue_gold", (.96, .62, .10), .45)
+    iris = mat("NB_cat_hat_statue_iris", (.93, .73, .16), .40)
+    stone = mat("NB_cat_hat_statue_stone", (.16, .24, .34), .88)
+    stone_top = mat("NB_cat_hat_statue_stone_top", (.31, .43, .53), .80)
+
+    # Overlapping pedestal tiers form one grounded base. The inset gold band
+    # and plaque are intentionally embedded rather than hovering on the face.
+    add_ngon_cone(col, "cat_statue_base_foot", 2.18, 2.08, .24, 16,
+                  0, 0, ground_z, stone)
+    add_ngon_cone(col, "cat_statue_base_bevel", 2.08, 1.83, .22, 16,
+                  0, 0, ground_z + .20, stone_top)
+    add_box(col, "cat_statue_pedestal", 3.12, 3.12, .67,
+            0, 0, ground_z + .38, stone)
+    add_box(col, "cat_statue_gold_band", 3.20, 3.20, .105,
+            0, 0, ground_z + .84, gold)
+    add_ngon_cone(col, "cat_statue_cap", 1.82, 1.62, .27, 16,
+                  0, 0, ground_z + .98, stone_top)
+    add_box(col, "cat_statue_plaque", 1.42, .10, .46,
+            0, -1.575, ground_z + .48, gold)
+    add_box(col, "cat_statue_plaque_inset", 1.18, .055, .26,
+            0, -1.637, ground_z + .58, dark_red)
+
+    figure_z = ground_z + 1.17
+
+    # Curved legs rise into the torso, while the broad paws overlap both the
+    # legs and cap. Nothing can separate when exported or viewed from behind.
+    for side in (-1, 1):
+        x = .42 * side
+        _add_connected_tube(
+            col, "cat_statue_leg",
+            ((x, .03, figure_z), (x + .035 * side, 0, figure_z + .62),
+             (x * .82, -.02, figure_z + 1.25)),
+            (.31, .29, .34), black, 14)
+        paw = _smooth_object(add_uv_sphere(
+            col, "cat_statue_paw", .49, x, -.21, figure_z + .08,
+            white, 9, 14))
+        paw.scale = (1.20, 1.48, .58)
+        # Three shallow toe ridges are embedded into the front of each paw.
+        for toe in (-.18, 0, .18):
+            ridge = _smooth_object(add_uv_sphere(
+                col, "cat_statue_toe", .105, x + toe, -.67,
+                figure_z + .12, charcoal, 6, 9))
+            ridge.scale = (.60, .36, .34)
+
+    torso = _smooth_object(add_uv_sphere(
+        col, "cat_statue_torso", 1.14, 0, .02, figure_z + 2.00,
+        black, 12, 18))
+    torso.scale = (.79, .66, 1.30)
+    belly = _smooth_object(add_uv_sphere(
+        col, "cat_statue_belly", .89, 0, -.68, figure_z + 1.94,
+        white, 11, 16))
+    belly.scale = (.66, .27, 1.04)
+
+    # The left arm gestures upward; the right presents the surrounding town.
+    # Each limb is one tapered shared-ring tube with its shoulder buried in
+    # the body and its cuff buried into both forearm and palm.
+    left_arm = ((-.58, -.02, figure_z + 2.46),
+                (-1.05, -.10, figure_z + 2.83),
+                (-1.42, -.13, figure_z + 3.35),
+                (-1.47, -.15, figure_z + 3.83))
+    _add_connected_tube(col, "cat_statue_left_arm", left_arm,
+                        (.32, .29, .255, .22), black, 14)
+    _add_connected_tube(col, "cat_statue_left_cuff",
+                        ((-1.47, -.15, figure_z + 3.72),
+                         (-1.47, -.17, figure_z + 3.98)),
+                        (.32, .29), white, 14)
+    left_palm = _smooth_object(add_uv_sphere(
+        col, "cat_statue_left_palm", .39, -1.47, -.18,
+        figure_z + 4.10, white, 9, 14))
+    left_palm.scale = (.82, .64, 1.02)
+    for offset, lean in ((-.18, -.18), (0, 0), (.18, .18)):
+        finger_start = (-1.47 + offset, -.18, figure_z + 4.22)
+        finger_end = (-1.47 + offset + lean, -.18, figure_z + 4.62 - abs(offset) * .30)
+        _add_connected_tube(col, "cat_statue_left_finger",
+                            (finger_start, finger_end), (.115, .085), white, 9)
+        _smooth_object(add_uv_sphere(col, "cat_statue_left_fingertip", .09,
+                                     *finger_end, white, 6, 9))
+    _add_connected_tube(col, "cat_statue_left_thumb",
+                        ((-1.29, -.21, figure_z + 4.08),
+                         (-1.07, -.22, figure_z + 4.18)),
+                        (.12, .085), white, 9)
+
+    right_arm = ((.59, -.02, figure_z + 2.48),
+                 (1.04, -.14, figure_z + 2.27),
+                 (1.45, -.22, figure_z + 1.92),
+                 (1.72, -.26, figure_z + 1.99))
+    _add_connected_tube(col, "cat_statue_right_arm", right_arm,
+                        (.32, .29, .255, .22), black, 14)
+    _add_connected_tube(col, "cat_statue_right_cuff",
+                        ((1.62, -.25, figure_z + 1.97),
+                         (1.88, -.30, figure_z + 2.02)),
+                        (.32, .29), white, 14)
+    right_palm = _smooth_object(add_uv_sphere(
+        col, "cat_statue_right_palm", .40, 1.99, -.32,
+        figure_z + 2.04, white, 9, 14))
+    right_palm.scale = (1.03, .64, .79)
+    for zoff, spread in ((.18, .37), (0, .43), (-.18, .34)):
+        finger_start = (2.13, -.33, figure_z + 2.04 + zoff)
+        finger_end = (2.13 + spread, -.34, figure_z + 2.04 + zoff * 1.45)
+        _add_connected_tube(col, "cat_statue_right_finger",
+                            (finger_start, finger_end), (.11, .075), white, 9)
+        _smooth_object(add_uv_sphere(col, "cat_statue_right_fingertip", .082,
+                                     *finger_end, white, 6, 9))
+    _add_connected_tube(col, "cat_statue_right_thumb",
+                        ((1.91, -.38, figure_z + 1.83),
+                         (2.10, -.40, figure_z + 1.67)),
+                        (.115, .08), white, 9)
+
+    # One continuous curl, including its white final segment, replaces the
+    # old stack of beams and detached tip sphere.
+    tail_points = ((.66, .31, figure_z + 1.45),
+                   (1.30, .49, figure_z + 1.55),
+                   (1.82, .55, figure_z + 2.02),
+                   (1.96, .49, figure_z + 2.62),
+                   (1.70, .34, figure_z + 3.07),
+                   (1.43, .20, figure_z + 3.28))
+    _add_connected_tube(col, "cat_statue_tail", tail_points,
+                        (.27, .25, .23, .21, .20, .16),
+                        (black, black, black, black, white), 14)
+
+    # The head overlaps the torso and all face layers are inset into the head
+    # or muzzle. Ears have inner panels that sit inside the black ear profile.
+    head_z = figure_z + 3.88
+    head = _smooth_object(add_uv_sphere(
+        col, "cat_statue_head", 1.06, 0, 0, head_z,
+        black, 13, 20))
+    head.scale = (1.0, .84, 1.04)
+    for side in (-1, 1):
+        ear = add_ngon_cone(col, "cat_statue_ear", .39, .04, .68, 5,
+                            .68 * side, -.01, head_z + .46, black, math.pi/2)
+        ear.scale.y = .68
+        inner = add_ngon_cone(col, "cat_statue_inner_ear", .24, .025, .43, 5,
+                              .68 * side, -.20, head_z + .55, red, math.pi/2)
+        inner.scale.y = .42
+
+    # Connected white brow/mask bridge gives the eyes one coherent expression.
+    mask_profile = [(-.63, head_z + .47), (-.50, head_z + .73),
+                    (-.13, head_z + .64), (0, head_z + .50),
+                    (.13, head_z + .64), (.50, head_z + .73),
+                    (.63, head_z + .47), (.47, head_z + .10),
+                    (0, head_z + .20), (-.47, head_z + .10)]
+    _add_extruded_profile(col, "cat_statue_eye_mask", mask_profile,
+                          -.73, -.90, white)
+    for side in (-1, 1):
+        eye_white = _smooth_object(add_uv_sphere(
+            col, "cat_statue_eye_white", .31, .31 * side, -.88,
+            head_z + .40, white, 10, 14))
+        eye_white.scale = (.72, .24, 1.06)
+        eye_iris = _smooth_object(add_uv_sphere(
+            col, "cat_statue_iris", .145, .31 * side, -.947,
+            head_z + .38, iris, 8, 12))
+        eye_iris.scale = (.80, .22, 1.0)
+        pupil = _smooth_object(add_uv_sphere(
+            col, "cat_statue_pupil", .07, .31 * side, -.982,
+            head_z + .38, black, 7, 10))
+        pupil.scale = (.72, .20, 1.12)
+
+    muzzle_profile = [(-.79, head_z - .17), (-.62, head_z + .08),
+                      (-.25, head_z + .10), (0, head_z - .04),
+                      (.25, head_z + .10), (.62, head_z + .08),
+                      (.79, head_z - .17), (.56, head_z - .54),
+                      (0, head_z - .62), (-.56, head_z - .54)]
+    _add_extruded_profile(col, "cat_statue_muzzle_mask", muzzle_profile,
+                          -.73, -.93, white)
+    for side in (-1, 1):
+        muzzle = _smooth_object(add_uv_sphere(
+            col, "cat_statue_muzzle", .53, .31 * side, -.86,
+            head_z - .25, white, 10, 15))
+        muzzle.scale = (.82, .25, .55)
+    nose = _smooth_object(add_uv_sphere(
+        col, "cat_statue_nose", .18, 0, -1.01,
+        head_z - .12, red, 8, 12))
+    nose.scale = (1.14, .64, .82)
+    _add_connected_tube(col, "cat_statue_smile",
+                        ((-.44, -.995, head_z - .43),
+                         (0, -1.025, head_z - .57),
+                         (.44, -.995, head_z - .43)),
+                        (.045, .05, .045), dark_red, 8)
+    for side in (-1, 1):
+        for index, zoff in enumerate((-.17, -.33, -.48)):
+            start = (.40 * side, -.955, head_z + zoff)
+            end = ((1.32 + index * .10) * side, -.94,
+                   head_z + zoff + (.10 - index * .07))
+            _add_connected_tube(col, "cat_statue_whisker",
+                                (start, end), (.04, .025), white, 7)
+
+    # The bow is one solid extruded silhouette behind an overlapping knot.
+    bow_z = head_z - .92
+    bow_profile = [(-.04, bow_z), (-.32, bow_z + .28),
+                   (-.82, bow_z + .38), (-.75, bow_z),
+                   (-.82, bow_z - .38), (-.32, bow_z - .27),
+                   (-.04, bow_z), (.32, bow_z - .27),
+                   (.82, bow_z - .38), (.75, bow_z),
+                   (.82, bow_z + .38), (.32, bow_z + .28)]
+    _add_extruded_profile(col, "cat_statue_bow", bow_profile,
+                          -.61, -.91, red)
+    knot = _smooth_object(add_uv_sphere(
+        col, "cat_statue_bow_knot", .28, 0, -.96, bow_z,
+        dark_red, 8, 12))
+    knot.scale.y = .62
+
+    # A single shared-ring crooked hat body carries all six alternating bands.
+    # Band boundaries reuse identical vertices, eliminating the floating stack
+    # effect of the previous separately capped cones.
+    hat_base_z = head_z + .84
+    brim = add_ngon_cone(col, "cat_statue_hat_brim", 1.43, 1.34, .24, 20,
+                         0, 0, hat_base_z, red, math.pi/20)
+    brim.scale.y = .82
+    hat_points = ((0, 0, hat_base_z + .18),
+                  (.02, .01, hat_base_z + .68),
+                  (-.05, .015, hat_base_z + 1.19),
+                  (.07, .02, hat_base_z + 1.70),
+                  (.18, .015, hat_base_z + 2.20),
+                  (.32, .00, hat_base_z + 2.67),
+                  (.43, -.02, hat_base_z + 3.07))
+    hat_radii = ((.84, .69), (.77, .64), (.82, .66), (.75, .62),
+                 (.80, .64), (.70, .58), (.61, .51))
+    _add_connected_tube(col, "cat_statue_banded_hat", hat_points,
+                        hat_radii, (white, red, white, red, white, red), 20)
+    _add_connected_tube(col, "cat_statue_hat_rim_band",
+                        ((-.76, -.01, hat_base_z + .26),
+                         (.76, -.01, hat_base_z + .26)),
+                        ((.055, .055), (.055, .055)), dark_red, 8)
+
+    # Low topiary mounds frame the sculpture without obscuring its pedestal.
+    topiary = mat("NB_cat_hat_statue_topiary", (.18, .48, .29), 1.0)
+    for x in (-4.2, 4.2):
+        shrub = _smooth_object(add_uv_sphere(
+            col, "cat_statue_topiary", 1.05, x, 1.1,
+            ground_z + .68, topiary, 8, 12))
+        shrub.scale = (1.28, .88, .78)
+
+
 def _build_storybook_street_asset(col):
     """Permanent hill, colored road, bespoke lamps, garden, and access road."""
     m = std_mats()
@@ -2616,29 +2981,47 @@ def _build_storybook_street_asset(col):
                       flower_mats[i % len(flower_mats)], 5, 7)
     _build_cat_in_hat_statue(col, 2.94)
 
-    # Crooked teal lamps with alternating fabric banners. Their warm globes
-    # echo the house windows at sunset without using readable branding.
+    # Crooked teal lamps with alternating fabric banners. Each main post is a
+    # single shared-ring tube from its base through its hook, so bends cannot
+    # split into disconnected upper/lower pieces in Blender or the web GLB.
     for i in range(10):
         angle = math.tau * (i + .25) / 10
         x, y = 25.8 * math.cos(angle), 17.1 * math.sin(angle)
         base_z = 2.94
-        bend = .38 if i % 2 else -.38
-        p0, p1 = (x, y, base_z), (x+bend, y, base_z+2.55)
-        p2 = (x-bend*.25, y-.22, base_z+4.55)
-        add_beam_between(col, "storybook_lamp_low", p0, p1, .18, pole)
-        add_beam_between(col, "storybook_lamp_high", p1, p2, .16, pole)
-        # The two crooked beams meet at p1, but their rotated square end faces
-        # can expose a diagonal pinhole. A joint globe and ground collar make
-        # every post read as one continuous built object from all angles.
-        add_uv_sphere(col, "storybook_lamp_joint", .245,
-                      p1[0], p1[1], p1[2], pole, 5, 8)
+        inward = Vector((-math.cos(angle), -math.sin(angle), 0))
+        tangent = Vector((-math.sin(angle), math.cos(angle), 0))
+        bend = .42 if i % 2 else -.42
+        p0 = Vector((x, y, base_z + .05))
+        p1 = p0 + tangent * bend + Vector((0, 0, 2.35))
+        p2 = p0 - tangent * (bend * .32) + inward * .08 + Vector((0, 0, 4.18))
+        p3 = p2 + inward * .52 + Vector((0, 0, .20))
+        _add_connected_tube(col, "storybook_lamp_post", (p0, p1, p2, p3),
+                            (.22, .195, .17, .145), pole, 14)
         add_ngon_cone(col, "storybook_lamp_base", .29, .23, .22, 8,
                       p0[0], p0[1], base_z, pole)
-        add_uv_sphere(col, "storybook_lamp_globe", .34,
-                      p2[0], p2[1], p2[2]+.10, m["bulb"], 6, 9)
-        banner = add_box(col, "storybook_banner", .82, .08, 1.18,
-                         p1[0] + (.48 if bend > 0 else -.48), p1[1],
-                         p1[2] + .12, banner_a if i % 2 else banner_b)
+        add_ngon_cone(col, "storybook_lamp_base_ring", .37, .29, .10, 10,
+                      p0[0], p0[1], base_z, pole)
+        globe = _smooth_object(add_uv_sphere(
+            col, "storybook_lamp_globe", .36, p3[0], p3[1], p3[2] + .08,
+            m["bulb"], 9, 14))
+        globe.scale = (.90, .90, 1.08)
+
+        # Two metal brackets physically enter both the post and the banner.
+        # The banner hangs tangent to the loop and therefore never appears to
+        # float beside a post when viewed from the road or nearby houses.
+        banner_center = p1 + tangent * (.70 if bend > 0 else -.70)
+        banner_sign = 1 if bend > 0 else -1
+        banner_bottom = base_z + 2.62
+        banner_height = 1.26
+        for bracket_z in (banner_bottom + .10, banner_bottom + banner_height - .10):
+            post_at_z = Vector((p1.x, p1.y, bracket_z))
+            near_edge = Vector((banner_center.x, banner_center.y, bracket_z)) \
+                        - tangent * (.49 * banner_sign)
+            _add_connected_tube(col, "storybook_banner_bracket",
+                                (post_at_z, near_edge), (.065, .055), pole, 8)
+        banner = add_box(col, "storybook_banner", 1.02, .10, banner_height,
+                         banner_center.x, banner_center.y, banner_bottom,
+                         banner_a if i % 2 else banner_b)
         banner.rotation_euler.z = angle + math.pi/2
 
     _merge_asset_meshes(col, "kaleidoscope_crest_street")

@@ -30,9 +30,12 @@ Kaleidoscope Crest's merged house assets need material-based collision bounds:
 `town.html` intentionally uses only `NB_story_wall*` vertices at player height,
 never the full merged mesh, because that mesh also contains each lawn, path,
 flowers, fence, and mailbox. Its steep access-road dashes are custom surface
-meshes sampled from the sloped road centerline. The center lamps use joint
-globes/base collars, and the former island tree is now a blocky Cat in the Hat
-statue with a compact pedestal collider. Keep the browser audits
+meshes sampled from the sloped road centerline. Each center lamp is now one
+continuous curved shared-ring tube with an overlapping globe, base, and two
+attached banner brackets. The former island tree is now a polished Cat in the
+Hat statue with connected limbs, tail, fingers, face/bow layers, a single
+shared-ring six-band hat, an interlocking pedestal, and a 2.18m base collider.
+Keep the browser audits
 `data-storybook-hitboxes="pass"` and `data-kaleidoscope-statue="pass"`.
 
 ## Website landing experience (2026-07-15)
@@ -64,9 +67,12 @@ The Walk destination intentionally links to `town.html#walk`, which removes the
 route hash and enters the rendered neighborhood without exposing the older
 in-town start screen. Desktop users can click the town canvas to capture
 mouse-look; mobile begins with the existing touch controls. Once walking on
-desktop, Escape returns to the redesigned homepage instead of displaying the
-legacy in-town intro. Escape still closes map/chat overlays in place, resuming
-the rendered town without mouse capture until the canvas is clicked again.
+desktop, Escape opens a real pause menu while preserving the camera position.
+`resume where I was` continues from that same spot; only the explicit
+`leave town` action returns to the homepage. Escape still closes map/chat
+overlays in place. Claimed homeowners can reach the safe confirmed per-house
+unclaim action through `manage my home(s) / unclaim` on the town/start screen
+and through the pause menu.
 
 The low-poly backdrop mountains are website atmosphere, not Blender terrain.
 Their distance is calculated against every current building on each load; a

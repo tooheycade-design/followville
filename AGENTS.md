@@ -33,10 +33,14 @@ you go looking for it here.**
   at body height, so lawns, paths, flowers, fences, and mailboxes are walkable.
   The uphill access markings are purpose-built surface meshes sampled at both
   ends from the sloped road centerline rather than rotated floating boxes.
-  Every crooked center lamp has a solid middle joint and grounded base collar.
-  The former center tree is now a detailed, blocky Cat in the Hat public-art
-  statue on a compact collidable pedestal, with the surrounding flower field
-  and two low topiaries preserved. Blender close proofs, GLB validation, all
+  Every crooked center lamp is one continuous shared-ring curved tube from
+  base through hook; its globe and two banner brackets physically overlap the
+  post, replacing the former two-beam/joint patch. The former center tree is
+  now a polished Cat in the Hat public-art statue with continuous curved limbs,
+  tail, fingers, and six-band crooked hat, embedded facial/bow details, and an
+  interlocking tiered pedestal. Its web collider matches the 2.18m base. The
+  surrounding flower field and two low topiaries are preserved. Front,
+  three-quarter, side, rear, lamp, and district Blender proofs, GLB validation, all
   five Playwright flows, and in-browser runtime audits passed. Blender/GLB and
   web collision code changed; day, population, 262 building records, addresses,
   ownership, and all 15 Day 15 claimable rows did not change.
@@ -76,9 +80,12 @@ you go looking for it here.**
   unboxed stats, minimal blur, and no oversized pills or icon-card dashboard UI.
   The homepage Walk action must target `town.html#walk`; that route bypasses the
   legacy in-town intro and enters the rendered neighborhood immediately. On
-  desktop, Escape from walking returns to the redesigned `index.html`; map and
-  chat Escape behavior remains local to those overlays and resumes the town
-  without pointer-lock until the visitor clicks the canvas again.
+  desktop, Escape opens an in-town pause menu without changing camera position.
+  `resume where I was` continues from that exact spot; `leave town` is the
+  explicit route to `index.html`. Map and chat Escape behavior remains local to
+  those overlays. Signed-in owners can reach the existing confirmed
+  per-house unclaim flow from clear `manage my home(s) / unclaim` entry points
+  on the town/start screen and from the pause menu.
 - 2026-07-15 live 3D town map (Cade via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start

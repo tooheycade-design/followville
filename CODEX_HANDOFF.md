@@ -37,11 +37,13 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   building record or claim. `storybookhouse` collisions are now derived only
   from `NB_story_wall*` material vertices at player height, excluding the
   merged lawn/path/fence/flower/mailbox geometry. The access-ramp dashes are
-  shallow surface meshes sampled from both ends of the 3D road centerline, and
-  all ten crooked lamps have a solid joint globe plus base collar. A blocky
-  Cat in the Hat public-art statue replaces the center tree; it is part of the
-  conditional Kaleidoscope street asset and has its own compact pedestal
-  collider. Preserve the Playwright requirements for
+  shallow surface meshes sampled from both ends of the 3D road centerline.
+  All ten crooked lamps are single continuous shared-ring tubes with attached
+  globes and banner brackets. A polished Cat in the Hat public-art statue
+  replaces the center tree: continuous curved limbs/tail/fingers, embedded
+  face and bow layers, one six-band shared-ring hat, an interlocking pedestal,
+  and an accurate 2.18m base collider. It remains part of the conditional
+  Kaleidoscope street asset. Preserve the Playwright requirements for
   `data-storybook-hitboxes="pass"` and `data-kaleidoscope-statue="pass"`.
 - Website backdrop mountains now move outward independently when town growth
   approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
@@ -76,9 +78,12 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   The homepage Walk link is `town.html#walk`; this explicitly bypasses the
   legacy in-town start screen and starts in the rendered neighborhood. Desktop
   canvas clicks capture mouse-look, and mobile retains its touch controls.
-  Desktop Escape while walking returns to the redesigned `index.html`; Escape
-  inside map/chat continues to close that overlay rather than leaving town. It
-  resumes without pointer-lock so a canvas click is required for mouse-look.
+  Desktop Escape while walking opens a real pause overlay without changing the
+  camera position. `resume where I was` restores that exact location, while
+  `leave town` explicitly returns to `index.html`. Escape inside map/chat still
+  closes that overlay rather than leaving town. Signed-in homeowners have
+  visible `manage my home(s) / unclaim` entry points on the town/start screen
+  and pause menu; each selected home still uses the existing confirmation step.
   When opened through the homepage's `town.html#map` deep-link, closing it,
   pressing Escape, or clicking its backdrop returns to the redesigned homepage
   instead of exposing the older in-town start screen. Visiting a selected map

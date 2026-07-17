@@ -27,6 +27,7 @@
   body.preview-mode #multiplayerStatus,
   body.preview-mode #mapToggle,
   body.preview-mode #townMapPanel,
+  body.preview-mode #pauseMenu,
   body.preview-mode #chatToggle,
   body.preview-mode #chatPanel { display:none !important; }
 
@@ -132,6 +133,37 @@
     #startScreen .btn { padding:11px 24px; font-size:14px; }
     #hud { font-size:13px; }
     #homeLink { font-size:12px; padding:6px 12px; }
+  }
+
+  /* A real in-town pause keeps the camera exactly where the player stopped.
+     Leaving the town is an explicit choice instead of the side effect of ESC. */
+  #pauseMenu {
+    position:fixed; inset:0; z-index:24; display:none; align-items:center; justify-content:center;
+    padding:18px; background:rgba(7,16,28,.68); backdrop-filter:blur(9px);
+    color:#1c2b45; touch-action:auto;
+  }
+  #pauseMenu.open { display:flex; }
+  #pauseCard {
+    width:min(420px,calc(100vw - 36px)); padding:27px; border-radius:24px;
+    background:#f8f2e7; border:1px solid rgba(255,255,255,.7);
+    box-shadow:0 28px 78px rgba(0,0,0,.42); text-align:left;
+  }
+  #pauseCard .eyebrow {
+    margin:0 0 6px; color:#9b543c; font-size:10px; font-weight:850;
+    letter-spacing:.12em; text-transform:uppercase;
+  }
+  #pauseCard h2 { margin:0; font:700 26px/1.1 Georgia,"Times New Roman",serif; }
+  #pauseCard p { margin:9px 0 20px; color:#536071; font-size:13px; line-height:1.5; }
+  #pauseCard button { width:100%; border:0; border-radius:12px; padding:12px 13px;
+    font:750 13px inherit; cursor:pointer; }
+  #pauseResumeBtn { background:#1c2b45; color:#fff; font-size:14px !important; }
+  .pause-secondary-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; }
+  #pauseMenu:not(.has-homes) #pauseMapBtn { grid-column:1 / -1; }
+  #pauseCard .pause-secondary { background:#fff; color:#1c2b45; border:1px solid #cbd2d8; }
+  #pauseExitBtn { margin-top:12px; padding:8px !important; background:transparent; color:#8a4c43; }
+  @media (max-width:480px){
+    #pauseCard { padding:22px 18px; }
+    .pause-secondary-actions { grid-template-columns:1fr; }
   }
   @media (prefers-reduced-motion: reduce){
     #startScreenVideo { display:none; }
@@ -311,6 +343,7 @@
     font-family:inherit;
   }
   #authCard .primary:disabled { opacity:0.55; }
+  #authCard .primary.danger-confirm { background:#963838; }
   #authCard .linkish {
     background:none; border:none; color:#2b6a94; font-size:13px; margin-top:13px;
     cursor:pointer; display:block; width:100%; text-align:center; font-family:inherit;
@@ -458,9 +491,24 @@
     <div class="btn alt" id="claimHomeBtn" style="display:none;">claim a home</div>
     <div class="btn alt" id="goHomeBtn" style="display:none;">go to my home</div>
     <div class="btn alt" id="customizeHomeBtn" style="display:none;">customize my home</div>
+    <div class="btn alt" id="manageHomesBtn" style="display:none;">manage my home</div>
   </div>
   </div>
 </div>
+
+<section id="pauseMenu" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" aria-hidden="true">
+  <div id="pauseCard">
+    <p class="eyebrow">Town paused</p>
+    <h2 id="pauseTitle">You are still right where you were.</h2>
+    <p>Your place in town is saved. Resume to keep walking from this exact spot.</p>
+    <button id="pauseResumeBtn" type="button">resume where I was</button>
+    <div class="pause-secondary-actions">
+      <button class="pause-secondary" id="pauseMapBtn" type="button">open town map</button>
+      <button class="pause-secondary" id="pauseHomesBtn" type="button" style="display:none;">manage my home</button>
+    </div>
+    <button id="pauseExitBtn" type="button">leave town</button>
+  </div>
+</section>
 
 <div id="hud" style="display:none;">
   <div id="hudMain">Followville</div>
@@ -1540,10 +1588,16 @@ const townMapRouteIntro = document.getElementById("townMapRouteIntro");
 const townMapRouteKicker = document.getElementById("townMapRouteKicker");
 const townMapRouteTitle = document.getElementById("townMapRouteTitle");
 const townMapRouteCopy = document.getElementById("townMapRouteCopy");
+const pauseMenu = document.getElementById("pauseMenu");
+const pauseResumeBtn = document.getElementById("pauseResumeBtn");
+const pauseMapBtn = document.getElementById("pauseMapBtn");
+const pauseHomesBtn = document.getElementById("pauseHomesBtn");
+const pauseExitBtn = document.getElementById("pauseExitBtn");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
 let resumeWalkingAfterMap = false;
+let pauseOpenedAt = -Infinity;
 // The public Walk link uses an explicit route so it can enter the rendered town
 // without briefly reviving the older in-town start screen.
 const directWalkRoute = location.hash === "#walk";
@@ -1567,6 +1621,8 @@ document.addEventListener("visibilitychange", () => {
 
 function beginWalking(){
   gameRunning = true;
+  pauseMenu.classList.remove("open");
+  pauseMenu.setAttribute("aria-hidden", "true");
   startScreenVideo.pause();
   startScreen.style.display = "none";
   crosshair.style.display = isTouch ? "none" : "block";
@@ -1582,14 +1638,47 @@ function resumeDesktopWalking(){
   controls.lock();
 }
 function resumeWalkingWithoutPointerLock(){
-  if (!isTouch) hint.textContent = "click the town for mouse look · WASD to walk · ESC for home";
   beginWalking();
+  if (!isTouch) hint.textContent = "click the town for mouse look / WASD to walk / ESC to pause";
 }
 function returnToHomepage(){
   gameRunning = false;
+  pauseMenu.classList.remove("open");
   startScreenVideo.pause();
   location.replace("/index.html");
 }
+
+function pauseMenuOpen(){ return pauseMenu.classList.contains("open"); }
+function openPauseMenu(){
+  if (pauseMenuOpen() || townMapOpen() || chatOpen() || modalOpen()) return;
+  pauseOpenedAt = performance.now();
+  clearMovementInput();
+  gameRunning = false;
+  crosshair.style.display = "none";
+  hint.style.display = "none";
+  lookZone.style.display = "none";
+  joystickZone.style.display = "none";
+  runBtn.style.display = "none";
+  pauseMenu.classList.add("open");
+  pauseMenu.setAttribute("aria-hidden", "false");
+  if (!isTouch && controls.isLocked) controls.unlock();
+  requestAnimationFrame(() => pauseResumeBtn.focus({ preventScroll:true }));
+}
+function resumeFromPause(){
+  if (!pauseMenuOpen()) return;
+  if (isTouch) resumeWalkingWithoutPointerLock();
+  else resumeDesktopWalking();
+}
+pauseResumeBtn.addEventListener("click", resumeFromPause);
+pauseMapBtn.addEventListener("click", () => {
+  pauseMenu.classList.remove("open");
+  pauseMenu.setAttribute("aria-hidden", "true");
+  // Let the map remember that it came from an active walk. Closing it then
+  // restores this same camera position instead of returning to the homepage.
+  gameRunning = true;
+  openTownMap();
+});
+pauseExitBtn.addEventListener("click", returnToHomepage);
 
 function chatOpen(){ return chatPanel.classList.contains("open"); }
 function clearMovementInput(){
@@ -1638,7 +1727,10 @@ if (isTouch){
   });
   controls.addEventListener("lock", beginWalking);
   controls.addEventListener("unlock", () => {
-    if (!chatOpen() && !townMapOpen() && !modalOpen()) returnToHomepage();
+    if (chatOpen() || townMapOpen() || modalOpen() || pauseMenuOpen()) return;
+    // Browser ESC releases pointer lock. Pause in place; leaving town is now
+    // the explicit secondary action in the pause menu.
+    if (gameRunning) openPauseMenu();
   });
 }
 
@@ -1646,6 +1738,15 @@ if (isTouch){
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
 document.addEventListener("keydown", e => {
+  if (pauseMenuOpen()){
+    if (e.code === "Escape"){
+      e.preventDefault();
+      // Pointer-lock unlock and keydown can arrive together. Do not close a
+      // menu in the same instant that the browser opened it.
+      if (performance.now() - pauseOpenedAt > 280) resumeFromPause();
+    }
+    return;
+  }
   if (townMapOpen()){
     if (e.code === "Escape"){
       e.preventDefault(); closeTownMap(false, true);
@@ -1660,7 +1761,7 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (!modalOpen() && e.code === "Escape" && gameRunning){
-    e.preventDefault(); returnToHomepage(); return;
+    e.preventDefault(); openPauseMenu(); return;
   }
   if (!modalOpen() && e.code === "KeyM"){
     e.preventDefault(); openTownMap(); return;
@@ -2014,7 +2115,7 @@ function buildGLBColliders(root){
   });
   if (hasCatStatue)
     colliders.push(circleCollider(STORYBOOK_CENTER_WEB[0], STORYBOOK_CENTER_WEB[1],
-                                  1.95, "kaleidoscope-cat-statue"));
+                                  2.18, "kaleidoscope-cat-statue"));
   document.body.dataset.kaleidoscopeStatue = hasCatStatue ? "pass" : "fail";
   const storybookEntries = [...houseVisuals.values()].filter(entry =>
     entry.building.type === "storybookhouse");
@@ -3440,6 +3541,7 @@ const accountBtn = document.getElementById("accountBtn");
 const claimHomeBtn = document.getElementById("claimHomeBtn");
 const goHomeBtn = document.getElementById("goHomeBtn");
 const customizeHomeBtn = document.getElementById("customizeHomeBtn");
+const manageHomesBtn = document.getElementById("manageHomesBtn");
 const claimPrompt = document.getElementById("claimPrompt");
 const claimPromptText = document.getElementById("claimPromptText");
 const authModal = document.getElementById("authModal");
@@ -3624,6 +3726,11 @@ function goHome(){
 /* ── account button + start-screen routing ── */
 function updateAccountUI(){
   townMapMyHome.style.display = myClaims.length ? "" : "none";
+  pauseMenu.classList.toggle("has-homes", myClaims.length > 0);
+  pauseHomesBtn.style.display = myClaims.length ? "" : "none";
+  pauseHomesBtn.textContent = myClaims.length > 1 ? "manage my homes" : "manage my home";
+  manageHomesBtn.style.display = myClaims.length ? "" : "none";
+  manageHomesBtn.textContent = myClaims.length > 1 ? "manage my homes / unclaim" : "manage my home / unclaim";
   if (!sb){ accountBtn.style.display = "none"; return; }
   accountBtn.style.display = "block";
   if (!session)            accountBtn.textContent = "sign in · claim a home";
@@ -3639,6 +3746,8 @@ function updateAccountUI(){
   if (modalOpen()) renderAuthCard();
 }
 accountBtn.addEventListener("click", openModal);
+manageHomesBtn.addEventListener("click", e => { e.stopPropagation(); openModal(); });
+pauseHomesBtn.addEventListener("click", openModal);
 
 claimHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
@@ -3840,7 +3949,7 @@ function renderAuthCard(){
       <h2>@${esc(myProfile.instagram_handle)} <span class="badge verified">verified</span></h2>
       <p class="muted">Give up home #${Number(myClaim.house_id)}? It goes back up for anyone to claim, including
       you — but if you want it back, someone else might get there first.</p>
-      <button class="primary" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
+      <button class="primary danger-confirm" id="doConfirmUnclaim" ${unclaiming ? "disabled" : ""}>
         ${unclaiming ? "unclaiming…" : `yes, unclaim home #${Number(myClaim.house_id)}`}</button>
       <div class="err" id="authErr"></div>
       <button class="linkish" id="doCancelUnclaim">never mind</button>`;

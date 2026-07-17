@@ -641,6 +641,33 @@ Kept here (rather than just in chat) so it survives across sessions.
   building records, addresses, claimability, ownership, and Supabase data were
   unchanged.
 
+## 36. Continuous feature props, position-preserving pause, and visible unclaim
+
+- Replaced every Kaleidoscope Crest lamp's two-beam/joint construction with a
+  single capped shared-ring tube. A parallel-transport frame keeps each ring's
+  vertices aligned through bends, so the post cannot split, pinch, or twist.
+  The globe overlaps the hook, the base overlaps the foot, and two metal
+  brackets enter both the post and banner.
+- Rebuilt the center Cat in the Hat sculpture as a polished hero asset. Curved
+  legs, arms, cuffs, fingers, tail, and the six-band crooked hat use continuous
+  tube meshes; facial layers, muzzle, bow, paws, and pedestal tiers overlap
+  their parents. This removes the former floating primitive stack from front,
+  three-quarter, side, and rear views while retaining Followville's blocky feel.
+- Preserved smooth shading when the full feature street is merged for GLB
+  performance. The web pedestal collider now matches the modeled 2.18m base.
+- Changed desktop Escape from an implicit homepage teleport to a true pause.
+  The camera never moves; `resume where I was` continues at the same location,
+  while `leave town` is an explicit action. Map and chat keep their local
+  Escape behavior.
+- Made home relinquishment discoverable without weakening its safeguards.
+  Signed-in owners now see `manage my home(s) / unclaim` on the town/start
+  screen and a manage-home action in pause; admins select which of their two
+  homes first, and the existing destructive confirmation/RPC remains required.
+- Reviewed seven Blender proofs (four statue angles, lamp, ramp, and district),
+  passed `check_town_glb.py`, passed all five Chromium flows, and completed an
+  annotated browser content/error/UI review. Day 15 state, population, 262
+  building records, addresses, claimability, and ownership were unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
