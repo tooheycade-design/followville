@@ -33,6 +33,16 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
   plane on all aerial cameras: it fixed the prior moving-shot road/pond
   flashing caused by depth-precision loss. All three were visually reviewed
   and emailed as separate MP4 attachments to Cade and Zach.
+- Kaleidoscope Crest received a post-delivery finish pass without changing any
+  building record or claim. `storybookhouse` collisions are now derived only
+  from `NB_story_wall*` material vertices at player height, excluding the
+  merged lawn/path/fence/flower/mailbox geometry. The access-ramp dashes are
+  shallow surface meshes sampled from both ends of the 3D road centerline, and
+  all ten crooked lamps have a solid joint globe plus base collar. A blocky
+  Cat in the Hat public-art statue replaces the center tree; it is part of the
+  conditional Kaleidoscope street asset and has its own compact pedestal
+  collider. Preserve the Playwright requirements for
+  `data-storybook-hitboxes="pass"` and `data-kaleidoscope-statue="pass"`.
 - Website backdrop mountains now move outward independently when town growth
   approaches them. The old fixed 282-310m ring intersected Day 14 Overlook
   Circle Houses #230-247; `addTownAtmosphere()` now gives every current building

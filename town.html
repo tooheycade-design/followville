@@ -1886,7 +1886,7 @@ function localBoundsAtPlayerHeight(root, acceptMesh=()=>true, minHeight=.18, max
   return result;
 }
 
-function localBoundsForMaterials(root, acceptMaterial){
+function localBoundsForMaterials(root, acceptMaterial, minHeight=-Infinity, maxHeight=Infinity){
   root.updateWorldMatrix(true, true);
   const inverseRoot = root.matrixWorld.clone().invert();
   const result = new THREE.Box3();
@@ -1909,6 +1909,7 @@ function localBoundsForMaterials(root, acceptMaterial){
       for (let i=group.start; i<end; i++){
         const vertexIndex = index ? index.getX(i) : i;
         point.fromBufferAttribute(position, vertexIndex).applyMatrix4(relative);
+        if (point.y < minHeight || point.y > maxHeight) continue;
         result.expandByPoint(point);
       }
     }
@@ -1938,6 +1939,16 @@ function houseFootprint(entry){
   if (!entry?.root) return null;
   if (["house", "ringhouse", "lanehouse"].includes(entry.building.type))
     return suburbanFootprint(entry);
+  if (entry.building.type === "storybookhouse"){
+    // Each feature home is one optimized multi-material mesh. Mesh-name
+    // filtering therefore sees its lawn, path, flower beds, fences, and
+    // mailbox as if they were the house. At player height, only the authored
+    // wall materials describe the actual solid building footprint.
+    const structure = localBoundsForMaterials(entry.root, material =>
+      /^NB_story_wall2?(?:_|$)/i.test(material?.name || ""), .18, 2.35);
+    if (!structure.isEmpty())
+      return colliderFromLocalBounds(entry.root, structure, `house-${entry.building.seed}`);
+  }
   const bounds = localBoundsAtPlayerHeight(entry.root,
     mesh => !NON_STRUCTURAL_HOME_PART.test(mesh.name || ""));
   if (!bounds.isEmpty()) return colliderFromLocalBounds(entry.root, bounds, `house-${entry.building.seed}`);
@@ -1994,6 +2005,26 @@ function buildGLBColliders(root){
     if (obj.isMesh && /^school_(?:center_hall|classroom_wing)(?:\d|[._]|$)/i.test(name))
       addMeshBoxCollider(obj, `school-${name}`);
   });
+  let hasCatStatue = false;
+  root.traverse(obj => {
+    if (!obj.isMesh) return;
+    const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+    if (materials.some(material => /^NB_cat_hat_statue_/i.test(material?.name || "")))
+      hasCatStatue = true;
+  });
+  if (hasCatStatue)
+    colliders.push(circleCollider(STORYBOOK_CENTER_WEB[0], STORYBOOK_CENTER_WEB[1],
+                                  1.95, "kaleidoscope-cat-statue"));
+  document.body.dataset.kaleidoscopeStatue = hasCatStatue ? "pass" : "fail";
+  const storybookEntries = [...houseVisuals.values()].filter(entry =>
+    entry.building.type === "storybookhouse");
+  const tightStorybookHitboxes = storybookEntries.length === 10 && storybookEntries.every(entry => {
+    const tight = houseFootprint(entry);
+    const fullBounds = localBoundsAtPlayerHeight(entry.root);
+    const full = colliderFromLocalBounds(entry.root, fullBounds, "storybook-lot-audit");
+    return tight && full && tight.hx*tight.hz < full.hx*full.hz*.82;
+  });
+  document.body.dataset.storybookHitboxes = tightStorybookHitboxes ? "pass" : "fail";
   refreshYardDecorationColliders();
   const boxes = colliders.filter(collider => collider.kind === "box").length;
   const trunks = colliders.filter(collider => collider.kind === "circle").length;

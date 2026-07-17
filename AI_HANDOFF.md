@@ -26,6 +26,15 @@ were emailed as distinct attachments to Cade and Zach. All 15 Day 15 Supabase
 rows were validated. Repo-based Windows growth still skips the legacy iCloud
 `wip` auto-share hook so the authoritative clone remains on `main`.
 
+Kaleidoscope Crest's merged house assets need material-based collision bounds:
+`town.html` intentionally uses only `NB_story_wall*` vertices at player height,
+never the full merged mesh, because that mesh also contains each lawn, path,
+flowers, fence, and mailbox. Its steep access-road dashes are custom surface
+meshes sampled from the sloped road centerline. The center lamps use joint
+globes/base collars, and the former island tree is now a blocky Cat in the Hat
+statue with a compact pedestal collider. Keep the browser audits
+`data-storybook-hitboxes="pass"` and `data-kaleidoscope-statue="pass"`.
+
 ## Website landing experience (2026-07-15)
 
 `index.html` and the `town.html` loading/start screen use the same optimized

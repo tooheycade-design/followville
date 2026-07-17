@@ -122,9 +122,11 @@ GREENS = [(0.31, 0.54, 0.31), (0.36, 0.61, 0.33), (0.25, 0.49, 0.27)]
 RING_WALLS = WALLS + [(0.78, 0.91, 0.82), (0.99, 0.86, 0.72), (0.84, 0.80, 0.94),
                       (0.99, 0.94, 0.70), (0.74, 0.87, 0.95), (0.97, 0.78, 0.84)]
 
-# Day-15 feature neighborhood. These are original Followville names and forms:
-# no protected character, title, signage, or copy is used. The houses sit on
-# the flat crown of a permanent landscaped hill and face the revealed loop.
+# Day-15 feature neighborhood. The ten houses remain original Followville
+# designs. Cade later requested a clearly recognizable Cat in the Hat public
+# art statue for the center island; keep it separate from the claimable homes.
+# The houses sit on the flat crown of a permanent landscaped hill and face the
+# revealed loop.
 STORYBOOK_CENTER = (270.0, 60.0)
 STORYBOOK_GROUND_Z = 2.82
 STORYBOOK_DISTRICT = "Kaleidoscope Crest"
@@ -2249,6 +2251,59 @@ def _polyline_sample(points, distance):
     return b[0], b[1], math.atan2(b[1] - a[1], b[0] - a[0])
 
 
+def _polyline_surface_sample(points, distance):
+    """Position and horizontal tangent on a 3D road centerline."""
+    remaining = max(0.0, distance)
+    for a, b in zip(points, points[1:]):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dy)
+        if length < .001:
+            continue
+        if remaining <= length:
+            t = remaining / length
+            az = a[2] if len(a) > 2 else 0.0
+            bz = b[2] if len(b) > 2 else 0.0
+            return (a[0] + dx*t, a[1] + dy*t,
+                    az + (bz-az)*t, dx/length, dy/length)
+        remaining -= length
+    a, b = points[-2], points[-1]
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = max(.001, math.hypot(dx, dy))
+    return b[0], b[1], (b[2] if len(b) > 2 else 0.0), dx/length, dy/length
+
+
+def _add_road_surface_dash(col, name, points, center_distance, length,
+                           width, road_top_offset, height, material):
+    """A shallow marking whose four corners follow the sloped road surface.
+
+    Rotating a box around its center left a visible air gap on the steep Day-15
+    access ramp. Sampling both ends from the authored centerline makes the
+    marking share the road pitch (and any nearby bend) exactly.
+    """
+    samples = [_polyline_surface_sample(points, center_distance + offset)
+               for offset in (-length/2, length/2)]
+    bottom, top = [], []
+    for x, y, z, tx, ty in samples:
+        nx, ny = -ty, tx
+        for side in (-1, 1):
+            point = (x + nx*width*.5*side,
+                     y + ny*width*.5*side,
+                     z + road_top_offset)
+            bottom.append(point)
+            top.append((point[0], point[1], point[2] + height))
+    verts = bottom + top
+    faces = [(0, 1, 3, 2), (4, 6, 7, 5),
+             (0, 4, 5, 1), (1, 5, 7, 3),
+             (3, 7, 6, 2), (2, 6, 4, 0)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    col.objects.link(obj)
+    return obj
+
+
 def build_suburban_roads(world_col, buildings, m):
     """Reveal only the road pieces needed by houses already constructed."""
     if not SUBURBAN_PLAN:
@@ -2341,6 +2396,131 @@ def _add_storybook_plateau(col, material):
     return obj
 
 
+def _build_cat_in_hat_statue(col, ground_z):
+    """Blocky, low-poly Cat in the Hat public-art figure for the center island."""
+    black = mat("NB_cat_hat_statue_black", (.035, .045, .055), .72)
+    white = mat("NB_cat_hat_statue_white", (.96, .95, .88), .82)
+    red = mat("NB_cat_hat_statue_red", (.82, .045, .075), .70)
+    eye = mat("NB_cat_hat_statue_eye", (.98, .84, .24), .48)
+    stone = mat("NB_cat_hat_statue_stone", (.19, .28, .39), .92)
+    stone_top = mat("NB_cat_hat_statue_stone_top", (.32, .45, .56), .86)
+    plaque = mat("NB_cat_hat_statue_plaque", (.93, .66, .17), .52)
+
+    # A stepped pedestal gives the figure enough visual weight to read from
+    # the road and provides one honest, compact collision footprint.
+    add_ngon_cone(col, "cat_statue_lower_plinth", 1.95, 1.78, .28, 12,
+                  0, 0, ground_z, stone)
+    add_box(col, "cat_statue_pedestal", 2.85, 2.85, .62,
+            0, 0, ground_z + .28, stone)
+    add_ngon_cone(col, "cat_statue_upper_plinth", 1.62, 1.45, .22, 12,
+                  0, 0, ground_z + .90, stone_top)
+    add_box(col, "cat_statue_plaque", 1.18, .09, .42,
+            0, -1.455, ground_z + .43, plaque)
+    body_z = ground_z + 1.12
+
+    # Feet, legs, torso, belly, arms, gloves, and a curled tail create a clear
+    # full-body silhouette instead of relying on the hat alone.
+    for x in (-.43, .43):
+        add_box(col, "cat_statue_leg", .48, .58, 1.15,
+                x, 0, body_z, black)
+        paw = add_uv_sphere(col, "cat_statue_paw", .46,
+                            x, -.18, body_z + .08, white, 6, 9)
+        paw.scale = (1.20, 1.50, .58)
+    add_ngon_cone(col, "cat_statue_torso", 1.04, .78, 2.20, 10,
+                  0, 0, body_z + .78, black, .12)
+    belly = add_uv_sphere(col, "cat_statue_belly", .84,
+                          0, -.79, body_z + 1.85, white, 7, 10)
+    belly.scale = (.72, .24, 1.10)
+    add_beam_between(col, "cat_statue_left_arm",
+                     (-.62, 0, body_z + 2.45),
+                     (-1.48, -.05, body_z + 2.95), .26, black)
+    add_beam_between(col, "cat_statue_left_forearm",
+                     (-1.48, -.05, body_z + 2.95),
+                     (-1.67, -.08, body_z + 3.72), .23, black)
+    add_uv_sphere(col, "cat_statue_left_glove", .42,
+                  -1.67, -.08, body_z + 3.82, white, 6, 9)
+    add_beam_between(col, "cat_statue_right_arm",
+                     (.62, 0, body_z + 2.45),
+                     (1.48, -.08, body_z + 1.96), .26, black)
+    add_uv_sphere(col, "cat_statue_right_glove", .42,
+                  1.58, -.10, body_z + 1.90, white, 6, 9)
+    tail_points = ((.70, .36, body_z + 1.25),
+                   (1.52, .50, body_z + 1.55),
+                   (1.92, .52, body_z + 2.25),
+                   (1.74, .45, body_z + 2.88))
+    for a, b in zip(tail_points, tail_points[1:]):
+        add_beam_between(col, "cat_statue_tail", a, b, .22, black)
+    add_uv_sphere(col, "cat_statue_tail_tip", .28,
+                  *tail_points[-1], white, 5, 8)
+
+    # Head, muzzle, eyes, nose, smile, and whiskers are modeled separately so
+    # the face remains readable from the surrounding homes at web resolution.
+    head_z = body_z + 3.78
+    head = add_uv_sphere(col, "cat_statue_head", 1.02,
+                         0, 0, head_z, black, 8, 12)
+    head.scale = (1.0, .84, 1.02)
+    for x in (-.68, .68):
+        ear = add_ngon_cone(col, "cat_statue_ear", .34, 0, .58, 4,
+                            x, .04, head_z + .53, black, math.pi/4)
+        ear.scale.y = .72
+    for x in (-.36, .36):
+        muzzle = add_uv_sphere(col, "cat_statue_muzzle", .56,
+                               x, -.78, head_z - .24, white, 6, 9)
+        muzzle.scale = (.78, .28, .52)
+        eye_white = add_uv_sphere(col, "cat_statue_eye_white", .28,
+                                  x*.84, -.80, head_z + .28, white, 6, 9)
+        eye_white.scale = (.70, .25, 1.00)
+        pupil = add_uv_sphere(col, "cat_statue_pupil", .105,
+                              x*.84, -.875, head_z + .27, eye, 5, 8)
+        pupil.scale.y = .42
+    add_uv_sphere(col, "cat_statue_nose", .17,
+                  0, -.99, head_z - .13, red, 5, 8)
+    add_beam_between(col, "cat_statue_smile_left",
+                     (-.48, -.965, head_z - .42),
+                     (0, -.995, head_z - .55), .045, black)
+    add_beam_between(col, "cat_statue_smile_right",
+                     (0, -.995, head_z - .55),
+                     (.48, -.965, head_z - .42), .045, black)
+    for zoff, spread in ((-.19, 1.34), (-.34, 1.48)):
+        add_beam_between(col, "cat_statue_whisker_left",
+                         (-.42, -.94, head_z + zoff),
+                         (-spread, -.92, head_z + zoff + .10), .035, white)
+        add_beam_between(col, "cat_statue_whisker_right",
+                         (.42, -.94, head_z + zoff),
+                         (spread, -.92, head_z + zoff + .10), .035, white)
+
+    for x in (-.39, .39):
+        bow = add_uv_sphere(col, "cat_statue_bow", .48,
+                            x, -.73, head_z - .91, red, 6, 9)
+        bow.scale = (.96, .28, .56)
+    add_uv_sphere(col, "cat_statue_bow_knot", .23,
+                  0, -.87, head_z - .91, red, 5, 8)
+
+    # The red-and-white stovepipe hat is deliberately oversized and gently
+    # tapered so the character is unmistakable without a high-poly asset.
+    hat_z = head_z + .82
+    add_ngon_cone(col, "cat_statue_hat_brim", 1.38, 1.30, .20, 14,
+                  0, 0, hat_z, red, .11)
+    stripe_specs = ((white, .78, .74, .52), (red, .74, .82, .54),
+                    (white, .82, .76, .52), (red, .76, .84, .54),
+                    (white, .84, .72, .50))
+    cursor = hat_z + .20
+    for index, (material, radius0, radius1, height) in enumerate(stripe_specs):
+        add_ngon_cone(col, "cat_statue_hat_stripe_%d" % index,
+                      radius0, radius1, height, 12, 0, 0, cursor, material, .11)
+        cursor += height
+    add_ngon_cone(col, "cat_statue_hat_top", .72, .68, .18, 12,
+                  0, 0, cursor, red, .11)
+
+    # A pair of low topiary mounds fills the former tree bed without crowding
+    # the statue or hiding its compact pedestal from walkers.
+    topiary = mat("NB_cat_hat_statue_topiary", (.18, .48, .29), 1.0)
+    for x in (-4.2, 4.2):
+        shrub = add_uv_sphere(col, "cat_statue_topiary", 1.05,
+                              x, 1.1, ground_z + .68, topiary, 6, 9)
+        shrub.scale = (1.28, .88, .78)
+
+
 def _build_storybook_street_asset(col):
     """Permanent hill, colored road, bespoke lamps, garden, and access road."""
     m = std_mats()
@@ -2400,8 +2580,9 @@ def _build_storybook_street_asset(col):
         mark.rotation_euler.z = tangent
 
     # Access-road center dashes keep one continuous eight-metre rhythm across
-    # every control segment. Requiring at least one dash per segment bunched a
-    # zig-zag cluster into the deliberately dense hill-climb controls.
+    # every control segment. Each mark is a shallow mesh sampled at both ends
+    # from the road centerline, so it physically lies on the climb instead of
+    # remaining horizontal or hovering above it.
     access_total = sum(math.hypot(b[0]-a[0], b[1]-a[1])
                        for a, b in zip(access, access[1:]))
     dash_distance = 4.0
@@ -2413,16 +2594,10 @@ def _build_storybook_street_asset(col):
             if remaining > length:
                 remaining -= length
                 continue
-            t = remaining / max(length, .001)
-            x, y, z = a[0]+dx*t, a[1]+dy*t, a[2]+dz*t
             dash_material = m["dash"] if segment_index == 0 else dash
-            mark = add_box(col, "storybook_access_dash", 2.15, .40, .04,
-                           x, y, z + .205, dash_material)
-            # Align the dash's long local X axis to the full 3D road tangent,
-            # including its climb. Yaw-only marks visibly floated sideways
-            # through the steep shoulder of the hill.
-            mark.rotation_mode = 'QUATERNION'
-            mark.rotation_quaternion = Vector((dx, dy, dz)).normalized().to_track_quat('X', 'Z')
+            _add_road_surface_dash(col, "storybook_access_dash", access,
+                                   dash_distance, 2.15, .40, .181, .022,
+                                   dash_material)
             break
         dash_distance += 8.0
 
@@ -2439,14 +2614,7 @@ def _build_storybook_street_asset(col):
                       x, y, 2.94, m["trunk"])
         add_uv_sphere(col, "public_flower", .20, x, y, 3.34,
                       flower_mats[i % len(flower_mats)], 5, 7)
-    # A sculptural three-trunk tree anchors the island from every camera angle.
-    for base_x, top_x, height in ((-.55, -1.15, 5.1), (0, .35, 6.2), (.55, 1.45, 4.8)):
-        add_beam_between(col, "island_tree_trunk",
-                         (base_x, 0, 2.94), (top_x, .15, 2.94 + height),
-                         .42, m["trunk"])
-        add_uv_sphere(col, "island_tree_crown", 2.15,
-                      top_x, .15, 2.94 + height + .55,
-                      mat("NB_story_tree", (.22, .54, .30), 1.0), 7, 10)
+    _build_cat_in_hat_statue(col, 2.94)
 
     # Crooked teal lamps with alternating fabric banners. Their warm globes
     # echo the house windows at sunset without using readable branding.
@@ -2459,6 +2627,13 @@ def _build_storybook_street_asset(col):
         p2 = (x-bend*.25, y-.22, base_z+4.55)
         add_beam_between(col, "storybook_lamp_low", p0, p1, .18, pole)
         add_beam_between(col, "storybook_lamp_high", p1, p2, .16, pole)
+        # The two crooked beams meet at p1, but their rotated square end faces
+        # can expose a diagonal pinhole. A joint globe and ground collar make
+        # every post read as one continuous built object from all angles.
+        add_uv_sphere(col, "storybook_lamp_joint", .245,
+                      p1[0], p1[1], p1[2], pole, 5, 8)
+        add_ngon_cone(col, "storybook_lamp_base", .29, .23, .22, 8,
+                      p0[0], p0[1], base_z, pole)
         add_uv_sphere(col, "storybook_lamp_globe", .34,
                       p2[0], p2[1], p2[2]+.10, m["bulb"], 6, 9)
         banner = add_box(col, "storybook_banner", .82, .08, 1.18,

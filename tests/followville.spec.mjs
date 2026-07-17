@@ -77,6 +77,8 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("#startScreen")).toBeHidden();
   await expect(page.locator("body")).toHaveAttribute("data-hill-clearance", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-walkable", "pass");
+  await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
+  await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   await page.keyboard.press("KeyT");
   await expect(page.locator("#chatPanel")).toHaveClass(/open/);
   await page.keyboard.press("Escape");

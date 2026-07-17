@@ -28,6 +28,18 @@ you go looking for it here.**
   a 10m near clip to prevent thin roads and ponds flashing from lost depth
   precision; do not restore Blender's 0.1m default for aerial modes. All three
   files were reviewed and emailed as separate attachments to Cade and Zach.
+- 2026-07-16 Kaleidoscope Crest finish pass (Cade via Windows Codex): the ten
+  `storybookhouse` player hitboxes now read only their wall-material geometry
+  at body height, so lawns, paths, flowers, fences, and mailboxes are walkable.
+  The uphill access markings are purpose-built surface meshes sampled at both
+  ends from the sloped road centerline rather than rotated floating boxes.
+  Every crooked center lamp has a solid middle joint and grounded base collar.
+  The former center tree is now a detailed, blocky Cat in the Hat public-art
+  statue on a compact collidable pedestal, with the surrounding flower field
+  and two low topiaries preserved. Blender close proofs, GLB validation, all
+  five Playwright flows, and in-browser runtime audits passed. Blender/GLB and
+  web collision code changed; day, population, 262 building records, addresses,
+  ownership, and all 15 Day 15 claimable rows did not change.
 - 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until

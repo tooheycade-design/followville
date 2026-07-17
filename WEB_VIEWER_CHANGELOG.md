@@ -613,6 +613,34 @@ Kept here (rather than just in chat) so it survives across sessions.
   not make the regression suite stale. All five Chromium flows passed after
   the change.
 
+## 35. Kaleidoscope house collisions and center-island finish
+
+- Corrected the ten optimized `storybookhouse` collision footprints. Each
+  house is one merged multi-material GLB mesh, so the former mesh-name filter
+  included its complete lawn, path, flowers, fence, and mailbox. The viewer now
+  measures only `NB_story_wall*` vertices intersecting player height, producing
+  an oriented box around the actual structure while leaving the yard walkable.
+- Added a runtime comparison against each full lot footprint and made the
+  walking Playwright flow require `data-storybook-hitboxes="pass"` for all ten
+  feature homes.
+- Replaced the steep access road's rotated dash boxes with shallow meshes whose
+  two ends are sampled directly from the 3D road centerline. The marks now share
+  the ramp pitch and sit one millimetre above its surface instead of hovering or
+  projecting horizontally through the climb.
+- Closed the diagonal seam between every crooked lamp's lower and upper beams
+  with a low-poly joint globe, and added a base collar at the island surface.
+- Replaced the center tree with a detailed, performance-conscious Cat in the
+  Hat public-art statue: full body, gloves, ears, face, whiskers, red bow tie,
+  oversized striped hat, stepped pedestal, plaque, and two low topiaries. The
+  merged street asset keeps the web draw count compact; a separate 1.95m
+  pedestal collider prevents walking through it. Runtime GLB detection is
+  covered by `data-kaleidoscope-statue="pass"`.
+- Close Blender proofs covered the statue front, the exact steep ramp section,
+  and a lamp joint. `check_town_glb.py`, all five Chromium regressions, and an
+  automated browser content/error/route check passed. Day, population, 262
+  building records, addresses, claimability, ownership, and Supabase data were
+  unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script
