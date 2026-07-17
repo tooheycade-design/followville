@@ -1855,6 +1855,22 @@ def build_pos(b):
         return b["px"], b["py"]
     return lot_to_world(b["gx"], b["gy"])
 
+def web_chunk_id(b):
+    """Stable streaming group for one canonical world-state building.
+
+    The value is stored on the Blender instance root before export.  It never
+    becomes a second address/source of truth: district and type still come
+    from world_state.json, and the exporter only uses this tag to partition
+    the exact same realized geometry that also goes into town.glb.
+    """
+    if b.get("district"):
+        value = str(b["district"]).strip().lower()
+        slug = "".join(ch if ch.isalnum() else "-" for ch in value)
+        return "-".join(part for part in slug.split("-") if part)
+    if b.get("type") in ("ringhouse", "parkdistrict"):
+        return "founder-park"
+    return "original-town"
+
 # building footprint in lots (per side); milestone buildings can span a whole block
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
         "storybookhouse": 1,
@@ -4265,6 +4281,14 @@ def main(cfg=None):
     rise, sink = [], []
     for b in state["buildings"]:
         e = place_instance(world_col, b, "%s_d%d" % (b["type"], b.get("day", 0)))
+        # Export-only identity.  The web chunker partitions these canonical
+        # building roots but leaves roads, terrain, nature, traffic, and public
+        # feature dressing in the always-loaded base asset.
+        e["nb_world_seed"] = int(b["seed"])
+        e["nb_world_type"] = str(b["type"])
+        e["nb_web_chunk"] = web_chunk_id(b)
+        if b.get("district"):
+            e["nb_world_district"] = str(b["district"])
         if id(b) in new_ids:
             rise.append(e)
         elif id(b) in rem_ids:

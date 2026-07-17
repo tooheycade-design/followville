@@ -2,7 +2,8 @@
 """
 FOLLOWER NEIGHBORHOOD -- town.glb sanity check
 ===============================================
-Standalone, no-Blender-needed check for the exact regression class behind the
+Standalone, no-Blender-needed check for the full GLB, stream manifest/chunks,
+and the exact regression class behind the
 2026-07-08 "pancaked houses" incident (pond + 3 new houses shipped to the live
 site with every mesh part squashed to scale ~0.001, baked in by a stale
 keyframe animation surviving into duplicates_make_real() -- see CLAUDE.md's
@@ -30,6 +31,7 @@ import sys
 import os
 import json
 import math
+import hashlib
 
 from neighborhood_plan import PLAN as SUBURBAN_PLAN
 
@@ -40,6 +42,115 @@ except ImportError:
     sys.exit(1)
 
 SQUASH_THRESHOLD = 0.05  # anything with |scale| below this on any axis is "pancaked"
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def check_asset_record(root, record, label, minimum_roots=1):
+    problems = []
+    if not isinstance(record, dict) or not record.get("file"):
+        return ["%s has no asset record" % label]
+    path = os.path.normpath(os.path.join(root, record["file"]))
+    if os.path.commonpath([root, path]) != root:
+        return ["%s points outside the repository: %s" % (label, record["file"])]
+    if not os.path.exists(path):
+        return ["%s is missing: %s" % (label, path)]
+    size = os.path.getsize(path)
+    if size != record.get("bytes"):
+        problems.append("%s byte count is stale (%r in manifest, %d on disk)" %
+                        (label, record.get("bytes"), size))
+    digest = file_sha256(path)
+    if digest != record.get("sha256"):
+        problems.append("%s SHA-256 is stale or incorrect" % label)
+    gltf = GLTF2().load(path)
+    if not gltf.nodes:
+        problems.append("%s has zero nodes" % label)
+        return problems
+    scene = gltf.scenes[gltf.scene] if gltf.scene is not None else gltf.scenes[0]
+    if len(scene.nodes or []) < minimum_roots:
+        problems.append("%s has %d scene root(s), expected at least %d" %
+                        (label, len(scene.nodes or []), minimum_roots))
+    squashed = find_squashed_nodes(gltf)
+    if squashed:
+        problems.append("%s contains %d squashed node(s): %s" %
+                        (label, len(squashed), ", ".join(squashed[:10])))
+    return problems
+
+
+def check_stream_manifest(root, state, fallback_path):
+    problems = []
+    manifest_path = os.path.join(root, "town_manifest.json")
+    if not os.path.exists(manifest_path):
+        return ["town_manifest.json is missing -- district streaming assets were not exported"]
+    with open(manifest_path, encoding="utf-8") as handle:
+        manifest = json.load(handle)
+    if manifest.get("version") != 1:
+        problems.append("town_manifest.json has unsupported version %r" % manifest.get("version"))
+
+    buildings = state.get("buildings") or []
+    state_ids = {int(building["seed"]) for building in buildings}
+    state_house_ids = {int(building["seed"]) for building in buildings
+                       if str(building.get("type", "")).endswith("house")}
+    meta = manifest.get("state") or {}
+    expected_meta = {
+        "day": state.get("day"), "population": state.get("pop"),
+        "building_count": len(buildings), "seed_counter": state.get("seed_counter")
+    }
+    for key, value in expected_meta.items():
+        if meta.get(key) != value:
+            problems.append("manifest state.%s is %r, expected %r" % (key, meta.get(key), value))
+
+    fallback = manifest.get("fallback") or {}
+    if os.path.normpath(os.path.join(root, fallback.get("file", ""))) != os.path.normpath(fallback_path):
+        problems.append("manifest fallback does not point to the checked town.glb")
+    problems.extend(check_asset_record(root, fallback, "fallback town.glb"))
+    problems.extend(check_asset_record(root, manifest.get("base"), "stream base"))
+
+    chunks = manifest.get("chunks") or []
+    chunk_ids = [chunk.get("id") for chunk in chunks]
+    if len(chunk_ids) != len(set(chunk_ids)):
+        problems.append("manifest contains duplicate chunk IDs")
+    if "original-town" not in chunk_ids:
+        problems.append("manifest has no original-town chunk")
+    if not any(chunk.get("initial") for chunk in chunks):
+        problems.append("manifest has no initial district chunk")
+    load_distance = (manifest.get("streaming") or {}).get("detail_load_distance")
+    if not isinstance(load_distance, (int, float)) or not 25 <= load_distance <= 250:
+        problems.append("manifest streaming.detail_load_distance is missing or unsafe")
+
+    seen_ids = []
+    seen_house_ids = []
+    for chunk in chunks:
+        chunk_id = chunk.get("id") or "<unnamed>"
+        building_ids = [int(value) for value in chunk.get("building_ids") or []]
+        house_ids = [int(value) for value in chunk.get("house_ids") or []]
+        seen_ids.extend(building_ids)
+        seen_house_ids.extend(house_ids)
+        if not set(house_ids).issubset(set(building_ids)):
+            problems.append("chunk %s has house IDs outside its building IDs" % chunk_id)
+        bounds = chunk.get("bounds") or {}
+        if len(bounds.get("center") or []) != 2 or not isinstance(bounds.get("radius"), (int, float)):
+            problems.append("chunk %s has invalid bounds" % chunk_id)
+        problems.extend(check_asset_record(
+            root, chunk.get("asset"), "chunk %s" % chunk_id,
+            minimum_roots=max(1, len(building_ids))))
+
+    if len(seen_ids) != len(set(seen_ids)):
+        problems.append("one or more building IDs appear in multiple chunks")
+    if set(seen_ids) != state_ids:
+        missing = sorted(state_ids - set(seen_ids))
+        extra = sorted(set(seen_ids) - state_ids)
+        problems.append("chunk building coverage mismatch (missing=%s extra=%s)" %
+                        (missing[:12], extra[:12]))
+    if set(seen_house_ids) != state_house_ids:
+        problems.append("chunk house coverage does not match canonical claimable-home geometry")
+    return problems
 
 
 def find_squashed_nodes(gltf):
@@ -85,7 +196,7 @@ def check(glb_path, state_path):
         )
 
     if os.path.exists(state_path):
-        with open(state_path) as f:
+        with open(state_path, encoding="utf-8") as f:
             state = json.load(f)
         day = state.get("day")
         pop = state.get("pop")
@@ -114,6 +225,8 @@ def check(glb_path, state_path):
             angle_delta = (building.get("rot", 0) - slot["rot"] + math.pi) % (2 * math.pi) - math.pi
             if abs(angle_delta) > 0.001:
                 problems.append("planned house %d no longer faces its road" % plan_id)
+        problems.extend(check_stream_manifest(os.path.dirname(os.path.abspath(glb_path)),
+                                              state, os.path.abspath(glb_path)))
     else:
         problems.append("world_state.json not found at %s (skipping day/pop cross-check)" % state_path)
 
@@ -122,8 +235,8 @@ def check(glb_path, state_path):
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
-    glb_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(here, "town.glb")
-    state_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(here, "world_state.json")
+    glb_path = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(here, "town.glb")
+    state_path = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(here, "world_state.json")
 
     problems = check(glb_path, state_path)
 
@@ -133,7 +246,7 @@ def main():
             print("  - " + p)
         sys.exit(1)
 
-    print("check_town_glb.py: OK -- no squashed nodes, state file consistent")
+    print("check_town_glb.py: OK -- full GLB + streamed chunks are complete and state-consistent")
     sys.exit(0)
 
 

@@ -691,6 +691,41 @@ Kept here (rather than just in chat) so it survives across sessions.
   free of page/console errors. Blender, GLB, state, population, buildings,
   addresses, claims, and ownership were unchanged.
 
+## 38. District-streamed Blender town with full fallback
+
+- Extended the canonical Blender export with stable building metadata and a
+  versioned `town_manifest.json`. Every one of the 262 canonical building IDs
+  appears exactly once across five deterministic district assets; terrain,
+  currently built roads, nature, traffic, and public feature dressing live in
+  one shared base asset.
+- Draco-compressed the base and district GLBs while preserving the complete,
+  uncompressed `town.glb` as a production fallback. Detailed startup transfer
+  is 2,800,996 bytes instead of 7,916,952 bytes (about 65% less); all compressed
+  stream assets together are 4,398,376 bytes. Asset URLs use manifest SHA-256
+  revisions so regenerated districts cannot be mixed with stale caches.
+- Added low-detail instanced house silhouettes for unloaded districts. The
+  browser loads detailed districts within a manifest-controlled 70m radius and
+  removes the proxy atomically when the real geometry is ready. Proxies have no
+  collision, so the existing real house/car/trunk hitboxes remain authoritative.
+- Made map destinations and signed-in owned-home teleports await the target
+  district. Failed destination loads leave the player and map in place with a
+  retry message. If the manifest or any initial asset fails, the viewer cleans
+  up and loads the full GLB automatically. Maintainers can force the same path
+  with `?assets=full` for parity checks.
+- Updated Windows and Mac growth automation to stage state, the full GLB,
+  manifest, and chunk directory together, fail if required export artifacts are
+  missing, and remove obsolete generated district files during export.
+  `check_town_glb.py` now verifies manifest state metadata, byte counts,
+  SHA-256s, GLB roots/scales, safe load distance, exact home coverage, and exact
+  one-to-one building coverage.
+- Eight Playwright flows passed: the existing homepage/Today/share/map/chat/
+  pause/error behavior plus streamed startup, remote Willow Hills loading
+  before teleport, intentional manifest-failure fallback, and iPhone touch/map
+  recovery. Desktop streamed/full screenshots matched in the active detailed
+  town, with only the intentional distant silhouettes differing. Day 15,
+  population 259, 262 buildings, claims, owners, addresses, and visible Blender
+  world content were unchanged.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

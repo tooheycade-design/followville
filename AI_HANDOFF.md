@@ -6,6 +6,19 @@ update into ONE shell command, run it, and report the result.
 
 ## Current town (Day 15, 2026-07-16)
 
+The web build now uses production district streaming without changing the
+town. `export_web.py` always produces the complete `town.glb` fallback plus a
+hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and five
+district chunks. Public startup loads the base and two initial districts
+(2,800,996 bytes versus 7,916,952 bytes for the monolith), shows low-detail
+silhouettes elsewhere, then loads full homes within 70m or before any map/home
+teleport. If streaming fails, the full GLB loads automatically. Never deploy or
+commit only one of these outputs: `world_state.json`, `town.glb`,
+`town_manifest.json`, and `town_chunks/` must advance together. Both growth
+scripts do this now, and `check_town_glb.py` validates exact 262-building
+coverage plus every asset hash. Run `pnpm test:e2e` (eight flows) after loader,
+map, teleport, or mobile-control work.
+
 Population is 259 with 262 buildings. Day 15 added 15 claimable homes: ten
 original `storybookhouse` seeds 248-257 around Wanderlight Loop in the new
 Kaleidoscope Crest feature district, plus five ordinary seeds 258-262 at

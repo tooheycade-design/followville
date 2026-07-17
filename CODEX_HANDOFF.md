@@ -15,6 +15,21 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Current canon
 
+- The website now streams deterministic Blender districts while keeping the
+  complete town as a safety fallback. `town_manifest.json` hashes a compressed
+  shared base and five `town_chunks/*.glb` district assets; the browser loads
+  2,800,996 bytes of detailed geometry at startup instead of the 7,916,952-byte
+  monolith, uses lightweight silhouettes for distant homes, and awaits the
+  destination district before map or owned-home teleports. Any manifest or
+  initial-chunk failure automatically loads `town.glb`. Future growth must
+  commit `world_state.json`, `town.glb`, `town_manifest.json`, and
+  `town_chunks/` together (the Windows and Mac scripts now do this). The
+  standalone validator checks every hash plus exact one-to-one coverage of all
+  262 canonical buildings. Eight Playwright flows include streaming, remote
+  teleport, full fallback, and iPhone touch/map recovery. This infrastructure
+  did not alter day, population, buildings, addresses, claims, or Blender
+  visuals.
+
 - Day 15 is population 259 with 262 total buildings. It added 15 claimable
   homes: ten `storybookhouse` seeds 248-257 on Wanderlight Loop in the new
   Kaleidoscope Crest feature district, plus five ordinary seeds 258-262 at

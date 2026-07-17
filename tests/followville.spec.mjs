@@ -1,7 +1,10 @@
-import { expect, test } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { devices, expect, test } from "@playwright/test";
+import { readFileSync, statSync } from "node:fs";
 
 const worldState = JSON.parse(readFileSync(new URL("../world_state.json", import.meta.url), "utf8"));
+const townManifest = JSON.parse(readFileSync(new URL("../town_manifest.json", import.meta.url), "utf8"));
+const fullTownBytes = statSync(new URL("../town.glb", import.meta.url)).size;
+const { defaultBrowserType: _mobileBrowser, ...mobileDevice } = devices["iPhone 13"];
 const newestHomes = worldState.buildings.filter(building =>
   String(building.type).endsWith("house") && Number(building.day) === Number(worldState.day));
 const newestDistricts = [...new Set(newestHomes.map(building => building.district).filter(Boolean))];
@@ -84,6 +87,14 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-storybook-walkable", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
+  await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
+  await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
+  const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
+  expect(loadedChunks).toEqual(expect.arrayContaining(["original-town", "kaleidoscope-crest"]));
+  const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
+  expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
+    .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
+  expect(initialBytes).toBeLessThan(fullTownBytes * 0.4);
   await page.keyboard.press("KeyT");
   await expect(page.locator("#chatPanel")).toHaveClass(/open/);
   await page.keyboard.press("Escape");
@@ -114,6 +125,52 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
+});
+
+test("visiting a house loads its district before teleporting", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  const willowHome = allHomes.find(building => building.district === "Willow Hills");
+  expect(willowHome).toBeTruthy();
+  await page.goto(`/house/${willowHome.seed}`);
+  await waitForTown(page);
+  await expect(page.locator("#townMapPanel")).toBeVisible();
+  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await page.getByRole("button", { name: "go to this house" }).click();
+  await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  expect(errors).toEqual([]);
+});
+
+test("complete-town fallback remains usable if the stream manifest is unavailable", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.route("**/town_manifest.json", route => route.abort());
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "fallback");
+  await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "fallback");
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", "full");
+  await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
+  await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
+  expect(errors).toEqual([]);
+});
+
+test.describe("mobile town", () => {
+  test.use(mobileDevice);
+
+  test("touch controls and the map remain usable with streamed districts", async ({ page }) => {
+    const errors = watchPageErrors(page);
+    await page.goto("/town.html#walk");
+    await waitForTown(page);
+    await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
+    await expect(page.locator("#lookZone")).toBeVisible();
+    await expect(page.locator("#joystickZone")).toBeVisible();
+    await page.getByRole("button", { name: /town map/i }).click();
+    await expect(page.locator("#townMapPanel")).toBeVisible();
+    await page.getByRole("button", { name: "Close map" }).click();
+    await expect(page.locator("#townMapPanel")).toBeHidden();
+    await expect(page.locator("#joystickZone")).toBeVisible();
+    expect(errors).toEqual([]);
+  });
 });
 
 test("unknown house addresses fail gracefully", async ({ page }) => {

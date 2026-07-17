@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-16 - Cade (via Windows Codex) - [BOTH] Added production district streaming for the Blender-authored web town: exports now create a hashed compressed base plus five exact building chunks while retaining the full GLB fallback, distant homes keep lightweight silhouettes, proximity/map/home teleports load their detailed district first, Windows/Mac growth stages every asset, and hash/262-building validation plus eight desktop/mobile/fallback browser flows and streamed-vs-full visual QA passed without changing Day 15 state, population, buildings, addresses, claims, ownership, or visible Blender content.
+
 2026-07-16 - Cade (via Windows Codex) - [WEB] Kept the existing interactive 3D town map but replaced its default 259-house sidebar with eight self-updating street groups, made street rows focus the relevant 3D neighborhood and 3D house clicks teleport directly, strengthened exact/partial `@owner`, house-number, and street search, grouped newest/claimed views by street, and passed all five Playwright flows plus desktop/mobile visual browser QA without changing Blender, GLB, world state, population, claims, or ownership.
 
 2026-07-16 - Cade (via Windows Codex) - [WEB] Simplified the new in-town pause overlay to action choices only (resume, map, optional home management, and leave town), removing the unnecessary position-saved heading and explanation; behavior and camera preservation are unchanged.

@@ -57,14 +57,22 @@ GLB_DIR="${NEIGHBORHOOD_REPO_DIR:-$DIR}"
 # 2026-07-09: pure-bash match instead of `echo | grep -q` -- with pipefail, grep -q
 # exiting early can SIGPIPE the echo and make the whole pipeline "fail" even on a
 # match (this produced a false WEB_EXPORT_FAILED and silently skipped Desktop copies)
-if [[ "$OUT" == *"export_web.py: wrote"* ]]; then echo "WEB $GLB_DIR/town.glb"; else echo "WEB_EXPORT_FAILED"; fi
+if [[ "$OUT" == *"export_web.py: wrote"* ]]; then
+  for ASSET in "$GLB_DIR/town.glb" "$GLB_DIR/town_manifest.json" "$GLB_DIR/town_chunks/base.glb"; do
+    [ -f "$ASSET" ] || { echo "WEB_EXPORT_FAILED -- missing $ASSET" >&2; exit 1; }
+  done
+  echo "WEB $GLB_DIR/town.glb"
+else
+  echo "WEB_EXPORT_FAILED -- export_web.py did not confirm a complete export" >&2
+  exit 1
+fi
 
 if [ -n "${NEIGHBORHOOD_REPO_DIR:-}" ]; then
   (
     cd "$NEIGHBORHOOD_REPO_DIR"
-    git add world_state.json town.glb
+    git add world_state.json town.glb town_manifest.json town_chunks
     if git diff --cached --quiet; then
-      echo "NOCHANGES -- world_state.json/town.glb already match the last commit"
+      echo "NOCHANGES -- state and town assets already match the last commit"
     else
       git commit -m "Grow: $ARG (auto-committed by grow.sh $(date -u +%FT%TZ))"
       git push origin main
@@ -102,8 +110,8 @@ fi
 # itself already grew and saved successfully above -- only the "share it" step
 # is at risk. Check share_progress_log.txt if you see AUTO_SHARE_FAILED.
 # NOTE: if NEIGHBORHOOD_REPO_DIR is ever adopted here (see the top of this
-# file), share_progress.command will need the same world_state.json/town.glb
-# exclusion share_progress.bat got on 2026-07-10 -- today it still copies both
+# file), share_progress.command will need the same state/full/streamed asset
+# exclusion share_progress.bat got for world_state.json/town.glb on 2026-07-10 -- today it still copies both
 # files straight from this iCloud folder, which is correct ONLY because Mac
 # growth (without NEIGHBORHOOD_REPO_DIR) writes them here directly.
 if [ -x "$DIR/share_progress.command" ]; then

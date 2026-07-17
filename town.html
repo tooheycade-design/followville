@@ -603,11 +603,15 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 const pageParams = new URLSearchParams(location.search);
 const previewView = pageParams.get("preview");
 const previewMode = previewView === "founders" || previewView === "buildings";
 const classicGraphics = pageParams.get("graphics") === "classic";
+// Maintainer-only escape hatch for visual parity checks and emergency recovery.
+// Public visitors use district streaming; ?assets=full exercises the complete GLB.
+const forceFullTown = pageParams.get("assets") === "full";
 const routeHousePath = location.pathname.match(/^\/house\/(\d+)\/?$/i);
 const routeHouseParam = pageParams.get("house") || routeHousePath?.[1] || null;
 const routeHouseId = /^\d+$/.test(routeHouseParam || "") && Number(routeHouseParam) > 0
@@ -2307,12 +2311,20 @@ let claimedBy = new Map();      // house_id -> instagram_handle       (DB truth)
 let claimCustomizations = new Map(); // house_id -> approved palette IDs (DB truth)
 let worldBuildings = [];        // from world_state.json (geometry truth)
 let townMapMeta = { day:null, population:null };
-let loadedTownRoot = null;       // real GLB root, used for the web-only detail pass
+let loadedTownRoot = null;       // combined root for streamed chunks or the full GLB fallback
+let townManifest = null;
+let townStreamLastCheck = 0;
+const townChunksById = new Map();
+const townChunkByBuilding = new Map();
+const townChunkLoads = new Map();
+const townLoadedChunks = new Set();
+const townChunkLods = new Map();
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
 let unclaiming = false, confirmingUnclaim = false;
 let customizingHome = false, savingCustomization = false, customizationDraft = null;
 let customizationPreview = null;
+let pendingHomeRoute = false;
 const nameTags = new THREE.Group();
 scene.add(nameTags);
 const customizationLayer = new THREE.Group();
@@ -2658,6 +2670,7 @@ function applyAllHomeCustomizations(){
 }
 
 function indexHouseVisuals(root, buildings){
+  const previousByRoot=new Map([...houseVisuals.values()].map(entry => [entry.root,entry]));
   houseVisuals.clear();
   const used = new Set();
   const homes = buildings.filter(building => HOME_MATERIAL_ROLES[building.type]);
@@ -2671,10 +2684,14 @@ function indexHouseVisuals(root, buildings){
     }
     if (best && bestDistance < 1){
       used.add(best);
-      houseVisuals.set(Number(building.seed), { building, root:best, isolated:false, materials:[] });
+      const previous=previousByRoot.get(best);
+      houseVisuals.set(Number(building.seed), previous
+        ? { ...previous, building }
+        : { building, root:best, isolated:false, materials:[] });
     }
   }
-  console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} home visuals.`);
+  document.body.dataset.homeVisuals=`${houseVisuals.size}/${homes.length}`;
+  console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} loaded home visuals.`);
   applyAllHomeCustomizations();
 }
 
@@ -3515,15 +3532,24 @@ function closeTownMap(forceWalking=false, withoutPointerLock=false){
   } else if (mapPreviouslyFocused instanceof HTMLElement) mapPreviouslyFocused.focus({preventScroll:true});
   mapPreviouslyFocused=null;
 }
-function visitTownMapItem(item){
+async function visitTownMapItem(item){
   if(!item)return;
-  const front=frontDirsFor(item.building)[0]||[0,1];
-  const distance=item.isHome?12:18;
-  camera.position.set(item.x+front[0]*distance,1.7,item.z+front[1]*distance);
-  camera.rotation.order="YXZ";camera.rotation.y=Math.atan2(front[0],front[1]);camera.rotation.x=0;
-  closeTownMap(true);showToast(`Visiting ${item.title}`);
+  const chunkId=townChunkByBuilding.get(Number(item.building?.seed));
+  const chunk=townChunksById.get(chunkId);
+  if(chunk&&!townLoadedChunks.has(chunkId))showToast(`Loading ${chunk.label}…`);
+  try{
+    await ensureTownChunkForBuilding(item.building);
+    const front=frontDirsFor(item.building)[0]||[0,1];
+    const distance=item.isHome?12:18;
+    camera.position.set(item.x+front[0]*distance,1.7,item.z+front[1]*distance);
+    camera.rotation.order="YXZ";camera.rotation.y=Math.atan2(front[0],front[1]);camera.rotation.x=0;
+    closeTownMap(true);showToast(`Visiting ${item.title}`);
+  }catch(error){
+    console.error(`Could not load ${item.title} before teleporting.`,error);
+    showToast("That neighborhood couldn't load. Please try again.");
+  }
 }
-function visitTownMapSelection(){ visitTownMapItem(mapState.selected); }
+function visitTownMapSelection(){ return visitTownMapItem(mapState.selected); }
 
 function fallbackCopyText(value){
   const area=document.createElement("textarea");
@@ -3802,16 +3828,24 @@ async function attemptUnclaim(){
 }
 
 /* ── spawn at your own house ── */
-function goHome(){
-  if (!myClaim) return;
+async function goHome(){
+  if (!myClaim) return false;
   const b = worldBuildings.find(bb => bb.seed === myClaim.house_id);
-  if (!b) return;
+  if (!b) return false;
+  try{
+    await ensureTownChunkForBuilding(b);
+  }catch(error){
+    console.error(`Could not load home #${b.seed} before teleporting.`,error);
+    showToast("Your neighborhood couldn't load. Please try again.");
+    return false;
+  }
   const [x, z] = buildingWorldXZ(b);
   const f = frontDirsFor(b)[0];              // the door side
   camera.position.set(x + f[0]*12, 1.7, z + f[1]*12);  // out front of the door
   camera.rotation.order = "YXZ";
   camera.rotation.y = Math.atan2(f[0], f[1]); // face back toward the house
   camera.rotation.x = 0;
+  return true;
 }
 
 /* ── account button + start-screen routing ── */
@@ -3849,9 +3883,9 @@ claimHomeBtn.addEventListener("click", e => {
     ? "Walk up to the front door of an open house — when the claim tag appears over it, tap to claim."
     : "Walk up to the front door of an open house — when the claim tag appears over it, press E.", 7000);
 });
-goHomeBtn.addEventListener("click", e => {
+goHomeBtn.addEventListener("click", async e => {
   e.stopPropagation();
-  goHome();
+  if(!await goHome())return;
   if (isTouch) beginWalking(); else controls.lock();
 });
 customizeHomeBtn.addEventListener("click", e => {
@@ -4571,7 +4605,10 @@ async function initSupabase(){
     .subscribe();
   await restartMultiplayer();
   if (location.hash === "#home" && myClaim){
-    goHome();               // arriving from the landing page's "Go to my home"
+    pendingHomeRoute = true;
+    if(loadedTownRoot){
+      pendingHomeRoute = !(await goHome()); // landing page's "Go to my home"
+    }
   } else if (location.hash === "#claim"){
     if (canClaimAnotherHome()) openModal();
   }
@@ -4581,19 +4618,212 @@ async function initSupabase(){
 
 /* ══════════════════════════════════ LOAD + RUN ══════════════════════════════════ */
 
-// Real path: town.glb, exported straight out of Blender by export_web.py —
-// the exact same geometry as your renders, no hand-ported JS shapes.
-// Fallback path (only used if town.glb hasn't been exported yet): rebuild an
-// approximation procedurally from world_state.json using the JS builders above.
+// Primary path: a compressed shared base plus district GLBs, all exported from
+// Blender and covered by town_manifest.json. The complete town.glb remains an
+// automatic network/decoder fallback. Only if both representations fail do we
+// rebuild the older procedural approximation from world_state.json below.
 
-function loadFromGLB(buildings){
-  const loader = new GLTFLoader();
-  return loader.loadAsync("town.glb").then(gltf => {
+const townDracoLoader=new DRACOLoader();
+townDracoLoader.setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/");
+const townGltfLoader=new GLTFLoader();
+townGltfLoader.setDRACOLoader(townDracoLoader);
+
+function townAssetUrl(asset){
+  const version=String(asset?.sha256||"").slice(0,16);
+  return `${asset.file}${version?`?v=${version}`:""}`;
+}
+
+function validateTownManifest(manifest,buildings){
+  if(!manifest||manifest.version!==1||!manifest.base?.file||!Array.isArray(manifest.chunks))
+    throw new Error("invalid town stream manifest");
+  if(Number(manifest.state?.day)!==Number(townMapMeta.day)||
+     Number(manifest.state?.population)!==Number(townMapMeta.population)||
+     Number(manifest.state?.building_count)!==buildings.length)
+    throw new Error("town stream manifest does not match world_state.json");
+  const canonical=new Set(buildings.map(building=>Number(building.seed)));
+  const byId=new Map(buildings.map(building=>[Number(building.seed),building]));
+  const seen=new Set();
+  townChunksById.clear();townChunkByBuilding.clear();
+  for(const chunk of manifest.chunks){
+    if(!chunk.id||!chunk.asset?.file||townChunksById.has(chunk.id))
+      throw new Error("town stream manifest contains an invalid or duplicate chunk");
+    const points=[];
+    for(const rawId of chunk.building_ids||[]){
+      const id=Number(rawId);
+      if(!canonical.has(id)||seen.has(id))throw new Error(`invalid building coverage for ${chunk.id}`);
+      seen.add(id);townChunkByBuilding.set(id,chunk.id);
+      points.push(buildingWorldXZ(byId.get(id)));
+    }
+    chunk.runtimePoints=points;townChunksById.set(chunk.id,chunk);
+  }
+  if(seen.size!==canonical.size)throw new Error(`town stream covers ${seen.size}/${canonical.size} buildings`);
+  townManifest=manifest;document.body.dataset.streamManifest="pass";
+}
+
+async function loadTownAsset(asset,name){
+  const gltf=await townGltfLoader.loadAsync(townAssetUrl(asset));
+  const group=new THREE.Group();group.name=name;
+  while(gltf.scene.children.length)group.add(gltf.scene.children[0]);
+  return group;
+}
+
+function prepareTownAsset(root){
+  const tunedMaterials=new Set();
+  root.traverse(obj=>{
+    if(!obj.isMesh)return;
+    obj.castShadow=true;obj.receiveShadow=true;
+    const materials=Array.isArray(obj.material)?obj.material:[obj.material];
+    for(const material of materials){
+      if(material&&!tunedMaterials.has(material)){
+        tunedMaterials.add(material);if(!classicGraphics)tuneTownMaterial(material);
+      }
+    }
+  });
+  if(!classicGraphics)addBuildingDetails(root);
+}
+
+function mergeTownAsset(group){
+  prepareTownAsset(group);
+  while(group.children.length)loadedTownRoot.add(group.children[0]);
+}
+
+function refreshLoadedTownSystems(buildings){
+  indexHouseVisuals(loadedTownRoot,buildings);
+  buildGLBColliders(loadedTownRoot);
+}
+
+function configureTownFraming(buildings){
+  const [minBx,,minBy]=blockExtent(buildings);
+  camera.position.set(0,1.7,minBy*PITCH-ROAD-15);
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const building of buildings){
+    const [x,z]=buildingWorldXZ(building);
+    minX=Math.min(minX,x);maxX=Math.max(maxX,x);minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+  }
+  const centerX=(minX+maxX)/2,centerZ=(minZ+maxZ)/2;
+  const span=Math.max(maxX-minX,maxZ-minZ)/2+45;
+  sun.shadow.camera.left=-span;sun.shadow.camera.right=span;
+  sun.shadow.camera.top=span;sun.shadow.camera.bottom=-span;
+  sun.shadow.camera.near=1;sun.shadow.camera.far=500;
+  sun.target.position.set(centerX,0,centerZ);
+  sun.position.set(centerX+70,110,centerZ-40);
+  sun.shadow.camera.updateProjectionMatrix();
+}
+
+function createTownChunkLod(chunk,buildings){
+  if(townChunkLods.has(chunk.id)||townLoadedChunks.has(chunk.id))return;
+  const byId=new Map(buildings.map(building=>[Number(building.seed),building]));
+  const homes=(chunk.house_ids||[]).map(id=>byId.get(Number(id))).filter(Boolean);
+  if(!homes.length)return;
+  const palettes=[
+    [0xd8c9a8,0x76594c],[0xc6d4bd,0x596b61],[0xc6ccd9,0x596779],
+    [0xd8c0b5,0x7a5752],[0xd9d1b9,0x6d6254],[0xc8d5d2,0x5d6d73]
+  ];
+  const wallMaterial=new THREE.MeshStandardMaterial({name:`FV_lod_wall_${chunk.id}`,color:0xffffff,roughness:.92});
+  const roofMaterial=new THREE.MeshStandardMaterial({name:`FV_lod_roof_${chunk.id}`,color:0xffffff,roughness:.9});
+  const walls=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),wallMaterial,homes.length);
+  const roofs=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,4),roofMaterial,homes.length);
+  const matrix=new THREE.Matrix4(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
+  const up=new THREE.Vector3(0,1,0);
+  homes.forEach((building,index)=>{
+    const [x,z]=buildingWorldXZ(building),ground=walkSurfaceHeight(x,z);
+    const front=frontDirsFor(building)[0]||[0,1];
+    quaternion.setFromAxisAngle(up,Math.atan2(front[0],front[1]));
+    const seed=Number(building.seed)||index;
+    const width=building.type==="ringhouse"?5.4:5.6+(seed%4)*.35;
+    const depth=4.25+(seed%3)*.32,height=[3.45,4.25,5.05][seed%3];
+    const colors=palettes[seed%palettes.length];
+    matrix.compose(new THREE.Vector3(x,ground+height/2,z),quaternion,scale.set(width,height,depth));
+    walls.setMatrixAt(index,matrix);
+    matrix.compose(new THREE.Vector3(x,ground+height+.72,z),quaternion,scale.set(width*.72,1.45,depth*.72));
+    roofs.setMatrixAt(index,matrix);
+    walls.setColorAt(index,new THREE.Color(colors[0]));
+    roofs.setColorAt(index,new THREE.Color(colors[1]));
+  });
+  walls.instanceMatrix.needsUpdate=true;roofs.instanceMatrix.needsUpdate=true;
+  walls.instanceColor.needsUpdate=true;roofs.instanceColor.needsUpdate=true;
+  walls.name=`FV_district_lod_walls_${chunk.id}`;roofs.name=`FV_district_lod_roofs_${chunk.id}`;
+  walls.castShadow=roofs.castShadow=false;walls.receiveShadow=roofs.receiveShadow=false;
+  const group=new THREE.Group();group.name=`FV_district_lod_${chunk.id}`;group.add(walls,roofs);
+  scene.add(group);townChunkLods.set(chunk.id,group);
+}
+
+function removeTownChunkLod(chunkId){
+  const lod=townChunkLods.get(chunkId);if(!lod)return;
+  scene.remove(lod);disposeObject(lod);townChunkLods.delete(chunkId);
+}
+
+function updateLoadedChunkStatus(){
+  document.body.dataset.loadedChunks=[...townLoadedChunks].sort().join(",");
+}
+
+function loadTownChunk(chunkId,buildings){
+  if(!townManifest||townLoadedChunks.has(chunkId))return Promise.resolve(true);
+  if(townChunkLoads.has(chunkId))return townChunkLoads.get(chunkId);
+  const chunk=townChunksById.get(chunkId);
+  if(!chunk)return Promise.reject(new Error(`unknown town chunk ${chunkId}`));
+  const promise=loadTownAsset(chunk.asset,`town-chunk-${chunk.id}`).then(group=>{
+    mergeTownAsset(group);townLoadedChunks.add(chunk.id);removeTownChunkLod(chunk.id);
+    updateLoadedChunkStatus();refreshLoadedTownSystems(buildings);
+    console.info(`[Followville] streamed ${chunk.label} (${chunk.building_ids.length} buildings)`);
+    return true;
+  }).catch(error=>{townChunkLoads.delete(chunkId);throw error;});
+  townChunkLoads.set(chunkId,promise);return promise;
+}
+
+function ensureTownChunkForBuilding(building){
+  const chunkId=townChunkByBuilding.get(Number(building?.seed));
+  return chunkId?loadTownChunk(chunkId,worldBuildings):Promise.resolve(true);
+}
+
+function updateTownDistrictStreaming(force=false){
+  if(!townManifest)return;
+  const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
+  townStreamLastCheck=now;
+  for(const chunk of townManifest.chunks){
+    if(townLoadedChunks.has(chunk.id)||townChunkLoads.has(chunk.id))continue;
+    let nearest=Infinity;
+    for(const [x,z] of chunk.runtimePoints||[])
+      nearest=Math.min(nearest,Math.hypot(camera.position.x-x,camera.position.z-z));
+    const loadDistance=Number(townManifest.streaming?.detail_load_distance||70);
+    if(nearest<loadDistance)loadTownChunk(chunk.id,worldBuildings).catch(error=>
+      console.warn(`[Followville] could not stream ${chunk.label}; its low-detail proxy remains.`,error));
+  }
+}
+
+async function loadStreamedTown(buildings){
+  const response=await fetch("town_manifest.json",{cache:"no-store"});
+  if(!response.ok)throw new Error(`town_manifest.json returned ${response.status}`);
+  const manifest=await response.json();validateTownManifest(manifest,buildings);
+  const initial=manifest.chunks.filter(chunk=>chunk.initial);
+  const assets=await Promise.all([
+    loadTownAsset(manifest.base,"town-stream-base"),
+    ...initial.map(chunk=>loadTownAsset(chunk.asset,`town-chunk-${chunk.id}`))
+  ]);
+  loadedTownRoot=new THREE.Group();loadedTownRoot.name="Followville-streamed-town";scene.add(loadedTownRoot);
+  assets.forEach(mergeTownAsset);
+  initial.forEach(chunk=>townLoadedChunks.add(chunk.id));updateLoadedChunkStatus();
+  configureTownFraming(buildings);refreshLoadedTownSystems(buildings);
+  for(const chunk of manifest.chunks)createTownChunkLod(chunk,buildings);
+  document.body.dataset.assetMode="streamed";
+  document.body.dataset.streamInitialBytes=String(
+    Number(manifest.base.bytes||0)+initial.reduce((sum,chunk)=>sum+Number(chunk.asset.bytes||0),0));
+  updateTownDistrictStreaming(true);
+  console.info(`[Followville] district streaming active: ${initial.length} detailed + ${manifest.chunks.length-initial.length} low-detail districts at boot.`);
+  return true;
+}
+
+function loadFullTown(buildings){
+  townManifest=null;townChunksById.clear();townChunkByBuilding.clear();townChunkLoads.clear();townLoadedChunks.clear();
+  return townGltfLoader.loadAsync("town.glb").then(gltf => {
     const root = gltf.scene;
     loadedTownRoot = root;
     scene.add(root);
+    prepareTownAsset(root);
     indexHouseVisuals(root, buildings);
     buildGLBColliders(root);
+    document.body.dataset.assetMode="fallback";
+    document.body.dataset.loadedChunks="full";
 
     // Build the "real town" bounding box from reasonably-sized top-level
     // objects — Blender's export includes a 4000x4000 ground plane as part of
@@ -4640,6 +4870,21 @@ function loadFromGLB(buildings){
   });
 }
 
+async function loadFromGLB(buildings){
+  if(forceFullTown){
+    document.body.dataset.streamManifest="forced-full";
+    return loadFullTown(buildings);
+  }
+  try{return await loadStreamedTown(buildings);}
+  catch(error){
+    document.body.dataset.streamManifest="fallback";
+    console.warn("District streaming unavailable; loading the complete town.glb fallback.",error);
+    if(loadedTownRoot?.parent){scene.remove(loadedTownRoot);disposeObject(loadedTownRoot);loadedTownRoot=null;}
+    for(const chunkId of [...townChunkLods.keys()])removeTownChunkLod(chunkId);
+    return loadFullTown(buildings);
+  }
+}
+
 fetch("world_state.json")
   .then(r => r.json())
   .then(state => {
@@ -4654,7 +4899,7 @@ fetch("world_state.json")
         addBuildings(buildings);
         addNature(buildings);
       })
-      .then(() => {
+      .then(async () => {
         const tunedMaterials = new Set();
         scene.traverse(obj => {
           if (obj.isMesh){
@@ -4671,9 +4916,11 @@ fetch("world_state.json")
         });
         if (!classicGraphics){
           document.body.classList.add("enhanced-graphics");
-          if (loadedTownRoot) addBuildingDetails(loadedTownRoot);
           addTownFinish(buildings);
           addTownAtmosphere();
+        }
+        if(pendingHomeRoute&&myClaim){
+          pendingHomeRoute=!(await goHome());
         }
         document.getElementById("startSub").textContent =
           `day ${state.day ?? "?"} · population ${state.pop ?? buildings.length}`;
@@ -4764,6 +5011,7 @@ function animate(){
   }
 
   updateMultiplayer(dt);
+  if(gameRunning)updateTownDistrictStreaming();
 
   if(townMapOpen()){townMapControls?.update();drawTownMap();}
   else renderer.render(scene,camera);

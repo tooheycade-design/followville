@@ -246,9 +246,19 @@ try {
     $GlbDir = if ($UseGit) { $RepoDir } else { $Dir }
     if ($Output | Select-String -Pattern '^export_web\.py: wrote') {
         Log-Line ("WEB " + (Join-Path $GlbDir 'town.glb'))
+        $RequiredWebAssets = @(
+            (Join-Path $GlbDir 'town.glb'),
+            (Join-Path $GlbDir 'town_manifest.json'),
+            (Join-Path $GlbDir 'town_chunks\base.glb')
+        )
+        foreach ($WebAsset in $RequiredWebAssets) {
+            if (-not (Test-Path -LiteralPath $WebAsset -PathType Leaf)) {
+                throw "Web export reported success but required asset is missing: $WebAsset"
+            }
+        }
     }
     else {
-        Log-Line "WEB_EXPORT_FAILED"
+        throw "WEB_EXPORT_FAILED -- export_web.py did not confirm a complete export"
     }
 
     if ($Output | Select-String -Pattern '^VIDEO') {
@@ -263,9 +273,9 @@ try {
     }
 
     if ($UseGit) {
-        Log-Line "-- git add/commit/push (world_state.json + town.glb) --"
+        Log-Line "-- git add/commit/push (state + full/streamed town assets) --"
         Push-Location $RepoDir
-        (Invoke-Git @('add', 'world_state.json', 'town.glb')) | Out-File -FilePath $LogFile -Append -Encoding utf8
+        (Invoke-Git @('add', 'world_state.json', 'town.glb', 'town_manifest.json', 'town_chunks')) | Out-File -FilePath $LogFile -Append -Encoding utf8
 
         $PrevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
@@ -274,7 +284,7 @@ try {
         $ErrorActionPreference = $PrevEAP
 
         if ($NothingToCommit) {
-            Log-Line "NOCHANGES -- world_state.json/town.glb already match the last commit"
+            Log-Line "NOCHANGES -- state and town assets already match the last commit"
         }
         else {
             $CommitMsg = "Grow: $Change (auto-committed by grow_windows.ps1 $(Get-Date -Format o))"
@@ -283,7 +293,7 @@ try {
             $PushOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
             if ($script:LastGitExit -ne 0) {
                 Pop-Location
-                throw "git push failed after growing -- world_state.json/town.glb are committed LOCALLY in $RepoDir but not pushed. See $LogFile, then push manually once fixed (e.g. network/auth issue) -- do not re-run a growth day on top of this without resolving it first."
+                throw "git push failed after growing -- state and town assets are committed LOCALLY in $RepoDir but not pushed. See $LogFile, then push manually once fixed (e.g. network/auth issue) -- do not re-run a growth day on top of this without resolving it first."
             }
             Log-Line "PUSHED $CommitMsg"
         }
@@ -295,7 +305,7 @@ try {
 
     # 2026-07-10: auto-share progress to wip after every successful growth run,
     # mirroring grow.sh's matching block (see CLAUDE.md's Collaboration
-    # section). world_state.json/town.glb are already pushed straight to main
+    # section). State plus full/streamed town assets are already pushed straight to main
     # above via NEIGHBORHOOD_STATE_DIR, so share_progress.bat only needs to
     # carry the OTHER tracked files (docs/code) -- it was fixed on 2026-07-10
     # to skip those two files for exactly that reason. Best-effort: a failure

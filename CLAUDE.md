@@ -8,6 +8,20 @@ folder, by default — see "Where world_state.json + town.glb actually live now"
 you go looking for it here.**
 
 ## Current canon (update this section each day!)
+- 2026-07-16 scalable town delivery (Cade via Windows Codex): the canonical
+  Blender world now exports a hashed `town_manifest.json`, a compressed shared
+  `town_chunks/base.glb`, and five district GLBs in addition to the complete
+  `town.glb` safety copy. The browser starts with 2,800,996 bytes of detailed
+  geometry instead of the 7,916,952-byte monolith, renders lightweight house
+  silhouettes for unloaded districts, and loads full districts within 70m or
+  before any map/home teleport. `town.glb` automatically takes over if the
+  manifest or an initial chunk fails. `check_town_glb.py` enforces hashes,
+  state metadata, root integrity, and exact one-to-one coverage of all 262
+  building IDs; Windows/Mac growth scripts stage every generated asset. Eight
+  Playwright flows cover streamed startup, remote-district teleport, full-GLB
+  fallback, touch controls, and all existing navigation. Day 15, population
+  259, buildings, addresses, claims, ownership, and visible Blender content
+  did not change.
 - Day 15, population 259, 262 buildings (grown 2026-07-16 via Cade's
   Windows Codex: +15 claimable homes). Seeds 248-257 are ten original
   `storybookhouse` designs around Wanderlight Loop in the new Kaleidoscope
@@ -435,20 +449,32 @@ add_prism_roof + mat(), register in SIZE and ASSET_VARIANTS, then
   and hand the log-watching to a HAIKU subagent. Never poll with the expensive model.
 - Routine +N days need no preview at all.
 
-## Web viewer (index.html + town.glb)
-A first-person browser version of the town lives in index.html, next to world_state.json.
+## Web viewer (town.html + streamed/full GLBs)
+A district-streaming layer now sits in front of the complete GLB. Every export
+writes `town_manifest.json`, `town_chunks/base.glb`, and deterministic district
+GLBs while retaining `town.glb` as an automatic fallback. The base contains
+terrain, built roads, nature, traffic, and public features; canonical building
+roots are tagged by `neighborhood_blender.py` and exported exactly once into a
+district. Keep the manifest/chunks/full GLB together. Map and owned-home
+teleports must await `ensureTownChunkForBuilding()`, and future growth must use
+the updated scripts so generated assets are staged together. `?assets=full` is
+the maintainer parity/fallback diagnostic; it is not the public default.
+
+A first-person browser version of the town lives in town.html, next to world_state.json.
 Real geometry, not a hand-ported copy: grow.sh now runs export_web.py (a second headless
 Blender pass) after every build, which bakes the actual "WORLD" collection Blender just
-built to town.glb (realizes collection-instances to real meshes via duplicates_make_real,
-then exports GLB, Y-up, no animation/camera/lights). index.html loads town.glb with
+built to full and district GLBs (realizes collection-instances to real meshes via
+duplicates_make_real, then exports Y-up, with no animation/camera/lights). town.html loads
+the manifest/chunks with
 Three.js's GLTFLoader — pixel-for-pixel the same model Blender rendered, no drift, no
 manually-ported shapes to keep in sync, and any brand-new custom house type in
 neighborhood_blender.py "just works" on the web the next time grow.sh runs, zero web-code
 changes needed. world_state.json is still fetched separately, just for the day/population
-HUD text. Collision colliders are computed automatically from each top-level object's
-bounding box in the loaded GLB — no per-house-type radius to maintain either.
+HUD text and canonical building identity. Collision colliders are computed automatically
+from loaded structural geometry as oriented footprints; cars and trunks retain their
+purpose-built accurate shapes.
 
-Fallback: if town.glb is missing (e.g. before the first export ever ran), index.html falls
+Fallback: if the full GLB also fails (e.g. before the first export ever ran), town.html falls
 back to an OLDER procedural JS approximation (the BUILDERS map, ~line 160-500) that
 hand-rebuilds simplified house shapes from world_state.json alone, no Blender needed. This
 is a safety net only — it's visually approximate and NOT kept in sync with new Blender

@@ -2,9 +2,10 @@
 FOLLOWER NEIGHBORHOOD — glTF export for the web viewer
 =======================================================
 Exports the CURRENT built world (the "WORLD" collection that
-neighborhood_blender.py just rebuilt) to town.glb, next to world_state.json,
-so index.html can load the exact same geometry Blender just rendered —
-no hand-ported JS shapes, no drift.
+neighborhood_blender.py just rebuilt) as a complete town.glb fallback plus a
+hashed, Draco-compressed base/district stream manifest next to
+world_state.json. The browser receives the exact same geometry Blender just
+rendered with no hand-ported house shapes or world drift.
 
 Run this AFTER neighborhood_blender.py has rebuilt the world in the same
 Blender session (same --python invocation, or immediately after in the GUI).
@@ -22,7 +23,108 @@ Or standalone, to just re-export the current .blend's world without regrowing:
 """
 
 import bpy
+import hashlib
+import json
+import math
 import os
+
+LOT = 10
+BLOCK_N = 3
+ROAD = 6
+PITCH = BLOCK_N * LOT + ROAD
+
+
+def _chunk_id_for_building(building):
+    district = str(building.get("district") or "").strip().lower()
+    if district:
+        slug = "".join(ch if ch.isalnum() else "-" for ch in district)
+        return "-".join(part for part in slug.split("-") if part)
+    if building.get("type") in ("ringhouse", "parkdistrict"):
+        return "founder-park"
+    return "original-town"
+
+
+def _building_xz(building):
+    if "px" in building:
+        x, y = float(building["px"]), float(building["py"])
+    else:
+        gx, gy = int(building["gx"]), int(building["gy"])
+        bx, ix = divmod(gx, BLOCK_N)
+        by, iy = divmod(gy, BLOCK_N)
+        x = bx * PITCH + ix * LOT + LOT / 2
+        y = by * PITCH + iy * LOT + LOT / 2
+        size = 3 if building.get("type") == "elementaryschool" else 1
+        x += (size - 1) * LOT / 2
+        y += (size - 1) * LOT / 2
+    return x, -y  # Three.js glTF coordinates: Blender +Y becomes Three -Z.
+
+
+def _descendants(root):
+    found, stack = [], list(root.children)
+    while stack:
+        child = stack.pop()
+        found.append(child)
+        stack.extend(child.children)
+    return found
+
+
+def _select(objects):
+    bpy.ops.object.select_all(action="DESELECT")
+    selected = [obj for obj in objects if obj and obj.name in bpy.context.view_layer.objects]
+    for obj in selected:
+        obj.hide_select = False
+        obj.hide_viewport = False
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = selected[0] if selected else None
+    return selected
+
+
+def _export_glb(path, objects, draco=False):
+    selected = _select(objects)
+    if not selected:
+        raise RuntimeError("STREAM_EXPORT_FAILED: no objects selected for %s" % path)
+    options = dict(
+        filepath=path,
+        export_format="GLB",
+        use_selection=True,
+        export_apply=True,
+        export_yup=True,
+        export_lights=False,
+        export_cameras=False,
+        export_animations=False,
+        export_materials="EXPORT",
+        export_extras=True,
+    )
+    if draco:
+        options.update(
+            export_draco_mesh_compression_enable=True,
+            export_draco_mesh_compression_level=6,
+        )
+    bpy.ops.export_scene.gltf(**options)
+    print("export_web.py: wrote", path)
+
+
+def _asset_record(base, path, compression=None):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    record = {
+        "file": os.path.relpath(path, base).replace(os.sep, "/"),
+        "bytes": os.path.getsize(path),
+        "sha256": digest.hexdigest(),
+    }
+    if compression:
+        record["compression"] = compression
+    return record
+
+
+def _chunk_bounds(buildings):
+    points = [_building_xz(building) for building in buildings]
+    center_x = sum(point[0] for point in points) / len(points)
+    center_z = sum(point[1] for point in points) / len(points)
+    radius = max(math.hypot(x - center_x, z - center_z) for x, z in points) + 18
+    return {"center": [round(center_x, 3), round(center_z, 3)], "radius": round(radius, 3)}
 
 def export_web_glb():
     col = bpy.data.collections.get("WORLD")
@@ -112,11 +214,6 @@ def export_web_glb():
         print(msg)
         raise RuntimeError(msg)
 
-    # Re-select the whole WORLD collection (now full of real meshes) for export.
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in col.objects:
-        obj.select_set(True)
-
     # Same NEIGHBORHOOD_STATE_DIR override as neighborhood_blender.py's
     # state_path() -- if set, town.glb is written straight into the git repo
     # clone alongside world_state.json instead of next to the .blend, so the
@@ -126,18 +223,116 @@ def export_web_glb():
             or (os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")))
     out_path = os.path.join(base, "town.glb")
 
-    bpy.ops.export_scene.gltf(
-        filepath=out_path,
-        export_format="GLB",
-        use_selection=True,
-        export_apply=True,          # bake modifiers/transforms
-        export_yup=True,            # glTF convention: Y-up (matches Three.js directly)
-        export_lights=False,
-        export_cameras=False,
-        export_animations=False,    # web viewer doesn't need the daily rise/sink animation
-        export_materials="EXPORT",
-    )
-    print("export_web.py: wrote", out_path)
+    # Keep the monolithic GLB as a production fallback.  Chunk streaming is an
+    # optimization layer, never the only copy of the town.
+    all_objects = list(col.objects)
+    _export_glb(out_path, all_objects)
+
+    state_path = os.path.join(base, "world_state.json")
+    with open(state_path, "r", encoding="utf-8") as handle:
+        state = json.load(handle)
+    buildings = list(state.get("buildings") or [])
+    canonical_ids = {int(building["seed"]) for building in buildings}
+
+    # Realized building roots retain the export tags written by
+    # neighborhood_blender.py.  Their complete descendant trees become the
+    # district assets; everything else (terrain, all revealed roads, nature,
+    # traffic, lamps, and public feature dressing) stays in the base asset.
+    tagged_roots = [obj for obj in col.objects
+                    if obj.get("nb_world_seed") is not None and obj.get("nb_web_chunk")]
+    root_by_seed = {}
+    for root in tagged_roots:
+        seed = int(root.get("nb_world_seed"))
+        if seed in canonical_ids and seed not in root_by_seed:
+            root_by_seed[seed] = root
+    missing = sorted(canonical_ids - set(root_by_seed))
+    if missing:
+        raise RuntimeError(
+            "STREAM_EXPORT_FAILED: %d canonical building root(s) missing export tags: %s" %
+            (len(missing), ", ".join(str(seed) for seed in missing[:12])))
+
+    tagged_objects = set()
+    for root in tagged_roots:
+        tagged_objects.add(root)
+        tagged_objects.update(_descendants(root))
+    base_objects = [obj for obj in col.objects if obj not in tagged_objects]
+
+    chunk_dir = os.path.join(base, "town_chunks")
+    os.makedirs(chunk_dir, exist_ok=True)
+    base_path = os.path.join(chunk_dir, "base.glb")
+    _export_glb(base_path, base_objects, draco=True)
+
+    grouped = {}
+    for building in buildings:
+        grouped.setdefault(_chunk_id_for_building(building), []).append(building)
+
+    chunk_records = []
+    # Original town frames the first view, Creekside borders the player spawn,
+    # and Kaleidoscope is a current hero district with runtime geometry audits.
+    # Await all three so the loading screen never reveals a nearby proxy pop.
+    initial_ids = {"original-town", "creekside-bend", "kaleidoscope-crest"}
+    for chunk_id in sorted(grouped):
+        chunk_buildings = grouped[chunk_id]
+        chunk_objects = []
+        for building in chunk_buildings:
+            root = root_by_seed[int(building["seed"])]
+            chunk_objects.append(root)
+            chunk_objects.extend(_descendants(root))
+        chunk_path = os.path.join(chunk_dir, chunk_id + ".glb")
+        _export_glb(chunk_path, chunk_objects, draco=True)
+        districts = sorted({str(building.get("district")) for building in chunk_buildings
+                            if building.get("district")})
+        label = ("Founder Park" if chunk_id == "founder-park" else
+                 "Original town" if chunk_id == "original-town" else
+                 (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))
+        building_ids = sorted(int(building["seed"]) for building in chunk_buildings)
+        house_ids = sorted(int(building["seed"]) for building in chunk_buildings
+                           if str(building.get("type", "")).endswith("house"))
+        chunk_records.append({
+            "id": chunk_id,
+            "label": label,
+            "initial": chunk_id in initial_ids,
+            "bounds": _chunk_bounds(chunk_buildings),
+            "building_ids": building_ids,
+            "house_ids": house_ids,
+            "asset": _asset_record(base, chunk_path, compression="draco"),
+        })
+
+    # Keep the generated directory canonical. A renamed/removed district must
+    # not leave an orphaned GLB that future deployments carry forever.
+    expected_chunk_files = {"base.glb"}
+    expected_chunk_files.update(record["asset"]["file"].split("/")[-1]
+                                for record in chunk_records)
+    for filename in os.listdir(chunk_dir):
+        path = os.path.join(chunk_dir, filename)
+        if filename.lower().endswith(".glb") and filename not in expected_chunk_files:
+            os.remove(path)
+
+    manifest = {
+        "version": 1,
+        "state": {
+            "day": state.get("day"),
+            "population": state.get("pop"),
+            "building_count": len(buildings),
+            "seed_counter": state.get("seed_counter"),
+        },
+        "base": _asset_record(base, base_path, compression="draco"),
+        "chunks": chunk_records,
+        "streaming": {
+            "detail_load_distance": 70,
+            "lod": "simple-houses",
+        },
+        "fallback": _asset_record(base, out_path),
+    }
+    manifest_path = os.path.join(base, "town_manifest.json")
+    temporary_path = manifest_path + ".tmp"
+    with open(temporary_path, "w", encoding="utf-8", newline="\n") as handle:
+        json.dump(manifest, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+    os.replace(temporary_path, manifest_path)
+    print("export_web.py: wrote", manifest_path)
+    print("export_web.py: stream manifest covers %d buildings across %d chunks" %
+          (len(canonical_ids), len(chunk_records)))
     return out_path
 
 if __name__ == "__main__":
