@@ -28,7 +28,7 @@ The preflight must report `PREFLIGHT_OK`. It intentionally aborts if:
 
 - the repository is missing, dirty, not on `main`, or differs from
   `origin/main`;
-- the plain iCloud generator is missing/stale;
+- the repository generator or shared iCloud Blend is missing;
 - the repository and shared Blend copies differ;
 - Blender is missing.
 

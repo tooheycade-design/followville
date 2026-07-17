@@ -20,7 +20,11 @@ workflow.
 
 - A Day 15 maintenance pass hardens the shared Blender workflow before any new
   growth: production launchers require clean/current Git, match the repo and
-  iCloud generator/Blend mirrors, and execute only the repository generator.
+  iCloud Blend mirrors, and execute only the repository generator. A generator
+  beside the iCloud Blend is ignored because iCloud may rename it. During the
+  maintenance repair, iCloud immediately renamed the restored exact mirror to
+  `neighborhood_blender 19.py`; it was preserved as history, and routine growth
+  no longer depends on any plain-name iCloud generator.
   Direct GUI growth rejects a stale embedded generator. The current refresh
   tool backs up the Blend and embeds the repo source with its hash/revision.
   No population, building, geometry, state, or generated asset changes belong

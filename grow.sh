@@ -41,7 +41,6 @@ REQUIRED=(
   "$REPO/town_manifest.json"
   "$REPO/town_chunks/base.glb"
   "$REPO/neighborhood.blend"
-  "$SHARED/neighborhood_blender.py"
   "$SHARED/neighborhood.blend"
 )
 for file in "${REQUIRED[@]}"; do
@@ -64,10 +63,6 @@ fi
 HEAD="$(git -C "$REPO" rev-parse HEAD)"
 ORIGIN_MAIN="$(git -C "$REPO" rev-parse origin/main)"
 [ "$HEAD" = "$ORIGIN_MAIN" ] || { echo "Local main does not match origin/main." >&2; exit 1; }
-cmp -s "$REPO/neighborhood_blender.py" "$SHARED/neighborhood_blender.py" || {
-  echo "The iCloud generator mirror is stale. Refresh it from the repository before growing." >&2
-  exit 1
-}
 cmp -s "$REPO/neighborhood.blend" "$SHARED/neighborhood.blend" || {
   echo "Repository and iCloud neighborhood.blend differ. Reconcile the scene before growing." >&2
   exit 1

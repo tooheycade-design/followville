@@ -27,7 +27,8 @@ grow_windows.bat +N --render
 
 On Mac, set `FOLLOWVILLE_REPO_DIR` to the local Git clone and run the repository
 or mirrored `grow.sh`. The script refuses to run without a clean, current
-`main`, a matching shared scene, and a matching plain-name generator mirror.
+`main` and matching repository/iCloud scene copies. It always executes the Git
+generator; a generator beside the iCloud Blend is ignored and may be missing.
 
 Never delete, reset, replace, or test against canonical `world_state.json`.
 Never run a daily growth simultaneously on both machines.

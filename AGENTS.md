@@ -17,8 +17,8 @@ you go looking for it here.**
   repo copy is a synchronized safety copy.
 - Growth launchers execute the generator/exporter from Git and the Blend from
   iCloud in one Blender session. They fail before Blender starts unless clean
-  `main`, `origin/main`, the plain iCloud generator mirror, and both Blend
-  copies agree.
+  `main`, `origin/main`, and both Blend copies agree. A generator beside the
+  iCloud Blend is never executed or required because iCloud may rename it.
 - `--no-git`, iCloud-only state, direct unguarded Blender growth, and automatic
   `wip` sharing are retired. Older text describing them is historical only.
 - Direct Blender GUI growth is locked unless its embedded generator hash
@@ -462,8 +462,8 @@ fails loudly; it never silently hands you an empty file the way iCloud's conflic
 - The shared iCloud folder supplies the authoritative `neighborhood.blend` and
   plain-name handoff mirrors. Numbered conflict copies are never executed.
 - Windows and Mac launchers require clean `main`, match `origin/main`, verify
-  repository/iCloud generator and Blend hashes, and then run generator + export
-  in one Blender session.
+  repository/iCloud Blend hashes, and then run the repository generator +
+  exporter in one Blender session. Any iCloud generator copy is ignored.
 - `--no-git` and an unset Mac repository path now fail before Blender starts.
   They are not troubleshooting fallbacks.
 - Direct Blender GUI growth also fails unless its embedded generator hash

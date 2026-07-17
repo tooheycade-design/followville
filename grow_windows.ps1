@@ -30,9 +30,10 @@ $Dir = $PSScriptRoot
 $Blender = "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 
 # 2026-07-17: the Git clone is the only executable source for code/state/web
-# assets. The shared iCloud folder owns the authoritative Blender scene. Both
-# locations are mandatory and their mirrored generator/Blend must match before
-# a growth is allowed to start. Override only for a deliberate machine setup.
+# assets. The shared iCloud folder owns only the authoritative Blender scene.
+# A generator beside the Blend is never executed or required because iCloud may
+# rename it; the repository generator is the sole source. Override paths only
+# for a deliberate machine setup.
 $RepoDir = if ($env:FOLLOWVILLE_REPO_DIR) {
     $env:FOLLOWVILLE_REPO_DIR
 } else {
@@ -107,7 +108,6 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
     }
 
     $RepoGenerator = Join-Path $RepoDir 'neighborhood_blender.py'
-    $SharedGenerator = Join-Path $SharedDir 'neighborhood_blender.py'
     $RepoBlend = Join-Path $RepoDir 'neighborhood.blend'
     $SharedBlend = Join-Path $SharedDir 'neighborhood.blend'
     $Required = @(
@@ -118,7 +118,6 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
         (Join-Path $RepoDir 'town_manifest.json'),
         (Join-Path $RepoDir 'town_chunks\base.glb'),
         $RepoBlend,
-        $SharedGenerator,
         $SharedBlend
     )
     foreach ($file in $Required) {
@@ -155,11 +154,6 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
         Pop-Location
     }
 
-    $RepoGeneratorHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $RepoGenerator).Hash
-    $SharedGeneratorHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SharedGenerator).Hash
-    if ($RepoGeneratorHash -ne $SharedGeneratorHash) {
-        throw "The iCloud generator mirror is stale. Refresh it from the repository before growing."
-    }
     $RepoBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $RepoBlend).Hash
     $SharedBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SharedBlend).Hash
     if ($RepoBlendHash -ne $SharedBlendHash) {

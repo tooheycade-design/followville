@@ -7,7 +7,8 @@ update into ONE shell command, run it, and report the result.
 Operational source split as of 2026-07-17: Git supplies executable code,
 canonical state, assets, and documentation; the shared iCloud folder supplies
 the authoritative `neighborhood.blend`. Guarded launchers require clean/current
-`main` plus matching generator and Blend mirrors. Direct GUI growth,
+`main` plus matching repo/iCloud Blend mirrors, and always execute the Git
+generator; any generator copy beside the Blend is ignored. Direct GUI growth,
 iCloud-only state, `--no-git`, and numbered conflict-copy scripts are not safe
 production paths.
 
