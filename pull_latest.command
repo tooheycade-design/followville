@@ -1,4 +1,7 @@
 #!/bin/bash
+# STATUS 2026-07-17: HANDOFF/RECOVERY ONLY. Git is authoritative. This may
+# restore plain-name mirrors into iCloud, but never makes iCloud a growth
+# source and never replaces the guarded repo growth launcher.
 # pull_latest.command — brings Cade's (or your own past session's) latest
 # work from GitHub into this iCloud folder. Run this FIRST, every session,
 # before editing anything. Companion to deploy_website.command (pushes the

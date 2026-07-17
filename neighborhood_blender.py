@@ -16,6 +16,7 @@ Works on Blender 3.6 – 4.x.
 """
 
 import bpy
+import hashlib
 import json
 import math
 import os
@@ -29,6 +30,54 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in global
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+
+
+EMBEDDED_GENERATOR_HASH_PROPERTY = "followville_generator_sha256"
+
+
+def _normalized_source(text):
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _source_hash(text):
+    return hashlib.sha256(_normalized_source(text).encode("utf-8")).hexdigest()
+
+
+def _configured_repo_dir():
+    configured = (os.environ.get("FOLLOWVILLE_REPO_DIR")
+                  or os.environ.get("NEIGHBORHOOD_STATE_DIR")
+                  or os.environ.get("NEIGHBORHOOD_REPO_DIR"))
+    return os.path.abspath(os.path.expanduser(configured)) if configured else ""
+
+
+def _assert_gui_generator_current(scene):
+    """Refuse direct GUI growth unless the embedded and Git sources agree."""
+    repo = _configured_repo_dir()
+    if not repo:
+        raise RuntimeError(
+            "Growth is locked because the Followville repository is not configured. "
+            "Use grow_windows.bat/grow.sh instead of growing from a directly opened Blend."
+        )
+    if not os.path.isdir(os.path.join(repo, ".git")):
+        raise RuntimeError("Configured Followville repository is not a Git clone: %s" % repo)
+
+    generator_path = os.path.join(repo, "neighborhood_blender.py")
+    state_file = os.path.join(repo, "world_state.json")
+    if not os.path.isfile(generator_path) or not os.path.isfile(state_file):
+        raise RuntimeError("Configured Followville repository is missing its generator or state")
+
+    with open(generator_path, "r", encoding="utf-8-sig", newline=None) as handle:
+        repository_hash = _source_hash(handle.read())
+    embedded = bpy.data.texts.get("neighborhood_blender.py")
+    if embedded is None:
+        raise RuntimeError("The Blend has no embedded Followville generator; run _refresh_text.py")
+    embedded_hash = _source_hash(embedded.as_string())
+    recorded_hash = scene.get(EMBEDDED_GENERATOR_HASH_PROPERTY, "")
+    if not recorded_hash or recorded_hash != repository_hash or embedded_hash != repository_hash:
+        raise RuntimeError(
+            "The Blend's embedded generator is stale. Run the guarded _refresh_text.py "
+            "from the current Git repository before using the Blender Grow button."
+        )
 
 # ═══════════════════════════ CONFIG — EDIT THIS DAILY ═══════════════════════════
 
@@ -4456,6 +4505,11 @@ def _register_ui():
         bl_description = "Apply the change, then play the growth in the camera view"
 
         def execute(self, ctx):
+            try:
+                _assert_gui_generator_current(ctx.scene)
+            except Exception as e:
+                self.report({"ERROR"}, str(e))
+                return {"CANCELLED"}
             try:
                 cfg = _parse_change(ctx.scene.nb_change)
             except ValueError as e:

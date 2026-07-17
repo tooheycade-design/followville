@@ -1,4 +1,7 @@
 #!/bin/bash
+# LEGACY 2026-07-17: iCloud-to-clone recovery path only. Normal production
+# changes are committed/pushed from the authoritative repo; guarded growth
+# already publishes synchronized state and web assets.
 # deploy_website.command — Mac version of deploy_website.bat (2026-07-09).
 # Pushes the current town to GitHub -> Vercel auto-redeploys the live site.
 # Double-click to run. Logs to deploy_log.txt (ends ALL_DONE / ALL_FAILED).

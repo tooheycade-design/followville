@@ -1,5 +1,9 @@
 @echo off
 REM Follower Neighborhood -- Windows growth runner (headless, no Blender GUI).
+REM SAFE SOURCE SPLIT (2026-07-17): code/state/assets always come from the Git
+REM repo; the authoritative neighborhood.blend comes from the shared iCloud
+REM folder. The PowerShell preflight refuses stale/missing mirrors before
+REM Blender starts. The retired --no-git/iCloud-only mode is not supported.
 REM Windows equivalent of grow.sh. Same syntax as the Mac version:
 REM
 REM   grow_windows.bat +5              add 5 houses (5 followers gained)
@@ -14,10 +18,11 @@ REM   --apartments N | --parks N | --trees N | --special TYPEhouse[@gx,gy]
 REM   --followers N             population change differs from house count
 REM   --cam overhead | --tag NAME | --time day|sunset|night | --season X
 REM   --hero | --celebrate
+REM   --preflight-only          validate paths/Git/mirrors; do not run Blender
 REM
 REM HOW TO RUN WITHOUT TYPING IN A TERMINAL WINDOW:
 REM   Press Win+R, then type (or paste) something like:
-REM     "C:\Users\cadet\iCloudDrive\neighborhood\grow_windows.bat" +5 --render
+REM     "C:\Users\cadet\followville_repo\grow_windows.bat" +5 --render
 REM   and press Enter. A console window will open and run Blender headlessly --
 REM   nothing to click inside it. Progress + full output goes to grow_log.txt
 REM   next to this script; its last line is ALL_DONE when finished (or

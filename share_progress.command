@@ -1,4 +1,7 @@
 #!/bin/bash
+# LEGACY 2026-07-17: recovery/handoff only. Do not run during normal
+# repo-based growth; it can switch the clone to wip. Use reviewed Git work
+# from the authoritative repo instead.
 # share_progress.command — pushes your current work to the shared "wip"
 # branch on GitHub WITHOUT deploying it to the live site (that's what
 # deploy_website.command is for, and it only ever touches "main"). Run this

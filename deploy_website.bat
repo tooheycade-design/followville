@@ -1,4 +1,7 @@
 @echo off
+REM LEGACY 2026-07-17: iCloud-to-clone recovery path only. Normal production
+REM changes are committed/pushed from the authoritative repo; guarded growth
+REM already publishes synchronized state and web assets.
 REM Followville -- push the live website (GitHub -> Vercel auto-deploy).
 REM
 REM 2026-07-10: this used to do the copy/commit/push itself in batch with a

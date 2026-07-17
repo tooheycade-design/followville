@@ -1,44 +1,39 @@
-# Follower Neighborhood — Blender Setup
+# Followville
 
-The foundation for your growing 3D city (like the Battery Tea video). One script builds the model library, the world, the daily growth, and the animation.
+Followville is Cade and Zach's persistent Blender town: one follower equals one
+home. The current operating instructions are in `AGENTS.md`, `CLAUDE.md`, and
+the newest entries in `TEAM_LOG.md`.
 
-## One-time setup
+## Authoritative locations
 
-1. Download Blender (free): https://www.blender.org/download/ — install and open it.
-2. Make a folder for the project, e.g. `Documents/neighborhood/`.
-3. In Blender: **File > Save As** → save `neighborhood.blend` into that folder. (Important — the world's memory file lives next to it.)
-4. Go to the **Scripting** tab (top bar) → **Open** → pick `neighborhood_blender.py` → move it into the same folder when asked or just open it from wherever you saved it.
+- Git repository: `C:\Users\cadet\followville_repo`
+- Shared authoritative Blender scene:
+  `C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend`
+- Canonical city state: the repository's `world_state.json`
+- Live website: <https://followville-kappa.vercel.app>
 
-## Daily routine (1 minute)
+Code, state, manifests, GLBs, chunks, and current documentation come from Git.
+The iCloud folder holds the shared Blender scene and verified handoff mirrors.
+Do not use numbered iCloud conflict copies as executable source.
 
-**In Blender (easiest):** open `neighborhood.blend` (click "Allow Execution" if asked),
-press **N** in the viewport, open the **City** tab, type your change (`+5`, `-3`, `=50`),
-click **Grow the City** — watch it build through the camera — then **Render Video**.
-The mp4 lands in `renders/` and auto-copies to your Desktop. AirDrop → post.
+## Before any growth
 
-**Or in Terminal:** `~/Documents/neighborhood/grow.sh +5 --render`
-(`-3` removes houses, `"=50"` sets the total — quote the = form.)
+On Windows, run the guarded launcher from the repository:
 
-Extras on either path: Time (day/sunset/night — auto-cycles by default, night = lit
-windows + streetlights) and Season (auto-follows the real calendar; winter = snow,
-fall = orange trees). Milestones appear automatically: plaza at 500, skyscraper at
-2,000, stadium at 10,000. Cars drive through town in every video.
+```text
+grow_windows.bat --preflight-only
+grow_windows.bat +N --render
+```
 
-The script remembers everything in `world_state.json` — old buildings stay exactly where they were, forever. Back that file up; it IS your city.
+On Mac, set `FOLLOWVILLE_REPO_DIR` to the local Git clone and run the repository
+or mirrored `grow.sh`. The script refuses to run without a clean, current
+`main`, a matching shared scene, and a matching plain-name generator mirror.
 
-## What's in the model library
+Never delete, reset, replace, or test against canonical `world_state.json`.
+Never run a daily growth simultaneously on both machines.
 
-Houses (6 variants: random walls, roofs, chimneys, yard trees), apartment complexes (3), shops (3), parks (3: pond, trees, benches), trees (4), streetlights, cars. Streetlights and parked cars scatter automatically as the road grid grows.
+## Historical note
 
-## Extending it
-
-- **Add a model:** copy `build_shop()` in the ASSET LIBRARY section, build your thing out of `add_box` / `add_ngon_cone` / `add_prism_roof` calls, register it in `ASSET_VARIANTS`, add a `NEW_<THING>` config line following the pattern in `main()`.
-- **Use downloaded/AI models:** import any model into the .blend, put it in a collection named e.g. `AST_stadium_0`, register that name in `ASSET_VARIANTS` — the script will place it like any other asset.
-- **Re-render yesterday:** set `REPLAY_LAST_DAY = True` (adds nothing, re-animates the last batch).
-- **Look tweaks:** sun angle/energy and sky color in `build_stage()`, camera lens/DOF there too.
-
-## Tips
-
-- First run: try `NEW_HOUSES = 10` as a test, then `Reset` by deleting `world_state.json` before going live.
-- Renders are fast (EEVEE). A 10-second day renders in a couple of minutes on most laptops.
-- Want captions burned in? Easier to add text in Instagram/CapCut than in Blender.
+Older setup instructions allowed direct Blender growth, iCloud-only state,
+`--no-git`, manual `wip` auto-sharing, and deleting `world_state.json` to reset
+a test town. Those workflows are retired and unsafe for the production city.

@@ -730,6 +730,30 @@ Kept here (rather than just in chat) so it survives across sessions.
   the shared spawn (or standing nearly inside each other) no longer have an
   avatar fill the camera; it returns after they separate by 1.65m.
 
+## 39. Guarded shared generator and claim-metadata maintenance (staged)
+
+- Made the Git clone the only executable source for generator, exporter, state,
+  and streamed/full web assets while retaining the shared iCloud
+  `neighborhood.blend` as the authoritative Blender scene.
+- Added matching Windows/Mac preflights that require clean synchronized `main`,
+  exact repository/iCloud generator and Blend hashes, current `origin/main`, and
+  all required streamed assets before Blender starts. The retired `--no-git`,
+  legacy `wip` auto-share, and standalone deploy/share paths now fail or carry
+  prominent historical/recovery warnings.
+- Hardened Blender text refresh with an explicit Git source, source hashing,
+  scene provenance, and a recoverable pre-refresh Blend backup. Direct GUI
+  growth now cancels when the embedded generator is not byte-for-byte current.
+- Updated expansion and handoff documentation to Day 15, population 259, 262
+  buildings, and consumed planned addresses through 115; address 116 is next.
+- Prepared, but did not apply, a guarded Supabase transaction for unclaimed
+  seed 73. Git history and canonical state identify it as the Day 9 house at
+  `(-3,-3)`; the live metadata still reflects a discarded `lanestreet` attempt.
+  The transaction is restricted to that row and contains a guarded rollback.
+- Temporary-Blend QA proved the refresh changed generator provenance but not
+  object/collection/mesh/material counts or the geometry digest. Production
+  database execution and any `main` push remain pending Cade's approval. No
+  state, GLB, town geometry, population, claim, or owner changed in this stage.
+
 ## Files touched
 - `index.html` — the web viewer itself
 - `export_web.py` — new; Blender→glTF export script

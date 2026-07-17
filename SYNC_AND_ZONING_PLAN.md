@@ -1,4 +1,9 @@
 # Followville — Sync Discrepancy Diagnosis & Scaling Plan
+> **Historical planning document.** Its 2026-07-10 diagnosis is useful context,
+> but it is not an operating guide. The guarded Git/iCloud source split in
+> `AGENTS.md`, `CLAUDE.md`, and the current growth scripts supersedes its
+> proposed workflow. Do not execute old `wip` or iCloud-only steps from here.
+
 *Written 2026-07-10. Spec/planning document only — no implementation yet. Per your usual pattern, hand this to a separate Fable build session once you and Zach agree on the approach.*
 
 ## 0. Status check

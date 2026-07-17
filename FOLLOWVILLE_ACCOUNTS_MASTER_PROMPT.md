@@ -1,5 +1,9 @@
 # Master prompt: Followville accounts + home claiming
 
+> **Historical implementation brief.** The claiming system is already live.
+> Use `CLAIMING_SETUP.md`, `supabase_schema.sql`, and current handoff files for
+> operations; do not rebuild or migrate from this original starting spec.
+
 Paste this whole document as the first message in a new Claude (Fable) chat to start
 building this feature. It's self-contained — read `CLAUDE.md` in this project folder
 first for full context on what Followville already is before writing any code.

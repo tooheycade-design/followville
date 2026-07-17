@@ -1,19 +1,30 @@
 # Codex handoff -- current through Day 15
 
-Updated 2026-07-16 for Cade's next Claude/Codex session.
+Updated 2026-07-17 for Cade's next Claude/Codex session.
 
 ## Open the authoritative project
 
-The live project is `C:\Users\cadet\followville_repo`, not the old binary/state
-copies in `C:\Users\cadet\iCloudDrive\neighborhood`. Start by reading
-`AGENTS.md`, `CLAUDE.md`, and the newest entries in `TEAM_LOG.md` from the repo.
-Run `git pull origin main` in the repo before changing anything.
+The executable project is `C:\Users\cadet\followville_repo`: code, canonical
+`world_state.json`, complete/streamed web assets, and current documentation come
+from Git. Start by reading `AGENTS.md`, `CLAUDE.md`, and the newest entries in
+`TEAM_LOG.md` there, then compare local `main` with `origin/main`.
 
-Do not replace the repo's `world_state.json`, `town.glb`, or
-`neighborhood.blend` with similarly named iCloud copies. The iCloud folder has
-historical/conflict copies and is only a shared handoff/bootstrap location now.
+The shared authoritative Blender scene is
+`C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend`; the repo Blend is
+a synchronized safety copy. Growth uses the generator/exporter from Git and
+that iCloud scene in one guarded Blender session. Never execute a numbered
+iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
+workflow.
 
 ## Current canon
+
+- A Day 15 maintenance pass hardens the shared Blender workflow before any new
+  growth: production launchers require clean/current Git, match the repo and
+  iCloud generator/Blend mirrors, and execute only the repository generator.
+  Direct GUI growth rejects a stale embedded generator. The current refresh
+  tool backs up the Blend and embeds the repo source with its hash/revision.
+  No population, building, geometry, state, or generated asset changes belong
+  to this maintenance.
 
 - The website now streams deterministic Blender districts while keeping the
   complete town as a safety fallback. `town_manifest.json` hashes a compressed
@@ -222,24 +233,16 @@ historical/conflict copies and is only a shared handoff/bootstrap location now.
 
 ## Latest delivery
 
-The Day 14 rise-overhead, completed-town overhead, football scene, and combined
-Reel MP4s are in:
-
-`C:\Users\cadet\Documents\Codex\2026-07-11\th\outputs`
-
-They were visually reviewed and copied to Cade's Desktop. Only
-`day_014_houses_appearing_overhead_0001-0244.mp4` contains house-rise animation;
-`day_014_reel_cut.mp4` joins rise, football scene, then static town overhead.
-All four were emailed to `tooheycade@gmail.com` in two messages with subjects
-`Followville Day 14 videos -- 244 followers (1 of 2)` and `(2 of 2)`.
+Day 15's approved delivery is three separate reviewed MP4s: whole-town/all-15
+rise, Kaleidoscope ten-home rise, and finished storybook-street tour. Do not
+replace them with the older combined Day 14 reel pattern. The newest production
+code delivery is district streaming plus the avatar camera guard and the CI
+timeout follow-up; it did not change town content.
 
 ## Git checkpoints
 
-- `df0c971` -- Day 14 population 244 state and permanent GLB.
-- `44e2449` -- top-down growth camera and temporary supporter-scene generator.
-- The final handoff commit after `df0c971` includes the saved Day 14 blend,
-  final GLB rebuild, documentation, and Windows growth guard.
-- `408ddab` -- final connected playground equipment and correct wheel placement.
-- `8984740` -- logged the corrected Day 12 video delivery.
+- `7446a16` -- production district streaming and streamed/full validation.
+- `40421eb` -- nearby multiplayer avatars no longer clip the camera.
+- `fbdef0e` -- CI allowance for the eight streamed Three.js regressions.
 
 Read newer commits if present; `origin/main` remains authoritative.

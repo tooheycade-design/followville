@@ -29,17 +29,20 @@ $ErrorActionPreference = "Stop"
 $Dir = $PSScriptRoot
 $Blender = "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 
-# 2026-07-08: world_state.json + town.glb now live authoritatively in the git
-# repo clone, not in this iCloud-synced folder -- Blender reads/writes them
-# there directly via NEIGHBORHOOD_STATE_DIR (see state_path() in
-# neighborhood_blender.py / export_web.py). This is the real fix for the
-# repeated iCloud sync race (world_state.json's plain filename randomly
-# getting renamed to a numbered conflict copy mid-session -- see CLAUDE.md).
-# git doesn't have that failure mode: a "git pull" either gets you the latest
-# committed state or fails loudly, it never silently hands you an empty file.
-# Pass --no-git to fall back to the old behavior (state next to the .blend,
-# in this iCloud folder, no git pull/push) if this ever needs troubleshooting.
-$RepoDir = "C:\Users\cadet\followville_repo"
+# 2026-07-17: the Git clone is the only executable source for code/state/web
+# assets. The shared iCloud folder owns the authoritative Blender scene. Both
+# locations are mandatory and their mirrored generator/Blend must match before
+# a growth is allowed to start. Override only for a deliberate machine setup.
+$RepoDir = if ($env:FOLLOWVILLE_REPO_DIR) {
+    $env:FOLLOWVILLE_REPO_DIR
+} else {
+    "C:\Users\cadet\followville_repo"
+}
+$SharedDir = if ($env:FOLLOWVILLE_SHARED_DIR) {
+    $env:FOLLOWVILLE_SHARED_DIR
+} else {
+    "C:\Users\cadet\iCloudDrive\neighborhood"
+}
 
 # pull an optional "--log <name>" out of $args by hand; everything else passes
 # straight through to Blender untouched, in original order
@@ -52,21 +55,26 @@ if ($logIdx -ge 0 -and $logIdx -lt $ArgList.Count - 1) {
     $ArgList.RemoveAt($logIdx + 1)
     $ArgList.RemoveAt($logIdx)
 }
-$UseGit = $true
+$PreflightOnly = $false
+$preflightIdx = $ArgList.IndexOf('--preflight-only')
+if ($preflightIdx -ge 0) {
+    $PreflightOnly = $true
+    $ArgList.RemoveAt($preflightIdx)
+}
 $noGitIdx = $ArgList.IndexOf('--no-git')
 if ($noGitIdx -ge 0) {
-    $UseGit = $false
-    $ArgList.RemoveAt($noGitIdx)
-}
-
-if ($ArgList.Count -lt 1) {
-    Write-Host "Usage: grow_windows.bat +N | -N | =N | replay [--render|--still|--apartments N|--parks N|--trees N|--followers N] [--log NAME]"
+    Write-Host "ERROR: --no-git was retired. Followville growth must use the authoritative Git state."
     exit 1
 }
 
-$Change = $ArgList[0]
+if ($ArgList.Count -lt 1 -and -not $PreflightOnly) {
+    Write-Host "Usage: grow_windows.bat +N | -N | =N | replay [options] [--preflight-only]"
+    exit 1
+}
+
+$Change = if ($PreflightOnly -and $ArgList.Count -eq 0) { '<preflight>' } else { $ArgList[0] }
 $Extra = @()
-if ($ArgList.Count -gt 1) { $Extra = $ArgList.GetRange(1, $ArgList.Count - 1) }
+if ($ArgList.Count -gt 1) { $Extra = @($ArgList.GetRange(1, $ArgList.Count - 1)) }
 
 $LogFile = Join-Path $Dir $LogName
 
@@ -88,6 +96,80 @@ function Invoke-Git {
     $script:LastGitExit = $LASTEXITCODE
     $ErrorActionPreference = $PrevEAP
     return ($result | Out-String)
+}
+
+function Assert-FollowvilleInputs([bool]$PullMain) {
+    if (-not (Test-Path -LiteralPath $Blender -PathType Leaf)) {
+        throw "Blender not found at: $Blender"
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $RepoDir '.git'))) {
+        throw "Authoritative repository is missing or is not a Git clone: $RepoDir"
+    }
+
+    $RepoGenerator = Join-Path $RepoDir 'neighborhood_blender.py'
+    $SharedGenerator = Join-Path $SharedDir 'neighborhood_blender.py'
+    $RepoBlend = Join-Path $RepoDir 'neighborhood.blend'
+    $SharedBlend = Join-Path $SharedDir 'neighborhood.blend'
+    $Required = @(
+        $RepoGenerator,
+        (Join-Path $RepoDir 'export_web.py'),
+        (Join-Path $RepoDir 'world_state.json'),
+        (Join-Path $RepoDir 'town.glb'),
+        (Join-Path $RepoDir 'town_manifest.json'),
+        (Join-Path $RepoDir 'town_chunks\base.glb'),
+        $RepoBlend,
+        $SharedGenerator,
+        $SharedBlend
+    )
+    foreach ($file in $Required) {
+        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+            throw "Missing required Followville file: $file"
+        }
+    }
+
+    Push-Location $RepoDir
+    try {
+        $Branch = (Invoke-Git @('branch', '--show-current')).Trim()
+        if ($script:LastGitExit -ne 0 -or $Branch -ne 'main') {
+            throw "Production growth requires the repository on clean branch main; current branch is '$Branch'."
+        }
+        $TrackedStatus = (Invoke-Git @('status', '--porcelain', '--untracked-files=no')).Trim()
+        if ($script:LastGitExit -ne 0 -or $TrackedStatus) {
+            throw "Tracked repository changes are present. Commit or intentionally resolve them before growing; no files were changed."
+        }
+        if ($PullMain) {
+            Log-Line "-- git pull --ff-only (authoritative repo, before growing) --"
+            $PullOutput = Invoke-Git @('pull', '--ff-only', 'origin', 'main')
+            $PullOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
+            if ($script:LastGitExit -ne 0) {
+                throw "git pull --ff-only failed. Resolve Git before any growth."
+            }
+        }
+        $Head = (Invoke-Git @('rev-parse', 'HEAD')).Trim()
+        $OriginMain = (Invoke-Git @('rev-parse', 'origin/main')).Trim()
+        if (-not $Head -or $Head -ne $OriginMain) {
+            throw "Local main does not match origin/main. Pull or resolve the branch before growing."
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
+    $RepoGeneratorHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $RepoGenerator).Hash
+    $SharedGeneratorHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SharedGenerator).Hash
+    if ($RepoGeneratorHash -ne $SharedGeneratorHash) {
+        throw "The iCloud generator mirror is stale. Refresh it from the repository before growing."
+    }
+    $RepoBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $RepoBlend).Hash
+    $SharedBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SharedBlend).Hash
+    if ($RepoBlendHash -ne $SharedBlendHash) {
+        throw "Repository and iCloud neighborhood.blend differ. Reconcile the authoritative scene before growing."
+    }
+
+    $env:FOLLOWVILLE_REPO_DIR = $RepoDir
+    $env:NEIGHBORHOOD_REPO_DIR = $RepoDir
+    $env:NEIGHBORHOOD_STATE_DIR = $RepoDir
+    Log-Line "PREFLIGHT_OK repo=$RepoDir shared=$SharedDir commit=$Head"
 }
 
 # 2026-07-09: claimable-homes feature (see CLAIMING_SETUP.md). After a growth
@@ -119,8 +201,7 @@ function Sync-Houses {
         if (-not $SbUrl -or -not $SbKey) {
             throw "supabase_sync.env is missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
         }
-        $StateDir = if ($UseGit) { $RepoDir } else { $Dir }
-        $StateFile = Join-Path $StateDir 'world_state.json'
+        $StateFile = Join-Path $RepoDir 'world_state.json'
         $State = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
         if (-not $State.buildings -or @($State.buildings).Count -eq 0) {
             throw "world_state.json at $StateFile has no buildings (empty-default fallback? refusing to sync)"
@@ -167,26 +248,11 @@ Log-Line "Change requested: $Change"
 if ($Extra.Count -gt 0) { Log-Line ("Extra args: " + ($Extra -join ' ')) }
 
 try {
-    if (-not (Test-Path -LiteralPath $Blender)) {
-        throw "Blender not found at: $Blender (edit the `$Blender path near the top of grow_windows.ps1 if it moved or was upgraded)"
-    }
-
-    if ($UseGit) {
-        if (-not (Test-Path -LiteralPath (Join-Path $RepoDir '.git'))) {
-            throw "$RepoDir is not a git clone -- run clone_repo.bat first, or pass --no-git to use the old iCloud-folder-only behavior."
-        }
-        Log-Line "-- git pull (repo clone, before growing) --"
-        Push-Location $RepoDir
-        $PullOutput = Invoke-Git @('pull', 'origin', 'main')
-        Pop-Location
-        $PullOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
-        if ($script:LastGitExit -ne 0) {
-            throw "git pull failed in $RepoDir -- see $LogFile. Not safe to grow on top of a state we might not have the latest copy of; resolve the git issue first (or pass --no-git for the old behavior)."
-        }
-        $env:NEIGHBORHOOD_STATE_DIR = $RepoDir
-    }
-    else {
-        Remove-Item Env:\NEIGHBORHOOD_STATE_DIR -ErrorAction SilentlyContinue
+    Assert-FollowvilleInputs (-not $PreflightOnly)
+    if ($PreflightOnly) {
+        Log-Line "ALL_DONE"
+        Write-Host "PREFLIGHT_OK"
+        exit 0
     }
 
     switch -Regex ($Change) {
@@ -199,9 +265,9 @@ try {
         }
     }
 
-    $BlendFile   = Join-Path $Dir 'neighborhood.blend'
-    $GeneratorPy = Join-Path $Dir 'neighborhood_blender.py'
-    $ExportPy    = Join-Path $Dir 'export_web.py'
+    $BlendFile   = Join-Path $SharedDir 'neighborhood.blend'
+    $GeneratorPy = Join-Path $RepoDir 'neighborhood_blender.py'
+    $ExportPy    = Join-Path $RepoDir 'export_web.py'
 
     foreach ($f in @($BlendFile, $GeneratorPy, $ExportPy)) {
         if (-not (Test-Path -LiteralPath $f)) { throw "Missing required file: $f" }
@@ -243,7 +309,7 @@ try {
     }
     $ResultLines | ForEach-Object { Log-Line $_.Line }
 
-    $GlbDir = if ($UseGit) { $RepoDir } else { $Dir }
+    $GlbDir = $RepoDir
     if ($Output | Select-String -Pattern '^export_web\.py: wrote') {
         Log-Line ("WEB " + (Join-Path $GlbDir 'town.glb'))
         $RequiredWebAssets = @(
@@ -272,73 +338,51 @@ try {
         }
     }
 
-    if ($UseGit) {
-        Log-Line "-- git add/commit/push (state + full/streamed town assets) --"
-        Push-Location $RepoDir
-        (Invoke-Git @('add', 'world_state.json', 'town.glb', 'town_manifest.json', 'town_chunks')) | Out-File -FilePath $LogFile -Append -Encoding utf8
+    Log-Line "-- git add/commit/push (state + full/streamed town assets) --"
+    Push-Location $RepoDir
+    try {
+        $AddOutput = Invoke-Git @('add', 'world_state.json', 'town.glb', 'town_manifest.json', 'town_chunks')
+        $AddOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
+        if ($script:LastGitExit -ne 0) {
+            throw "git add failed after growing. State/assets remain local; resolve Git before another growth."
+        }
 
         $PrevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
         & git diff --cached --quiet
-        $NothingToCommit = ($LASTEXITCODE -eq 0)
+        $DiffExit = $LASTEXITCODE
         $ErrorActionPreference = $PrevEAP
+        if ($DiffExit -gt 1) {
+            throw "git diff failed after staging growth assets. Resolve Git before another growth."
+        }
+        $NothingToCommit = ($DiffExit -eq 0)
 
         if ($NothingToCommit) {
             Log-Line "NOCHANGES -- state and town assets already match the last commit"
         }
         else {
             $CommitMsg = "Grow: $Change (auto-committed by grow_windows.ps1 $(Get-Date -Format o))"
-            (Invoke-Git @('commit', '-m', $CommitMsg)) | Out-File -FilePath $LogFile -Append -Encoding utf8
+            $CommitOutput = Invoke-Git @('commit', '-m', $CommitMsg)
+            $CommitOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
+            if ($script:LastGitExit -ne 0) {
+                throw "git commit failed after growing. State/assets remain staged; resolve Git before another growth."
+            }
             $PushOutput = Invoke-Git @('push', 'origin', 'main')
             $PushOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
             if ($script:LastGitExit -ne 0) {
-                Pop-Location
-                throw "git push failed after growing -- state and town assets are committed LOCALLY in $RepoDir but not pushed. See $LogFile, then push manually once fixed (e.g. network/auth issue) -- do not re-run a growth day on top of this without resolving it first."
+                throw "git push failed after growing -- state/assets are committed locally. Resolve the push before another growth."
             }
             Log-Line "PUSHED $CommitMsg"
         }
+    }
+    finally {
         Pop-Location
     }
 
     Log-Line "-- houses table sync (claimable homes, see CLAIMING_SETUP.md) --"
     Sync-Houses
 
-    # 2026-07-10: auto-share progress to wip after every successful growth run,
-    # mirroring grow.sh's matching block (see CLAUDE.md's Collaboration
-    # section). State plus full/streamed town assets are already pushed straight to main
-    # above via NEIGHBORHOOD_STATE_DIR, so share_progress.bat only needs to
-    # carry the OTHER tracked files (docs/code) -- it was fixed on 2026-07-10
-    # to skip those two files for exactly that reason. Best-effort: a failure
-    # here does NOT fail this growth run, since the town itself already grew
-    # and (if -UseGit) pushed successfully above.
-    $ShareScript = Join-Path $Dir 'share_progress.bat'
-    $RunningInAuthoritativeRepo = [string]::Equals(
-        [System.IO.Path]::GetFullPath($Dir).TrimEnd('\'),
-        [System.IO.Path]::GetFullPath($RepoDir).TrimEnd('\'),
-        [System.StringComparison]::OrdinalIgnoreCase)
-    if ($RunningInAuthoritativeRepo) {
-        # share_progress.bat is designed to copy from the iCloud handoff folder
-        # into this separate clone and therefore checks the clone out to wip.
-        # When grow_windows.ps1 itself already lives in the authoritative clone,
-        # calling it would switch this working tree away from main after a good
-        # growth push (observed on Day 14). The state/model are already on main;
-        # skip the legacy iCloud-sharing hop here.
-        Log-Line "AUTO_SHARE_SKIPPED (running in authoritative repo; main is already pushed)"
-    }
-    elseif (Test-Path -LiteralPath $ShareScript) {
-        Log-Line "-- auto-sharing progress to wip --"
-        $PrevEAP = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
-        & cmd.exe /c "`"$ShareScript`"" 2>&1 | Out-File -FilePath $LogFile -Append -Encoding utf8
-        $ShareExit = $LASTEXITCODE
-        $ErrorActionPreference = $PrevEAP
-        if ($ShareExit -ne 0) {
-            Log-Line "AUTO_SHARE_FAILED -- growth itself succeeded and was saved; see share_progress_log.txt"
-        }
-    }
-    else {
-        Log-Line "AUTO_SHARE_SKIPPED (share_progress.bat not found)"
-    }
+    Log-Line "HANDOFF_SYNC_SKIPPED (authoritative main already contains the growth assets)"
 
     Log-Line "ALL_DONE"
 }

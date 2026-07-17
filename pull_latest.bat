@@ -1,4 +1,7 @@
 @echo off
+REM STATUS 2026-07-17: HANDOFF/RECOVERY ONLY. Git is authoritative. This may
+REM restore plain-name mirrors into iCloud, but never makes iCloud a growth
+REM source and never replaces the guarded repo growth launcher.
 REM Followville -- bring Zach's (or your own past session's) latest work from
 REM GitHub into this iCloud folder. Run this FIRST, every session, before
 REM editing anything. Companion to deploy_website.bat (pushes the other

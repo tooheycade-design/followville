@@ -7,7 +7,41 @@ town.glb) live in the git repo clone (`C:\Users\cadet\followville_repo`), NOT in
 folder, by default — see "Where world_state.json + town.glb actually live now" below before
 you go looking for it here.**
 
+## Authoritative operating workflow (2026-07-17)
+
+- Git is the only executable source for code, `world_state.json`, website
+  assets, and current documentation. On Windows use
+  `C:\Users\cadet\followville_repo`.
+- The shared authoritative scene is
+  `C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend`. The matching
+  repo copy is a synchronized safety copy.
+- Growth launchers execute the generator/exporter from Git and the Blend from
+  iCloud in one Blender session. They fail before Blender starts unless clean
+  `main`, `origin/main`, the plain iCloud generator mirror, and both Blend
+  copies agree.
+- `--no-git`, iCloud-only state, direct unguarded Blender growth, and automatic
+  `wip` sharing are retired. Older text describing them is historical only.
+- Direct Blender GUI growth is locked unless its embedded generator hash
+  matches the configured Git repository. Use the guarded `_refresh_text.py`
+  workflow after generator changes.
+- Numbered iCloud files are conflict/history copies, never executable source.
+  Preserve them, but restore current handoffs and scripts under plain names.
+
+This block and the actual current scripts override conflicting historical text
+later in this file.
+
 ## Current canon (update this section each day!)
+- 2026-07-17 maintenance staging (production database/main push pending): the
+  guarded growth/refresh workflow now treats Git as the only executable source
+  and iCloud `neighborhood.blend` as the shared scene, rejects retired
+  iCloud-only/`--no-git` paths, and locks direct GUI growth when the embedded
+  generator hash differs. The expansion docs now reflect Day 15/address 115.
+  A one-row guarded repair transaction is prepared for unclaimed seed 73, whose live
+  Supabase metadata still reflects an abandoned Day 9 road experiment even
+  though every Git `main` state identifies it as a house. Do not describe that
+  database repair as live until its transaction and claim-preservation audit
+  complete. No town state, geometry, population, or generated asset belongs in
+  this maintenance diff.
 - 2026-07-16 scalable town delivery (Cade via Windows Codex): the canonical
   Blender world now exports a hashed `town_manifest.json`, a compressed shared
   `town_chunks/base.glb`, and five district GLBs in addition to the complete
@@ -415,9 +449,19 @@ you go looking for it here.**
   containing custom houses (enforced in code).
 
 ## Daily workflow (Terminal, no Blender GUI needed)
-  cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/neighborhood
-  ./grow.sh +N --render              # N followers gained -> N houses + video
-  ./grow.sh -N | "=TOTAL" | replay   # losses / set total / re-animate
+
+Windows (authoritative production path):
+
+```text
+cd C:\Users\cadet\followville_repo
+grow_windows.bat --preflight-only
+grow_windows.bat +N --render
+```
+
+Mac: set `FOLLOWVILLE_REPO_DIR` to the local Git clone, then run the guarded
+`grow.sh`. It refuses to use iCloud-only state. Run `--preflight-only` first on
+Zach's first use after any workflow change.
+
 Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
        --cam overhead|street|park --tag NAME --time day|sunset|night --season X --still
        (--cam street: added 2026-07-07 — eye-level flythrough down the town's oldest
@@ -440,8 +484,10 @@ Videos auto-copy to Desktop. Multi-shot days: hero shot (replay --hero --render 
 ## Adding custom house models (Fable-level work)
 Edit neighborhood_blender.py: write build_X_house() using add_box/add_ngon_cone/
 add_prism_roof + mat(), register in SIZE and ASSET_VARIANTS, then
---special xhouse[@gx,gy]. Match the cute pastel style. After script changes run:
-  /Applications/Blender.app/Contents/MacOS/Blender --background neighborhood.blend --python _refresh_text.py
+--special xhouse[@gx,gy]. Match the cute pastel style. After script changes,
+refresh embedded text only through the guarded repo `_refresh_text.py` with
+`FOLLOWVILLE_REPO_DIR`/`NEIGHBORHOOD_STATE_DIR` set. Never load a numbered
+iCloud generator copy.
 
 ## Cost discipline
 - ONE preview still per day max (--still), then render.
@@ -480,38 +526,25 @@ hand-rebuilds simplified house shapes from world_state.json alone, no Blender ne
 is a safety net only — it's visually approximate and NOT kept in sync with new Blender
 house types. Prefer fixing/regenerating town.glb over touching the JS builders.
 
-Serve via a local server (`python3 -m http.server` in this folder — fetch() needs http://,
-not file://) to preview locally. For the actual live site, see "Deploying the live site"
-below — growing the town does NOT push those changes live by itself.
+Serve via a local server (`python3 -m http.server` in the repository; fetch()
+needs http://, not file://) to preview locally. Production growth commits and
+pushes synchronized state/full/streamed assets to `main`; non-growth code/docs
+still require an intentional reviewed Git commit and push.
 It always shows the CURRENT town only (no time-travel yet). Usernames on houses are a
 planned feature, not wired up — needs a `username` field added to buildings in
 world_state.json first.
 
-## Deploying the live site (GitHub + Vercel) — READ THIS, it's the thing that got missed
-Live URL: `https://followville-kappa.vercel.app`. Repo:
-`https://github.com/tooheycade-design/followville`. Vercel auto-redeploys on every push
-to `main` — but nothing pushes automatically on its own.
+## Deploying the live site (current workflow)
 
-**Growing the town (`grow.sh` / `grow_windows.bat`) does NOT push to GitHub or update the
-live site.** Neither script contains a single git command — they only ever touch files in
-this local iCloud folder. Deploying is a separate, manual step, and it's easy to forget:
-on 2026-07-07 the live site was still showing "day 5" a full day after the local town had
-already grown to day 6, because nobody had pushed in between. **After growing the town,
-always also check/push the live site — don't assume it updates itself.**
-- **Windows:** `deploy_website.bat` (built 2026-07-07) does this in one click — copies the
-  current tracked files (index.html, town.html, town.glb, world_state.json,
-  neighborhood_blender.py, grow.sh, export_web.py, the .md docs, etc.) into a local git
-  clone at `C:\Users\cadet\followville_repo`, commits, and pushes. Progress + a final
-  `ALL_DONE`/`ALL_FAILED` land in `deploy_log.txt`. See the "Third AI" section below for
-  the full setup story (installing git, cloning, one-time GitHub sign-in, etc.).
-- **Mac:** no equivalent script was found in this folder as of 2026-07-07 — the repo
-  already had prior commits (e.g. "Day 5: population 22, 22 buildings") before any AI
-  touched git here, so it looks like Cade has just been running `git add / commit / push`
-  by hand from a Mac terminal after growing. **If you're Zach's Claude reading this:**
-  check with Cade whether he already has a routine for this before assuming there isn't
-  one — and if there really isn't one, consider offering to build a `deploy_website.sh`
-  mirroring this same idea (copy tracked files, commit, push, log ALL_DONE) so this stops
-  getting missed.
+Live URL: `https://followville-kappa.vercel.app`. Vercel deploys each reviewed
+push to repository `main`. Guarded production growth commits and pushes only
+`world_state.json`, `town.glb`, `town_manifest.json`, and `town_chunks/` after a
+successful same-session build/export. Other changes use normal reviewed Git
+commits from the repository.
+
+The old `deploy_website.*` and `share_progress.*` iCloud-to-clone scripts are
+legacy recovery/handoff tools. Do not use them for routine repo-based growth or
+deployment, and never let one switch the authoritative clone to `wip`.
 
 ## Where world_state.json + town.glb actually live now (2026-07-09)
 This section supersedes most of the "combined restore + launch script" workaround described
@@ -524,42 +557,20 @@ sync path. The actual fix isn't a smarter workaround, it's removing the file fro
 path entirely and using git instead — a `git pull` either gets you the latest committed state or
 fails loudly; it never silently hands you an empty file the way iCloud's conflict-copy renaming did.
 
-**How it works now (Windows):**
-- `neighborhood_blender.py`'s `state_path()` and `export_web.py`'s town.glb output path both
-  check an environment variable, `NEIGHBORHOOD_STATE_DIR`. If set, `world_state.json`/`town.glb`
-  are read/written there instead of "next to the .blend" (the old default). Unset = old
-  behavior, unchanged — this is fully backward compatible.
-- `grow_windows.ps1` sets `NEIGHBORHOOD_STATE_DIR` to `C:\Users\cadet\followville_repo` (the git
-  clone) before every Blender invocation. Before that, it does `git pull origin main` in the
-  clone — if the pull fails, the whole run aborts loudly rather than growing on top of state we
-  might not have the latest copy of. After Blender succeeds, it `git add`s `world_state.json` +
-  `town.glb`, commits (message: `Grow: <change> (auto-committed by grow_windows.ps1 <timestamp>)`),
-  and pushes to `origin/main` automatically — growing the town and publishing its new state are
-  now ONE step, not two. (This also closes the *other* recurring problem, "forgot to deploy,
-  live site stuck a day behind" — see the old note below.)
-- Pass `--no-git` to `grow_windows.bat`/`.ps1` to fall back to the pre-2026-07-09 behavior
-  (state next to the `.blend`, in this iCloud folder, no git pull/push) if this ever needs
-  troubleshooting.
-- `deploy_website.bat` no longer copies `world_state.json`/`town.glb` from this iCloud folder —
-  doing so would silently overwrite the fresher git-committed copies with a stale iCloud copy.
-  It still handles every OTHER tracked file (docs, code, the HTML). Growing (`grow_windows.bat`)
-  publishes state; `deploy_website.bat` publishes everything else (docs/code changes made
-  directly in this iCloud folder, outside of a growth run).
-- `preview_website.ps1` (local preview server) was updated to serve `world_state.json`/`town.glb`
-  from the repo clone if present there, and everything else from this iCloud folder as before —
-  so local preview still shows the real current state after a `grow_windows.bat` run.
-- **Mac (`grow.sh`):** the equivalent opt-in exists — set `NEIGHBORHOOD_REPO_DIR` (e.g.
-  `export NEIGHBORHOOD_REPO_DIR="$HOME/Documents/GitHub/followville"`) before running `grow.sh`,
-  and it mirrors the same pull/env-var/commit-push pattern. **This was written from the Windows
-  session and has NOT been tested on an actual Mac** — Cade's and Zach's Mac repo clone paths
-  weren't known/verifiable from here. Leave `NEIGHBORHOOD_REPO_DIR` unset and `grow.sh` behaves
-  exactly as before (fully backward compatible); whoever's on a Mac should verify this once
-  before relying on it, and update this note with what was actually found.
-- **Docs (this file, TEAM_LOG.md, etc.) have NOT moved** — they're far less frequently
-  read-modified-written than `world_state.json` was, but they DO still occasionally get hit by
-  the same iCloud race (it happened again mid-edit while writing this very section, 2026-07-09 —
-  see the recovery pattern in the gotcha note below). If this becomes a recurring problem for
-  docs too, the same fix applies: move their canonical copy into the git repo clone as well.
+**Current guarded source split (2026-07-17):**
+- The Git repository is mandatory and supplies the generator, exporter, state,
+  complete/streamed web assets, and current documentation.
+- The shared iCloud folder supplies the authoritative `neighborhood.blend` and
+  plain-name handoff mirrors. Numbered conflict copies are never executed.
+- Windows and Mac launchers require clean `main`, match `origin/main`, verify
+  repository/iCloud generator and Blend hashes, and then run generator + export
+  in one Blender session.
+- `--no-git` and an unset Mac repository path now fail before Blender starts.
+  They are not troubleshooting fallbacks.
+- Direct Blender GUI growth also fails unless its embedded generator hash
+  matches the configured repository generator.
+- Current docs live in Git and are mirrored to iCloud only for handoff. Git
+  remains authoritative when an iCloud plain name disappears or conflicts.
 
 **Also added 2026-07-08/09, closing the OTHER half of the pancaked-houses problem (that it shipped
 silently for a full day before anyone noticed):** `export_web.py` now has an in-Blender check
@@ -646,7 +657,11 @@ the Action outright, so there is no F-curve left that could ever reassert a stal
 regardless of depsgraph evaluation order. Verified fixed by re-running export_web.py and
 checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the fix, 0 after.
 
-## Collaboration (Cade + Zach) — READ THIS FIRST, EVERY SESSION
+## Historical collaboration machinery (2026-07-10; not current operations)
+
+The following records how the former iCloud-to-`wip` workflow evolved. Keep it
+for incident history, but use the authoritative 2026-07-17 workflow at the top
+of this file for all current work.
 
 **As of 2026-07-10, GitHub is the real sync mechanism between Cade and Zach, not iCloud
 Drive's file sync.** This folder still lives in an iCloud Drive synced folder shared

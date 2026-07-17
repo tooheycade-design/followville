@@ -4,6 +4,13 @@ You are operating Cade's growing 3D city. Every Instagram follower = one house i
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
+Operational source split as of 2026-07-17: Git supplies executable code,
+canonical state, assets, and documentation; the shared iCloud folder supplies
+the authoritative `neighborhood.blend`. Guarded launchers require clean/current
+`main` plus matching generator and Blend mirrors. Direct GUI growth,
+iCloud-only state, `--no-git`, and numbered conflict-copy scripts are not safe
+production paths.
+
 ## Current town (Day 15, 2026-07-16)
 
 The web build now uses production district streaming without changing the
@@ -36,8 +43,14 @@ the completed road-level tour. Do not stitch these into one long video. Aerial
 cameras must keep their 10m near clip; that prevents moving roads and ponds
 from flashing due to depth-precision loss. All three clips passed visual QA and
 were emailed as distinct attachments to Cade and Zach. All 15 Day 15 Supabase
-rows were validated. Repo-based Windows growth still skips the legacy iCloud
-`wip` auto-share hook so the authoritative clone remains on `main`.
+rows were validated. Guarded production growth no longer runs the legacy
+iCloud `wip` auto-share hook.
+
+Maintenance audit note: canonical seed 73 is a Day 9 house at grid `(-3,-3)`.
+A discarded road experiment left its Supabase row typed `lanestreet` at
+`(5,-9)` and nonclaimable; it has no claim. The guarded one-row repair is staged
+in `supabase_repairs/20260717_repair_seed_73.sql` but must not be described as
+live until the production transaction and unchanged-claims verification pass.
 
 Kaleidoscope Crest's merged house assets need material-based collision bounds:
 `town.html` intentionally uses only `NB_story_wall*` vertices at player height,
@@ -196,8 +209,14 @@ future addresses and must remain at zero house-to-house overlaps.
 
 ## The one command
 
-```bash
-bash ~/Documents/neighborhood/grow.sh <change> [options]
+```text
+# Windows
+C:\Users\cadet\followville_repo\grow_windows.bat --preflight-only
+C:\Users\cadet\followville_repo\grow_windows.bat <change> [options]
+
+# Mac (FOLLOWVILLE_REPO_DIR must point at the local clone)
+./grow.sh --preflight-only
+./grow.sh <change> [options]
 ```
 
 `<change>` is one of:
@@ -215,19 +234,19 @@ Options: `--render` (make the day's 9:16 video — use this whenever he's postin
 
 ## Translating what Cade says
 
-- "we gained 5 today" → `bash ~/Documents/neighborhood/grow.sh +5 --render`
+- "we gained 5 today" → `grow_windows.bat +5 --render` (or guarded `grow.sh`)
 - "yesterday we had 20 followers and gained 30 to now have 50" →
-  `bash ~/Documents/neighborhood/grow.sh "=50" --render`
+  `grow_windows.bat "=50" --render` (or `./grow.sh "=50" --render`)
   (he gave a TOTAL — always prefer `=total`, it self-corrects any drift;
   ALWAYS quote "=N" so zsh doesn't mangle it)
-- "we're at 143 now" → `bash ~/Documents/neighborhood/grow.sh "=143" --render`
-- "lost 3 followers" → `bash ~/Documents/neighborhood/grow.sh -3 --render`
+- "we're at 143 now" → `grow_windows.bat "=143" --render`
+- "lost 3 followers" → `grow_windows.bat -3 --render`
 - "make tonight's video at sunset" → append `--time sunset` (day/sunset/night,
   otherwise it auto-cycles); seasons follow the real calendar or `--season winter` etc.
 - "we hit 2k! do something big" →
-  `bash ~/Documents/neighborhood/grow.sh +0 --apartments 1 --followers 127 --render`
+  `grow_windows.bat +0 --apartments 1 --followers 127 --render`
   (an apartment complex marks the milestone; `--followers` = actual gain since last run)
-- "the town deserves a park" → `bash ~/Documents/neighborhood/grow.sh +0 --parks 1 --render`
+- "the town deserves a park" → `grow_windows.bat +0 --parks 1 --render`
 
 If he gives both a total and a delta, trust the total (`=N`). If the numbers seem
 inconsistent, ask once, then use the total.

@@ -24,7 +24,18 @@ remains for backward compatibility but refuses an ambiguous two-home request.
 **Current migration state:** `allow_admins_two_homes` was applied to the live
 Supabase project on 2026-07-15. It dropped the old per-user unique constraint,
 added the locking limit trigger and targeted RPC overloads, and preserved all
-27 claim rows. `supabase_schema.sql` remains the re-runnable canonical schema.
+27 claim rows present at that time. The public database has 30 claims across 29
+handles as of the latest 2026-07-17 maintenance audit. `supabase_schema.sql` remains
+the re-runnable canonical schema.
+
+**Seed 73 maintenance (approved, production transaction pending):** Git history
+and canonical state identify seed 73 as a Day 9 `house` at grid `(-3,-3)`. A
+discarded concurrent Day 9 road experiment left only its Supabase row at
+`(5,-9)`, typed `lanestreet`, and nonclaimable. It has no claim. The guarded
+one-row transaction in `supabase_repairs/20260717_repair_seed_73.sql` corrects
+its position/type and makes it claimable without touching any claim/profile or
+other house. Update this paragraph and `TEAM_LOG.md` only after that transaction
+is actually applied and verified.
 
 **Multiplayer (added 2026-07-14):** the same Supabase project now backs website
 Presence/movement, persistent town chat, and admin activity logs. Signed-in

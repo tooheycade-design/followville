@@ -1,4 +1,7 @@
 @echo off
+REM LEGACY 2026-07-17: recovery/handoff only. Do not run during normal
+REM repo-based growth; it can switch the clone to wip. Use reviewed Git work
+REM from the authoritative repo instead.
 REM Followville -- push your current work to the shared "wip" branch on
 REM GitHub WITHOUT deploying it to the live site (that's deploy_website.bat's
 REM job, and it only ever touches "main"). Run this whenever you want Zach
