@@ -2,7 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 60_000,
+  // GitHub's shared software-rendered Chromium can take roughly twice as long
+  // as a local GPU for the full Three.js walking/map/chat/pause story.
+  timeout: 90_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
