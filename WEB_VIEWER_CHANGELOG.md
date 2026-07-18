@@ -15,6 +15,7 @@ Kept here (rather than just in chat) so it survives across sessions.
   wheel and trackpad scrolling zoom continuously through first person. Mobile
   drag and pinch use only camera-area touches, so one thumb can steer while the
   other orbits.
+- Removed the obsolete white-dot center crosshair from gameplay.
 - Bare `/town.html` now redirects old bookmarks to the current dashboard with
   the live map preview and Today in Followville. Explicit walk/map/house routes
   are unchanged.

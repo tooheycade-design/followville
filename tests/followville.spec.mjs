@@ -184,6 +184,7 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   const errors=watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
+  await expect(page.locator("#crosshair")).toBeHidden();
   const positions=()=>page.locator("body").evaluate(body=>{
     const parse=name=>(body.dataset[name]||"0,0").split(",").map(Number);
     return {player:parse("playerPosition"),camera:parse("cameraPosition")};
