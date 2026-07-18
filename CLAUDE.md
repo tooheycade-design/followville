@@ -10,8 +10,10 @@ you go looking for it here.**
 ## Avatar System v1 (released 2026-07-17)
 
 The website has third-person Avatar System v1 with the full-screen Neighborhood
-Tailor, modular customization, 37 additional complete looks, real model preview
-cards, guest persistence, and owner-only profile persistence. The isolated
+Tailor, one consistent modular animated character family, real component preview
+cards, guest persistence, and owner-only profile persistence. The separate tall
+complete-character catalog was retired on 2026-07-17; old saved look IDs safely
+normalize to the modular custom avatar. The isolated
 Supabase migration was applied and verified before the web release. It did not
 change Day 16, population 272, 275 buildings, claims, ownership,
 `world_state.json`, town GLBs, or `neighborhood.blend`. Read `AVATAR_SYSTEM.md`

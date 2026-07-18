@@ -19,10 +19,13 @@ workflow.
 ## Current canon
 
 - Avatar System v1 is released: third-person walking, the Neighborhood Tailor,
-  modular customization, 37 additional complete looks, real preview cards,
-  guest persistence, and owner-only profile persistence. The migration and
-  production web release both passed verification while preserving Day 16 / 272
-  / 275 and every claim. Start with `AVATAR_SYSTEM.md` before changing it.
+  one modular animated character family with body/face/hair/outfit/hat choices,
+  real component preview cards, guest persistence, and owner-only profile
+  persistence. A 2026-07-17 correction removes the separate tall
+  complete-character library and fixes the streamed-town camera initialization
+  plus follow drift; it was tested and published to `main`. Old saved
+  look IDs normalize to modular custom without a database write. The work
+  preserves Day 16 / 272 / 275 and every claim. Start with `AVATAR_SYSTEM.md`.
 
 - Day 16 is population 272 with 275 total buildings. The +13 ordinary-home
   batch used planned addresses 116-128: seed 263 completed Overlook Circle and

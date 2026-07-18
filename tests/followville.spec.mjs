@@ -138,7 +138,7 @@ test("Avatar Studio builds a persistent third-person guest avatar", async ({ pag
   await page.keyboard.press("KeyV");
   await expect(page.locator("#avatarStudio")).toBeVisible();
   await expect(page.getByRole("heading", { name:"Make yourself at home" })).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveCount(6);
+  await expect(page.getByRole("tab")).toHaveCount(5);
   await expect(page.locator("#avatarPreviewCanvas")).toBeVisible();
   expect(await page.locator("#avatarPreviewCanvas").evaluate(canvas => canvas.width > 100 && canvas.height > 100)).toBe(true);
 
@@ -169,30 +169,61 @@ test("Avatar Studio builds a persistent third-person guest avatar", async ({ pag
   expect(errors).toEqual([]);
 });
 
-test("Avatar Studio offers a visual complete-look catalog that persists", async ({ page }) => {
+test("Avatar Studio keeps only the modular animated avatar family", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.addInitScript(() => localStorage.setItem("followville_avatar_v1", JSON.stringify({
+    version:1, skin:"warm", height:"teen", face:"round", hair:"tousled",
+    outfit:"striped", hat:"none", look:"wizard"
+  })));
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:warm:teen:round:tousled:striped:none:custom$/);
+  await page.keyboard.press("KeyV");
+  await expect(page.locator("#avatarStudio")).toBeVisible();
+  await expect(page.locator("#avatarStudioSub")).toHaveText("Design a look that feels like you in Followville.");
+  await expect(page.getByRole("tab")).toHaveCount(5);
+  await expect(page.getByRole("tab", { name:"Looks" })).toHaveCount(0);
+  await expect(page.locator("[data-avatar-kind='look']")).toHaveCount(0);
+  await expect(page.locator(".avatar-look-thumb")).toHaveCount(0);
+  await page.getByRole("button", { name:"save avatar" }).click();
+  await expect(page.locator("#avatarStudio")).toBeHidden();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
+    version:1,skin:"warm",height:"teen",face:"round",hair:"tousled",outfit:"striped",hat:"none",look:"custom"
+  });
+  expect(await page.evaluate(() => performance.getEntriesByType("resource")
+    .some(entry => /avatar_v1\/(look|look-thumb)\//.test(entry.name)))).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test("third-person camera travels with the animated avatar", async ({ page }) => {
   test.setTimeout(180_000);
   const errors = watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
-  await page.keyboard.press("KeyV");
-  await expect(page.locator("#avatarStudio")).toBeVisible();
-  await expect(page.locator("#avatarStudioSub")).toHaveText("Design a look that feels like you in Followville.");
-  await page.getByRole("tab", { name:"Looks" }).click();
-  await expect(page.locator("[data-avatar-kind='look']")).toHaveCount(38);
-  await expect(page.locator(".avatar-look-thumb")).toHaveCount(38);
-  await expect(page.locator("#avatarChoices")).not.toContainText("Quaternius");
-  await expect(page.locator(".avatar-look-thumb").first()).toHaveJSProperty("complete", true);
-  await page.locator("[data-avatar-kind='look'][data-avatar-id='wizard']").click();
-  await page.getByRole("button", { name:"save avatar" }).click();
-  await expect(page.locator("#avatarStudio")).toBeHidden();
-  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
-    version:1,look:"wizard"
-  });
-
-  await page.reload();
-  await waitForTown(page);
-  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
+  const readPositions = () => page.locator("body").evaluate(body => ({
+    player:(body.dataset.playerPosition || "0,0").split(",").map(Number),
+    camera:(body.dataset.cameraPosition || "0,0").split(",").map(Number)
+  }));
+  const before = await readPositions();
+  await page.keyboard.down("ShiftLeft");
+  await page.keyboard.down("KeyW");
+  await page.waitForTimeout(1600);
+  await page.keyboard.up("KeyW");
+  await page.keyboard.up("ShiftLeft");
+  const after = await readPositions();
+  const distance = (a,b) => Math.hypot(a[0]-b[0],a[1]-b[1]);
+  const playerDelta=[after.player[0]-before.player[0],after.player[1]-before.player[1]];
+  const cameraDelta=[after.camera[0]-before.camera[0],after.camera[1]-before.camera[1]];
+  const beforeOffset=[before.camera[0]-before.player[0],before.camera[1]-before.player[1]];
+  const afterOffset=[after.camera[0]-after.player[0],after.camera[1]-after.player[1]];
+  const offsetDirectionDot=(beforeOffset[0]*afterOffset[0]+beforeOffset[1]*afterOffset[1])/
+    (Math.hypot(...beforeOffset)*Math.hypot(...afterOffset));
+  expect(distance(after.player,before.player)).toBeGreaterThan(8);
+  expect(distance(after.camera,before.camera)).toBeGreaterThan(6);
+  expect(cameraDelta[0]*playerDelta[0]+cameraDelta[1]*playerDelta[1]).toBeGreaterThan(0);
+  expect(distance(after.camera,after.player)).toBeLessThan(7.5);
+  expect(offsetDirectionDot).toBeGreaterThan(.95);
   expect(errors).toEqual([]);
 });
 

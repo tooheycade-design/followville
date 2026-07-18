@@ -3,7 +3,28 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Modular-only avatar and camera correction (released 2026-07-17)
+- Retired the separate tall complete-character catalog, its 37 GLBs, preview
+  images, manifest, and superseded build scripts. The Tailor now presents only
+  the smaller modular animated avatar family across Body, Face, Hair, Outfit,
+  and Hat.
+- Legacy saved `look` IDs normalize to `custom`, so an old guest/profile choice
+  cannot request a removed asset or break loading. No Supabase row was changed.
+- Fixed the normal streamed-town startup path failing to enable third-person
+  follow (the full-GLB fallback already enabled it). Both asset modes now use
+  the same player spawn initialization.
+- Removed the accumulating shoulder offset and now rebuilds the camera directly
+  from the player's live position and orbit angles every gameplay frame,
+  keeping the avatar centered while preserving camera obstruction protection.
+- Three focused Chromium avatar/camera flows plus the full-town fallback passed:
+  modular customization/persistence,
+  legacy-look fallback with no retired asset requests, and real player/camera
+  movement. No town state, population, buildings, claims, GLBs, or Blender
+  content changed.
+
 ## Third-person Avatar System v1 (released 2026-07-17)
+Historical release record; the complete-look catalog details below were
+superseded by the modular-only correction above.
 - Added a full-screen editorial Neighborhood Tailor opened from the start
   screen, pause menu, in-town button, or desktop `V`.
 - Added a rigged modular avatar with 10 skin tones, five proportions, eight

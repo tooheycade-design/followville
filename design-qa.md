@@ -20,16 +20,17 @@
   backward-facing/T-pose defects. The neutral studio intentionally replaces
   the reference's rendered tailor room so the actual game model remains the
   visual source of truth.
-- The product intentionally offers complete outfits and an expanded Looks tab
-  instead of separately compositing tops, bottoms, and shoes. This follows the
-  approved character library while retaining the reference's browsing pattern.
+- The product intentionally offers complete modular outfits instead of
+  separately compositing tops, bottoms, and shoes. The separate tall
+  complete-character Looks catalog was removed so every player shares one
+  approachable animated style.
 - At 390 x 844, the preview, horizontally scrollable tabs, three-column visual
   choices, vertical catalog scrolling, and persistent save controls remain
   usable without clipping the active content or producing browser errors.
 
 ## Interaction and accessibility assessment
 
-- Body, Face, Hair, Outfit, Hat, and Looks tabs all select real options and
+- Body, Face, Hair, Outfit, and Hat tabs all select real options and
   update the live 3D preview.
 - Preview drag/orbit and wheel/pinch zoom work; save, cancel, reset, keyboard
   `V`, start-screen, pause-menu, and in-town entry paths are wired.
@@ -42,9 +43,11 @@
 
 ## Verification evidence
 
-- `pnpm test:e2e`: 10 passed in 4.3 minutes on Chromium.
-- Avatar asset manifests: 50 GLB entries checked; byte sizes and SHA-256 hashes
-  all matched, with zero missing or mismatched assets.
+- Focused modular-avatar and camera verification: 3 passed in 2.6 minutes on
+  Chromium; the directly related full-town fallback also passed. The preceding
+  production release passed all 10 browser flows.
+- The modular avatar manifest remains the authoritative asset inventory; the
+  retired complete-look files and manifest are absent.
 - Mobile visual capture: no console or page errors.
 - `git diff --check`: passed; only line-ending notices were reported.
 - Canonical town data was not changed: Day 16, population 272, 275 buildings,
@@ -57,7 +60,7 @@
 - P1 major issues: none.
 - P2 actionable visual or interaction issues: none.
 - Intentional deviations: actual approved game-character models replace the
-  aspirational reference character/room; outfits are complete looks rather
-  than independent top/bottom/shoe meshes.
+  aspirational reference character/room; outfits are bundled modular choices
+  rather than independent top/bottom/shoe meshes.
 
 final result: passed

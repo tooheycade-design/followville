@@ -11,9 +11,6 @@ was applied and verified before the web release.
 - Custom mode offers 10 skin tones, five age/height proportions, eight face
   silhouettes, six modeled hairstyles, six complete modeled outfits, and two
   hat states.
-- Looks mode offers 37 additional complete characters grouped into Everyday,
-  Town roles, and Adventure. With `Build my own`, the visual catalog has 38
-  look cards.
 - Every visible catalog card is captured from the actual selectable 3D model.
   The live preview supports drag rotation plus wheel/pinch zoom.
 - Guests persist locally. Signed-in profiles will persist the same validated
@@ -28,10 +25,9 @@ owns the studio UI, preview scene, third-person integration, local storage,
 presence refresh, and the owner-only save call.
 
 The default custom avatar loads `core.glb` plus one hair, outfit, and optional
-hat. The default initial payload is 512,832 bytes. Complete looks lazy-load one
-compressed GLB only when chosen. The 37 complete-look GLBs total 2,059,796
-bytes; they are not part of town startup. Preview JPGs load only inside their
-catalog tabs.
+hat. The default initial payload is 512,832 bytes. Component preview JPGs load
+only inside their catalog tabs. The former separate complete-character library
+was removed on 2026-07-17 so every player uses the same modular animated style.
 
 The avatar files are completely separate from `town.glb`, streamed town
 districts, `world_state.json`, and the canonical `neighborhood.blend`. Avatar
@@ -43,11 +39,9 @@ The production avatar models come from these CC0 1.0 Quaternius packs:
 
 - Universal Base Characters
 - Modular Character Outfits - Fantasy
-- Ultimate Animated Character Pack
 
 Source pages and license metadata are retained in
-`avatar_assets/avatar_v1/manifest.json` and
-`avatar_assets/avatar_v1/look-manifest.json`. Licensing is maintainer-facing;
+`avatar_assets/avatar_v1/manifest.json`. Licensing is maintainer-facing;
 the player UI intentionally uses Followville names only.
 
 Local source packs live outside the repository under
@@ -60,7 +54,6 @@ Use Blender 5.1 from the repository root:
 
 ```powershell
 & 'C:\Program Files\Blender Foundation\Blender 5.1\blender.exe' --background --python scripts\export_avatar_library.py
-& 'C:\Program Files\Blender Foundation\Blender 5.1\blender.exe' --background --python scripts\export_avatar_look_library.py
 ```
 
 With the local test server running at `http://127.0.0.1:8765`, rebuild visual
@@ -68,13 +61,10 @@ cards with the bundled Node runtime:
 
 ```powershell
 node scripts\capture_avatar_component_thumbnails.mjs
-node scripts\capture_avatar_look_thumbnails.mjs
 ```
 
-Both exporters write deterministic manifests with byte sizes and SHA-256
-hashes. The complete-look exporter bakes each source character's authored idle
-stance into a web-safe rig, normalizes it at runtime to a 1.82m baseline, and
-does not export animation clips.
+The exporter writes a deterministic manifest with byte sizes and SHA-256
+hashes.
 
 ## Database rollout
 
@@ -102,6 +92,11 @@ snapshot, and ownership snapshot. The migration intentionally revokes any
 table-wide client `UPDATE` privilege on `profiles` before granting only
 `UPDATE (avatar)`.
 
+The live constraint still recognizes the retired complete-look IDs for schema
+compatibility. The browser normalizer always converts those values to `custom`
+before loading or saving, and none of the retired assets or UI remain. The
+modular-only correction required no database write.
+
 Rollback is isolated from claims and houses: disable the browser save path,
 revoke/drop `update_my_avatar(jsonb)`, drop
 `profiles_own_avatar_update`, drop `profiles_avatar_valid`, and drop the
@@ -113,9 +108,9 @@ handle, verification record, house, or town-state row.
 
 ## Browser verification
 
-The avatar Playwright flows verify custom selections, all 38 look choices,
-real preview images, local persistence, reload persistence, third-person mode,
-and clean console behavior. Run:
+The avatar Playwright flows verify modular selections, real component previews,
+local persistence, reload persistence, safe legacy-look normalization,
+third-person player/camera movement, and clean console behavior. Run:
 
 ```powershell
 pnpm test:e2e --grep "Avatar Studio"
@@ -123,6 +118,7 @@ pnpm test:e2e --grep "Avatar Studio"
 
 Run the complete `pnpm test:e2e` suite before review or release.
 
-Latest local verification on 2026-07-17: all 10 browser flows passed in
-Chromium, all 50 manifest-listed GLBs matched their recorded byte sizes and
-SHA-256 hashes, and desktop/mobile visual QA passed. See `design-qa.md`.
+Latest correction verification on 2026-07-17: all three focused avatar
+and follow-camera flows plus the full-town fallback passed in Chromium. The
+preceding production release passed all 10 browser flows and its modular
+manifest checks. See `design-qa.md`.

@@ -608,7 +608,6 @@
   .avatar-choice-heading span { color:#777d82; font-size:10px; }
   .avatar-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 18px; }
   .avatar-choice-grid.compact { grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
-  .avatar-choice-grid.look-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 12px; }
   .avatar-choice-grid.face-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 10px; }
   .avatar-choice-grid.hair-grid,
   .avatar-choice-grid.outfit-grid,
@@ -625,18 +624,6 @@
   .avatar-choice-grid.compact .avatar-choice { padding:10px 3px; text-align:center; }
   .avatar-choice-grid.compact .avatar-choice-name { font-size:10px; }
   .avatar-outfit-swatches { width:58px; height:10px; margin-bottom:11px; border:0; border-radius:0; }
-  .look-grid .avatar-choice {
-    min-height:0; padding:0 0 10px; overflow:hidden; border:1px solid #d9d5cd;
-    background:#fffdf8; text-align:center;
-  }
-  .look-grid .avatar-choice:hover { border-color:#8b969d; }
-  .look-grid .avatar-choice.selected { border:2px solid #c25a43; padding-bottom:9px; }
-  .avatar-look-thumb {
-    display:block; width:100%; aspect-ratio:4/5; margin:0 0 9px; object-fit:cover;
-    object-position:center center; background:#d3d7cb;
-  }
-  .look-grid .avatar-choice-name { padding:0 7px; font-size:11px; }
-  .look-grid .avatar-choice-note { padding:0 7px; }
   .face-grid .avatar-choice,
   .hair-grid .avatar-choice,
   .outfit-grid .avatar-choice,
@@ -702,7 +689,6 @@
     #avatarChoices { padding:13px 14px 18px; }
     .avatar-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 12px; }
     .avatar-choice-grid.compact { grid-template-columns:repeat(5,minmax(62px,1fr)); overflow-x:auto; }
-    .avatar-choice-grid.look-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 8px; }
     .avatar-choice-grid.face-grid { grid-template-columns:repeat(4,minmax(82px,1fr)); overflow-x:auto; }
     .avatar-choice-grid.hair-grid,
     .avatar-choice-grid.outfit-grid,
@@ -1896,9 +1882,11 @@ const movementRight = new THREE.Vector3();
 const movementDelta = new THREE.Vector3();
 const cameraTarget = new THREE.Vector3();
 const desiredCameraPosition = new THREE.Vector3();
-const cameraShoulderDirection = new THREE.Vector3();
 const cameraOcclusionDirection = new THREE.Vector3();
 const cameraOcclusionRaycaster = new THREE.Raycaster();
+const cameraOrbitEuler = new THREE.Euler(-.10,Math.PI,0,"YXZ");
+let cameraOrbitYaw=Math.PI;
+let cameraOrbitPitch=-.10;
 let cameraOcclusionCheckedAt = 0;
 let cameraOcclusionLimit = THIRD_PERSON_MAX_DISTANCE;
 let thirdPersonReady = false;
@@ -1998,22 +1986,23 @@ function updateThirdPersonCamera(force=false){
   const surface=walkSurfaceHeight(playerPosition.x,playerPosition.z);
   const targetHeight=Math.max(.92,(localAvatar?.userData?.avatar?.eyeHeight || 1.55)*.82);
   cameraTarget.set(playerPosition.x,surface+targetHeight,playerPosition.z);
-  camera.getWorldDirection(cameraLookDirection);
-  if(!Number.isFinite(cameraLookDirection.x) || cameraLookDirection.lengthSq()<.5)
-    cameraLookDirection.set(Math.sin(playerYaw),-.12,Math.cos(playerYaw));
-  cameraLookDirection.y=THREE.MathUtils.clamp(cameraLookDirection.y,-.52,.32);
-  cameraLookDirection.normalize();
+
+  // PointerLockControls and touch-look rotate the camera itself. Capture only
+  // those orbit angles, then rebuild the camera position directly from the
+  // player's current position every frame. The camera can no longer remain
+  // behind in the world while the player walks away from it.
+  if(Number.isFinite(camera.rotation.y))cameraOrbitYaw=camera.rotation.y;
+  if(Number.isFinite(camera.rotation.x))cameraOrbitPitch=THREE.MathUtils.clamp(camera.rotation.x,-.52,.32);
+  cameraOrbitEuler.set(cameraOrbitPitch,cameraOrbitYaw,0,"YXZ");
+  cameraLookDirection.set(0,0,-1).applyEuler(cameraOrbitEuler).normalize();
   desiredCameraPosition.copy(cameraTarget).addScaledVector(cameraLookDirection,-thirdPersonDistance);
-  cameraShoulderDirection.set(cameraLookDirection.z,0,-cameraLookDirection.x);
-  if(cameraShoulderDirection.lengthSq()>.01){
-    cameraShoulderDirection.normalize();
-    desiredCameraPosition.addScaledVector(cameraShoulderDirection,.42);
-  }
   const safe=cameraPositionWithTownOcclusion(cameraTarget,
     cameraPositionWithCollision(cameraTarget,desiredCameraPosition));
   camera.position.copy(safe);
   camera.lookAt(cameraTarget);
   document.body.dataset.cameraDistance = camera.position.distanceTo(cameraTarget).toFixed(2);
+  document.body.dataset.playerPosition = `${playerPosition.x.toFixed(3)},${playerPosition.z.toFixed(3)}`;
+  document.body.dataset.cameraPosition = `${camera.position.x.toFixed(3)},${camera.position.z.toFixed(3)}`;
 }
 
 function placePlayerAt(x,z,cameraYaw=camera.rotation.y){
@@ -2026,6 +2015,8 @@ function placePlayerAt(x,z,cameraYaw=camera.rotation.y){
   }
   camera.rotation.order="YXZ";
   camera.rotation.set(-.10,cameraYaw,0);
+  cameraOrbitYaw=cameraYaw;
+  cameraOrbitPitch=-.10;
   updateThirdPersonCamera(true);
 }
 
@@ -2063,7 +2054,6 @@ function avatarChoiceButton(kind,choice,extra=""){
   let visual="";
   if(kind==="skin") visual=`<i class="avatar-choice-swatch" style="--avatar-color:#${choice.swatch.toString(16).padStart(6,"0")}"></i>`;
   if(kind==="outfit") visual=`<i class="avatar-outfit-swatches"><i style="--avatar-color:#${choice.top.toString(16).padStart(6,"0")}"></i><i style="--avatar-color:#${choice.bottom.toString(16).padStart(6,"0")}"></i><i style="--avatar-color:#${choice.accent.toString(16).padStart(6,"0")}"></i></i>`;
-  if(kind==="look") visual=`<img class="avatar-look-thumb" src="avatar_assets/avatar_v1/look-thumb/${choice.id}.jpg" alt="" loading="lazy" decoding="async">`;
   if(["face","hair","outfit","hat"].includes(kind)) visual=`<img class="avatar-component-thumb" src="avatar_assets/avatar_v1/component-thumb/${kind}/${choice.id}.jpg" alt="" loading="lazy" decoding="async">`;
   return `<button class="avatar-choice${selected?" selected":""}" type="button" data-avatar-kind="${kind}" data-avatar-id="${choice.id}" aria-pressed="${selected}">${visual}<span class="avatar-choice-name">${choice.label}</span>${extra?`<span class="avatar-choice-note">${extra}</span>`:""}</button>`;
 }
@@ -2071,21 +2061,12 @@ function avatarSection(title,note,content,compact=false,kind=""){
   return `<section class="avatar-choice-section"><div class="avatar-choice-heading"><h3>${title}</h3><span>${note}</span></div><div class="avatar-choice-grid${compact?" compact":""}${kind?` ${kind}-grid`:""}">${content}</div></section>`;
 }
 function renderAvatarChoices(){
-  const tabs=[['body','Body'],['face','Face'],['hair','Hair'],['outfit','Outfit'],['hat','Hat'],['look','Looks']];
+  const tabs=[['body','Body'],['face','Face'],['hair','Hair'],['outfit','Outfit'],['hat','Hat']];
   avatarTabs.innerHTML=tabs.map(([id,label])=>`<button class="avatar-tab" type="button" role="tab" data-avatar-tab="${id}" aria-selected="${avatarTab===id}">${label}</button>`).join("");
   let markup="";
   if(avatarTab==="body"){
     markup+=avatarSection("Height","five proportions",AVATAR_CATALOG.height.map(choice=>avatarChoiceButton("height",choice,`${choice.note} · ${choice.target}`)).join(""));
     markup+=avatarSection("Body color","ten natural skin tones",AVATAR_CATALOG.skin.map(choice=>avatarChoiceButton("skin",choice)).join(""),true);
-  }else if(avatarTab==="look"){
-    const groups=["Custom","Everyday","Town roles","Adventure"];
-    markup=groups.map(group=>avatarSection(
-      group,
-      group==="Custom"?"mix every detail yourself":"complete character looks",
-      AVATAR_CATALOG.look.filter(choice=>choice.group===group).map(choice=>avatarChoiceButton("look",choice,choice.note||"")).join(""),
-      false,
-      "look"
-    )).join("");
   }else{
     const notes={face:"subtle face silhouettes",hair:"real 3D styles",outfit:"complete clothing, boots, and details",hat:"rigged accessories"};
     markup+=avatarSection(avatarTab,notes[avatarTab],AVATAR_CATALOG[avatarTab].map(choice=>avatarChoiceButton(avatarTab,choice)).join(""),false,avatarTab);
@@ -2104,7 +2085,7 @@ function renderAvatarChoices(){
   avatarChoices.querySelectorAll("[data-avatar-kind]").forEach(button=>button.addEventListener("click",()=>{
     const kind=button.dataset.avatarKind;
     const next={...avatarDraft,[kind]:button.dataset.avatarId};
-    if(["face","hair","outfit","hat"].includes(kind))next.look="custom";
+    next.look="custom";
     avatarDraft=normalizeAvatarConfig(next);
     renderAvatarChoices();rebuildAvatarPreview();
   }));
@@ -5419,9 +5400,16 @@ function refreshLoadedTownSystems(buildings){
   buildGLBColliders(loadedTownRoot);
 }
 
+function configureTownPlayerSpawn(buildings){
+  const [,,minBy]=blockExtent(buildings);
+  const spawnX=0;
+  const spawnZ=minBy*PITCH-ROAD-15;
+  thirdPersonReady=true;
+  placePlayerAt(spawnX,spawnZ,Math.PI);
+}
+
 function configureTownFraming(buildings){
-  const [minBx,,minBy]=blockExtent(buildings);
-  camera.position.set(0,1.7,minBy*PITCH-ROAD-15);
+  configureTownPlayerSpawn(buildings);
   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
   for(const building of buildings){
     const [x,z]=buildingWorldXZ(building);
@@ -5578,11 +5566,7 @@ function loadFullTown(buildings){
     // town blocks, which put the player behind a wall of foliage instead of
     // on a road. Use the same grid math the town is laid out from instead,
     // so the spawn is always exactly on a real road, at the town's south edge.
-    const [minBx, , minBy] = blockExtent(buildings);
-    const spawnX = 0; // the bx=0 road always exists (block_extent guarantees -1..1)
-    const spawnZ = minBy*PITCH - ROAD - 15;
-    thirdPersonReady=true;
-    placePlayerAt(spawnX,spawnZ,Math.PI);
+    configureTownPlayerSpawn(buildings);
 
     const fullSize = new THREE.Vector3(), fullCenter = new THREE.Vector3();
     full.getSize(fullSize); full.getCenter(fullCenter);

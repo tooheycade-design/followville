@@ -24,8 +24,12 @@ separate portrait MP4s: completed town overhead with no rise animation, then a
 whole-town overhead replay showing all 13 new houses appearing.
 
 Avatar System v1 is live with third-person walking and the Neighborhood Tailor,
-including modular customization, 37 additional complete looks, real preview
-cards, guest persistence, and owner-only profile persistence. Its isolated
+including one modular animated character family, real component preview cards,
+guest persistence, and owner-only profile persistence. A tested correction
+removes the separate tall complete-character library and fixes follow-camera
+startup/drift in the normal streamed town and is published on `main`. Old saved
+look IDs normalize to modular custom without changing the
+database. Its isolated
 migration and production release preserved the Day 16 town, claims, ownership,
 population, and Blender assets. Read `AVATAR_SYSTEM.md` before changing it.
 
