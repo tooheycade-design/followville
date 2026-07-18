@@ -7,6 +7,26 @@ town.glb) live in the git repo clone (`C:\Users\cadet\followville_repo`), NOT in
 folder, by default — see "Where world_state.json + town.glb actually live now" below before
 you go looking for it here.**
 
+## Downtown + terrain release (2026-07-17)
+
+Zach's approved local downtown/terrain source package was semantically merged
+onto Cade's current Day 16 branch and rebuilt from the authoritative iCloud
+Blend in replay mode. The town now uses a thirteen-metre downtown lot grid,
+continuous authored sidewalks/curbs/crossings, storefront interiors and civic
+street furniture, stronger downtown massing, rolling regional terrain,
+terrain-aligned suburban roads, and protected house foundation pads. Day 16,
+population 272, all 275 building records, addresses 1-128, claims, ownership,
+and `world_state.json` are unchanged. Full and six-district streamed GLBs were
+regenerated together. `town_manifest.json` now carries the exact walk-surface
+manifest used by the browser, and `check_town_glb.py` validates it.
+
+The public browser uses the rebuilt Blender geometry in balanced mode. Costly
+browser-generated facade overlays, procedural material shaders, and dynamic
+town shadows are maintainer-only under `?graphics=ultra`; software renderers
+automatically use the compatible path. The offline review server requires
+`'wasm-unsafe-eval'` only for the local Draco decoder and makes no production
+security change. Read `DOWNTOWN_TERRAIN_HANDOFF.md` before changing this work.
+
 ## Avatar System v1 (released 2026-07-17)
 
 The website has third-person Avatar System v1 with the full-screen Neighborhood

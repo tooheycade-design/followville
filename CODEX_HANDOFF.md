@@ -18,6 +18,18 @@ workflow.
 
 ## Current canon
 
+- Zach's downtown/terrain design package is integrated on Day 16 without a
+  growth run. Downtown lots are thirteen metres wide and now have authored
+  sidewalks, curbs, crossings, storefronts, public furniture, stronger
+  massing, regional terrain, terrain-following suburban roads, and foundation
+  pads. The full GLB and all six district chunks were regenerated from the
+  authoritative iCloud Blend; the stream manifest includes canonical browser
+  walk surfaces. Balanced browser graphics keep the actual Blender geometry
+  while reserving browser-generated shader/edge/shadow extras for
+  `?graphics=ultra`. Day 16 / 272 / 275, addresses 1-128, claims, ownership,
+  Supabase, and `world_state.json` remain unchanged. See
+  `DOWNTOWN_TERRAIN_HANDOFF.md` for provenance, merge decisions, and QA.
+
 - Avatar System v1 uses only the 37 compact animated complete characters in
   the public Tailor, plus body color and height. The taller modular system is
   retired from the UI/runtime and legacy custom profiles normalize safely.

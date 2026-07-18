@@ -28,7 +28,9 @@ import json
 import math
 import os
 
-LOT = 10
+from world_layout import transform_building_point, walk_surface_manifest
+
+LOT = 13
 BLOCK_N = 3
 ROAD = 6
 PITCH = BLOCK_N * LOT + ROAD
@@ -46,7 +48,7 @@ def _chunk_id_for_building(building):
 
 def _building_xz(building):
     if "px" in building:
-        x, y = float(building["px"]), float(building["py"])
+        x, y = transform_building_point(building)
     else:
         gx, gy = int(building["gx"]), int(building["gy"])
         bx, ix = divmod(gx, BLOCK_N)
@@ -214,6 +216,43 @@ def export_web_glb():
         print(msg)
         raise RuntimeError(msg)
 
+    # Re-select the whole WORLD collection (now full of real meshes) for export.
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in col.objects:
+        obj.select_set(True)
+
+    # The Kaleidoscope access road is authored in the feature asset's local
+    # 0..3m vertical frame, then parented at its world position. Applying the
+    # regional terrain function to those local coordinates creates a huge
+    # floating ribbon after the parent transform. Refuse to export that exact
+    # regression class; this runs on every normal Blender-to-web export.
+    feature_road_materials = {"NB_road", "NB_story_transition", "NB_story_road"}
+    feature_meshes = []
+    feature_outliers = []
+    for obj in col.objects:
+        if obj.type != "MESH":
+            continue
+        material_names = {slot.material.name for slot in obj.material_slots if slot.material}
+        if "NB_story_transition" not in material_names:
+            continue
+        feature_meshes.append(obj.name)
+        for polygon in obj.data.polygons:
+            if polygon.material_index >= len(obj.material_slots):
+                continue
+            material = obj.material_slots[polygon.material_index].material
+            if not material or material.name not in feature_road_materials:
+                continue
+            for vertex_index in polygon.vertices:
+                z = obj.data.vertices[vertex_index].co.z
+                if z < -.05 or z > 3.25:
+                    feature_outliers.append((obj.name, material.name, z))
+                    break
+    if not feature_meshes:
+        raise RuntimeError("FEATURE_ROAD_CHECK_FAILED: Kaleidoscope access mesh missing")
+    if feature_outliers:
+        sample = ", ".join("%s/%s z=%.3f" % item for item in feature_outliers[:8])
+        raise RuntimeError("FEATURE_ROAD_CHECK_FAILED: authored elevation escaped: " + sample)
+
     # Same NEIGHBORHOOD_STATE_DIR override as neighborhood_blender.py's
     # state_path() -- if set, town.glb is written straight into the git repo
     # clone alongside world_state.json instead of next to the .blend, so the
@@ -322,6 +361,7 @@ def export_web_glb():
             "detail_load_distance": 70,
             "lod": "simple-houses",
         },
+        "walk_surfaces": walk_surface_manifest(state),
         "fallback": _asset_record(base, out_path),
     }
     manifest_path = os.path.join(base, "town_manifest.json")

@@ -12,6 +12,18 @@ generator; any generator copy beside the Blend is ignored. Direct GUI growth,
 iCloud-only state, `--no-git`, and numbered conflict-copy scripts are not safe
 production paths.
 
+The approved downtown/terrain redesign is now integrated into the current Day
+16 source without growth. It widens downtown lots to thirteen metres and adds
+authored sidewalks, curbs, crossings, storefronts, public furniture, stronger
+building massing, rolling terrain, terrain-aligned suburban roads, and house
+foundation pads. The full GLB and all six streamed district chunks must remain
+synchronized with the new `town_manifest.json` walk-surface payload. Public
+graphics use the real rebuilt Blender geometry in balanced mode; only the
+optional `?graphics=ultra` route enables the costly browser-generated facade
+edges, procedural shaders, and dynamic shadows. Day 16 / population 272 / 275
+buildings, addresses 1-128, claims, owners, Supabase, and `world_state.json`
+were preserved. Read `DOWNTOWN_TERRAIN_HANDOFF.md` before modifying this area.
+
 ## Current town (Day 16, 2026-07-17)
 
 Population is 272 with 275 buildings. Day 16 added 13 ordinary claimable

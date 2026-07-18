@@ -3,6 +3,25 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Downtown terrain + balanced streaming presentation (2026-07-17)
+- Integrated the approved thirteen-metre downtown layout and rebuilt full plus
+  six-district streamed GLBs from the current Day 16 authoritative scene.
+- Added authored downtown sidewalks, curbs, crossings, storefronts, furniture,
+  skyline massing, regional terrain, terrain-following suburban roads, house
+  pads, and Kaleidoscope access-road alignment without changing city canon.
+- Added deterministic walk-surface segments/bulbs to `town_manifest.json` so
+  streamed, full-fallback, map, collision, and player terrain logic share the
+  same layout source; the GLB validator now checks this payload.
+- Kept the real Blender geometry as the public default while moving expensive
+  browser-generated facade overlays, procedural shaders, and dynamic shadows
+  to maintainer-only `?graphics=ultra`. Software renderers select the
+  compatible path automatically, and static town matrices are frozen without
+  freezing animated avatars.
+- Fixed the offline review server's CSP so its local Draco WebAssembly decoder
+  can run; this allowance exists only on the local preview server.
+- Preserved Day 16 / population 272 / 275 buildings, addresses 1-128, claims,
+  owners, Supabase, and `world_state.json`.
+
 ## Avatar family and player-camera correction (2026-07-17)
 - Made the 37 compact animated complete characters the only public character
   family. The taller modular face/hair/outfit/hat system is no longer shown or
