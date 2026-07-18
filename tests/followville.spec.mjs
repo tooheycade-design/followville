@@ -227,8 +227,14 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
 
   await page.mouse.wheel(0,-2000);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
+  await expect(page.locator("body")).toHaveAttribute("data-first-person-look","locked");
+  expect(await page.evaluate(() => document.pointerLockElement?.tagName)).toBe("CANVAS");
+  const firstPersonYaw=Number(await page.locator("body").getAttribute("data-camera-yaw"));
+  await page.mouse.move(860,380,{steps:5});
+  expect(Math.abs(Number(await page.locator("body").getAttribute("data-camera-yaw"))-firstPersonYaw)).toBeGreaterThan(.05);
   await page.mouse.wheel(0,1500);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","third-person");
+  expect(await page.evaluate(() => document.pointerLockElement)).toBeNull();
   expect(errors).toEqual([]);
 });
 

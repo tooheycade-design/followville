@@ -1999,13 +1999,16 @@ function cameraPositionWithTownOcclusion(target,desired){
 function updateThirdPersonCamera(force=false){
   if (!thirdPersonReady && !force) return;
   const surface=walkSurfaceHeight(playerPosition.x,playerPosition.z);
-  const targetHeight=Math.max(.92,(localAvatar?.userData?.avatar?.eyeHeight || 1.55)*.82);
+  const avatarEyeHeight=localAvatar?.userData?.avatar?.eyeHeight || 1.55;
+  const firstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
+  const targetHeight=firstPerson?avatarEyeHeight:Math.max(.92,avatarEyeHeight*.82);
   cameraTarget.set(playerPosition.x,surface+targetHeight,playerPosition.z);
   cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch,-.52,.32);
   cameraOrbitEuler.set(cameraOrbitPitch,cameraOrbitYaw,0,"YXZ");
   cameraLookDirection.set(0,0,-1).applyEuler(cameraOrbitEuler).normalize();
-  const firstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
   document.body.dataset.cameraMode=firstPerson?"first-person":"third-person";
+  document.body.dataset.cameraYaw=cameraOrbitYaw.toFixed(4);
+  document.body.dataset.cameraPitch=cameraOrbitPitch.toFixed(4);
   if(localAvatar)localAvatar.visible=!previewMode&&!firstPerson;
   if(firstPerson){
     camera.position.copy(cameraTarget);
@@ -2027,7 +2030,18 @@ function updateThirdPersonCamera(force=false){
 }
 
 function setGameplayCameraDistance(distance){
+  const wasFirstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
   thirdPersonDistance=THREE.MathUtils.clamp(distance,THIRD_PERSON_MIN_DISTANCE,THIRD_PERSON_MAX_DISTANCE);
+  const isFirstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
+  if(isFirstPerson&&!wasFirstPerson&&!isTouch&&gameRunning){
+    document.body.dataset.firstPersonLook="requesting";
+    try{
+      const request=renderer.domElement.requestPointerLock?.();
+      request?.catch(()=>{document.body.dataset.firstPersonLook="click";});
+    }catch(_){document.body.dataset.firstPersonLook="click";}
+  }else if(!isFirstPerson&&wasFirstPerson&&document.pointerLockElement===renderer.domElement&&!cameraDragActive){
+    document.exitPointerLock();
+  }
   updateThirdPersonCamera(true);
 }
 
@@ -2448,7 +2462,7 @@ if (isTouch){
   startScreen.addEventListener("click", beginWalking);
 }
 
-let cameraDragActive=false,cameraDragX=0,cameraDragY=0;
+let cameraDragActive=false,cameraDragButton=2,cameraDragX=0,cameraDragY=0;
 function cameraDragAllowed(){
   return gameRunning&&!isTouch&&!chatOpen()&&!townMapOpen()&&!modalOpen()&&!avatarStudioOpen()&&!pauseMenuOpen();
 }
@@ -2460,16 +2474,21 @@ function endCameraDrag(){
   delete document.body.dataset.cameraGrab;
 }
 renderer.domElement.addEventListener("mousedown",event=>{
-  if(event.button!==2||!cameraDragAllowed())return;
+  const orbitPress=event.button===2||(event.button===0&&event.ctrlKey);
+  if(!orbitPress||!cameraDragAllowed())return;
   event.preventDefault();
-  cameraDragActive=true;cameraDragX=event.clientX;cameraDragY=event.clientY;
+  cameraDragActive=true;cameraDragButton=event.button;cameraDragX=event.clientX;cameraDragY=event.clientY;
   document.body.dataset.cameraOrbiting="true";
   document.body.dataset.cameraGrab="requesting";
-  renderer.domElement.requestPointerLock?.();
+  try{
+    const request=renderer.domElement.requestPointerLock?.();
+    request?.catch(()=>{if(cameraDragActive)document.body.dataset.cameraGrab="dragging";});
+  }catch(_){document.body.dataset.cameraGrab="dragging";}
 });
 document.addEventListener("mousemove",event=>{
-  if(!cameraDragActive)return;
-  if(!(event.buttons&2)){endCameraDrag(event);return;}
+  const firstPersonMouseLook=thirdPersonDistance<=FIRST_PERSON_THRESHOLD&&
+    document.pointerLockElement===renderer.domElement&&gameRunning;
+  if(!cameraDragActive&&!firstPersonMouseLook)return;
   const locked=document.pointerLockElement===renderer.domElement;
   const dx=locked?event.movementX:event.clientX-cameraDragX;
   const dy=locked?event.movementY:event.clientY-cameraDragY;
@@ -2478,16 +2497,23 @@ document.addEventListener("mousemove",event=>{
   cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,-.52,.32);
   updateThirdPersonCamera(true);
 });
-document.addEventListener("mouseup",event=>{if(event.button===2)endCameraDrag();});
+document.addEventListener("mouseup",event=>{if(cameraDragActive&&event.button===cameraDragButton)endCameraDrag();});
 document.addEventListener("pointerlockchange",()=>{
   if(document.pointerLockElement===renderer.domElement){
     if(cameraDragActive)document.body.dataset.cameraGrab="locked";
+    if(thirdPersonDistance<=FIRST_PERSON_THRESHOLD)document.body.dataset.firstPersonLook="locked";
   }else if(cameraDragActive){
     cameraDragActive=false;
     delete document.body.dataset.cameraOrbiting;
     delete document.body.dataset.cameraGrab;
   }
+  if(document.pointerLockElement!==renderer.domElement)delete document.body.dataset.firstPersonLook;
 });
+renderer.domElement.addEventListener("click",()=>{
+  if(!gameRunning||isTouch||thirdPersonDistance>FIRST_PERSON_THRESHOLD||document.pointerLockElement===renderer.domElement)return;
+  renderer.domElement.requestPointerLock?.();
+});
+window.addEventListener("blur",endCameraDrag);
 renderer.domElement.addEventListener("contextmenu",event=>{if(gameRunning)event.preventDefault();});
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the

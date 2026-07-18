@@ -11,8 +11,11 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Fixed streamed startup so the camera rig attaches immediately and follows the
   player continuously. Corrected camera-relative A/D directions.
 - Replaced always-on desktop mouse-look with cursor-locked right-button drag
-  orbit; the cursor returns immediately on release. Mouse
-  wheel and trackpad scrolling zoom continuously through first person. Mobile
+  orbit; the cursor returns immediately on release. The orbit path no longer
+  depends on Windows-style held-button state and accepts Mac Control-click drag
+  as a fallback. Mouse wheel and trackpad scrolling now enter true eye-height,
+  cursor-locked first-person mouse-look; zooming out restores third person and
+  the cursor. Mobile
   drag and pinch use only camera-area touches, so one thumb can steer while the
   other orbits.
 - Removed the obsolete white-dot center crosshair from gameplay.

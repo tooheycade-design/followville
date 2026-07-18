@@ -15,7 +15,7 @@ real model preview cards, guest persistence, and owner-only profile
 persistence. The taller modular face/hair/outfit/hat system is retired from the
 player experience and never loads at runtime; legacy `look: custom` profiles
 normalize to the safe animated default. Desktop uses cursor-locked right-drag orbit and
-wheel/trackpad zoom through first person; mobile supports simultaneous joystick
+wheel/trackpad zoom into true cursor-locked first-person mouse-look; mobile supports simultaneous joystick
 movement plus camera drag and pinch zoom. The camera follows continuously and
 A/D are camera-relative. The isolated Supabase migration was applied and
 verified. None of this changed Day 16, population 272, 275 buildings, claims,
