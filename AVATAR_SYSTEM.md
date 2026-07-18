@@ -14,6 +14,9 @@ was applied and verified before the web release.
   looks around without holding a button. Zooming out restores the cursor. On
   mobile, camera drag works while the other thumb holds the
   joystick, and pinch controls the same third/first-person zoom range.
+- Space on desktop and the dedicated JUMP button on mobile make a short,
+  grounded hop. The camera follows its height, a second jump cannot start
+  while airborne, and multiplayer movement carries the same vertical offset.
 - `V`, the in-town avatar button, the start screen, and the pause menu open the
   full-screen Neighborhood Tailor.
 - Characters offers 37 compact animated complete characters grouped into

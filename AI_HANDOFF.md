@@ -29,7 +29,8 @@ system is retired from player UI/runtime; legacy custom selections normalize
 to the animated default. Desktop right-drag locks the cursor and orbits, with
 Mac-safe secondary/Control-click fallback. Wheel/trackpad zoom enters true
 eye-height, cursor-locked first-person mouse-look. Mobile can drag the camera while holding the joystick and
-pinch zoom. The follow camera and A/D directions are corrected. Guest and
+pinch zoom. The follow camera and A/D directions are corrected. Space and the
+mobile JUMP button perform the same small grounded hop, including for remote player display. Guest and
 owner-only profile persistence remain intact, and the isolated release did not
 change the Day 16 town, claims, ownership, population, or Blender assets. Read
 `AVATAR_SYSTEM.md` before changing it.

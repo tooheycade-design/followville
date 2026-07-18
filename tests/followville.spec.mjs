@@ -184,12 +184,20 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   const errors=watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
+  await expect(page.locator("#startScreen")).toBeHidden();
+  await expect(page.locator("body")).toHaveAttribute("data-player-ready","true");
   await expect(page.locator("#crosshair")).toBeHidden();
   const positions=()=>page.locator("body").evaluate(body=>{
     const parse=name=>(body.dataset[name]||"0,0").split(",").map(Number);
     return {player:parse("playerPosition"),camera:parse("cameraPosition")};
   });
   const initial=await positions();
+
+  await page.keyboard.press("Space");
+  await expect(page.locator("body")).toHaveAttribute("data-jumping","true");
+  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-jump-peak")),{timeout:1500}).toBeGreaterThan(.25);
+  await expect(page.locator("body")).not.toHaveAttribute("data-jumping",/./,{timeout:1500});
+  expect(Number(await page.locator("body").getAttribute("data-jump-height"))).toBe(0);
 
   await page.mouse.move(220,220);
   await page.mouse.move(520,360,{steps:5});
@@ -275,6 +283,7 @@ test.describe("mobile town", () => {
     await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
     await expect(page.locator("#lookZone")).toBeVisible();
     await expect(page.locator("#joystickZone")).toBeVisible();
+    await expect(page.locator("#jumpBtn")).toBeVisible();
     const readPositions=()=>page.locator("body").evaluate(body=>({
       player:(body.dataset.playerPosition||"0,0").split(",").map(Number),
       camera:(body.dataset.cameraPosition||"0,0").split(",").map(Number)
@@ -297,6 +306,9 @@ test.describe("mobile town", () => {
     const beforeOffset=[beforeTwoThumb.camera[0]-beforeTwoThumb.player[0],beforeTwoThumb.camera[1]-beforeTwoThumb.player[1]];
     const afterOffset=[afterTwoThumb.camera[0]-afterTwoThumb.player[0],afterTwoThumb.camera[1]-afterTwoThumb.player[1]];
     expect(Math.hypot(afterOffset[0]-beforeOffset[0],afterOffset[1]-beforeOffset[1])).toBeGreaterThan(.5);
+    await page.locator("#jumpBtn").tap();
+    await expect(page.locator("body")).toHaveAttribute("data-jumping","true");
+    await expect(page.locator("body")).not.toHaveAttribute("data-jumping",/./,{timeout:1500});
     await page.getByRole("button", { name: /town map/i }).click();
     await expect(page.locator("#townMapPanel")).toBeVisible();
     await page.getByRole("button", { name: "Close map" }).click();

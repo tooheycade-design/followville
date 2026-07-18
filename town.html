@@ -29,6 +29,7 @@
   body.preview-mode #lookZone,
   body.preview-mode #joystickZone,
   body.preview-mode #runBtn,
+  body.preview-mode #jumpBtn,
   body.preview-mode #claimPrompt,
   body.preview-mode #multiplayerStatus,
   body.preview-mode #mapToggle,
@@ -134,6 +135,15 @@
     user-select:none;
   }
   #runBtn.active { background:rgba(255,255,255,0.4); }
+  #jumpBtn {
+    position:fixed; right:106px; bottom:42px; z-index:6; display:none;
+    width:62px; height:62px; padding:0; border-radius:50%; touch-action:none;
+    background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.4);
+    color:#fff; font:700 11px inherit; letter-spacing:0.03em;
+    align-items:center; justify-content:center; text-shadow:0 1px 4px rgba(0,0,0,0.5);
+    user-select:none;
+  }
+  #jumpBtn:active { background:rgba(255,255,255,0.4); }
 
   @media (max-width: 480px){
     #startScreen h1 { font-size:24px; }
@@ -918,6 +928,7 @@
   <div id="joystickNub"></div>
 </div>
 <div id="runBtn">RUN</div>
+<button id="jumpBtn" type="button" aria-label="Jump">JUMP</button>
 <div id="cinematicGrade" aria-hidden="true"></div>
 
 <script type="importmap">
@@ -1885,6 +1896,11 @@ function addTownAtmosphere(){
    instead of acting as the collision body, which keeps movement, map markers,
    claims, streaming, and multiplayer honest while making the avatar visible. */
 const playerPosition = new THREE.Vector3(0,0,-70);
+let playerJumpOffset=0;
+let playerJumpVelocity=0;
+let playerJumpPeak=0;
+const PLAYER_JUMP_VELOCITY=4.35;
+const PLAYER_JUMP_GRAVITY=14.5;
 document.body.dataset.cameraMode = "third-person";
 let playerYaw = Math.PI;
 let thirdPersonDistance = 4.9;
@@ -2002,7 +2018,7 @@ function updateThirdPersonCamera(force=false){
   const avatarEyeHeight=localAvatar?.userData?.avatar?.eyeHeight || 1.55;
   const firstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
   const targetHeight=firstPerson?avatarEyeHeight:Math.max(.92,avatarEyeHeight*.82);
-  cameraTarget.set(playerPosition.x,surface+targetHeight,playerPosition.z);
+  cameraTarget.set(playerPosition.x,surface+playerJumpOffset+targetHeight,playerPosition.z);
   cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch,-.52,.32);
   cameraOrbitEuler.set(cameraOrbitPitch,cameraOrbitYaw,0,"YXZ");
   cameraLookDirection.set(0,0,-1).applyEuler(cameraOrbitEuler).normalize();
@@ -2046,6 +2062,10 @@ function setGameplayCameraDistance(distance){
 }
 
 function placePlayerAt(x,z,cameraYaw=camera.rotation.y){
+  playerJumpOffset=0;playerJumpVelocity=0;playerJumpPeak=0;
+  document.body.dataset.jumpHeight="0.00";
+  document.body.dataset.jumpPeak="0.00";
+  delete document.body.dataset.jumping;
   playerPosition.set(Number(x)||0,walkSurfaceHeight(Number(x)||0,Number(z)||0),Number(z)||0);
   if(!Number.isFinite(cameraYaw))cameraYaw=0;
   playerYaw=Math.atan2(Math.sin(cameraYaw+Math.PI),Math.cos(cameraYaw+Math.PI));
@@ -2209,7 +2229,7 @@ function openAvatarStudio(){
   resumeWalkingAfterAvatar=gameRunning;
   clearMovementInput();gameRunning=false;
   crosshair.style.display="none";hint.style.display="none";
-  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";
+  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";jumpBtn.style.display="none";
   avatarDraft=normalizeAvatarConfig(currentAvatarConfig);avatarTab="look";avatarSaving=false;
   avatarStudio.classList.add("open");avatarStudio.setAttribute("aria-hidden","false");
   renderAvatarChoices();rebuildAvatarPreview();updateAvatarSaveUI();
@@ -2302,6 +2322,7 @@ const lookZone = document.getElementById("lookZone");
 const joystickZone = document.getElementById("joystickZone");
 const joystickNub = document.getElementById("joystickNub");
 const runBtn = document.getElementById("runBtn");
+const jumpBtn = document.getElementById("jumpBtn");
 const onlineCount = document.getElementById("onlineCount");
 const chatToggle = document.getElementById("chatToggle");
 const chatPanel = document.getElementById("chatPanel");
@@ -2372,6 +2393,7 @@ function beginWalking(){
     lookZone.style.display = "block";
     joystickZone.style.display = "block";
     runBtn.style.display = "flex";
+    jumpBtn.style.display = "flex";
   }
   updateThirdPersonCamera(true);
 }
@@ -2380,7 +2402,7 @@ function resumeDesktopWalking(){
 }
 function resumeWalkingWithoutPointerLock(){
   beginWalking();
-  if (!isTouch) hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move";
+  if (!isTouch) hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move · Space to jump";
 }
 function returnToHomepage(){
   gameRunning = false;
@@ -2400,6 +2422,7 @@ function openPauseMenu(){
   lookZone.style.display = "none";
   joystickZone.style.display = "none";
   runBtn.style.display = "none";
+  jumpBtn.style.display = "none";
   pauseMenu.classList.add("open");
   pauseMenu.setAttribute("aria-hidden", "false");
   requestAnimationFrame(() => pauseResumeBtn.focus({ preventScroll:true }));
@@ -2453,12 +2476,12 @@ chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); }
 
 if (isTouch){
   enterBtn.textContent = "tap to enter";
-  startHint.textContent = "third-person · drag to look · joystick to walk";
-  hint.textContent = "drag to orbit · use the joystick to move";
+  startHint.textContent = "third-person · drag to look · joystick to walk · jump button";
+  hint.textContent = "drag to orbit · joystick to move · jump button";
   enterBtn.addEventListener("touchend", e => { e.preventDefault(); beginWalking(); });
 } else {
-  startHint.textContent = "third-person · WASD to walk · right-drag to orbit · scroll to zoom";
-  hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move";
+  startHint.textContent = "third-person · WASD to walk · Space to jump · right-drag to orbit";
+  hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move · Space to jump";
   startScreen.addEventListener("click", beginWalking);
 }
 
@@ -2519,6 +2542,30 @@ renderer.domElement.addEventListener("contextmenu",event=>{if(gameRunning)event.
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
    on-screen joystick (touch); both funnel into the same animate() loop. */
 const move = { x:0, z:0, run:false };
+function requestPlayerJump(){
+  if(!gameRunning||playerJumpOffset>.015||playerJumpVelocity>0)return;
+  playerJumpPeak=0;
+  document.body.dataset.jumpPeak="0.00";
+  playerJumpVelocity=PLAYER_JUMP_VELOCITY;
+  document.body.dataset.jumping="true";
+}
+function updatePlayerJump(dt){
+  if(playerJumpOffset<=0&&playerJumpVelocity<=0){
+    playerJumpOffset=0;playerJumpVelocity=0;
+    document.body.dataset.jumpHeight="0.00";
+    delete document.body.dataset.jumping;
+    return;
+  }
+  playerJumpVelocity-=PLAYER_JUMP_GRAVITY*dt;
+  playerJumpOffset+=playerJumpVelocity*dt;
+  playerJumpPeak=Math.max(playerJumpPeak,playerJumpOffset);
+  document.body.dataset.jumpPeak=playerJumpPeak.toFixed(2);
+  if(playerJumpOffset<=0){
+    playerJumpOffset=0;playerJumpVelocity=0;
+    delete document.body.dataset.jumping;
+  }
+  document.body.dataset.jumpHeight=playerJumpOffset.toFixed(2);
+}
 document.addEventListener("keydown", e => {
   if (avatarStudioOpen()){
     if (e.code === "Escape"){ e.preventDefault(); closeAvatarStudio(true); }
@@ -2566,6 +2613,7 @@ document.addEventListener("keydown", e => {
     case "KeyA": case "ArrowLeft": move.x = -1; break;
     case "KeyD": case "ArrowRight": move.x = 1; break;
     case "ShiftLeft": case "ShiftRight": move.run = true; break;
+    case "Space": e.preventDefault(); if(!e.repeat)requestPlayerJump(); break;
     case "KeyE": if (gameRunning) attemptClaim(); break;
   }
 });
@@ -2675,6 +2723,9 @@ if (isTouch){
     move.run = !move.run;
     runBtn.classList.toggle("active", move.run);
   }, { passive:false });
+  jumpBtn.addEventListener("touchstart",e=>{
+    e.preventDefault();requestPlayerJump();
+  },{passive:false});
 }
 
 /* Player collisions use the shape that is actually solid: oriented boxes for
@@ -4275,7 +4326,7 @@ function focusTownMapStreet(group){
 function pauseWalkingForMap(){
   clearMovementInput();gameRunning=false;
   crosshair.style.display="none";hint.style.display="none";
-  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";
+  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";jumpBtn.style.display="none";
 }
 function applyTownMapRoute(){
   if (mapRouteApplied || !mapRouteRequested) return;
@@ -4995,6 +5046,7 @@ function localPresencePayload(){
     logged_in:!!myProfile,
     x:Number(playerPosition.x.toFixed(3)),
     z:Number(playerPosition.z.toFixed(3)),
+    jump:Number(playerJumpOffset.toFixed(3)),
     yaw:Number(playerYaw.toFixed(4)),
     avatar:normalizeAvatarConfig(currentAvatarConfig),
     joined_at:new Date().toISOString()
@@ -5028,12 +5080,13 @@ const multiplayerClientId = getMultiplayerClientId();
 function cleanPresence(raw){
   if (!raw || typeof raw.client_id !== "string") return null;
   const x = Number(raw.x), z = Number(raw.z), yaw = Number(raw.yaw || 0);
+  const jump=THREE.MathUtils.clamp(Number(raw.jump)||0,0,1.5);
   if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 5000 || Math.abs(z) > 5000) return null;
   const trusted = multiplayerTrustedHandles.get(raw.client_id);
   const loggedIn = typeof trusted === "string";
   const handle = loggedIn ? trusted : "visitor-" + raw.client_id.slice(0, 4);
   const avatar=normalizeAvatarConfig(raw.avatar);
-  return { client_id:raw.client_id,x,z,yaw,logged_in:loggedIn,handle,avatar };
+  return { client_id:raw.client_id,x,z,jump,yaw,logged_in:loggedIn,handle,avatar };
 }
 
 function disposeSprite(sprite){
@@ -5059,11 +5112,11 @@ function setPlayerLabel(player, presence){
 function createRemotePlayer(presence){
   const group = new THREE.Group();
   const surfaceHeight=walkSurfaceHeight(presence.x,presence.z);
-  group.position.set(presence.x, surfaceHeight, presence.z);
+  group.position.set(presence.x, surfaceHeight+presence.jump, presence.z);
   multiplayerLayer.add(group);
   const player = {
     group,model:null,avatarKey:avatarConfigKey(presence.avatar),label:null,bubble:null,bubbleTimer:null,
-    target:new THREE.Vector3(presence.x, surfaceHeight, presence.z),
+    target:new THREE.Vector3(presence.x, surfaceHeight+presence.jump, presence.z),
     targetYaw:presence.yaw,handle:"",logged_in:false,lastPosition:group.position.clone()
   };
   setPlayerLabel(player, presence);
@@ -5088,7 +5141,7 @@ function upsertRemotePlayer(raw){
   }
   if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
     setPlayerLabel(player, presence);
-  player.target.set(presence.x, walkSurfaceHeight(presence.x,presence.z), presence.z);
+  player.target.set(presence.x, walkSurfaceHeight(presence.x,presence.z)+presence.jump, presence.z);
   player.targetYaw = presence.yaw;
 }
 
@@ -5335,6 +5388,7 @@ function updateMultiplayer(dt){
       client_id:multiplayerClientId,
       x:Number(playerPosition.x.toFixed(3)),
       z:Number(playerPosition.z.toFixed(3)),
+      jump:Number(playerJumpOffset.toFixed(3)),
       yaw:Number(playerYaw.toFixed(4)),
       avatar:normalizeAvatarConfig(currentAvatarConfig)
     }
@@ -5482,11 +5536,13 @@ function refreshLoadedTownSystems(buildings){
 }
 
 function configureTownPlayerSpawn(buildings){
+  if(thirdPersonReady)return;
   const [,,minBy]=blockExtent(buildings);
   const spawnX=0;
   const spawnZ=minBy*PITCH-ROAD-15;
   thirdPersonReady=true;
   placePlayerAt(spawnX,spawnZ,Math.PI);
+  document.body.dataset.playerReady="true";
 }
 
 function configureTownFraming(buildings){
@@ -5766,7 +5822,8 @@ function animate(){
     // Shape-aware push-out against building/car footprints and tree trunks.
     const p = playerPosition;
     for (const col of colliders) resolvePlayerCollision(p, col);
-    p.y=walkSurfaceHeight(p.x,p.z);
+    updatePlayerJump(dt);
+    p.y=walkSurfaceHeight(p.x,p.z)+playerJumpOffset;
     if(localAvatar){
       localAvatar.position.set(p.x,p.y,p.z);
       let avatarYawDelta=playerYaw-localAvatar.rotation.y;

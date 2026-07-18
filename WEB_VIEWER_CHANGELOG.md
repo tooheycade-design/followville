@@ -19,6 +19,9 @@ Kept here (rather than just in chat) so it survives across sessions.
   drag and pinch use only camera-area touches, so one thumb can steer while the
   other orbits.
 - Removed the obsolete white-dot center crosshair from gameplay.
+- Added a short grounded player jump on desktop Space and a dedicated mobile
+  JUMP button beside RUN. The follow camera rises with the local avatar,
+  airborne re-jumps are blocked, and multiplayer visitors receive jump height.
 - Bare `/town.html` now redirects old bookmarks to the current dashboard with
   the live map preview and Today in Followville. Explicit walk/map/house routes
   are unchanged.

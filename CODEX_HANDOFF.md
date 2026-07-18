@@ -23,7 +23,8 @@ workflow.
   retired from the UI/runtime and legacy custom profiles normalize safely.
   Desktop right-drag locks the cursor and orbits, including Mac-safe secondary/Control-click drag. Wheel/trackpad zoom enters true eye-height, cursor-locked first-person mouse-look; mobile
   can drag the camera while moving and pinch zoom, A/D are correct, and the
-  follow rig initializes in streamed and full-GLB paths. Bare `town.html`
+  follow rig initializes in streamed and full-GLB paths. Space or the mobile
+  JUMP button performs a small grounded hop that is mirrored in multiplayer. Bare `town.html`
   bookmarks return to the current map-preview homepage. Owner/guest persistence
   remains intact. Start with `AVATAR_SYSTEM.md` before changing it.
 

@@ -17,7 +17,8 @@ player experience and never loads at runtime; legacy `look: custom` profiles
 normalize to the safe animated default. Desktop uses cursor-locked right-drag orbit and
 wheel/trackpad zoom into true cursor-locked first-person mouse-look; mobile supports simultaneous joystick
 movement plus camera drag and pinch zoom. The camera follows continuously and
-A/D are camera-relative. The isolated Supabase migration was applied and
+A/D are camera-relative. Players can make a small grounded jump with Space or
+the mobile JUMP button; jump height is mirrored to multiplayer visitors. The isolated Supabase migration was applied and
 verified. None of this changed Day 16, population 272, 275 buildings, claims,
 ownership, `world_state.json`, town GLBs, or `neighborhood.blend`. Read
 `AVATAR_SYSTEM.md` before changing the catalog, rigs, persistence, or controls.
