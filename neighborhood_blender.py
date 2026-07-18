@@ -4038,10 +4038,13 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         orbit_deg = 55
     elif cam == "wholeoverhead":
         # Day-15 release camera: keep every developed edge inside frame while
-        # all new homes rise. The shallower orbit avoids clipping a far suburb
-        # during the move and still preserves enough parallax to read as a sky
-        # shot rather than a flat map.
-        pol_deg, dist, fstop = 28, ext * 1.32 + 100, 7.0
+        # all new homes rise. Day 17 extended the portrait composition in both
+        # horizontal directions; the previous distance clipped Twin Oaks at
+        # one end of the orbit and crowded Kaleidoscope Crest at the other.
+        # Keep enough margin for the full developed footprint throughout the
+        # move while preserving parallax so the shot still reads as a sky
+        # camera rather than a flat map.
+        pol_deg, dist, fstop = 28, ext * 1.62 + 140, 7.0
         orbit_deg = 18
     if hero:  # close-up on a special building / batch
         cx, cy, hdist = hero
