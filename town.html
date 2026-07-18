@@ -5,6 +5,12 @@
 <base href="/" />
 <title>Followville — Walk the Town</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<script>
+  // Old bookmarks sometimes point at the retired in-town splash. A bare town
+  // URL should always open the current dashboard; explicit walk/map/routes stay here.
+  if (/\/town\.html$/.test(location.pathname) && !location.search && !location.hash)
+    location.replace("/index.html");
+</script>
 <style>
   html, body { margin:0; padding:0; overflow:hidden; height:100%; background:#8fb7d8;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -608,6 +614,7 @@
   .avatar-choice-heading span { color:#777d82; font-size:10px; }
   .avatar-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 18px; }
   .avatar-choice-grid.compact { grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
+  .avatar-choice-grid.look-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 12px; }
   .avatar-choice-grid.face-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 10px; }
   .avatar-choice-grid.hair-grid,
   .avatar-choice-grid.outfit-grid,
@@ -624,6 +631,18 @@
   .avatar-choice-grid.compact .avatar-choice { padding:10px 3px; text-align:center; }
   .avatar-choice-grid.compact .avatar-choice-name { font-size:10px; }
   .avatar-outfit-swatches { width:58px; height:10px; margin-bottom:11px; border:0; border-radius:0; }
+  .look-grid .avatar-choice {
+    min-height:0; padding:0 0 10px; overflow:hidden; border:1px solid #d9d5cd;
+    background:#fffdf8; text-align:center;
+  }
+  .look-grid .avatar-choice:hover { border-color:#8b969d; }
+  .look-grid .avatar-choice.selected { border:2px solid #c25a43; padding-bottom:9px; }
+  .avatar-look-thumb {
+    display:block; width:100%; aspect-ratio:4/5; margin:0 0 9px; object-fit:cover;
+    object-position:center center; background:#d3d7cb;
+  }
+  .look-grid .avatar-choice-name { padding:0 7px; font-size:11px; }
+  .look-grid .avatar-choice-note { padding:0 7px; }
   .face-grid .avatar-choice,
   .hair-grid .avatar-choice,
   .outfit-grid .avatar-choice,
@@ -689,6 +708,7 @@
     #avatarChoices { padding:13px 14px 18px; }
     .avatar-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 12px; }
     .avatar-choice-grid.compact { grid-template-columns:repeat(5,minmax(62px,1fr)); overflow-x:auto; }
+    .avatar-choice-grid.look-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 8px; }
     .avatar-choice-grid.face-grid { grid-template-columns:repeat(4,minmax(82px,1fr)); overflow-x:auto; }
     .avatar-choice-grid.hair-grid,
     .avatar-choice-grid.outfit-grid,
@@ -911,7 +931,6 @@
 
 <script type="module">
 import * as THREE from "three";
-import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
@@ -1861,11 +1880,6 @@ function addTownAtmosphere(){
   scene.add(clouds);
 }
 
-const controls = new PointerLockControls(camera, document.body);
-controls.pointerSpeed = .72;
-controls.minPolarAngle = Math.PI * .22;
-controls.maxPolarAngle = Math.PI * .68;
-
 /* ─── local player + third-person camera ───
    The player now owns a real world position. The camera orbits that position
    instead of acting as the collision body, which keeps movement, map markers,
@@ -1874,19 +1888,20 @@ const playerPosition = new THREE.Vector3(0,0,-70);
 document.body.dataset.cameraMode = "third-person";
 let playerYaw = Math.PI;
 let thirdPersonDistance = 4.9;
-const THIRD_PERSON_MIN_DISTANCE = 2.35;
+const THIRD_PERSON_MIN_DISTANCE = .05;
 const THIRD_PERSON_MAX_DISTANCE = 7.2;
+const FIRST_PERSON_THRESHOLD = .55;
 const cameraLookDirection = new THREE.Vector3(0,0,1);
 const movementForward = new THREE.Vector3();
 const movementRight = new THREE.Vector3();
 const movementDelta = new THREE.Vector3();
 const cameraTarget = new THREE.Vector3();
 const desiredCameraPosition = new THREE.Vector3();
+const cameraOrbitEuler = new THREE.Euler(-.10,Math.PI,0,"YXZ");
+let cameraOrbitYaw = Math.PI;
+let cameraOrbitPitch = -.10;
 const cameraOcclusionDirection = new THREE.Vector3();
 const cameraOcclusionRaycaster = new THREE.Raycaster();
-const cameraOrbitEuler = new THREE.Euler(-.10,Math.PI,0,"YXZ");
-let cameraOrbitYaw=Math.PI;
-let cameraOrbitPitch=-.10;
 let cameraOcclusionCheckedAt = 0;
 let cameraOcclusionLimit = THIRD_PERSON_MAX_DISTANCE;
 let thirdPersonReady = false;
@@ -1986,23 +2001,34 @@ function updateThirdPersonCamera(force=false){
   const surface=walkSurfaceHeight(playerPosition.x,playerPosition.z);
   const targetHeight=Math.max(.92,(localAvatar?.userData?.avatar?.eyeHeight || 1.55)*.82);
   cameraTarget.set(playerPosition.x,surface+targetHeight,playerPosition.z);
-
-  // PointerLockControls and touch-look rotate the camera itself. Capture only
-  // those orbit angles, then rebuild the camera position directly from the
-  // player's current position every frame. The camera can no longer remain
-  // behind in the world while the player walks away from it.
-  if(Number.isFinite(camera.rotation.y))cameraOrbitYaw=camera.rotation.y;
-  if(Number.isFinite(camera.rotation.x))cameraOrbitPitch=THREE.MathUtils.clamp(camera.rotation.x,-.52,.32);
+  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch,-.52,.32);
   cameraOrbitEuler.set(cameraOrbitPitch,cameraOrbitYaw,0,"YXZ");
   cameraLookDirection.set(0,0,-1).applyEuler(cameraOrbitEuler).normalize();
+  const firstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
+  document.body.dataset.cameraMode=firstPerson?"first-person":"third-person";
+  if(localAvatar)localAvatar.visible=!previewMode&&!firstPerson;
+  if(firstPerson){
+    camera.position.copy(cameraTarget);
+    camera.rotation.order="YXZ";
+    camera.rotation.set(cameraOrbitPitch,cameraOrbitYaw,0);
+    document.body.dataset.cameraDistance="0.00";
+    document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
+    document.body.dataset.cameraPosition=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
+    return;
+  }
   desiredCameraPosition.copy(cameraTarget).addScaledVector(cameraLookDirection,-thirdPersonDistance);
   const safe=cameraPositionWithTownOcclusion(cameraTarget,
     cameraPositionWithCollision(cameraTarget,desiredCameraPosition));
   camera.position.copy(safe);
   camera.lookAt(cameraTarget);
   document.body.dataset.cameraDistance = camera.position.distanceTo(cameraTarget).toFixed(2);
-  document.body.dataset.playerPosition = `${playerPosition.x.toFixed(3)},${playerPosition.z.toFixed(3)}`;
-  document.body.dataset.cameraPosition = `${camera.position.x.toFixed(3)},${camera.position.z.toFixed(3)}`;
+  document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
+  document.body.dataset.cameraPosition=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
+}
+
+function setGameplayCameraDistance(distance){
+  thirdPersonDistance=THREE.MathUtils.clamp(distance,THIRD_PERSON_MIN_DISTANCE,THIRD_PERSON_MAX_DISTANCE);
+  updateThirdPersonCamera(true);
 }
 
 function placePlayerAt(x,z,cameraYaw=camera.rotation.y){
@@ -2022,10 +2048,9 @@ function placePlayerAt(x,z,cameraYaw=camera.rotation.y){
 
 renderer.domElement.addEventListener("wheel",event=>{
   if(!gameRunning || modalOpen() || avatarStudioOpen() || townMapOpen())return;
-  thirdPersonDistance=THREE.MathUtils.clamp(thirdPersonDistance+Math.sign(event.deltaY)*.45,
-    THIRD_PERSON_MIN_DISTANCE,THIRD_PERSON_MAX_DISTANCE);
-  updateThirdPersonCamera(true);
-},{passive:true});
+  event.preventDefault();
+  setGameplayCameraDistance(thirdPersonDistance+event.deltaY*.006);
+},{passive:false});
 
 /* ─── Avatar Studio ─── */
 const avatarStudio=document.getElementById("avatarStudio");
@@ -2054,6 +2079,7 @@ function avatarChoiceButton(kind,choice,extra=""){
   let visual="";
   if(kind==="skin") visual=`<i class="avatar-choice-swatch" style="--avatar-color:#${choice.swatch.toString(16).padStart(6,"0")}"></i>`;
   if(kind==="outfit") visual=`<i class="avatar-outfit-swatches"><i style="--avatar-color:#${choice.top.toString(16).padStart(6,"0")}"></i><i style="--avatar-color:#${choice.bottom.toString(16).padStart(6,"0")}"></i><i style="--avatar-color:#${choice.accent.toString(16).padStart(6,"0")}"></i></i>`;
+  if(kind==="look") visual=`<img class="avatar-look-thumb" src="avatar_assets/avatar_v1/look-thumb/${choice.id}.jpg" alt="" loading="lazy" decoding="async">`;
   if(["face","hair","outfit","hat"].includes(kind)) visual=`<img class="avatar-component-thumb" src="avatar_assets/avatar_v1/component-thumb/${kind}/${choice.id}.jpg" alt="" loading="lazy" decoding="async">`;
   return `<button class="avatar-choice${selected?" selected":""}" type="button" data-avatar-kind="${kind}" data-avatar-id="${choice.id}" aria-pressed="${selected}">${visual}<span class="avatar-choice-name">${choice.label}</span>${extra?`<span class="avatar-choice-note">${extra}</span>`:""}</button>`;
 }
@@ -2061,12 +2087,21 @@ function avatarSection(title,note,content,compact=false,kind=""){
   return `<section class="avatar-choice-section"><div class="avatar-choice-heading"><h3>${title}</h3><span>${note}</span></div><div class="avatar-choice-grid${compact?" compact":""}${kind?` ${kind}-grid`:""}">${content}</div></section>`;
 }
 function renderAvatarChoices(){
-  const tabs=[['body','Body'],['face','Face'],['hair','Hair'],['outfit','Outfit'],['hat','Hat']];
+  const tabs=[['look','Characters'],['body','Body']];
   avatarTabs.innerHTML=tabs.map(([id,label])=>`<button class="avatar-tab" type="button" role="tab" data-avatar-tab="${id}" aria-selected="${avatarTab===id}">${label}</button>`).join("");
   let markup="";
   if(avatarTab==="body"){
     markup+=avatarSection("Height","five proportions",AVATAR_CATALOG.height.map(choice=>avatarChoiceButton("height",choice,`${choice.note} · ${choice.target}`)).join(""));
     markup+=avatarSection("Body color","ten natural skin tones",AVATAR_CATALOG.skin.map(choice=>avatarChoiceButton("skin",choice)).join(""),true);
+  }else if(avatarTab==="look"){
+    const groups=["Everyday","Town roles","Adventure"];
+    markup=groups.map(group=>avatarSection(
+      group,
+      "animated character choices",
+      AVATAR_CATALOG.look.filter(choice=>choice.group===group).map(choice=>avatarChoiceButton("look",choice,choice.note||"")).join(""),
+      false,
+      "look"
+    )).join("");
   }else{
     const notes={face:"subtle face silhouettes",hair:"real 3D styles",outfit:"complete clothing, boots, and details",hat:"rigged accessories"};
     markup+=avatarSection(avatarTab,notes[avatarTab],AVATAR_CATALOG[avatarTab].map(choice=>avatarChoiceButton(avatarTab,choice)).join(""),false,avatarTab);
@@ -2085,7 +2120,6 @@ function renderAvatarChoices(){
   avatarChoices.querySelectorAll("[data-avatar-kind]").forEach(button=>button.addEventListener("click",()=>{
     const kind=button.dataset.avatarKind;
     const next={...avatarDraft,[kind]:button.dataset.avatarId};
-    next.look="custom";
     avatarDraft=normalizeAvatarConfig(next);
     renderAvatarChoices();rebuildAvatarPreview();
   }));
@@ -2158,13 +2192,12 @@ function updateAvatarSaveUI(){
 }
 function openAvatarStudio(){
   if(avatarStudioOpen())return;
-  resumeWalkingAfterAvatar=gameRunning||controls.isLocked;
+  resumeWalkingAfterAvatar=gameRunning;
   clearMovementInput();gameRunning=false;
   crosshair.style.display="none";hint.style.display="none";
   lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";
-  avatarDraft=normalizeAvatarConfig(currentAvatarConfig);avatarTab="body";avatarSaving=false;
+  avatarDraft=normalizeAvatarConfig(currentAvatarConfig);avatarTab="look";avatarSaving=false;
   avatarStudio.classList.add("open");avatarStudio.setAttribute("aria-hidden","false");
-  if(!isTouch&&controls.isLocked)controls.unlock();
   renderAvatarChoices();rebuildAvatarPreview();updateAvatarSaveUI();
   requestAnimationFrame(()=>{sizeAvatarPreview();avatarStudioClose.focus({preventScroll:true});});
 }
@@ -2330,11 +2363,10 @@ function beginWalking(){
 }
 function resumeDesktopWalking(){
   beginWalking();
-  controls.lock();
 }
 function resumeWalkingWithoutPointerLock(){
   beginWalking();
-  if (!isTouch) hint.textContent = "click the town for mouse look / WASD to walk / ESC to pause";
+  if (!isTouch) hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move";
 }
 function returnToHomepage(){
   gameRunning = false;
@@ -2356,7 +2388,6 @@ function openPauseMenu(){
   runBtn.style.display = "none";
   pauseMenu.classList.add("open");
   pauseMenu.setAttribute("aria-hidden", "false");
-  if (!isTouch && controls.isLocked) controls.unlock();
   requestAnimationFrame(() => pauseResumeBtn.focus({ preventScroll:true }));
 }
 function resumeFromPause(){
@@ -2386,10 +2417,9 @@ function openChat(){
     if (!chatInput.disabled) chatInput.focus();
     return;
   }
-  resumeWalkingAfterChat = gameRunning || controls.isLocked;
+  resumeWalkingAfterChat = gameRunning;
   chatPanel.classList.add("open");
   clearMovementInput();
-  if (!isTouch && controls.isLocked) controls.unlock();
   setTimeout(() => { if (!chatInput.disabled) chatInput.focus(); }, 0);
 }
 function closeChat(resumeWalking = true, withoutPointerLock = false){
@@ -2413,21 +2443,40 @@ if (isTouch){
   hint.textContent = "drag to orbit · use the joystick to move";
   enterBtn.addEventListener("touchend", e => { e.preventDefault(); beginWalking(); });
 } else {
-  startHint.textContent = "third-person · WASD to walk · V for avatar · shift to run";
-  startScreen.addEventListener("click", () => controls.lock());
-  renderer.domElement.addEventListener("click", () => {
-    if (gameRunning && !controls.isLocked && !chatOpen() && !townMapOpen() && !modalOpen() && !avatarStudioOpen()){
-      controls.lock();
-    }
-  });
-  controls.addEventListener("lock", beginWalking);
-  controls.addEventListener("unlock", () => {
-    if (chatOpen() || townMapOpen() || modalOpen() || avatarStudioOpen() || pauseMenuOpen()) return;
-    // Browser ESC releases pointer lock. Pause in place; leaving town is now
-    // the explicit secondary action in the pause menu.
-    if (gameRunning) openPauseMenu();
-  });
+  startHint.textContent = "third-person · WASD to walk · right-drag to orbit · scroll to zoom";
+  hint.textContent = "right-drag to orbit · scroll to zoom · WASD to move";
+  startScreen.addEventListener("click", beginWalking);
 }
+
+let cameraDragPointer=null,cameraDragX=0,cameraDragY=0;
+function cameraDragAllowed(){
+  return gameRunning&&!isTouch&&!chatOpen()&&!townMapOpen()&&!modalOpen()&&!avatarStudioOpen()&&!pauseMenuOpen();
+}
+function endCameraDrag(event){
+  if(cameraDragPointer===null||(event&&event.pointerId!==cameraDragPointer))return;
+  try{renderer.domElement.releasePointerCapture(cameraDragPointer);}catch(_){}
+  cameraDragPointer=null;
+  delete document.body.dataset.cameraOrbiting;
+}
+renderer.domElement.addEventListener("pointerdown",event=>{
+  if(event.button!==2||!cameraDragAllowed())return;
+  event.preventDefault();
+  cameraDragPointer=event.pointerId;cameraDragX=event.clientX;cameraDragY=event.clientY;
+  renderer.domElement.setPointerCapture(event.pointerId);
+  document.body.dataset.cameraOrbiting="true";
+});
+renderer.domElement.addEventListener("pointermove",event=>{
+  if(event.pointerId!==cameraDragPointer)return;
+  if(!(event.buttons&2)){endCameraDrag(event);return;}
+  const dx=event.clientX-cameraDragX,dy=event.clientY-cameraDragY;
+  cameraDragX=event.clientX;cameraDragY=event.clientY;
+  cameraOrbitYaw-=dx*.004;
+  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,-.52,.32);
+  updateThirdPersonCamera(true);
+});
+renderer.domElement.addEventListener("pointerup",endCameraDrag);
+renderer.domElement.addEventListener("pointercancel",endCameraDrag);
+renderer.domElement.addEventListener("contextmenu",event=>{if(gameRunning)event.preventDefault();});
 
 /* movement — analog x/z force in [-1,1], driven by keyboard (desktop) or the
    on-screen joystick (touch); both funnel into the same animate() loop. */
@@ -2545,44 +2594,39 @@ if (isTouch){
 
   /* ─── touch: drag-to-look, anywhere outside the joystick ─── */
   let lookTouchId = null, lastX = 0, lastY = 0, gameplayPinchDistance = 0;
-  let yaw = camera.rotation.y, pitch = 0;
 
   lookZone.addEventListener("touchstart", e => {
-    if(e.touches.length>=2){
-      const a=e.touches[0],b=e.touches[1];gameplayPinchDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    if(e.targetTouches.length>=2){
+      const a=e.targetTouches[0],b=e.targetTouches[1];gameplayPinchDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
       lookTouchId=null;return;
     }
     if (lookTouchId !== null) return;
     const t = e.changedTouches[0];
-    yaw=camera.rotation.y;pitch=camera.rotation.x;
     lookTouchId = t.identifier;
     lastX = t.clientX; lastY = t.clientY;
   }, { passive:false });
 
   lookZone.addEventListener("touchmove", e => {
     e.preventDefault();
-    if(e.touches.length>=2){
-      const a=e.touches[0],b=e.touches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-      if(gameplayPinchDistance)thirdPersonDistance=THREE.MathUtils.clamp(
-        thirdPersonDistance+(gameplayPinchDistance-distance)*.018,THIRD_PERSON_MIN_DISTANCE,THIRD_PERSON_MAX_DISTANCE);
+    if(e.targetTouches.length>=2){
+      const a=e.targetTouches[0],b=e.targetTouches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+      if(gameplayPinchDistance)setGameplayCameraDistance(
+        thirdPersonDistance+(gameplayPinchDistance-distance)*.018);
       gameplayPinchDistance=distance;return;
     }
     for (const t of e.changedTouches){
       if (t.identifier !== lookTouchId) continue;
       const dx = t.clientX - lastX, dy = t.clientY - lastY;
       lastX = t.clientX; lastY = t.clientY;
-      yaw -= dx * 0.0035;
-      pitch -= dy * 0.0035;
-      pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, pitch));
-      camera.rotation.order = "YXZ";
-      camera.rotation.y = yaw;
-      camera.rotation.x = pitch;
+      cameraOrbitYaw -= dx * 0.0035;
+      cameraOrbitPitch = THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,-.52,.32);
+      updateThirdPersonCamera(true);
     }
   }, { passive:false });
 
   function endLookTouch(e){
     for (const t of e.changedTouches) if (t.identifier === lookTouchId) lookTouchId = null;
-    if(e.touches.length<2)gameplayPinchDistance=0;
+    if(e.targetTouches.length<2)gameplayPinchDistance=0;
   }
   lookZone.addEventListener("touchend", endLookTouch);
   lookZone.addEventListener("touchcancel", endLookTouch);
@@ -4216,12 +4260,11 @@ function openTownMap(){
   if (townMapOpen()) return;
   if (chatOpen()) closeChat(false);
   if (modalOpen()) closeModal();
-  resumeWalkingAfterMap=gameRunning||controls.isLocked;
+  resumeWalkingAfterMap=gameRunning;
   mapPreviouslyFocused=document.activeElement;
   townMapPanel.classList.add("open");
   townMapPanel.setAttribute("aria-hidden","false");
   pauseWalkingForMap();
-  if (!isTouch&&controls.isLocked) controls.unlock();
   if (mapRouteRequested) mapRouteApplied=false;
   mapState.filter="streets";mapState.streetKey=null;mapState.selected=null;townMapSearch.value="";
   refreshTownMap();
@@ -4588,7 +4631,7 @@ claimHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
   if (!canClaimAnotherHome()) return;
   claimMode = true;
-  if (isTouch) beginWalking(); else controls.lock();
+  beginWalking();
   showToast(isTouch
     ? "Walk up to the front door of an open house — when the claim tag appears over it, tap to claim."
     : "Walk up to the front door of an open house — when the claim tag appears over it, press E.", 7000);
@@ -4596,7 +4639,7 @@ claimHomeBtn.addEventListener("click", e => {
 goHomeBtn.addEventListener("click", async e => {
   e.stopPropagation();
   if(!await goHome())return;
-  if (isTouch) beginWalking(); else controls.lock();
+  beginWalking();
 });
 customizeHomeBtn.addEventListener("click", e => {
   e.stopPropagation();
@@ -5671,7 +5714,7 @@ function animate(){
     camera.getWorldDirection(movementForward);movementForward.y=0;
     if(movementForward.lengthSq()<.001)movementForward.set(Math.sin(playerYaw),0,Math.cos(playerYaw));
     else movementForward.normalize();
-    movementRight.set(movementForward.z,0,-movementForward.x);
+    movementRight.set(-movementForward.z,0,movementForward.x);
     movementDelta.addScaledVector(movementForward,move.z).addScaledVector(movementRight,move.x);
     if(movementDelta.lengthSq()>1)movementDelta.normalize();
     if(movementDelta.lengthSq()>0){

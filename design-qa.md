@@ -1,13 +1,13 @@
 # Avatar System v1 design QA
 
-## Review target
+## Current review target
 
 - Source reference: `C:\Users\cadet\AppData\Local\Temp\codex-clipboard-54caaefc-71be-4e5f-b947-fa87b7c00e55.png`
-- Desktop implementation: `C:\Users\cadet\followville_repo\test-results\avatar-realistic-outfit-custom-swept-tailored-none-adult-classic-peach.png`
-- Side-by-side comparison: `C:\Users\cadet\followville_repo\test-results\design-qa-avatar-comparison.png`
-- Mobile implementation: `C:\Users\cadet\followville_repo\test-results\design-qa-avatar-mobile-390x844.png`
-- Desktop viewport/state: 1487 x 1058, guest, custom avatar, Outfit tab
-- Mobile viewport/state: 390 x 844, guest, custom avatar, Outfit tab
+- Approved player family: the 37 compact animated complete characters in
+  `avatar_assets/avatar_v1/look/`, represented by the matching real thumbnails
+  in `look-thumb/`.
+- The earlier realistic/custom Outfit-tab captures are superseded and must not
+  be used as current product evidence.
 
 ## Visual assessment
 
@@ -20,20 +20,20 @@
   backward-facing/T-pose defects. The neutral studio intentionally replaces
   the reference's rendered tailor room so the actual game model remains the
   visual source of truth.
-- The product intentionally offers complete modular outfits instead of
-  separately compositing tops, bottoms, and shoes. The separate tall
-  complete-character Looks catalog was removed so every player shares one
-  approachable animated style.
+- The product intentionally offers complete animated characters in the
+  Characters tab instead of the taller modular family or separate top/bottom
+  assembly.
 - At 390 x 844, the preview, horizontally scrollable tabs, three-column visual
   choices, vertical catalog scrolling, and persistent save controls remain
   usable without clipping the active content or producing browser errors.
 
 ## Interaction and accessibility assessment
 
-- Body, Face, Hair, Outfit, and Hat tabs all select real options and
-  update the live 3D preview.
-- Preview drag/orbit and wheel/pinch zoom work; save, cancel, reset, keyboard
-  `V`, start-screen, pause-menu, and in-town entry paths are wired.
+- Characters and Body are the only public tabs. All 37 character cards select
+  real models; body color and height update the live 3D preview.
+- Preview drag/orbit and wheel/pinch zoom work. In-town desktop orbit requires
+  right-drag; scrolling reaches first person. Mobile camera drag remains active
+  while the joystick is held, and pinch zoom uses the same camera range.
 - Guest choices persist locally across reloads. Signed-in choices persist
   through the verified owner-only profile migration.
 - Button and tab roles, labels, selected states, focusable controls, close
@@ -43,12 +43,11 @@
 
 ## Verification evidence
 
-- Focused modular-avatar and camera verification: 3 passed in 2.6 minutes on
-  Chromium; the directly related full-town fallback also passed. The preceding
-  production release passed all 10 browser flows.
-- The modular avatar manifest remains the authoritative asset inventory; the
-  retired complete-look files and manifest are absent.
-- Mobile visual capture: no console or page errors.
+- Focused Chromium flows passed for the 37-character catalog/persistence,
+  camera follow/orbit/zoom/A-D behavior, mobile controls, streamed/full fallback,
+  and homepage entry route.
+- The complete-character manifest retains byte sizes and SHA-256 hashes for the
+  37 selectable GLBs.
 - `git diff --check`: passed; only line-ending notices were reported.
 - Canonical town data was not changed: Day 16, population 272, 275 buildings,
   existing claims/ownership, `world_state.json`, town geometry, and Blender
@@ -58,9 +57,8 @@
 
 - P0 blockers: none.
 - P1 major issues: none.
-- P2 actionable visual or interaction issues: none.
-- Intentional deviations: actual approved game-character models replace the
-  aspirational reference character/room; outfits are bundled modular choices
-  rather than independent top/bottom/shoe meshes.
+- Intentional deviation: actual approved compact game-character models replace
+  the aspirational reference character/room; clothing is bundled into complete
+  characters rather than independent top/bottom/shoe meshes.
 
 final result: passed

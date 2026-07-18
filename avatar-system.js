@@ -6,9 +6,9 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 /*
  * Followville Avatar System v1
  *
- * Saved profiles contain stable catalog IDs only. The visible character is a
- * modular, rigged GLB assembled from a shared core plus the selected modeled
- * hair, outfit, and hat. The default initial payload is about 0.5 MB.
+ * Saved profiles contain stable catalog IDs only. The public player uses the
+ * compact, animated complete-character library; legacy modular selections are
+ * normalized to a safe complete-character default.
  */
 
 export const AVATAR_VERSION = 1;
@@ -64,9 +64,43 @@ export const AVATAR_CATALOG = Object.freeze({
     { id:"ranger_hood", label:"Ranger hood" }
   ]),
   look: Object.freeze([
-    // Kept in the saved schema for backward compatibility. Followville now
-    // deliberately uses only the modular animated character family.
-    { id:"custom", label:"Custom" }
+    { id:"casual_day_f", label:"Easy day I", group:"Everyday" },
+    { id:"casual_day_m", label:"Easy day II", group:"Everyday" },
+    { id:"casual_sky_f", label:"Sky casual I", group:"Everyday" },
+    { id:"casual_sky_m", label:"Sky casual II", group:"Everyday" },
+    { id:"casual_lilac_f", label:"Lilac casual I", group:"Everyday" },
+    { id:"casual_lilac_m", label:"Lilac casual II", group:"Everyday" },
+    { id:"casual_bald", label:"Clean casual", group:"Everyday" },
+    { id:"suit_f", label:"Town suit I", group:"Town roles" },
+    { id:"suit_m", label:"Town suit II", group:"Town roles" },
+    { id:"classy_f", label:"Classic formal I", group:"Town roles" },
+    { id:"classy_m", label:"Classic formal II", group:"Town roles" },
+    { id:"chef_f", label:"Chef I", group:"Town roles" },
+    { id:"chef_m", label:"Chef II", group:"Town roles" },
+    { id:"doctor_young_f", label:"Doctor I", group:"Town roles" },
+    { id:"doctor_young_m", label:"Doctor II", group:"Town roles" },
+    { id:"doctor_senior_f", label:"Senior doctor I", group:"Town roles" },
+    { id:"doctor_senior_m", label:"Senior doctor II", group:"Town roles" },
+    { id:"worker_f", label:"Builder I", group:"Town roles" },
+    { id:"worker_m", label:"Builder II", group:"Town roles" },
+    { id:"cowboy_f", label:"Rancher I", group:"Town roles" },
+    { id:"cowboy_m", label:"Rancher II", group:"Town roles" },
+    { id:"kimono_f", label:"Festival I", group:"Town roles" },
+    { id:"kimono_m", label:"Festival II", group:"Town roles" },
+    { id:"pirate_f", label:"Pirate I", group:"Adventure" },
+    { id:"pirate_m", label:"Pirate II", group:"Adventure" },
+    { id:"viking_f", label:"Viking I", group:"Adventure" },
+    { id:"viking_m", label:"Viking II", group:"Adventure" },
+    { id:"ninja_f", label:"Night ninja I", group:"Adventure" },
+    { id:"ninja_m", label:"Night ninja II", group:"Adventure" },
+    { id:"sand_ninja_f", label:"Sand ninja I", group:"Adventure" },
+    { id:"sand_ninja_m", label:"Sand ninja II", group:"Adventure" },
+    { id:"gold_knight_f", label:"Golden knight I", group:"Adventure" },
+    { id:"gold_knight_m", label:"Golden knight II", group:"Adventure" },
+    { id:"knight_m", label:"Steel knight", group:"Adventure" },
+    { id:"elf", label:"Woodland elf", group:"Adventure" },
+    { id:"witch", label:"Town witch", group:"Adventure" },
+    { id:"wizard", label:"Town wizard", group:"Adventure" }
   ])
 });
 
@@ -78,7 +112,7 @@ export const DEFAULT_AVATAR = Object.freeze({
   hair:"swept",
   outfit:"tailored",
   hat:"none",
-  look:"custom"
+  look:"casual_day_m"
 });
 
 const catalogMaps = Object.fromEntries(Object.entries(AVATAR_CATALOG)
@@ -123,6 +157,7 @@ function loadAsset(relative){
 }
 
 function componentPath(kind, id){
+  if (kind === "look") return `look/${id}.glb`;
   if (kind === "hair" && id !== "none") return `hair/${id}.glb`;
   if (kind === "outfit") return `outfit/${id}.glb`;
   if (kind === "hat" && id !== "none") return `hat/${id}.glb`;
@@ -131,7 +166,7 @@ function componentPath(kind, id){
 
 export function preloadAvatarAssets(value=DEFAULT_AVATAR){
   const config = normalizeAvatarConfig(value);
-  const paths = ["core.glb", componentPath("hair",config.hair), componentPath("outfit",config.outfit), componentPath("hat",config.hat)];
+  const paths = [componentPath("look",config.look)];
   return Promise.all(paths.filter(Boolean).map(loadAsset));
 }
 
@@ -259,13 +294,7 @@ function applyTailorPose(rigs){
 
 export async function createAvatarModel(value, options={}){
   const config = normalizeAvatarConfig(value);
-  const requests = [
-      ["core","core.glb"],
-      ["hair",componentPath("hair",config.hair)],
-      ["outfit",componentPath("outfit",config.outfit)],
-      ["hat",componentPath("hat",config.hat)]
-    ]
-    .filter(([,path]) => path);
+  const requests = [["look",componentPath("look",config.look)]];
   const loaded = await Promise.all(requests.map(async ([kind,path]) => [kind,cloneAsset(await loadAsset(path))]));
 
   const group = new THREE.Group();
@@ -274,7 +303,7 @@ export async function createAvatarModel(value, options={}){
   visualRoot.name = "FV_avatar_visual";
   const assetRoot = new THREE.Group();
   assetRoot.name = "FV_avatar_assets";
-  assetRoot.rotation.y = Math.PI;
+  assetRoot.rotation.y = 0;
   visualRoot.add(assetRoot);
   group.add(visualRoot);
   const materials = new Set();
@@ -287,11 +316,19 @@ export async function createAvatarModel(value, options={}){
   }
   body = applySkinAndFace(assetRoot,config,materials);
 
+  // Derive the conversion from actual geometry so all complete characters
+  // share a 1.82 m baseline and rest exactly on the floor.
+  assetRoot.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(assetRoot);
+  const size = bounds.getSize(new THREE.Vector3());
+  const unitScale = size.y > .001 ? 1.82 / size.y : .575;
+  assetRoot.scale.setScalar(unitScale);
+  assetRoot.position.y = -bounds.min.y * unitScale;
+  assetRoot.updateMatrixWorld(true);
+
   const height = avatarChoice("height",config.height);
-  const face = avatarChoice("face",config.face);
   group.scale.setScalar(height.scale);
-  applyTailorPose(rigs);
-  applyHeadScale(rigs,height.headScale,face);
+  applyHeadScale(rigs,height.headScale,{ width:1, height:1 });
   group.userData.avatar = {
     config,
     key:avatarConfigKey(config),

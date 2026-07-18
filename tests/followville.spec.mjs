@@ -36,6 +36,13 @@ test("homepage presents the live town and today's update", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("a bare legacy town URL returns to the current homepage", async ({ page }) => {
+  await page.goto("/town.html");
+  await expect(page).toHaveURL(/\/index\.html$/);
+  await expect(page.locator("#mapPreview")).toBeVisible();
+  await expect(page.locator("#todaySummary")).toBeVisible();
+});
+
 test("Today route opens the newest homes and returns home cleanly", async ({ page }) => {
   const errors = watchPageErrors(page);
   await page.goto("/today");
@@ -127,103 +134,96 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("Avatar Studio builds a persistent third-person guest avatar", async ({ page }) => {
+test("Avatar Studio only offers the animated character library and persists it", async ({ page }) => {
   test.setTimeout(180_000);
   const errors = watchPageErrors(page);
+  const avatarRequests=[];
+  page.on("request",request=>{if(request.url().includes("/avatar_assets/"))avatarRequests.push(request.url());});
+  await page.addInitScript(() => {
+    if(sessionStorage.getItem("followville_test_seeded_avatar"))return;
+    sessionStorage.setItem("followville_test_seeded_avatar","true");
+    localStorage.setItem("followville_avatar_v1",JSON.stringify({
+      version:1,skin:"cocoa",height:"tall",face:"defined",hair:"long",
+      outfit:"field_jacket",hat:"ranger_hood",look:"custom"
+    }));
+  });
   await page.goto("/town.html#walk");
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode", "third-person");
   expect(Number(await page.locator("body").getAttribute("data-camera-distance"))).toBeGreaterThan(2);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:casual_day_m$/);
 
   await page.keyboard.press("KeyV");
   await expect(page.locator("#avatarStudio")).toBeVisible();
   await expect(page.getByRole("heading", { name:"Make yourself at home" })).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveCount(5);
+  await expect(page.getByRole("tab")).toHaveCount(2);
+  await expect(page.getByRole("tab", { name:"Characters" })).toBeVisible();
+  await expect(page.getByRole("tab", { name:"Body" })).toBeVisible();
   await expect(page.locator("#avatarPreviewCanvas")).toBeVisible();
   expect(await page.locator("#avatarPreviewCanvas").evaluate(canvas => canvas.width > 100 && canvas.height > 100)).toBe(true);
-
-  await page.getByRole("button", { name:/Tall tall adult/ }).click();
-  await page.getByRole("button", { name:"Cocoa" }).click();
-  await page.getByRole("tab", { name:"Face" }).click();
-  await expect(page.locator("[data-avatar-kind='face']")).toHaveCount(8);
-  await page.locator("[data-avatar-kind='face'][data-avatar-id='defined']").click();
-  await page.getByRole("tab", { name:"Hair" }).click();
-  await expect(page.locator("[data-avatar-kind='hair']")).toHaveCount(6);
-  await page.locator("[data-avatar-kind='hair'][data-avatar-id='long']").click();
-  await page.getByRole("tab", { name:"Outfit" }).click();
-  await expect(page.locator("[data-avatar-kind='outfit']")).toHaveCount(6);
-  await page.locator("[data-avatar-kind='outfit'][data-avatar-id='field_jacket']").click();
-  await page.getByRole("tab", { name:"Hat" }).click();
-  await expect(page.locator("[data-avatar-kind='hat']")).toHaveCount(2);
-  await page.locator("[data-avatar-kind='hat'][data-avatar-id='ranger_hood']").click();
+  await expect(page.locator("[data-avatar-kind='look']")).toHaveCount(37);
+  await expect(page.locator(".avatar-look-thumb")).toHaveCount(37);
+  await expect(page.locator("[data-avatar-kind='face'],[data-avatar-kind='hair'],[data-avatar-kind='outfit'],[data-avatar-kind='hat']")).toHaveCount(0);
+  await page.locator("[data-avatar-kind='look'][data-avatar-id='wizard']").click();
   await page.getByRole("button", { name:"save avatar" }).click();
   await expect(page.locator("#avatarStudio")).toBeHidden();
-  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:cocoa:tall:defined:long:field_jacket:ranger_hood:custom$/);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
-    version:1,skin:"cocoa",height:"tall",face:"defined",hair:"long",outfit:"field_jacket",hat:"ranger_hood",look:"custom"
+    version:1,look:"wizard"
   });
 
-  await page.reload();
+  await page.goto("/town.html#walk");
   await waitForTown(page);
-  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:cocoa:tall:defined:long:field_jacket:ranger_hood:custom$/);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
+  expect(avatarRequests.some(url=>/\/(core\.glb|hair\/|outfit\/|hat\/)/.test(url))).toBe(false);
   expect(errors).toEqual([]);
 });
 
-test("Avatar Studio keeps only the modular animated avatar family", async ({ page }) => {
+test("player camera follows, right-drag orbits, wheel reaches first person, and A/D are correct", async ({ page }) => {
   test.setTimeout(180_000);
-  const errors = watchPageErrors(page);
-  await page.addInitScript(() => localStorage.setItem("followville_avatar_v1", JSON.stringify({
-    version:1, skin:"warm", height:"teen", face:"round", hair:"tousled",
-    outfit:"striped", hat:"none", look:"wizard"
-  })));
+  const errors=watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
-  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:warm:teen:round:tousled:striped:none:custom$/);
-  await page.keyboard.press("KeyV");
-  await expect(page.locator("#avatarStudio")).toBeVisible();
-  await expect(page.locator("#avatarStudioSub")).toHaveText("Design a look that feels like you in Followville.");
-  await expect(page.getByRole("tab")).toHaveCount(5);
-  await expect(page.getByRole("tab", { name:"Looks" })).toHaveCount(0);
-  await expect(page.locator("[data-avatar-kind='look']")).toHaveCount(0);
-  await expect(page.locator(".avatar-look-thumb")).toHaveCount(0);
-  await page.getByRole("button", { name:"save avatar" }).click();
-  await expect(page.locator("#avatarStudio")).toBeHidden();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
-    version:1,skin:"warm",height:"teen",face:"round",hair:"tousled",outfit:"striped",hat:"none",look:"custom"
+  const positions=()=>page.locator("body").evaluate(body=>{
+    const parse=name=>(body.dataset[name]||"0,0").split(",").map(Number);
+    return {player:parse("playerPosition"),camera:parse("cameraPosition")};
   });
-  expect(await page.evaluate(() => performance.getEntriesByType("resource")
-    .some(entry => /avatar_v1\/(look|look-thumb)\//.test(entry.name)))).toBe(false);
-  expect(errors).toEqual([]);
-});
+  const initial=await positions();
 
-test("third-person camera travels with the animated avatar", async ({ page }) => {
-  test.setTimeout(180_000);
-  const errors = watchPageErrors(page);
-  await page.goto("/town.html#walk");
-  await waitForTown(page);
-  const readPositions = () => page.locator("body").evaluate(body => ({
-    player:(body.dataset.playerPosition || "0,0").split(",").map(Number),
-    camera:(body.dataset.cameraPosition || "0,0").split(",").map(Number)
-  }));
-  const before = await readPositions();
-  await page.keyboard.down("ShiftLeft");
-  await page.keyboard.down("KeyW");
-  await page.waitForTimeout(1600);
-  await page.keyboard.up("KeyW");
-  await page.keyboard.up("ShiftLeft");
-  const after = await readPositions();
-  const distance = (a,b) => Math.hypot(a[0]-b[0],a[1]-b[1]);
-  const playerDelta=[after.player[0]-before.player[0],after.player[1]-before.player[1]];
-  const cameraDelta=[after.camera[0]-before.camera[0],after.camera[1]-before.camera[1]];
-  const beforeOffset=[before.camera[0]-before.player[0],before.camera[1]-before.player[1]];
-  const afterOffset=[after.camera[0]-after.player[0],after.camera[1]-after.player[1]];
-  const offsetDirectionDot=(beforeOffset[0]*afterOffset[0]+beforeOffset[1]*afterOffset[1])/
-    (Math.hypot(...beforeOffset)*Math.hypot(...afterOffset));
-  expect(distance(after.player,before.player)).toBeGreaterThan(8);
-  expect(distance(after.camera,before.camera)).toBeGreaterThan(6);
-  expect(cameraDelta[0]*playerDelta[0]+cameraDelta[1]*playerDelta[1]).toBeGreaterThan(0);
-  expect(distance(after.camera,after.player)).toBeLessThan(7.5);
-  expect(offsetDirectionDot).toBeGreaterThan(.95);
+  await page.mouse.move(220,220);
+  await page.mouse.move(520,360,{steps:5});
+  const noDrag=await positions();
+  expect(Math.hypot(noDrag.camera[0]-initial.camera[0],noDrag.camera[1]-initial.camera[1])).toBeLessThan(.2);
+
+  await page.mouse.move(520,360);
+  await page.mouse.down({button:"right"});
+  await page.mouse.move(700,310,{steps:6});
+  await page.mouse.up({button:"right"});
+  const orbited=await positions();
+  expect(Math.hypot(orbited.camera[0]-initial.camera[0],orbited.camera[1]-initial.camera[1])).toBeGreaterThan(1);
+
+  const forward=[orbited.player[0]-orbited.camera[0],orbited.player[1]-orbited.camera[1]];
+  const length=Math.hypot(...forward);
+  const screenRight=[-forward[1]/length,forward[0]/length];
+  await page.keyboard.down("KeyD");await page.waitForTimeout(650);await page.keyboard.up("KeyD");
+  const afterD=await positions();
+  const dDelta=[afterD.player[0]-orbited.player[0],afterD.player[1]-orbited.player[1]];
+  expect(dDelta[0]*screenRight[0]+dDelta[1]*screenRight[1]).toBeGreaterThan(1);
+  await page.keyboard.down("KeyA");await page.waitForTimeout(650);await page.keyboard.up("KeyA");
+  const afterA=await positions();
+  const aDelta=[afterA.player[0]-afterD.player[0],afterA.player[1]-afterD.player[1]];
+  expect(aDelta[0]*screenRight[0]+aDelta[1]*screenRight[1]).toBeLessThan(-1);
+
+  const beforeForward=await positions();
+  await page.keyboard.down("KeyW");await page.waitForTimeout(1500);await page.keyboard.up("KeyW");
+  const afterForward=await positions();
+  expect(Math.hypot(afterForward.player[0]-beforeForward.player[0],afterForward.player[1]-beforeForward.player[1])).toBeGreaterThan(4.5);
+  expect(Math.hypot(afterForward.camera[0]-beforeForward.camera[0],afterForward.camera[1]-beforeForward.camera[1])).toBeGreaterThan(4);
+
+  await page.mouse.wheel(0,-2000);
+  await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
+  await page.mouse.wheel(0,1500);
+  await expect(page.locator("body")).toHaveAttribute("data-camera-mode","third-person");
   expect(errors).toEqual([]);
 });
 
@@ -264,6 +264,28 @@ test.describe("mobile town", () => {
     await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
     await expect(page.locator("#lookZone")).toBeVisible();
     await expect(page.locator("#joystickZone")).toBeVisible();
+    const readPositions=()=>page.locator("body").evaluate(body=>({
+      player:(body.dataset.playerPosition||"0,0").split(",").map(Number),
+      camera:(body.dataset.cameraPosition||"0,0").split(",").map(Number)
+    }));
+    const beforeTwoThumb=await readPositions();
+    const joystickBox=await page.locator("#joystickZone").boundingBox();
+    const lookBox=await page.locator("#lookZone").boundingBox();
+    const cdp=await page.context().newCDPSession(page);
+    const joy={x:joystickBox.x+joystickBox.width/2,y:joystickBox.y+joystickBox.height/2};
+    const look={x:lookBox.x+lookBox.width*.68,y:lookBox.y+lookBox.height*.48};
+    await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[joy]});
+    await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[joy,look]});
+    await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[
+      {x:joy.x,y:joy.y-36},{x:look.x+70,y:look.y-8}
+    ]});
+    await page.waitForTimeout(700);
+    await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+    const afterTwoThumb=await readPositions();
+    expect(Math.hypot(afterTwoThumb.player[0]-beforeTwoThumb.player[0],afterTwoThumb.player[1]-beforeTwoThumb.player[1])).toBeGreaterThan(1);
+    const beforeOffset=[beforeTwoThumb.camera[0]-beforeTwoThumb.player[0],beforeTwoThumb.camera[1]-beforeTwoThumb.player[1]];
+    const afterOffset=[afterTwoThumb.camera[0]-afterTwoThumb.player[0],afterTwoThumb.camera[1]-afterTwoThumb.player[1]];
+    expect(Math.hypot(afterOffset[0]-beforeOffset[0],afterOffset[1]-beforeOffset[1])).toBeGreaterThan(.5);
     await page.getByRole("button", { name: /town map/i }).click();
     await expect(page.locator("#townMapPanel")).toBeVisible();
     await page.getByRole("button", { name: "Close map" }).click();

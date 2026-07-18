@@ -23,15 +23,15 @@ claims across 29 accounts were not changed. The reviewed delivery is two
 separate portrait MP4s: completed town overhead with no rise animation, then a
 whole-town overhead replay showing all 13 new houses appearing.
 
-Avatar System v1 is live with third-person walking and the Neighborhood Tailor,
-including one modular animated character family, real component preview cards,
-guest persistence, and owner-only profile persistence. A tested correction
-removes the separate tall complete-character library and fixes follow-camera
-startup/drift in the normal streamed town and is published on `main`. Old saved
-look IDs normalize to modular custom without changing the
-database. Its isolated
-migration and production release preserved the Day 16 town, claims, ownership,
-population, and Blender assets. Read `AVATAR_SYSTEM.md` before changing it.
+Avatar System v1 uses only 37 compact animated complete characters in the
+public Neighborhood Tailor, plus body color and height. The taller modular
+system is retired from player UI/runtime; legacy custom selections normalize
+to the animated default. Desktop right-drag orbits and wheel/trackpad zooms
+through first person. Mobile can drag the camera while holding the joystick and
+pinch zoom. The follow camera and A/D directions are corrected. Guest and
+owner-only profile persistence remain intact, and the isolated release did not
+change the Day 16 town, claims, ownership, population, or Blender assets. Read
+`AVATAR_SYSTEM.md` before changing it.
 
 The web build now uses production district streaming without changing the
 town. `export_web.py` always produces the complete `town.glb` fallback plus a

@@ -5,29 +5,36 @@ was applied and verified before the web release.
 
 ## Player experience
 
-- Third-person is the town's default walking camera.
+- Third-person is the town's default walking camera. On desktop, right-button
+  drag orbits and wheel/trackpad scrolling zooms continuously into first
+  person. On mobile, camera drag works while the other thumb holds the
+  joystick, and pinch controls the same third/first-person zoom range.
 - `V`, the in-town avatar button, the start screen, and the pause menu open the
   full-screen Neighborhood Tailor.
-- Custom mode offers 10 skin tones, five age/height proportions, eight face
-  silhouettes, six modeled hairstyles, six complete modeled outfits, and two
-  hat states.
+- Characters offers 37 compact animated complete characters grouped into
+  Everyday, Town roles, and Adventure. Body offers 10 skin tones and five
+  age/height proportions.
+- The taller modular face/hair/outfit/hat family is intentionally retired from
+  the public UI and runtime. Existing profile JSON retains its stable schema,
+  but a legacy `look: custom` value normalizes to `casual_day_m`; no profile or
+  claim rows need rewriting.
 - Every visible catalog card is captured from the actual selectable 3D model.
   The live preview supports drag rotation plus wheel/pinch zoom.
-- Guests persist locally. Signed-in profiles will persist the same validated
-  catalog IDs through `profiles.avatar` once the migration is approved/applied.
+- Guests persist locally. Signed-in profiles persist the same validated catalog
+  IDs through the applied owner-only `profiles.avatar` migration.
 - Roleplay names are deliberately outside v1.
 
 ## Runtime architecture
 
-`avatar-system.js` owns the catalog, validation, lazy GLB loading, assembly,
-skin/face/height transforms, shared rig posing, and locomotion. `town.html`
+`avatar-system.js` owns the catalog, validation, lazy GLB loading,
+skin/height transforms, shared rig posing, and locomotion. `town.html`
 owns the studio UI, preview scene, third-person integration, local storage,
 presence refresh, and the owner-only save call.
 
-The default custom avatar loads `core.glb` plus one hair, outfit, and optional
-hat. The default initial payload is 512,832 bytes. Component preview JPGs load
-only inside their catalog tabs. The former separate complete-character library
-was removed on 2026-07-17 so every player uses the same modular animated style.
+The player loads exactly one compressed complete-character GLB. The 37
+character GLBs total 2,059,796 bytes and are not part of town startup. Preview
+JPGs load only inside the Characters catalog. Retained modular authoring assets
+are not reachable from the player loader.
 
 The avatar files are completely separate from `town.glb`, streamed town
 districts, `world_state.json`, and the canonical `neighborhood.blend`. Avatar
@@ -39,9 +46,11 @@ The production avatar models come from these CC0 1.0 Quaternius packs:
 
 - Universal Base Characters
 - Modular Character Outfits - Fantasy
+- Ultimate Animated Character Pack
 
 Source pages and license metadata are retained in
-`avatar_assets/avatar_v1/manifest.json`. Licensing is maintainer-facing;
+`avatar_assets/avatar_v1/manifest.json` and
+`avatar_assets/avatar_v1/look-manifest.json`. Licensing is maintainer-facing;
 the player UI intentionally uses Followville names only.
 
 Local source packs live outside the repository under
@@ -54,6 +63,7 @@ Use Blender 5.1 from the repository root:
 
 ```powershell
 & 'C:\Program Files\Blender Foundation\Blender 5.1\blender.exe' --background --python scripts\export_avatar_library.py
+& 'C:\Program Files\Blender Foundation\Blender 5.1\blender.exe' --background --python scripts\export_avatar_look_library.py
 ```
 
 With the local test server running at `http://127.0.0.1:8765`, rebuild visual
@@ -61,10 +71,13 @@ cards with the bundled Node runtime:
 
 ```powershell
 node scripts\capture_avatar_component_thumbnails.mjs
+node scripts\capture_avatar_look_thumbnails.mjs
 ```
 
-The exporter writes a deterministic manifest with byte sizes and SHA-256
-hashes.
+Both exporters write deterministic manifests with byte sizes and SHA-256
+hashes. The complete-look exporter bakes each source character's authored idle
+stance into a web-safe rig, normalizes it at runtime to a 1.82m baseline, and
+does not export animation clips.
 
 ## Database rollout
 
@@ -92,11 +105,6 @@ snapshot, and ownership snapshot. The migration intentionally revokes any
 table-wide client `UPDATE` privilege on `profiles` before granting only
 `UPDATE (avatar)`.
 
-The live constraint still recognizes the retired complete-look IDs for schema
-compatibility. The browser normalizer always converts those values to `custom`
-before loading or saving, and none of the retired assets or UI remain. The
-modular-only correction required no database write.
-
 Rollback is isolated from claims and houses: disable the browser save path,
 revoke/drop `update_my_avatar(jsonb)`, drop
 `profiles_own_avatar_update`, drop `profiles_avatar_valid`, and drop the
@@ -108,17 +116,17 @@ handle, verification record, house, or town-state row.
 
 ## Browser verification
 
-The avatar Playwright flows verify modular selections, real component previews,
-local persistence, reload persistence, safe legacy-look normalization,
-third-person player/camera movement, and clean console behavior. Run:
+The focused Playwright flows verify all 37 character choices, absence of public
+modular controls/requests, legacy normalization, persistence, continuous camera
+follow, right-drag-only orbit, first-person zoom, A/D direction, mobile controls,
+the full-GLB fallback, and the bare-town homepage redirect. Run:
 
 ```powershell
-pnpm test:e2e --grep "Avatar Studio"
+pnpm test:e2e --grep "animated character library|player camera follows|touch controls|bare legacy|complete-town fallback"
 ```
 
 Run the complete `pnpm test:e2e` suite before review or release.
 
-Latest correction verification on 2026-07-17: all three focused avatar
-and follow-camera flows plus the full-town fallback passed in Chromium. The
-preceding production release passed all 10 browser flows and its modular
-manifest checks. See `design-qa.md`.
+Latest local verification on 2026-07-17: all 10 browser flows passed in
+Chromium, all 50 manifest-listed GLBs matched their recorded byte sizes and
+SHA-256 hashes, and desktop/mobile visual QA passed. See `design-qa.md`.
