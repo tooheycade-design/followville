@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "license": "Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0)",
+  "source": [
+    "https://quaternius.com/packs/universalbasecharacters.html",
+    "https://quaternius.com/packs/modularcharacteroutfitsfantasy.html"
+  ],
+  "core": {
+    "path": "avatar_v1/core.glb",
+    "bytes": 95760,
+    "sha256": "8f5d10bdcbbfa34af4e272452178735b58f2eacfcb48c7988043740233d09889"
+  },
+  "hair": {
+    "close_crop": {
+      "path": "avatar_v1/hair/close_crop.glb",
+      "bytes": 86060,
+      "sha256": "7ce6f585fead4a9ac991a96558ccf6365a1fffeb1f8d564fef83bb1799a1d0ec"
+    },
+    "tousled": {
+      "path": "avatar_v1/hair/tousled.glb",
+      "bytes": 85904,
+      "sha256": "56cf07f13ffdbbcabbba62f4d20c2d9af0c4091d95987ac23282d543caf9b969"
+    },
+    "swept": {
+      "path": "avatar_v1/hair/swept.glb",
+      "bytes": 88636,
+      "sha256": "42cfdc35054c1dbd2bd8c0c4ff15dea24bc176b01ea166e6ea6f7df3f948e991"
+    },
+    "afro": {
+      "path": "avatar_v1/hair/afro.glb",
+      "bytes": 108256,
+      "sha256": "c4326e499c4267e765df592371c8fd622111ad802b3c07b46fa06b9e66fb996a"
+    },
+    "long": {
+      "path": "avatar_v1/hair/long.glb",
+      "bytes": 104844,
+      "sha256": "3b1fa75ee356de9089251f39aad81f2124508f80fdda44c9373ac1824981756a"
+    }
+  },
+  "outfit": {
+    "tailored": {
+      "path": "avatar_v1/outfit/tailored.glb",
+      "bytes": 328436,
+      "sha256": "1420b542d3be63c895aa86870a8646daaf9e16540420bd51fab89b5e47d702ca"
+    },
+    "striped": {
+      "path": "avatar_v1/outfit/striped.glb",
+      "bytes": 349180,
+      "sha256": "5f3f0cd3b00397a0fffc9d683884e1de2be80d748e49f1fff841a7694ade2479"
+    },
+    "tee": {
+      "path": "avatar_v1/outfit/tee.glb",
+      "bytes": 328396,
+      "sha256": "319059397d1b648edaa15fa760bf717195a261d62a2ba798b59930beef5e94ad"
+    },
+    "field_jacket": {
+      "path": "avatar_v1/outfit/field_jacket.glb",
+      "bytes": 557464,
+      "sha256": "237f4a71018669680394dd866415d20fe51cc0928726e34c2826b73795c3a67f"
+    },
+    "weekend": {
+      "path": "avatar_v1/outfit/weekend.glb",
+      "bytes": 503564,
+      "sha256": "3bf17237d7164a2af83c153d3995eeab21247d17536bf4296c4d6f4fb3b7d0d3"
+    },
+    "active": {
+      "path": "avatar_v1/outfit/active.glb",
+      "bytes": 557412,
+      "sha256": "2b3197875c5c4f90ae7486ea419779425b88a2d88de87f73b940e44a49402b22"
+    }
+  },
+  "hat": {
+    "ranger_hood": {
+      "path": "avatar_v1/hat/ranger_hood.glb",
+      "bytes": 315528,
+      "sha256": "e50f07369c325b693f6d6fcf98a59d1583a5cee02ddd617ebdd816489fb3ac61"
+    }
+  }
+}

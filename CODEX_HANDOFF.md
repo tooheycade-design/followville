@@ -18,6 +18,12 @@ workflow.
 
 ## Current canon
 
+- Avatar System v1 is released: third-person walking, the Neighborhood Tailor,
+  modular customization, 37 additional complete looks, real preview cards,
+  guest persistence, and owner-only profile persistence. The migration and
+  production web release both passed verification while preserving Day 16 / 272
+  / 275 and every claim. Start with `AVATAR_SYSTEM.md` before changing it.
+
 - Day 16 is population 272 with 275 total buildings. The +13 ordinary-home
   batch used planned addresses 116-128: seed 263 completed Overlook Circle and
   Willow Hills at address 116; seeds 264-275 opened Twin Oaks Drive at

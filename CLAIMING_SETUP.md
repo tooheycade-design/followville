@@ -33,6 +33,16 @@ the re-runnable canonical schema.
 claimable houses. The `claims` table remains at 30 rows across 29 accounts;
 growth did not modify any owner or customization.
 
+**Avatar persistence (applied 2026-07-17):**
+`supabase_migrations/20260717_avatar_system_v1.sql`. It adds only a validated
+`profiles.avatar` JSON object, an own-row update policy, column-level avatar
+update permission, and a security-invoker save RPC. The live rollout preserved
+55 profiles, 30 claims across 29 accounts, all 275 house rows, and the exact
+claim snapshot. Authenticated own-profile saves passed; cross-profile updates,
+anonymous execution, extra keys, and non-avatar column updates were rejected.
+It did not touch claims, ownership, handles, verification, admin status, or
+houses. Follow the isolated rollback procedure in `AVATAR_SYSTEM.md`.
+
 **Seed 73 maintenance (applied 2026-07-17):** Git history and canonical state
 identify seed 73 as a Day 9 `house` at grid `(-3,-3)`. A discarded concurrent
 Day 9 road experiment had left only its Supabase row at `(5,-9)`, typed

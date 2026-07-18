@@ -127,6 +127,75 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
+test("Avatar Studio builds a persistent third-person guest avatar", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-camera-mode", "third-person");
+  expect(Number(await page.locator("body").getAttribute("data-camera-distance"))).toBeGreaterThan(2);
+
+  await page.keyboard.press("KeyV");
+  await expect(page.locator("#avatarStudio")).toBeVisible();
+  await expect(page.getByRole("heading", { name:"Make yourself at home" })).toBeVisible();
+  await expect(page.getByRole("tab")).toHaveCount(6);
+  await expect(page.locator("#avatarPreviewCanvas")).toBeVisible();
+  expect(await page.locator("#avatarPreviewCanvas").evaluate(canvas => canvas.width > 100 && canvas.height > 100)).toBe(true);
+
+  await page.getByRole("button", { name:/Tall tall adult/ }).click();
+  await page.getByRole("button", { name:"Cocoa" }).click();
+  await page.getByRole("tab", { name:"Face" }).click();
+  await expect(page.locator("[data-avatar-kind='face']")).toHaveCount(8);
+  await page.locator("[data-avatar-kind='face'][data-avatar-id='defined']").click();
+  await page.getByRole("tab", { name:"Hair" }).click();
+  await expect(page.locator("[data-avatar-kind='hair']")).toHaveCount(6);
+  await page.locator("[data-avatar-kind='hair'][data-avatar-id='long']").click();
+  await page.getByRole("tab", { name:"Outfit" }).click();
+  await expect(page.locator("[data-avatar-kind='outfit']")).toHaveCount(6);
+  await page.locator("[data-avatar-kind='outfit'][data-avatar-id='field_jacket']").click();
+  await page.getByRole("tab", { name:"Hat" }).click();
+  await expect(page.locator("[data-avatar-kind='hat']")).toHaveCount(2);
+  await page.locator("[data-avatar-kind='hat'][data-avatar-id='ranger_hood']").click();
+  await page.getByRole("button", { name:"save avatar" }).click();
+  await expect(page.locator("#avatarStudio")).toBeHidden();
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:cocoa:tall:defined:long:field_jacket:ranger_hood:custom$/);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
+    version:1,skin:"cocoa",height:"tall",face:"defined",hair:"long",outfit:"field_jacket",hat:"ranger_hood",look:"custom"
+  });
+
+  await page.reload();
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:cocoa:tall:defined:long:field_jacket:ranger_hood:custom$/);
+  expect(errors).toEqual([]);
+});
+
+test("Avatar Studio offers a visual complete-look catalog that persists", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+  await page.keyboard.press("KeyV");
+  await expect(page.locator("#avatarStudio")).toBeVisible();
+  await expect(page.locator("#avatarStudioSub")).toHaveText("Design a look that feels like you in Followville.");
+  await page.getByRole("tab", { name:"Looks" }).click();
+  await expect(page.locator("[data-avatar-kind='look']")).toHaveCount(38);
+  await expect(page.locator(".avatar-look-thumb")).toHaveCount(38);
+  await expect(page.locator("#avatarChoices")).not.toContainText("Quaternius");
+  await expect(page.locator(".avatar-look-thumb").first()).toHaveJSProperty("complete", true);
+  await page.locator("[data-avatar-kind='look'][data-avatar-id='wizard']").click();
+  await page.getByRole("button", { name:"save avatar" }).click();
+  await expect(page.locator("#avatarStudio")).toBeHidden();
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("followville_avatar_v1")))).toMatchObject({
+    version:1,look:"wizard"
+  });
+
+  await page.reload();
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-avatar", /:wizard$/);
+  expect(errors).toEqual([]);
+});
+
 test("visiting a house loads its district before teleporting", async ({ page }) => {
   const errors = watchPageErrors(page);
   const willowHome = allHomes.find(building => building.district === "Willow Hills");
@@ -168,6 +237,11 @@ test.describe("mobile town", () => {
     await expect(page.locator("#townMapPanel")).toBeVisible();
     await page.getByRole("button", { name: "Close map" }).click();
     await expect(page.locator("#townMapPanel")).toBeHidden();
+    await expect(page.locator("#joystickZone")).toBeVisible();
+    await page.getByRole("button", { name:"avatar", exact:true }).click();
+    await expect(page.locator("#avatarStudio")).toBeVisible();
+    await page.getByRole("button", { name:"Close avatar studio" }).click();
+    await expect(page.locator("#avatarStudio")).toBeHidden();
     await expect(page.locator("#joystickZone")).toBeVisible();
     expect(errors).toEqual([]);
   });

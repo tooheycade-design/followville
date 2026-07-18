@@ -3,6 +3,25 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Third-person Avatar System v1 (released 2026-07-17)
+- Added a full-screen editorial Neighborhood Tailor opened from the start
+  screen, pause menu, in-town button, or desktop `V`.
+- Added a rigged modular avatar with 10 skin tones, five proportions, eight
+  face silhouettes, six modeled hairstyles, six modeled outfits, and two hat
+  states, plus 37 lazy-loaded complete character looks.
+- Replaced text-only selection UI with 60 real preview JPGs captured from the
+  exact selectable 3D models. Complete looks are grouped as Everyday, Town
+  roles, and Adventure.
+- Added third-person locomotion, live rotate/zoom preview, local guest storage,
+  stable catalog IDs, and owner-only Supabase profile persistence.
+- Default avatar geometry is 512,832 bytes; complete looks load individually
+  and are not part of town startup. Avatar assets are isolated from every town
+  GLB, `world_state.json`, and the canonical Blender scene.
+- Applied `20260717_avatar_system_v1.sql`, verified authenticated saves and
+  rejected unauthorized/malformed writes, then released the web build. Day 16 /
+  272 population / 275 buildings and all 30 claims are unchanged. See
+  `AVATAR_SYSTEM.md` for the asset, rebuild, license, rollback, and QA plan.
+
 ## 1. Built the first version of index.html (JS-procedural)
 - Created `index.html`: a Three.js first-person walker, `PointerLockControls`,
   WASD/arrow movement, click-to-lock start screen, HUD (day/pop/building count).

@@ -37,11 +37,38 @@ create table if not exists public.profiles (
   verified_at         timestamptz,
   created_at          timestamptz not null default now(),
   is_admin             boolean not null default false,
+  avatar               jsonb not null default
+                       '{"version":1,"skin":"peach","height":"adult","face":"classic","hair":"swept","outfit":"tailored","hat":"none","look":"custom"}'::jsonb,
   constraint handle_format check (instagram_handle ~ '^[a-z0-9._]{1,30}$')
 );
 
 -- Keeps the file re-runnable against installations created before is_admin.
 alter table public.profiles add column if not exists is_admin boolean not null default false;
+alter table public.profiles add column if not exists avatar jsonb not null default
+  '{"version":1,"skin":"peach","height":"adult","face":"classic","hair":"swept","outfit":"tailored","hat":"none","look":"custom"}'::jsonb;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.profiles'::regclass and conname = 'profiles_avatar_valid'
+  ) then
+    alter table public.profiles add constraint profiles_avatar_valid check (
+      jsonb_typeof(avatar) = 'object'
+      and octet_length(avatar::text) <= 512
+      and avatar ?& array['version','skin','height','face','hair','outfit','hat','look']
+      and avatar - array['version','skin','height','face','hair','outfit','hat','look'] = '{}'::jsonb
+      and avatar->>'version' = '1'
+      and avatar->>'skin' in ('porcelain','fair','peach','warm','honey','amber','bronze','cocoa','deep','espresso')
+      and avatar->>'height' in ('kid','tween','teen','adult','tall')
+      and avatar->>'face' in ('classic','round','oval','narrow','heart','square','soft','defined')
+      and avatar->>'hair' in ('none','close_crop','tousled','swept','afro','long')
+      and avatar->>'outfit' in ('tailored','striped','tee','field_jacket','weekend','active')
+      and avatar->>'hat' in ('none','ranger_hood')
+      and avatar->>'look' in ('custom','casual_day_f','casual_day_m','casual_sky_f','casual_sky_m','casual_lilac_f','casual_lilac_m','casual_bald','suit_f','suit_m','classy_f','classy_m','chef_f','chef_m','doctor_young_f','doctor_young_m','doctor_senior_f','doctor_senior_m','worker_f','worker_m','cowboy_f','cowboy_m','kimono_f','kimono_m','pirate_f','pirate_m','viking_f','viking_m','ninja_f','ninja_m','sand_ninja_f','sand_ninja_m','gold_knight_f','gold_knight_m','knight_m','elf','witch','wizard')
+    );
+  end if;
+end $$;
 
 create table if not exists public.claims (
   house_id      bigint primary key references public.houses(id),
@@ -116,10 +143,22 @@ drop policy if exists profiles_own_read on public.profiles;
 create policy profiles_own_read on public.profiles
   for select to authenticated using (user_id = auth.uid());
 
+-- Players may update only the avatar column on their own profile. All other
+-- profile fields remain server-controlled, and profiles_avatar_valid rejects
+-- arbitrary JSON even when a client writes the column directly.
+drop policy if exists profiles_own_avatar_update on public.profiles;
+create policy profiles_own_avatar_update on public.profiles
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+revoke update on public.profiles from public, anon, authenticated;
+grant update (avatar) on public.profiles to authenticated;
+
 grant select on public.public_claims to anon, authenticated;
 
--- No insert/update/delete policies anywhere: all writes go through the
--- SECURITY DEFINER functions below (or the service-role key, which bypasses RLS).
+-- Claims and identity fields still have no client write policies. The one
+-- profile UPDATE policy above is paired with avatar-only column privileges;
+-- every other write goes through the narrow functions below (or service role).
 
 -- ───────────────────────────── RPCs ─────────────────────────────
 
@@ -253,6 +292,58 @@ as $$
   );
 $$;
 
+-- Avatar System v1: signed-in players save one complete catalog selection on
+-- their profile. Column-level grants prevent updates to identity/admin fields;
+-- this security-invoker RPC normalizes IDs and returns only the caller's row.
+create or replace function public.update_my_avatar(p_avatar jsonb)
+returns json
+language plpgsql security invoker set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_input jsonb := coalesce(p_avatar, '{}'::jsonb);
+  v_avatar jsonb;
+  v_row public.profiles;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  if jsonb_typeof(v_input) <> 'object' or octet_length(v_input::text) > 512 then
+    raise exception 'bad_avatar';
+  end if;
+  if exists (
+    select 1 from jsonb_object_keys(v_input) as k(key)
+    where k.key not in ('version','skin','height','face','hair','outfit','hat','look')
+  ) then raise exception 'bad_avatar'; end if;
+  if coalesce(v_input->>'version','1') <> '1'
+     or coalesce(v_input->>'skin','peach') not in
+       ('porcelain','fair','peach','warm','honey','amber','bronze','cocoa','deep','espresso')
+     or coalesce(v_input->>'height','adult') not in ('kid','tween','teen','adult','tall')
+     or coalesce(v_input->>'face','classic') not in
+       ('classic','round','oval','narrow','heart','square','soft','defined')
+     or coalesce(v_input->>'hair','swept') not in
+       ('none','close_crop','tousled','swept','afro','long')
+     or coalesce(v_input->>'outfit','tailored') not in
+       ('tailored','striped','tee','field_jacket','weekend','active')
+     or coalesce(v_input->>'hat','none') not in
+       ('none','ranger_hood')
+     or coalesce(v_input->>'look','custom') not in
+       ('custom','casual_day_f','casual_day_m','casual_sky_f','casual_sky_m','casual_lilac_f','casual_lilac_m','casual_bald','suit_f','suit_m','classy_f','classy_m','chef_f','chef_m','doctor_young_f','doctor_young_m','doctor_senior_f','doctor_senior_m','worker_f','worker_m','cowboy_f','cowboy_m','kimono_f','kimono_m','pirate_f','pirate_m','viking_f','viking_m','ninja_f','ninja_m','sand_ninja_f','sand_ninja_m','gold_knight_f','gold_knight_m','knight_m','elf','witch','wizard') then
+    raise exception 'bad_avatar';
+  end if;
+  v_avatar := jsonb_build_object(
+    'version',1,
+    'skin',coalesce(v_input->>'skin','peach'),
+    'height',coalesce(v_input->>'height','adult'),
+    'face',coalesce(v_input->>'face','classic'),
+    'hair',coalesce(v_input->>'hair','swept'),
+    'outfit',coalesce(v_input->>'outfit','tailored'),
+    'hat',coalesce(v_input->>'hat','none'),
+    'look',coalesce(v_input->>'look','custom')
+  );
+  update public.profiles set avatar = v_avatar where user_id = v_uid returning * into v_row;
+  if not found then raise exception 'profile_missing'; end if;
+  return row_to_json(v_row);
+end $$;
+
 -- Homeowner Mode: the signed-in owner may change only the approved visual
 -- options on their own claim.  Keeping this behind a narrow RPC means the
 -- browser never receives UPDATE permission on claims, and the normalized
@@ -315,10 +406,11 @@ grant execute on function public.claim_house(bigint)  to authenticated;
 grant execute on function public.unclaim_house()      to authenticated;
 grant execute on function public.unclaim_house(bigint) to authenticated;
 grant execute on function public.my_status()          to authenticated;
+grant execute on function public.update_my_avatar(jsonb) to authenticated;
 grant execute on function public.update_my_customization(bigint, jsonb) to authenticated;
 revoke execute on function public.enforce_claim_limit(), public.setup_profile(text), public.claim_house(bigint),
   public.unclaim_house(), public.unclaim_house(bigint), public.my_status(),
-  public.update_my_customization(bigint, jsonb) from public, anon;
+  public.update_my_customization(bigint, jsonb), public.update_my_avatar(jsonb) from public, anon;
 
 -- ───────────────────────────── REALTIME ─────────────────────────────
 -- Broadcast claim inserts/deletes to every connected town.html.
@@ -496,7 +588,7 @@ revoke execute on function
   public.admin_list_verified_unclaimed(),
   public.enforce_claim_limit(), public.setup_profile(text), public.claim_house(bigint),
   public.unclaim_house(), public.unclaim_house(bigint), public.my_status(),
-  public.update_my_customization(bigint, jsonb)
+  public.update_my_customization(bigint, jsonb), public.update_my_avatar(jsonb)
 from public, anon, authenticated;
 
 grant execute on function
@@ -506,7 +598,7 @@ grant execute on function
   public.admin_list_verified_unclaimed(),
   public.setup_profile(text), public.claim_house(bigint), public.unclaim_house(),
   public.unclaim_house(bigint), public.my_status(),
-  public.update_my_customization(bigint, jsonb)
+  public.update_my_customization(bigint, jsonb), public.update_my_avatar(jsonb)
 to authenticated, service_role;
 
 -- ───────────────────────────── NOTES ─────────────────────────────

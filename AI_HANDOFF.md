@@ -23,6 +23,12 @@ claims across 29 accounts were not changed. The reviewed delivery is two
 separate portrait MP4s: completed town overhead with no rise animation, then a
 whole-town overhead replay showing all 13 new houses appearing.
 
+Avatar System v1 is live with third-person walking and the Neighborhood Tailor,
+including modular customization, 37 additional complete looks, real preview
+cards, guest persistence, and owner-only profile persistence. Its isolated
+migration and production release preserved the Day 16 town, claims, ownership,
+population, and Blender assets. Read `AVATAR_SYSTEM.md` before changing it.
+
 The web build now uses production district streaming without changing the
 town. `export_web.py` always produces the complete `town.glb` fallback plus a
 hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and six
@@ -33,7 +39,8 @@ teleport. If streaming fails, the full GLB loads automatically. Never deploy or
 commit only one of these outputs: `world_state.json`, `town.glb`,
 `town_manifest.json`, and `town_chunks/` must advance together. Both growth
 scripts do this now, and `check_town_glb.py` validates exact 275-building
-coverage plus every asset hash. Run `pnpm test:e2e` (eight flows) after loader,
+coverage plus every asset hash. Run `pnpm test:e2e` (10 flows on current
+`main`) after loader,
 map, teleport, or mobile-control work.
 
 Population is 259 with 262 buildings. Day 15 added 15 claimable homes: ten
