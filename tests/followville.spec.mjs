@@ -197,8 +197,12 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
 
   await page.mouse.move(520,360);
   await page.mouse.down({button:"right"});
+  await expect(page.locator("body")).toHaveAttribute("data-camera-grab","locked");
+  expect(await page.evaluate(() => document.pointerLockElement?.tagName)).toBe("CANVAS");
   await page.mouse.move(700,310,{steps:6});
   await page.mouse.up({button:"right"});
+  await expect(page.locator("body")).not.toHaveAttribute("data-camera-grab",/./);
+  expect(await page.evaluate(() => document.pointerLockElement)).toBeNull();
   const orbited=await positions();
   expect(Math.hypot(orbited.camera[0]-initial.camera[0],orbited.camera[1]-initial.camera[1])).toBeGreaterThan(1);
 

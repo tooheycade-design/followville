@@ -26,7 +26,7 @@ whole-town overhead replay showing all 13 new houses appearing.
 Avatar System v1 uses only 37 compact animated complete characters in the
 public Neighborhood Tailor, plus body color and height. The taller modular
 system is retired from player UI/runtime; legacy custom selections normalize
-to the animated default. Desktop right-drag orbits and wheel/trackpad zooms
+to the animated default. Desktop right-drag locks the cursor and orbits while wheel/trackpad zooms
 through first person. Mobile can drag the camera while holding the joystick and
 pinch zoom. The follow camera and A/D directions are corrected. Guest and
 owner-only profile persistence remain intact, and the isolated release did not

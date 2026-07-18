@@ -21,7 +21,7 @@ workflow.
 - Avatar System v1 uses only the 37 compact animated complete characters in
   the public Tailor, plus body color and height. The taller modular system is
   retired from the UI/runtime and legacy custom profiles normalize safely.
-  Desktop right-drag orbits, wheel/trackpad zoom reaches first person, mobile
+  Desktop right-drag locks the cursor and orbits, wheel/trackpad zoom reaches first person, mobile
   can drag the camera while moving and pinch zoom, A/D are correct, and the
   follow rig initializes in streamed and full-GLB paths. Bare `town.html`
   bookmarks return to the current map-preview homepage. Owner/guest persistence

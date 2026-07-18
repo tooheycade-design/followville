@@ -10,7 +10,8 @@ Kept here (rather than just in chat) so it survives across sessions.
   default without a database rewrite.
 - Fixed streamed startup so the camera rig attaches immediately and follows the
   player continuously. Corrected camera-relative A/D directions.
-- Replaced always-on desktop mouse-look with right-button drag orbit. Mouse
+- Replaced always-on desktop mouse-look with cursor-locked right-button drag
+  orbit; the cursor returns immediately on release. Mouse
   wheel and trackpad scrolling zoom continuously through first person. Mobile
   drag and pinch use only camera-area touches, so one thumb can steer while the
   other orbits.

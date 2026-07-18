@@ -6,7 +6,8 @@ was applied and verified before the web release.
 ## Player experience
 
 - Third-person is the town's default walking camera. On desktop, right-button
-  drag orbits and wheel/trackpad scrolling zooms continuously into first
+  drag locks/hides the cursor and orbits without screen-edge limits; releasing
+  restores the cursor. Wheel/trackpad scrolling zooms continuously into first
   person. On mobile, camera drag works while the other thumb holds the
   joystick, and pinch controls the same third/first-person zoom range.
 - `V`, the in-town avatar button, the start screen, and the pause menu open the
