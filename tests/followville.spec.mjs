@@ -247,9 +247,17 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   await page.mouse.move(640,30,{steps:8});
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeGreaterThan(1.3);
   expect(Number(await page.locator("body").getAttribute("data-camera-ground-clearance"))).toBeGreaterThanOrEqual(.4);
-  await page.mouse.move(640,1300,{steps:12});
-  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
   await page.mouse.up({button:"right"});
+  // Pointer-lock ignores out-of-viewport coordinates in headless Chromium.
+  // Two ordinary top-to-bottom grabs exercise the same real input path and
+  // cover the full pitch range without manufacturing a DOM mouse event.
+  for(let drag=0;drag<2;drag++){
+    await page.mouse.move(640,30);
+    await page.mouse.down({button:"right"});
+    await page.mouse.move(640,650,{steps:8});
+    await page.mouse.up({button:"right"});
+  }
+  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
 
   await page.mouse.wheel(0,-2000);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
