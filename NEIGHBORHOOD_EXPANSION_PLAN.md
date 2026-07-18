@@ -3,11 +3,13 @@
 Implemented 2026-07-11 for Cade. This is a permanent deterministic plan for
 the next 366 ordinary houses. It changes no existing building or road.
 
-Current progress: addresses 1-128 are built through Day 16 (population 272).
+Current progress: addresses 1-157 are built through Day 17 (population 301).
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills
-and beginning Twin Oaks. Address 129 is the next ordinary planned home.
+and beginning Twin Oaks. Day 17 consumed addresses 129-157, continuing Twin
+Oaks Drive and opening Acorn Court. Address 158 is the next ordinary planned
+home.
 
 ## Behavior
 
@@ -38,7 +40,7 @@ and beginning Twin Oaks. Address 129 is the next ordinary planned home.
 |---|---|---:|
 | 1-54 | Creekside Bend | 54 (complete) |
 | 55-116 | Willow Hills | 62 (complete) |
-| 117-184 | Twin Oaks | 68 (12 built; addresses 117-128) |
+| 117-184 | Twin Oaks | 68 (41 built; addresses 117-157) |
 | 185-260 | Meadow Run | 76 |
 | 261-318 | Pine Hollow | 58 |
 | 319-366 | North Ridge | 48 |

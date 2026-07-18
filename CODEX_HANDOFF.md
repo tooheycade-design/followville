@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 16
+# Codex handoff -- current through Day 17
 
 Updated 2026-07-18 for Cade's next Claude/Codex session.
 
@@ -17,6 +17,20 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 17 is population 301 with 304 total buildings. The single +29 growth
+  consumed Twin Oaks plan IDs 129-157: seeds 276-285 continued Twin Oaks Drive
+  at addresses 129-138, and seeds 286-304 opened Acorn Court at addresses
+  139-157. All 29 new Supabase rows are claimable. The exact claim snapshot is
+  unchanged at 31 claims across 30 accounts, including owners, timestamps, and
+  customizations. Full and six-district streamed GLBs passed source, downtown,
+  hash, state, and exact 304-building coverage checks. The reviewed delivery is
+  three separate daytime portrait MP4s: finished entire-town overhead, finished
+  moving downtown showcase, then the only animated clip--an entire-town replay
+  where all 29 Day 17 homes appear. The standard overhead camera clipped the
+  expanded city; `wholeoverhead` was widened and previewed so Twin Oaks and
+  Kaleidoscope Crest remain in frame throughout. The generator refresh was
+  backed up and synchronized into both authoritative Blend copies.
 
 - The latest finish pass corrects five connected play-quality issues without
   changing canon. Third-person pitch reaches near-vertical views and ground no

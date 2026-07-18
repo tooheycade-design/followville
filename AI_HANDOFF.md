@@ -12,8 +12,8 @@ generator; any generator copy beside the Blend is ignored. Direct GUI growth,
 iCloud-only state, `--no-git`, and numbered conflict-copy scripts are not safe
 production paths.
 
-The approved downtown/terrain redesign is now integrated into the current Day
-16 source without growth. It widens downtown lots to thirteen metres and adds
+The approved downtown/terrain redesign has been integrated since Day 16. It
+widens downtown lots to thirteen metres and adds
 authored sidewalks, curbs, crossings, storefronts, public furniture, stronger
 building massing, rolling terrain, terrain-aligned suburban roads, and house
 foundation pads. The full GLB and all six streamed district chunks must remain
@@ -30,19 +30,22 @@ detailed districts after 112m (70m load threshold), measures house/claim labels
 from actual GLB roof bounds, makes downtown storefront glazing flush, and
 shows recent persistent chat in a compact top-left walking feed. Keep the
 load/unload hysteresis and full-fallback label-clearance browser regression.
-The town was rebuilt in replay mode only; Day 16 / 272 / 275, addresses,
-claims, owners, `world_state.json`, and Supabase did not change.
+That finish pass rebuilt the town in replay mode only; its then-current Day 16
+state, addresses, claims, owners, `world_state.json`, and Supabase did not
+change.
 
-## Current town (Day 16, 2026-07-17)
+## Current town (Day 17, 2026-07-18)
 
-Population is 272 with 275 buildings. Day 16 added 13 ordinary claimable
-homes: seed 263 completed Willow Hills at Overlook Circle plan ID 116, and
-seeds 264-275 began Twin Oaks at Twin Oaks Drive plan IDs 117-128. Export now
-contains six district chunks, including the new `twin-oaks.glb`, plus the full
-GLB fallback. All 13 Supabase rows are present and claimable; the existing 30
-claims across 29 accounts were not changed. The reviewed delivery is two
-separate portrait MP4s: completed town overhead with no rise animation, then a
-whole-town overhead replay showing all 13 new houses appearing.
+Population is 301 with 304 buildings. Day 17 added 29 ordinary claimable homes:
+seeds 276-285 continued Twin Oaks Drive at plan IDs 129-138, and seeds 286-304
+opened Acorn Court at plan IDs 139-157. Export contains six district chunks,
+including `twin-oaks.glb`, plus the full GLB fallback. All 29 new Supabase rows
+are present and claimable. The exact claim snapshot remained unchanged at 31
+claims across 30 accounts. The reviewed delivery is three separate daytime
+portrait MP4s: completed whole-town overhead, completed moving downtown
+showcase, then the only animated clip--a whole-town replay showing all 29 new
+houses appearing. Use the widened `wholeoverhead` camera for city-wide shots;
+the older standard overhead clips the expanded Day 17 footprint.
 
 Avatar System v1 uses only 37 compact animated complete characters in the
 public Neighborhood Tailor, plus body color and height. The taller modular
@@ -65,7 +68,7 @@ silhouettes elsewhere, then loads full homes within 70m or before any map/home
 teleport. If streaming fails, the full GLB loads automatically. Never deploy or
 commit only one of these outputs: `world_state.json`, `town.glb`,
 `town_manifest.json`, and `town_chunks/` must advance together. Both growth
-scripts do this now, and `check_town_glb.py` validates exact 275-building
+scripts do this now, and `check_town_glb.py` validates exact 304-building
 coverage plus every asset hash. Run `pnpm test:e2e` (10 flows on current
 `main`) after loader,
 map, teleport, or mobile-control work.

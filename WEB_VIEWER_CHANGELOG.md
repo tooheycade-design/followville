@@ -3,6 +3,23 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 17 growth + entire-town aerial framing (2026-07-18)
+- Grew once from Day 16 / 272 to Day 17 / 301 with 29 ordinary claimable homes
+  at Twin Oaks plan IDs 129-157, producing 304 canonical buildings.
+- Regenerated the complete GLB fallback, base, manifest, and all six district
+  chunks together; focused source, downtown, hash, state, and 304-building
+  coverage checks passed.
+- Increased the `wholeoverhead` portrait camera margin after visual review
+  showed that the expanded Day 17 footprint clipped Twin Oaks on one side and
+  crowded Kaleidoscope Crest on the other. The corrected opening and ending
+  keep every developed district visible.
+- Produced three separate 12-second daytime portrait videos: completed whole
+  town, completed moving downtown showcase, then the only growth-animation
+  clip with all 29 Day 17 homes appearing.
+- Inserted all 29 new Supabase house rows without changing the exact existing
+  claim snapshot: 31 claims across 30 accounts with identical ownership,
+  timestamps, and customizations.
+
 ## Camera, reversible streaming, roof labels, storefronts, and chat (2026-07-18)
 - Expanded third-person pitch to near-vertical up/down views and excluded
   walkable ground/roads from the obstruction ray. The collision-safe camera

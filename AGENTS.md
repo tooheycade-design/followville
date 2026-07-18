@@ -67,6 +67,20 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 17, population 301, 304 buildings (grown 2026-07-18 via Cade's
+  Windows Codex: +29 ordinary claimable homes). Seeds 276-285 continued Twin
+  Oaks Drive at planned addresses 129-138; seeds 286-304 opened Acorn Court at
+  addresses 139-157. All 29 Supabase rows are present and claimable. The exact
+  before/after claim snapshot stayed identical at 31 claims across 30 accounts,
+  including owners, timestamps, and customizations. The complete/full fallback
+  and all six streamed district assets were regenerated and validated together.
+  Day 17 delivery is three standalone 12-second daytime portrait MP4s, in this
+  order: a completed whole-town overhead; a completed moving downtown showcase;
+  and the only animated clip, a whole-town replay in which all 29 new homes
+  appear. Standard overhead framing clipped the expanded city, so
+  `wholeoverhead` now keeps Twin Oaks and Kaleidoscope Crest inside the portrait
+  frame throughout its orbit. The camera-only generator change was refreshed
+  into the authoritative iCloud Blend and synchronized to the repo mirror.
 - 2026-07-18 web/city finish pass (Cade via Windows Codex): third-person
   camera pitch now reaches near-vertical views in both directions without the
   ground acting like an occluding wall; the camera shortens along the ground
