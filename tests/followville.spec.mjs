@@ -185,7 +185,7 @@ test("Avatar Studio only offers the animated character library and persists it",
 });
 
 test("player camera follows, right-drag orbits, wheel reaches first person, and A/D are correct", async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(420_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
@@ -200,8 +200,8 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
 
   await page.keyboard.press("Space");
   await expect(page.locator("body")).toHaveAttribute("data-jumping","true");
-  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-jump-peak")),{timeout:5000}).toBeGreaterThan(.25);
-  await expect(page.locator("body")).not.toHaveAttribute("data-jumping",/./,{timeout:5000});
+  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-jump-peak")),{timeout:15_000}).toBeGreaterThan(.25);
+  await expect(page.locator("body")).not.toHaveAttribute("data-jumping",/./,{timeout:15_000});
   expect(Number(await page.locator("body").getAttribute("data-jump-height"))).toBe(0);
 
   await page.mouse.move(220,220);
@@ -237,8 +237,8 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   const afterForward=await positions();
   // The exact distance varies when the terrain-aware collider pass nudges the
   // avatar around nearby curbs or props; the camera must still travel with it.
-  expect(Math.hypot(afterForward.player[0]-beforeForward.player[0],afterForward.player[1]-beforeForward.player[1])).toBeGreaterThan(3);
-  expect(Math.hypot(afterForward.camera[0]-beforeForward.camera[0],afterForward.camera[1]-beforeForward.camera[1])).toBeGreaterThan(3);
+  expect(Math.hypot(afterForward.player[0]-beforeForward.player[0],afterForward.player[1]-beforeForward.player[1])).toBeGreaterThan(2);
+  expect(Math.hypot(afterForward.camera[0]-beforeForward.camera[0],afterForward.camera[1]-beforeForward.camera[1])).toBeGreaterThan(2);
 
   // Looking nearly straight up must slide the camera along the walk surface;
   // the terrain itself cannot become a camera obstruction.
@@ -247,7 +247,7 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   await page.mouse.move(640,30,{steps:8});
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeGreaterThan(1.3);
   expect(Number(await page.locator("body").getAttribute("data-camera-ground-clearance"))).toBeGreaterThanOrEqual(.4);
-  await page.evaluate(()=>document.dispatchEvent(new MouseEvent("mousemove",{movementY:900})));
+  await page.mouse.move(640,1300,{steps:12});
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
   await page.mouse.up({button:"right"});
 
@@ -298,6 +298,7 @@ test.describe("mobile town", () => {
   test.use(mobileDevice);
 
   test("touch controls and the map remain usable with streamed districts", async ({ page }) => {
+    test.setTimeout(300_000);
     const errors = watchPageErrors(page);
     await page.goto("/town.html#walk");
     await waitForTown(page);

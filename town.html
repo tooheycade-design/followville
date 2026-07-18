@@ -751,6 +751,7 @@
     overflow:hidden; flex-direction:column; touch-action:auto; backdrop-filter:blur(4px);
   }
   #chatPanel.feed-visible, #chatPanel.open { display:flex; }
+  #chatPanel.feed-visible:not(.open) { pointer-events:none; }
   #chatPanel.open { background:rgba(10,20,33,.88); pointer-events:auto; box-shadow:0 12px 32px rgba(0,0,0,.34); }
   #chatHeader {
     display:none; align-items:center; padding:9px 11px; font-size:13px;
