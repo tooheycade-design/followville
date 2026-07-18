@@ -13,7 +13,9 @@ was applied and verified before the web release.
   height, hides the local avatar, locks the cursor, and ordinary mouse movement
   looks around without holding a button. Zooming out restores the cursor. On
   mobile, camera drag works while the other thumb holds the
-  joystick, and pinch controls the same third/first-person zoom range.
+  joystick, and pinch controls the same third/first-person zoom range. Phone
+  gameplay is landscape-only: portrait pauses behind a rotate prompt and the
+  interrupted walk resumes automatically after rotation.
 - Space on desktop and the dedicated JUMP button on mobile make a short,
   grounded hop. The camera follows its height, a second jump cannot start
   while airborne, and multiplayer movement carries the same vertical offset.

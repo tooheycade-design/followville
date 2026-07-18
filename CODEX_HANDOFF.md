@@ -45,6 +45,12 @@ workflow.
   browser flows passed. Day 16 / 272 / 275, addresses, all claims/owners,
   `world_state.json`, and Supabase are unchanged.
 
+- Phone play inside the 3D town is landscape-only. Portrait phones receive a
+  polished rotate prompt, movement pauses, and an interrupted walk resumes
+  automatically after rotation. The landscape passive chat feed is compact;
+  tapping it expands the existing composer. This does not affect the
+  portrait-friendly homepage or desktop play.
+
 - Zach's downtown/terrain design package is integrated on Day 16 without a
   growth run. Downtown lots are thirteen metres wide and now have authored
   sidewalks, curbs, crossings, storefronts, public furniture, stronger

@@ -305,9 +305,24 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 
+  test("portrait asks the player to rotate and landscape chat stays compact", async ({ page }) => {
+    await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
+    await expect(page.locator("#orientationGate")).toBeVisible();
+    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-blocked");
+    await expect(page.locator("#joystickZone")).toBeHidden();
+    await page.setViewportSize({ width:844, height:390 });
+    await expect(page.locator("#orientationGate")).toBeHidden();
+    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "landscape");
+    await page.locator("#chatPanel").evaluate(panel=>panel.classList.add("feed-visible"));
+    const chatBox=await page.locator("#chatPanel").boundingBox();
+    expect(chatBox.width).toBeLessThan(310);
+    expect(chatBox.width).toBeLessThan(844*.5);
+  });
+
   test("touch controls and the map remain usable with streamed districts", async ({ page }) => {
     test.setTimeout(300_000);
     const errors = watchPageErrors(page);
+    await page.setViewportSize({ width:844, height:390 });
     await page.goto("/town.html#walk");
     await waitForTown(page);
     await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");

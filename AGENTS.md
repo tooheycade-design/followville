@@ -67,6 +67,13 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-18 mobile landscape play (Cade via Windows Codex): the 3D town now
+  pauses behind a dedicated rotate-phone screen on coarse-pointer phones in
+  portrait and resumes automatically in landscape. The passive mobile chat
+  feed is narrower/shorter in landscape, while tapping it still opens the full
+  composer. The portrait homepage remains available. Web-only; Day 17,
+  population 301, 304 buildings, claims, ownership, state, GLBs, Blender, and
+  Supabase are unchanged.
 - Day 17, population 301, 304 buildings (grown 2026-07-18 via Cade's
   Windows Codex: +29 ordinary claimable homes). Seeds 276-285 continued Twin
   Oaks Drive at planned addresses 129-138; seeds 286-304 opened Acorn Court at

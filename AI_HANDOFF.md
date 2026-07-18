@@ -34,6 +34,12 @@ That finish pass rebuilt the town in replay mode only; its then-current Day 16
 state, addresses, claims, owners, `world_state.json`, and Supabase did not
 change.
 
+Phone gameplay is landscape-only in `town.html`: a coarse-pointer phone in
+portrait shows the rotation gate and pauses movement, then automatically
+resumes the interrupted walk in landscape. The passive landscape chat feed is
+smaller than the opened composer. Do not apply this gate to `index.html`; the
+homepage intentionally remains portrait-friendly.
+
 ## Current town (Day 17, 2026-07-18)
 
 Population is 301 with 304 buildings. Day 17 added 29 ordinary claimable homes:

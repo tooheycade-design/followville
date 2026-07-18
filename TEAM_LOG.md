@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-18 - Cade (via Windows Codex) - [WEB] Made phone gameplay landscape-only with a polished portrait rotation screen, automatic pause/resume across rotation, and a much smaller passive landscape chat feed that expands only when opened; focused mobile automation and portrait/landscape visual QA passed without changing Day 17 state, population, buildings, claims, ownership, GLBs, Blender, or Supabase.
+
 2026-07-18 - Cade (via Windows Codex) - [WORLD] Completed Day 17 from 272 to 301 followers with one guarded +29 growth at Twin Oaks addresses 129-157, synchronized full and six-district web assets, preserved the exact 31-claim/30-account ownership snapshot, widened the whole-town portrait camera after visual QA caught edge clipping, reviewed finished entire-town and downtown showcase videos plus the only animated all-29 growth video, and prepared the three standalone MP4s for Cade's email delivery.
 
 2026-07-18 - Cade (via Windows Codex) - [BOTH] Finished the current play-quality pass: the third-person camera now reaches near-vertical up/down views without ground trapping, far district detail unloads past 112m and restores lightweight silhouettes, claim labels measure each real GLB roof including tall/storybook homes, downtown storefront glass is flush, and persistent chat appears as a compact top-left walking feed; replay rebuild plus GLB and focused browser validation passed without changing Day 16 / 272 / 275, addresses, claims, ownership, world state, or Supabase.

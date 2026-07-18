@@ -3,6 +3,18 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Mobile landscape play + compact chat (2026-07-18)
+- Made the 3D town landscape-only on coarse-pointer phones. Portrait displays
+  a dedicated Followville rotation screen, pauses active movement, and resumes
+  the interrupted walk automatically after the device turns sideways.
+- Reduced the closed landscape chat feed to a 300px/36vw footprint and 54px
+  message viewport. Tapping it still expands to the existing composer/history
+  size; the closed feed no longer crowds the movement controls.
+- Kept the public homepage portrait-friendly and left desktop/tablet behavior,
+  world state, town assets, claims, ownership, Blender, and Supabase unchanged.
+- Focused mobile Playwright coverage and portrait/landscape visual review
+  passed.
+
 ## Day 17 growth + entire-town aerial framing (2026-07-18)
 - Grew once from Day 16 / 272 to Day 17 / 301 with 29 ordinary claimable homes
   at Twin Oaks plan IDs 129-157, producing 304 canonical buildings.
