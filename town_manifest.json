@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1215072,
+    "bytes": 1214976,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "233cba8fa97e2f6b488cba5ad742287ad8f97a1c103172d4348e5904bc3da8ab"
+    "sha256": "c392b1eaaa7801f0c5b30690526d60a734b4dcd2e8f1022190b3324e1e7e2d53"
   },
   "chunks": [
     {
@@ -138,10 +138,10 @@
     },
     {
       "asset": {
-        "bytes": 718396,
+        "bytes": 718232,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "de406af72292c4a2e71501ac4443519bc96cc2ca8115499d4e5206fd635892b8"
+        "sha256": "5af05c467c803a2c090d39f0b493a03bdf38b4f52badbbb7780f768589709b8f"
       },
       "bounds": {
         "center": [
@@ -285,10 +285,10 @@
     },
     {
       "asset": {
-        "bytes": 656896,
+        "bytes": 656628,
         "compression": "draco",
         "file": "town_chunks/original-town.glb",
-        "sha256": "dfd09a56512d9411e11fc2c0f10dd723d05d3e830ae025fcab7c606363cf0292"
+        "sha256": "ccf5c8ef63dc6602421ac094e04c4a8bc79916ca9bae19b9ab19954d1d3e4142"
       },
       "bounds": {
         "center": [
@@ -745,9 +745,9 @@
     }
   ],
   "fallback": {
-    "bytes": 15945400,
+    "bytes": 15945200,
     "file": "town.glb",
-    "sha256": "ec4acddffcbfe84396ea388b5b08b45c2cd590e0adcac9cf102bd68f3a825038"
+    "sha256": "412046c637bfaffff73cac543a325b2b804ac8f6c637541ec63b8c0757397bae"
   },
   "state": {
     "building_count": 304,
