@@ -40,6 +40,7 @@ except ImportError:
     sys.exit(1)
 
 SQUASH_THRESHOLD = 0.05  # anything with |scale| below this on any axis is "pancaked"
+FEATURE_ROAD_MATERIALS = {"NB_road", "NB_story_transition", "NB_story_road"}
 
 
 def find_squashed_nodes(gltf):
@@ -63,6 +64,40 @@ def find_squashed_nodes(gltf):
     return squashed
 
 
+def find_feature_road_outliers(gltf):
+    """Reject feature-road vertices evaluated in the asset's local XY frame.
+
+    Kaleidoscope Crest is built around local z=0..3 and then instanced at its
+    world position. Applying the regional terrain function before that parent
+    transform produces the long floating beam captured in Zach's screenshots.
+    """
+    outliers = []
+    seen_materials = set()
+    for node in gltf.nodes:
+        if not node.name or "kaleidoscope_crest_street" not in node.name:
+            continue
+        if node.mesh is None:
+            continue
+        for primitive in gltf.meshes[node.mesh].primitives:
+            if primitive.material is None:
+                continue
+            material_name = gltf.materials[primitive.material].name or ""
+            if material_name not in FEATURE_ROAD_MATERIALS:
+                continue
+            seen_materials.add(material_name)
+            accessor = gltf.accessors[primitive.attributes.POSITION]
+            minimum, maximum = accessor.min or [], accessor.max or []
+            if len(minimum) < 2 or len(maximum) < 2:
+                outliers.append("%s has no position bounds" % material_name)
+            elif minimum[1] < -0.05 or maximum[1] > 3.25:
+                outliers.append("%s local vertical range %.3f..%.3f" %
+                                (material_name, minimum[1], maximum[1]))
+    missing = FEATURE_ROAD_MATERIALS - seen_materials
+    if missing:
+        outliers.append("missing feature-road material(s): %s" % ", ".join(sorted(missing)))
+    return outliers
+
+
 def check(glb_path, state_path):
     problems = []
 
@@ -83,6 +118,11 @@ def check(glb_path, state_path):
             % (len(squashed), ", ".join(squashed[:15]),
                " ... (%d more)" % (len(squashed) - 15) if len(squashed) > 15 else "")
         )
+
+    feature_road_outliers = find_feature_road_outliers(gltf)
+    if feature_road_outliers:
+        problems.append("Kaleidoscope feature road escaped its authored elevation: %s" %
+                        "; ".join(feature_road_outliers))
 
     if os.path.exists(state_path):
         with open(state_path) as f:

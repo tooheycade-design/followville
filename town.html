@@ -600,7 +600,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const pageParams = new URLSearchParams(location.search);
 const previewView = pageParams.get("preview");
-const previewMode = previewView === "founders" || previewView === "buildings";
+const localDesignPreview = pageParams.get("local") === "1";
+const localAuditView = localDesignPreview ? pageParams.get("view") : null;
+const previewMode = localDesignPreview || previewView === "founders" || previewView === "buildings";
 const classicGraphics = pageParams.get("graphics") === "classic";
 const routeHousePath = location.pathname.match(/^\/house\/(\d+)\/?$/i);
 const routeHouseParam = pageParams.get("house") || routeHousePath?.[1] || null;
@@ -610,17 +612,48 @@ const routeActivity = pageParams.get("activity") || (/^\/today\/?$/i.test(locati
 const todayRoute = routeActivity === "today";
 const mapRouteRequested = todayRoute || routeHouseId !== null;
 
+if (localDesignPreview){
+  document.body.dataset.localDesignPreview = "true";
+  const localBadge = document.createElement("div");
+  localBadge.id = "localDesignBadge";
+  localBadge.textContent = "LOCAL DESIGN PREVIEW · OFFLINE · NOT THE LIVE TOWN";
+  Object.assign(localBadge.style, {
+    position:"fixed", left:"50%", top:"10px", transform:"translateX(-50%)",
+    zIndex:"10000", padding:"8px 16px", borderRadius:"999px",
+    background:"#9f2f2f", color:"white", font:"800 12px/1.2 system-ui,sans-serif",
+    letterSpacing:".08em", boxShadow:"0 4px 18px rgba(0,0,0,.28)",
+    pointerEvents:"none", whiteSpace:"nowrap"
+  });
+  document.body.appendChild(localBadge);
+}
+
 /* ══════════════════════════ WORLD LAYOUT CONSTANTS ══════════════════════════
    Mirrors neighborhood_blender.py so the web town matches the Blender town. */
-const LOT = 10, BLOCK_N = 3, ROAD = 6, PITCH = BLOCK_N * LOT + ROAD;
-const STORYBOOK_CENTER_WEB = [270, -60];
+const LOT = 13, BLOCK_N = 3, ROAD = 6, PITCH = BLOCK_N * LOT + ROAD;
+const STORYBOOK_CENTER_WEB = [305, -60];
 const STORYBOOK_ACCESS_WEB = [
-  [69,-33,0],[92,-56,.02],[126,-72,.02],[168,-74,.03],[201,-72,.05],
-  [205,-71,.28],[208,-70,.80],[211,-69,1.55],[213,-68,2.30],
-  [215,-68,2.62],[219,-67,2.74],[229,-65,2.74],[239,-60,2.74]
+  [87,-33,0],[112,-56,.02],[149,-72,.02],[198,-74,.03],[236,-72,.05],
+  [240,-71,.28],[243,-70,.80],[246,-69,1.55],[248,-68,2.30],
+  [250,-68,2.62],[254,-67,2.74],[264,-65,2.74],[274,-60,2.74]
 ];
 const STORYBOOK_ACCESS_WIDTHS = [6,6.3,6.7,7,7,7,7,7,7,7,7,7,7];
 const STORYBOOK_ROAD_COLORS = { established:0x59666d, transition:0x75404f, feature:0xb52f50 };
+const LOCAL_DISTRICT_OFFSETS = {
+  "Creekside Bend":[0,58], "Willow Hills":[-48,48], "Twin Oaks":[-62,0],
+  "Meadow Run":[-48,-48], "Pine Hollow":[0,-62], "North Ridge":[48,-48]
+};
+
+function applyExperimentalLayout(buildings){
+  if(!localDesignPreview) return;
+  for(const building of buildings){
+    if(building.px == null || building.py == null || building.__layoutShifted) continue;
+    let offset=LOCAL_DISTRICT_OFFSETS[building.district] || null;
+    if(building.type === "parkdistrict" || building.type === "ringhouse") offset=[35,0];
+    if(building.type === "storybookhouse" || building.feature_id === "kaleidoscope_crest_day15") offset=[35,0];
+    if(offset){ building.px+=offset[0]; building.py+=offset[1]; }
+    building.__layoutShifted=true;
+  }
+}
 
 const WALLS = [[0.96,0.90,0.81],[0.91,0.84,0.77],[0.97,0.82,0.79],
                [0.85,0.89,0.87],[0.90,0.89,0.94],[0.98,0.93,0.82],[0.86,0.91,0.96]];
@@ -1084,7 +1117,28 @@ function makeSkyTexture(){
   return texture;
 }
 
+function makeEnvironmentTexture(){
+  const canvas=document.createElement("canvas");
+  canvas.width=1024;canvas.height=512;
+  const ctx=canvas.getContext("2d");
+  const gradient=ctx.createLinearGradient(0,0,0,canvas.height);
+  gradient.addColorStop(0,"#4f9ed1");
+  gradient.addColorStop(.46,"#b9ddec");
+  gradient.addColorStop(.51,"#d9ddd2");
+  gradient.addColorStop(1,"#66725f");
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
+  const sun=ctx.createRadialGradient(760,142,4,760,142,95);
+  sun.addColorStop(0,"rgba(255,246,207,.95)");
+  sun.addColorStop(1,"rgba(255,235,190,0)");
+  ctx.fillStyle=sun;ctx.fillRect(0,0,canvas.width,canvas.height);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.mapping=THREE.EquirectangularReflectionMapping;
+  return texture;
+}
+
 scene.background = classicGraphics ? new THREE.Color(0x8fd0f0) : makeSkyTexture();
+if (!classicGraphics) scene.environment=makeEnvironmentTexture();
 scene.fog = classicGraphics
   ? new THREE.Fog(0x9fd6ee, 90, 320)
   : new THREE.Fog(0xa6d5e8, 115, 390);
@@ -1094,30 +1148,48 @@ camera.position.set(0, 1.7, -70);
 camera.rotation.y = Math.PI; // face north into town
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const maximumRenderRatio=Math.min(window.devicePixelRatio||1,classicGraphics?1.45:1.70);
+let activeRenderRatio=maximumRenderRatio;
+renderer.setPixelRatio(activeRenderRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = classicGraphics ? 1.05 : 0.96;
+renderer.toneMappingExposure = classicGraphics ? 1.0 : 0.84;
 document.body.appendChild(renderer.domElement);
 
 const hemi = new THREE.HemisphereLight(
   classicGraphics ? 0xbfe0ff : 0xc9e7ff,
   classicGraphics ? 0x4a5a34 : 0x4b5d38,
-  classicGraphics ? 0.6 : 0.54
+  classicGraphics ? 0.52 : 0.36
 );
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(classicGraphics ? 0xfff0d0 : 0xffe4b0, classicGraphics ? 2.2 : 2.45);
+const sun = new THREE.DirectionalLight(classicGraphics ? 0xfff0d0 : 0xffe6bd, classicGraphics ? 1.9 : 1.62);
 sun.position.set(70, 110, -40);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.bias = classicGraphics ? -0.0015 : -0.0008;
-if (!classicGraphics) sun.shadow.normalBias = 0.025;
+sun.shadow.mapSize.set(1536, 1536);
+sun.shadow.bias = classicGraphics ? -0.0015 : -0.00025;
+if (!classicGraphics) sun.shadow.normalBias = 0.065;
 scene.add(sun);
 scene.add(sun.target);
-const fill = new THREE.DirectionalLight(classicGraphics ? 0xcfe0ff : 0xd9ebff, classicGraphics ? 0.35 : 0.2);
+const shadowFocus=new THREE.Vector2(Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY);
+function updateFocusedTownShadow(force=false){
+  if(classicGraphics)return;
+  const x=camera.position.x,z=camera.position.z;
+  if(!force && shadowFocus.distanceToSquared(new THREE.Vector2(x,z))<324)return;
+  shadowFocus.set(x,z);
+  const span=86;
+  sun.shadow.camera.left=-span;sun.shadow.camera.right=span;
+  sun.shadow.camera.top=span;sun.shadow.camera.bottom=-span;
+  sun.shadow.camera.near=1;sun.shadow.camera.far=320;
+  sun.target.position.set(x,0,z);
+  sun.position.set(x+70,110,z-40);
+  sun.target.updateMatrixWorld();sun.updateMatrixWorld();
+  sun.shadow.camera.updateProjectionMatrix();
+  sun.shadow.needsUpdate=true;
+}
+const fill = new THREE.DirectionalLight(classicGraphics ? 0xcfe0ff : 0xd9ebff, classicGraphics ? 0.24 : 0.10);
 fill.position.set(-60, 50, 60);
 scene.add(fill);
 
@@ -1148,25 +1220,13 @@ function addSurfaceVariation(material, scale, strength, cacheKey){
       .replace("#include <common>", `#include <common>
         varying vec3 fvLocalPos;
         varying vec3 fvObjectNormal;
-        float fvHash(vec2 p){
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-        }
-        float fvNoise(vec2 p){
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          f = f * f * (3.0 - 2.0 * f);
-          float a = fvHash(i);
-          float b = fvHash(i + vec2(1.0, 0.0));
-          float c = fvHash(i + vec2(0.0, 1.0));
-          float d = fvHash(i + vec2(1.0, 1.0));
-          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        float fvFastGrain(vec3 p){
+          float a=sin(dot(p,vec3(1.71,2.43,1.19)));
+          float b=sin(dot(p,vec3(-3.11,.87,2.07))+a*1.35);
+          return (a+b)*.5;
         }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float fvGrain = (
-          fvNoise(fvLocalPos.xy * ${scale.toFixed(3)}) +
-          fvNoise(fvLocalPos.xz * ${scale.toFixed(3)}) +
-          fvNoise(fvLocalPos.yz * ${scale.toFixed(3)})
-        ) / 3.0 * 2.0 - 1.0;
+        float fvGrain = fvFastGrain(fvLocalPos * ${scale.toFixed(3)});
         float fvSoft = sin((fvLocalPos.x + fvLocalPos.z) * ${Math.max(0.35, scale * 0.45).toFixed(3)});
         float fvUp = abs(normalize(fvObjectNormal).y);
         float fvShapeLight = mix(0.92, 1.055, pow(fvUp, 0.7));
@@ -1211,13 +1271,43 @@ function tuneTownMaterial(material){
     material.roughness = 0.08;
     material.metalness = 0.14;
     material.color.offsetHSL(-0.015, 0.12, 0.035);
+  } else if (name.includes("storefront_glass") || name.includes("podium_glass") || name.includes("shelter_glass")){
+    material.roughness = 0.07;
+    material.metalness = 0.06;
+    material.transparent = true;
+    material.opacity = name.includes("shelter") ? 0.34 : 0.52;
+    material.depthWrite = false;
+    if ("transmission" in material) material.transmission = name.includes("shelter") ? 0.42 : 0.48;
+    if ("thickness" in material) material.thickness = 0.06;
+    if ("ior" in material) material.ior = 1.48;
+    if ("clearcoat" in material) material.clearcoat = 0.74;
+    if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.08;
+    material.envMapIntensity = 0.72;
+    material.needsUpdate = true;
   } else if (name.includes("window") || name.includes("windark") || name.includes("glass")){
-    material.roughness = 0.16;
-    material.metalness = 0.14;
+    material.roughness = 0.11;
+    material.metalness = 0.12;
+    material.transparent = false;
+    material.opacity = 1;
+    material.depthWrite = true;
+    if ("transmission" in material) material.transmission = 0;
+    if ("thickness" in material) material.thickness = Math.max(material.thickness || 0, 0.08);
+    if ("ior" in material) material.ior = 1.48;
+    if ("clearcoat" in material) material.clearcoat = Math.max(material.clearcoat || 0, 0.62);
+    if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.12;
+    material.envMapIntensity = 0.82;
     if (material.emissive){
-      material.emissive.copy(material.color).multiplyScalar(0.055);
-      material.emissiveIntensity = 0.8;
+      material.emissive.copy(material.color).multiplyScalar(0.035);
+      material.emissiveIntensity = 0.62;
     }
+    material.needsUpdate = true;
+  } else if (name.includes("interior_light")){
+    material.roughness=0.28;
+    if(material.emissive){
+      material.emissive.set(0xffb85e);
+      material.emissiveIntensity=1.35;
+    }
+    material.needsUpdate=true;
   } else if (name.includes("bulb") || name.includes("lamp")){
     material.roughness = 0.18;
     if (material.emissive){
@@ -1912,16 +2002,109 @@ function storybookAccessSurfaceHeight(x,z){
     const nearX=a[0]+dx*t,nearZ=a[1]+dz*t;
     const halfWidth=THREE.MathUtils.lerp(STORYBOOK_ACCESS_WIDTHS[i-1],STORYBOOK_ACCESS_WIDTHS[i],t)/2+.18;
     if(Math.hypot(x-nearX,z-nearZ)>halfWidth) continue;
-    height=Math.max(height,THREE.MathUtils.lerp(a[2],b[2],t)+.18);
+    height=Math.max(height,
+      Math.max(THREE.MathUtils.lerp(a[2],b[2],t),regionalTerrainHeight(x,z))+.085);
+  }
+  return height;
+}
+
+function redesignSmoothstep(edge0,edge1,value){
+  const t=THREE.MathUtils.clamp((value-edge0)/(edge1-edge0),0,1);
+  return t*t*(3-2*t);
+}
+
+function redesignGaussian(x,z,cx,cz,sx,sz,height){
+  return height*Math.exp(-.5*(Math.pow((x-cx)/sx,2)+Math.pow((z-cz)/sz,2)));
+}
+
+function regionalTerrainHeight(x,z){
+  // Blender is x/y/z-up while Three.js is x/y-up/-z. Terrain previously used
+  // Three's z as though it were Blender y, mirroring every hill north/south
+  // and causing the player to walk through visible ground.
+  const y=-z;
+  let height=5.2*redesignSmoothstep(64,210,y);
+  height+=3.4*redesignSmoothstep(72,230,-x)*redesignSmoothstep(42,145,y);
+  height+=redesignGaussian(x,y,-175,170,105,90,5.8);
+  height+=redesignGaussian(x,y,15,205,120,92,3.9);
+  height+=redesignGaussian(x,y,-315,245,145,115,6.2);
+  height+=redesignGaussian(x,y,355,245,150,120,5.0);
+  height+=redesignGaussian(x,y,-360,-150,150,125,4.2);
+  height+=redesignGaussian(x,y,345,-180,155,135,4.8);
+  height*=.62;
+  height+=redesignGaussian(x,y,-445,330,105,120,24.0);
+  height+=redesignGaussian(x,y,455,345,115,125,26.0);
+  height+=redesignGaussian(x,y,-455,-245,120,110,21.0);
+  height+=redesignGaussian(x,y,455,-255,125,115,23.0);
+  height+=redesignGaussian(x,y,-235,-155,88,82,17.0);
+  height+=redesignGaussian(x,y,250,-175,92,86,15.0);
+  const downtownDx=Math.max(0,Math.abs(x+3)-108);
+  const downtownDy=Math.max(0,Math.abs(y+5)-108);
+  const downtownDistance=Math.hypot((x+3)/1.05,(y+5));
+  height*=redesignSmoothstep(88,155,downtownDistance);
+  height=Math.min(height,Math.hypot(downtownDx,downtownDy)*.09);
+  const ringDistance=Math.hypot((x-169)/1.25,(y+3)/.85);
+  height*=redesignSmoothstep(78,112,ringDistance);
+  const storyDistance=Math.hypot((x-305)/1.15,(y-60)/.9);
+  height*=redesignSmoothstep(75,112,storyDistance);
+  return Math.max(0,height);
+}
+
+function downtownBuiltSurfaceHeight(x,z){
+  // Day 15's expanded downtown occupies blocks -2..1 on each axis. Roads
+  // remain six metres wide; only the block interiors and sidewalks expanded.
+  const minBlock=-2,maxBlock=1,blockSize=BLOCK_N*LOT,walk=3.40;
+  const y=-z;
+  const coreMin=minBlock*PITCH-ROAD,coreMax=(maxBlock+1)*PITCH;
+  if(x<coreMin||x>coreMax||y<coreMin||y>coreMax) return 0;
+  const roadDistance=v=>Math.abs(((v+ROAD/2)/PITCH)-Math.round((v+ROAD/2)/PITCH))*PITCH;
+  if(roadDistance(x)<=ROAD/2+.05||roadDistance(y)<=ROAD/2+.05) return .16;
+  const bx=Math.floor(x/PITCH),by=Math.floor(y/PITCH);
+  if(bx<minBlock||bx>maxBlock||by<minBlock||by>maxBlock) return 0;
+  const localX=x-bx*PITCH,localY=y-by*PITCH;
+  if(localX<0||localX>blockSize||localY<0||localY>blockSize) return 0;
+  const onWalk=localX<=walk||localX>=blockSize-walk||localY<=walk||localY>=blockSize-walk;
+  return onWalk ? .28 : 0;
+}
+
+let localWalkSurfaces={segments:[],bulbs:[]};
+function suburbanRoadSurfaceHeight(x,z){
+  let height=0;
+  for(const segment of localWalkSurfaces.segments||[]){
+    const [ax,az,ah,bx,bz,bh,halfWidth]=segment;
+    if(x<Math.min(ax,bx)-halfWidth||x>Math.max(ax,bx)+halfWidth||
+       z<Math.min(az,bz)-halfWidth||z>Math.max(az,bz)+halfWidth) continue;
+    const dx=bx-ax,dz=bz-az,lengthSq=dx*dx+dz*dz;
+    const t=THREE.MathUtils.clamp(((x-ax)*dx+(z-az)*dz)/Math.max(lengthSq,.0001),0,1);
+    const nx=ax+dx*t,nz=az+dz*t;
+    if(Math.hypot(x-nx,z-nz)<=halfWidth+.18)
+      // The exported road ribbon follows terrain at both edges.  Matching the
+      // player surface to the terrain at the player's exact position avoids
+      // walking through a banked road or hovering over its downhill edge.
+      height=Math.max(height,regionalTerrainHeight(x,z)+.085);
+  }
+  for(const bulb of localWalkSurfaces.bulbs||[]){
+    const [cx,cz,ch,radius]=bulb;
+    if(Math.hypot(x-cx,z-cz)<=radius+.18)
+      height=Math.max(height,regionalTerrainHeight(x,z)+.085);
   }
   return height;
 }
 
 function walkSurfaceHeight(x,z){
-  return Math.max(0,storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z));
+  return Math.max(0,regionalTerrainHeight(x,z),
+                  downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
+                  storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z));
+}
+if(localDesignPreview){
+  window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
+    downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,
+    surfaces:()=>localWalkSurfaces};
 }
 document.body.dataset.storybookWalkable =
-  walkSurfaceHeight(270,-60)>2.7 && walkSurfaceHeight(211,-69)>1.5 ? "pass" : "fail";
+  walkSurfaceHeight(305,-60)>2.7 && walkSurfaceHeight(246,-69)>1.5 ? "pass" : "fail";
+document.body.dataset.regionalTerrainWalkable =
+  walkSurfaceHeight(-175,-170)>5 && regionalTerrainHeight(0,0)<.1 &&
+  downtownBuiltSurfaceHeight(0,0)>.15 ? "pass" : "fail";
 
 const SUBURBAN_FOOTPRINTS = [
   [7.9,5.7], [8.5,5.4], [7.7,5.8], [8.3,5.7], [7.1,5.7],
@@ -2010,6 +2193,16 @@ function localBoundsForMaterials(root, acceptMaterial, minHeight=-Infinity, maxH
 }
 
 function suburbanFootprint(entry){
+  if (entry.building.type === "house" && !entry.building.plan_id && entry.building.px == null){
+    const root = entry.root;
+    root.updateWorldMatrix(true,true);
+    const center = root.getWorldPosition(new THREE.Vector3());
+    const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+    const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+    const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+    return boxCollider(center.x,center.z,u.x,u.z,v.x,v.z,4.25,4.35,
+                       `urban-home-${entry.building.seed}`);
+  }
   const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
   const style = SUBURBAN_FOOTPRINTS[styleIndex];
   const root = entry.root;
@@ -2088,6 +2281,17 @@ function buildGLBColliders(root){
     // GLTFLoader sanitizes Blender dots to underscores (car.001 -> car_001).
     if (/^(car|traffic)(?:\d|[._]|$)/.test(name) || name === "ringtraffic")
       addMeshBoxCollider(child, `car-${child.name}`);
+  }
+  // The skyline is batched by material for performance, so its individual
+  // towers cannot be recovered as one collider per GLB root. These centers
+  // mirror the 13 currently generated empty center lots.
+  const downtownTowerBlocks = [
+    [-2,-1],[-2,0],[-2,1],[-1,-2],[-1,0],[-1,1],
+    [0,-2],[0,-1],[0,1],[1,-2],[1,-1],[1,0],[1,1]
+  ];
+  for (const [bx,by] of downtownTowerBlocks){
+    const x=bx*PITCH+BLOCK_N*LOT/2, z=by*PITCH+BLOCK_N*LOT/2;
+    colliders.push(boxCollider(x,z,1,0,0,1,5.25,5.25,`downtown-tower-${bx}-${by}`));
   }
   root.traverse(obj => {
     const name = obj.name || "";
@@ -2179,7 +2383,6 @@ function addRoads(buildings){
   sun.shadow.camera.updateProjectionMatrix();
 
   const roadMat = lam(c(0.30,0.31,0.33), 0.95);
-  const dashMat = lam(c(0.85,0.80,0.40), 0.7);
   for (let bx = minBx; bx <= maxBx+1; bx++){
     const x = bx*PITCH - ROAD/2;
     const m = new THREE.Mesh(new THREE.BoxGeometry(ROAD, 0.15, y1-y0), roadMat);
@@ -2193,12 +2396,6 @@ function addRoads(buildings){
     m.position.set((x0+x1)/2, 0.08, y);
     m.receiveShadow = true;
     scene.add(m);
-    for (let x = x0 + 4; x < x1 - 4; x += 8){
-      const dash = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 0.45), dashMat);
-      dash.position.set(x, 0.17, y);
-      dash.receiveShadow = true;
-      scene.add(dash);
-    }
   }
 
   // streetlights + parked cars at intersections, seeded per-tile so they stay
@@ -2662,12 +2859,25 @@ function indexHouseVisuals(root, buildings){
       const distance = Math.hypot(child.position.x-x, child.position.z-z);
       if (distance < bestDistance){ best = child; bestDistance = distance; }
     }
-    if (best && bestDistance < 1){
+    // Expanded downtown storefronts sit 1.25m inward from their canonical lot
+    // anchors. Lots are 13m apart, so a 2m identity tolerance remains safely
+    // unambiguous while preserving every original house ID and claim mapping.
+    if (best && bestDistance < 2){
       used.add(best);
       houseVisuals.set(Number(building.seed), { building, root:best, isolated:false, materials:[] });
     }
   }
   console.info(`[Followville] Homeowner Mode mapped ${houseVisuals.size}/${homes.length} home visuals.`);
+  if(localDesignPreview){
+    const missing={};
+    for(const building of homes){
+      if(houseVisuals.has(Number(building.seed))) continue;
+      const key=building.type+(building.district?`:${building.district}`:"");
+      missing[key]=(missing[key]||0)+1;
+    }
+    document.body.dataset.homeVisualsMapped=`${houseVisuals.size}/${homes.length}`;
+    document.body.dataset.homeVisualsMissing=JSON.stringify(missing);
+  }
   applyAllHomeCustomizations();
 }
 
@@ -3474,6 +3684,31 @@ document.getElementById("townMapQuick").addEventListener("click",e=>{
   townMapSearch.value="";mapState.filter=button.dataset.mapQuick;renderTownMapResults();
   const first=townMapFilteredItems()[0];if(first)selectTownMapItem(first);
 });
+
+let performanceFrames=0;
+let performanceWindowStart=performance.now();
+function updateAdaptiveRenderScale(){
+  if(classicGraphics)return;
+  performanceFrames++;
+  const now=performance.now();
+  const elapsed=now-performanceWindowStart;
+  if(elapsed<2400)return;
+  const fps=performanceFrames*1000/elapsed;
+  let next=activeRenderRatio;
+  if(fps<50)next=Math.max(1.0,activeRenderRatio-.12);
+  else if(fps>58)next=Math.min(maximumRenderRatio,activeRenderRatio+.06);
+  if(Math.abs(next-activeRenderRatio)>.01){
+    activeRenderRatio=next;
+    renderer.setPixelRatio(activeRenderRatio);
+    renderer.setSize(window.innerWidth,window.innerHeight,false);
+  }
+  document.body.dataset.renderFps=String(Math.round(fps));
+  document.body.dataset.renderScale=activeRenderRatio.toFixed(2);
+  document.body.dataset.renderCalls=String(renderer.info.render.calls||0);
+  document.body.dataset.renderTriangles=String(renderer.info.render.triangles||0);
+  performanceFrames=0;
+  performanceWindowStart=now;
+}
 townMapResults.addEventListener("click",e=>{
   const button=e.target.closest("[data-map-key]");if(!button)return;
   selectTownMapItem(mapState.byKey.get(button.dataset.mapKey));
@@ -4433,6 +4668,14 @@ window.addEventListener("pagehide", () => {
 
 /* ── boot ── */
 async function initSupabase(){
+  if (localDesignPreview){
+    sb = null;
+    session = null;
+    onlineCount.textContent = "offline design preview";
+    chatToggle.style.display = "none";
+    accountBtn.style.display = "none";
+    return;
+  }
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     onlineCount.textContent = "multiplayer unavailable";
     return;
@@ -4521,9 +4764,11 @@ function loadFromGLB(buildings){
     // town blocks, which put the player behind a wall of foliage instead of
     // on a road. Use the same grid math the town is laid out from instead,
     // so the spawn is always exactly on a real road, at the town's south edge.
-    const [minBx, , minBy] = blockExtent(buildings);
+    const [minBx, , minBy, maxBy] = blockExtent(buildings);
     const spawnX = 0; // the bx=0 road always exists (block_extent guarantees -1..1)
-    const spawnZ = minBy*PITCH - ROAD - 15;
+    // GLB conversion maps Blender Y to negative Three.js Z. Spawn on the
+    // northernmost road and look toward +Z through the town center.
+    const spawnZ = -((maxBy+1)*PITCH - ROAD/2);
     camera.position.set(spawnX, 1.7, spawnZ);
 
     const fullSize = new THREE.Vector3(), fullCenter = new THREE.Vector3();
@@ -4540,10 +4785,32 @@ function loadFromGLB(buildings){
   });
 }
 
-fetch("world_state.json")
-  .then(r => r.json())
-  .then(state => {
+const localWalkSurfacePromise = localDesignPreview
+  ? fetch("local_walk_surfaces.json").then(r => {
+      if(!r.ok) throw new Error(`local walk surface manifest ${r.status}`);
+      return r.json();
+    })
+  : Promise.resolve({segments:[],bulbs:[]});
+
+Promise.all([fetch("world_state.json").then(r => r.json()),localWalkSurfacePromise])
+  .then(([state,walkSurfaces]) => {
+    localWalkSurfaces=walkSurfaces;
+    if(localDesignPreview){
+      document.body.dataset.localRoadSegments=String(walkSurfaces.segments?.length||0);
+      const first=walkSurfaces.segments?.[0];
+      if(first){
+        const [ax,az,ah,bx,bz,bh]=first;
+        const actual=suburbanRoadSurfaceHeight((ax+bx)/2,(az+bz)/2);
+        const expected=(ah+bh)/2+.085;
+        document.body.dataset.localRoadSurface=Math.abs(actual-expected)<.03?"pass":"fail";
+      }
+      const curbStep=downtownBuiltSurfaceHeight(.5,-.5)-downtownBuiltSurfaceHeight(-3,0);
+      document.body.dataset.localCurbStep=Math.abs(curbStep-.12)<.015?"pass":"fail";
+      document.body.dataset.localTerrainAxis=
+        Math.abs(regionalTerrainHeight(-175,-170)-8.3389747571)<.001?"pass":"fail";
+    }
     const buildings = state.buildings || [];
+    applyExperimentalLayout(buildings);
     worldBuildings = buildings;
     townMapMeta = { day:state.day ?? null, population:state.pop ?? null };
     initSupabase();   // accounts + claiming; no-op until configured
@@ -4558,9 +4825,31 @@ fetch("world_state.json")
         const tunedMaterials = new Set();
         scene.traverse(obj => {
           if (obj.isMesh){
-            obj.castShadow = true;
+            obj.updateMatrix();
+            obj.matrixAutoUpdate=false;
             obj.receiveShadow = true;
             const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+            const groundLike=materials.length>0 && materials.every(material => {
+              const name=(material?.name||"").toLowerCase();
+              return ["road","grass","lawn","terrain","sidewalk","hardscape",
+                      "courtyard","service_lane","paving","crosswalk","parking_bay"]
+                .some(token=>name.includes(token));
+            });
+            const shadowDetail=materials.length>0 && materials.every(material => {
+              const name=(material?.name||"").toLowerCase();
+              return ["window","glass","lamp","bulb","tactile","paving_joint",
+                      "street_sign","transit_marker","interior_light"]
+                .some(token=>name.includes(token));
+            });
+            const localBounds=new THREE.Box3().setFromObject(obj);
+            const localSize=new THREE.Vector3();
+            localBounds.getSize(localSize);
+            const tinyShadowCaster=Math.max(localSize.x,localSize.y,localSize.z)<.82;
+            // Broad, nearly coplanar surfaces should receive the buildings'
+            // shadows but never cast onto themselves; doing both produced
+            // visible shadow-acne stripes in the real Chrome renderer.
+            obj.castShadow = !groundLike && !shadowDetail && !tinyShadowCaster;
+            if(shadowDetail)obj.receiveShadow=false;
             for (const material of materials){
               if (material && !tunedMaterials.has(material)){
                 tunedMaterials.add(material);
@@ -4572,7 +4861,9 @@ fetch("world_state.json")
         if (!classicGraphics){
           document.body.classList.add("enhanced-graphics");
           if (loadedTownRoot) addBuildingDetails(loadedTownRoot);
-          addTownFinish(buildings);
+          // Curbs and crossings are authored once in town.glb.  A second
+          // browser-generated copy occupied nearly the same depth plane and
+          // visibly flickered while walking along downtown blocks.
           addTownAtmosphere();
         }
         document.getElementById("startSub").textContent =
@@ -4589,7 +4880,81 @@ fetch("world_state.json")
           playIntroVideo();
         }
         hud.style.display = "block";
-        if (previewMode) frameFounderPreview();
+        // The named preview routes are fixed, UI-free cameras for screenshots.
+        // Local design mode must remain a normal, fully walkable town; it only
+        // disables network services and labels the page as an offline preview.
+        if (previewView === "founders" || previewView === "buildings") frameFounderPreview();
+        if(localAuditView === "storefront" || localAuditView === "storefront-left" ||
+           localAuditView === "storefront-right"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=58;
+          const storefrontX=localAuditView === "storefront-left" ? 15.4 :
+                            localAuditView === "storefront-right" ? 23.6 : 19.5;
+          camera.position.set(storefrontX,1.82,5.0);
+          camera.lookAt(19.5,1.62,12.5);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "road-grade"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=62;
+          camera.position.set(-28.5,6.3,-113.0);
+          camera.lookAt(-38.5,4.6,-133.4);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "foundation"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=54;
+          camera.position.set(-151.8,9.7,-131.2);
+          camera.lookAt(-159.15,8.15,-121.68);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "storybook-wide"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=60;
+          camera.position.set(180,5.65,-135);
+          camera.lookAt(305,4.2,-60);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "storybook-road"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=64;
+          camera.position.set(132,2.25,-83);
+          camera.lookAt(165,1.10,-71);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "school"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=61;
+          camera.position.set(-77,4.15,99);
+          camera.lookAt(-77,2.0,76);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "facade-side"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=60;
+          camera.position.set(10.2,4.0,13.2);
+          camera.lookAt(19.4,4.0,12.7);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "city-perimeter"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=63;
+          camera.position.set(125,7.50,108);
+          camera.lookAt(2,7.0,4);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "street"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+        }
         animate();
         if (location.hash === "#map" || mapRouteRequested) requestAnimationFrame(openTownMap);
       });
@@ -4664,6 +5029,8 @@ function animate(){
   }
 
   updateMultiplayer(dt);
+  updateFocusedTownShadow();
+  updateAdaptiveRenderScale();
 
   if(townMapOpen()){townMapControls?.update();drawTownMap();}
   else renderer.render(scene,camera);

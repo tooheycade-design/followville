@@ -29,6 +29,9 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in global
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+from downtown_visuals import build_downtown_visuals, terrain_height
+from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
+                          transform_building_point, transform_point)
 
 # ═══════════════════════════ CONFIG — EDIT THIS DAILY ═══════════════════════════
 
@@ -107,7 +110,7 @@ CLI = _cli()
 
 # ═════════════════════════════ WORLD LAYOUT CONSTANTS ═══════════════════════════
 
-LOT      = 10                    # lot size (m)
+LOT      = 13                    # expanded downtown lot spacing (m)
 BLOCK_N  = 3                     # lots per block side
 ROAD     = 6                     # road width (m)
 PITCH    = BLOCK_N * LOT + ROAD  # block repeat distance
@@ -184,15 +187,28 @@ def save_state(state):
 
 # ══════════════════════════════════ MATERIALS ═══════════════════════════════════
 
-def mat(name, rgb, rough=0.85):
+def mat(name, rgb, rough=0.85, metallic=0.0, alpha=1.0,
+        transmission=0.0, coat=0.0):
     m = bpy.data.materials.get(name)
-    if m:
-        return m
-    m = bpy.data.materials.new(name)
+    if not m:
+        m = bpy.data.materials.new(name)
     m.use_nodes = True
     bsdf = m.node_tree.nodes.get("Principled BSDF")
     bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
     bsdf.inputs["Roughness"].default_value = rough
+    bsdf.inputs["Metallic"].default_value = metallic
+    bsdf.inputs["Alpha"].default_value = alpha
+    transmission_input = (bsdf.inputs.get("Transmission Weight")
+                          or bsdf.inputs.get("Transmission"))
+    if transmission_input:
+        transmission_input.default_value = transmission
+    coat_input = bsdf.inputs.get("Coat Weight") or bsdf.inputs.get("Clearcoat")
+    if coat_input:
+        coat_input.default_value = coat
+    m.diffuse_color = (*rgb, alpha)
+    if alpha < .999:
+        m.surface_render_method = "DITHERED"
+        m.use_transparency_overlap = False
     return m
 
 def std_mats():
@@ -203,9 +219,9 @@ def std_mats():
         "dash":   mat("NB_dash",   (0.85, 0.80, 0.40), 0.9),
         "trunk":  mat("NB_trunk",  (0.44, 0.31, 0.21), 1.0),
         "door":   mat("NB_door",   (0.36, 0.24, 0.17), 0.8),
-        "window": mat("NB_window", (0.95, 0.90, 0.70), 0.2),
-        "windark": mat("NB_windark", (0.16, 0.22, 0.30), 0.2),
-        "water":  mat("NB_water",  (0.30, 0.58, 0.78), 0.1),
+        "window": mat("NB_window", (0.95, 0.90, 0.70), .16, .04, 1.0, 0.0, .42),
+        "windark": mat("NB_windark", (0.10, 0.19, 0.28), .14, .12, 1.0, 0.0, .62),
+        "water":  mat("NB_water",  (0.24, 0.52, 0.72), .08, .05, .90, .32, .72),
         "metal":  mat("NB_metal",  (0.25, 0.27, 0.30), 0.5),
         "cap":    mat("NB_cap",    (0.32, 0.34, 0.38), 0.8),
         "bulb":   mat("NB_bulb",   (1.0, 0.95, 0.75), 0.2),
@@ -604,7 +620,7 @@ def build_suburban_house(col, variant):
     mail_flag = mat("NB_mail_flag", (0.72, 0.12, 0.11), .65)
     shutter = mat("NB_sub_shutter_%d" % palette_index, shutter_c, .78)
     trim = mat("NB_sub_trim", (.94, .92, .84), .76)
-    glass = mat("NB_sub_glass", (.10, .23, .32), .25)
+    glass = mat("NB_sub_glass", (.075, .18, .27), .13, .12, 1.0, 0.0, .66)
     garage = mat("NB_sub_garage", (.84, .83, .76), .84)
     brick = mat("NB_sub_brick", (.49, .20, .14), .90)
     stone = mat("NB_sub_stone", (.45, .43, .38), .95)
@@ -791,7 +807,7 @@ def build_storybook_house(col, variant):
                 tuple(min(1.0, c * .72 + .14) for c in roof_c), .88)
     door = mat("NB_story_door_%02d" % variant, door_c, .70)
     trim = mat("NB_story_trim", (.97, .90, .66), .76)
-    glass = mat("NB_story_glass", (.09, .25, .37), .22)
+    glass = mat("NB_story_glass", (.065, .20, .32), .13, .10, 1.0, 0.0, .64)
     lawn = mat("NB_story_lawn", (.35, .68, .27), 1.0)
     path = mat("NB_story_path", (.92, .76, .48), .94)
     fence = mat("NB_story_fence", (.89, .77, .56), .88)
@@ -964,6 +980,156 @@ def build_storybook_house(col, variant):
 def build_house(col, seed):
     # Backward-compatible entry point used by docs/custom callers.
     build_suburban_house(col, seed % (len(SUBURBAN_STYLES) * len(SUBURBAN_PALETTES)))
+
+
+def build_urban_townhouse(col, variant):
+    """Compact claim-preserving city home for the legacy downtown grid."""
+    rng = random.Random(41000 + variant)
+    palettes = (
+        ((.46,.20,.14),(.18,.22,.24),(.72,.42,.20)),
+        ((.56,.48,.37),(.15,.23,.28),(.20,.38,.34)),
+        ((.30,.34,.37),(.11,.19,.24),(.62,.23,.16)),
+        ((.39,.18,.15),(.21,.25,.27),(.72,.58,.33)),
+        ((.61,.57,.49),(.16,.20,.22),(.28,.35,.48)),
+    )
+    wall_c, frame_c, door_c = palettes[variant % len(palettes)]
+    wall = mat("FV_townhouse_wall_%d" % (variant % len(palettes)), wall_c, .91)
+    frame = mat("FV_townhouse_frame", (.82,.79,.70), .86)
+    dark = mat("FV_townhouse_window", frame_c, .12, .12, 1.0, 0.0, .65)
+    storefront_glass = mat("FV_townhouse_storefront_glass", (.055,.16,.20),
+                           .08,.08,.48,.42,.78)
+    interior = mat("FV_townhouse_interior", (.095,.075,.060), .88)
+    interior_floor = mat("FV_townhouse_interior_floor", (.24,.15,.085), .72)
+    interior_light = mat("FV_townhouse_interior_light", (.92,.63,.30), .34)
+    display = mat("FV_townhouse_display", (.48,.31,.18), .74)
+    door = mat("FV_townhouse_door_%d" % (variant % len(palettes)), door_c, .72)
+    roof = mat("FV_townhouse_roof", (.10,.12,.13), .86)
+    metal = mat("FV_townhouse_metal", (.12,.14,.15), .62)
+    solar = mat("FV_townhouse_solar", (.055,.13,.19), .18, .22, 1.0, 0.0, .62)
+    sign = mat("FV_townhouse_sign_%d" % (variant % len(palettes)), door_c, .62)
+    floors = 3 + (1 if variant % 7 == 0 else 0)
+    # Buildings retain full urban scale. Breathing room now comes from the
+    # expanded thirteen-metre lot grid rather than shrinking architecture.
+    width = 7.8 + rng.uniform(-.35,.35)
+    depth = 7.9 + rng.uniform(-.30,.40)
+    floor_h = 2.85
+    height = floors*floor_h
+    # Real ground-floor shell: an open room behind the glazing, not a tinted
+    # rectangle pasted over a solid wall. The upper floors retain the efficient
+    # single mass while the street-facing level gets true depth and contents.
+    ground_h=2.92
+    add_box(col,"upper_wall",width,depth,height-ground_h,0,.25,ground_h,wall)
+    add_box(col,"ground_rear",width,.34,ground_h,0,.25+depth/2-.17,.12,wall)
+    add_box(col,"ground_left",.36,depth-.34,ground_h,-width/2+.18,.08,.12,wall)
+    add_box(col,"ground_right",.36,depth-.34,ground_h,width/2-.18,.08,.12,wall)
+    add_box(col,"interior_floor",width-.72,depth-.52,.16,0,.12,.14,interior_floor)
+    add_box(col,"interior_ceiling",width-.72,depth-.52,.14,0,.12,2.87,interior)
+    add_box(col,"interior_backdrop",width-.95,.12,2.28,0,depth/2-.12,.38,interior)
+    # Storefront structure surrounds two actual openings.
+    # All storefront surfaces share one exterior plane.  The earlier version
+    # placed glass, door and trim at four different Y offsets, so oblique views
+    # made the panes look pasted onto the building.
+    front_y=-depth/2-.04
+    facade_depth=.12
+    outer_y=front_y-facade_depth/2
+    glass_depth=.035
+    glass_y=outer_y+glass_depth/2
+    add_box(col,"storefront_base",width+.12,facade_depth,.30,0,front_y,.18,frame)
+    add_box(col,"storefront_lintel",width+.12,facade_depth,.34,0,front_y,2.62,frame)
+    add_box(col,"storefront_left_pier",.46,facade_depth,2.44,-width/2+.23,front_y,.48,frame)
+    add_box(col,"storefront_right_pier",.46,facade_depth,2.44,width/2-.23,front_y,.48,frame)
+    add_box(col,"storefront_center_pier",.48,facade_depth,2.44,-width*.10,front_y,.48,frame)
+    door_x=-width*.28
+    # A framed glazed door replaces the old solid door with a glass rectangle
+    # hovering in front of it.
+    add_box(col,"door_left_stile",.18,facade_depth,2.37,door_x-.50,front_y,.24,door)
+    add_box(col,"door_right_stile",.18,facade_depth,2.37,door_x+.50,front_y,.24,door)
+    add_box(col,"door_bottom_rail",.82,facade_depth,.24,door_x,front_y,.24,door)
+    add_box(col,"door_top_rail",.82,facade_depth,.15,door_x,front_y,2.46,door)
+    add_box(col,"door_glass",.82,glass_depth,1.67,door_x,glass_y,.48,storefront_glass)
+    add_box(col,"door_transom",.82,glass_depth,.31,door_x,glass_y,2.15,storefront_glass)
+    sidelight_left=-width/2+.46
+    sidelight_right=door_x-.59
+    sidelight_width=max(.24,sidelight_right-sidelight_left)
+    add_box(col,"door_sidelight",sidelight_width,glass_depth,2.13,
+            (sidelight_left+sidelight_right)/2,glass_y,.48,storefront_glass)
+    add_box(col,"entry_canopy",1.65,.42,.12,-width*.28,-depth/2-.30,2.66,metal)
+    add_box(col,"door_pull",.07,.055,.48,door_x+.31,outer_y-.028,1.05,metal)
+    add_box(col,"door_kickplate",.72,.035,.24,door_x,outer_y-.018,.30,metal)
+    shop_left=-width*.10+.24
+    shop_right=width/2-.46
+    shop_width=shop_right-shop_left
+    shop_center=(shop_left+shop_right)/2
+    add_box(col,"shop_window",shop_width,glass_depth,2.09,shop_center,glass_y,.52,
+            storefront_glass)
+    for fraction in (1/3,2/3):
+        add_box(col,"shop_mullion",.055,.08,2.09,
+                shop_left+shop_width*fraction,front_y,.52,frame)
+    add_box(col,"shop_sill",shop_width+.26,.16,.16,shop_center,front_y-.02,.42,frame)
+    # Visible interior composition: counter, rear shelves, product blocks and
+    # warm ceiling panels. These remain low-poly and merge into the house mesh.
+    add_box(col,"display_counter",2.75,.62,.86,width*.18,-1.50,.30,display)
+    add_box(col,"counter_top",2.95,.72,.12,width*.18,-1.50,1.16,frame)
+    for shelf_z in (.72,1.28,1.84):
+        add_box(col,"rear_shelf",3.25,.24,.11,width*.15,depth/2-.32,shelf_z,display)
+    for item_index in range(6):
+        item_x=width*.15+(item_index%3-1)*.82
+        item_z=.83+(item_index//3)*.58
+        add_box(col,"display_item",.34,.28,.34,item_x,depth/2-.48,item_z,
+                door if item_index%2 else sign)
+    for light_x in (-width*.22,width*.22):
+        add_box(col,"interior_light",.92,.38,.08,light_x,-.10,2.76,interior_light)
+    if variant % 3 != 1:
+        add_box(col,"shop_canopy",3.85,.48,.14,width*.18,-depth/2-.32,2.66,door)
+        for support_x in (-1.45,1.45):
+            add_beam_between(col,"awning_support",
+                             (width*.18+support_x,-depth/2-.14,2.66),
+                             (width*.18+support_x,-depth/2-.48,2.43),.075,metal)
+    for floor in range(1,floors):
+        z=.72+floor*floor_h
+        for ix in (-.27,0,.27):
+            x=ix*width
+            add_box(col,"window_frame",1.20,.16,1.58,x,-depth/2-.08,z,frame)
+            add_box(col,"window",.94,.08,1.32,x,-depth/2-.19,z+.13,dark)
+            add_box(col,"window_mullion",.06,.05,1.32,x,-depth/2-.25,z+.13,frame)
+            add_box(col,"window_sill",1.34,.28,.12,x,-depth/2-.12,z-.10,frame)
+    # Side windows stop the row from reading like a stage-flat facade.
+    for floor in range(1,floors):
+        z=.76+floor*floor_h
+        for y in (-1.8,1.8):
+            for side in (-1,1):
+                # Sink the frame into the wall and let only a few centimetres
+                # project. The former one-centimetre overlap made these panes
+                # visibly detach at oblique street angles.
+                # Keep several centimetres embedded in the masonry while the
+                # visible face remains outside the wall plane.
+                frame_x=side*(width/2+.025)
+                for frame_y in (y-.605,y+.605):
+                    add_box(col,"side_window_jamb",.14,.16,1.48,
+                            frame_x,frame_y,z-.115,frame)
+                for frame_z in (z-.695,z+.575):
+                    add_box(col,"side_window_rail",.14,1.37,.14,
+                            frame_x,y,frame_z,frame)
+                add_box(col,"side_window",.10,1.05,1.25,
+                        side*(width/2+.015),y,z,dark)
+    add_box(col,"cornice",width+.55,depth+.55,.42,0,.25,height+.12,frame)
+    add_box(col,"roof",width+.12,depth+.12,.42,0,.25,height+.54,roof)
+    add_box(col,"roof_access",2.0,2.2,1.45,.9,.65,height+.96,roof)
+    for vent_x in (-width*.22,width*.18):
+        add_box(col,"roof_vent",.28,.28,.62,vent_x,1.15,height+.96,metal)
+        add_box(col,"roof_vent_cap",.44,.44,.12,vent_x,1.15,height+1.54,metal)
+    if variant%4==0:
+        for sy in (-.62,.62):
+            add_box(col,"solar_panel",2.25,.92,.10,-.95,sy,height+.98,solar)
+    elif variant%4==1:
+        add_box(col,"mechanical_curb",1.72,1.48,.24,-.82,.52,height+.98,metal)
+        add_box(col,"mechanical_unit",1.48,1.24,1.02,-.82,.52,height+1.22,roof)
+        for louver_x in (-1.23,-.97,-.71,-.45):
+            add_box(col,"mechanical_louver",.12,.06,.62,louver_x,-.13,height+1.40,metal)
+        add_box(col,"mechanical_cap",1.66,1.42,.16,-.82,.52,height+2.24,metal)
+    for side in (-1,1):
+        add_box(col,"parapet",.18,depth+.25,.70,side*(width/2),.25,height+.58,metal)
+    _merge_asset_meshes(col,"urban_townhouse_%02d" % variant)
 
 def build_apartment(col, seed):
     rng = random.Random(seed)
@@ -1840,6 +2006,11 @@ ASSET_VARIANTS = {
     "parkdistrict": [("AST_parkdist_0", lambda c: build_park_district(c, 2400))],
 }
 
+URBAN_ASSET_VARIANTS = [
+    ("AST_urban_%d" % i, lambda c, i=i: build_urban_townhouse(c, i))
+    for i in range(15)
+]
+
 # ═══════════════════════════════ GRID / PLACEMENT ═══════════════════════════════
 
 def lot_to_world(gx, gy):
@@ -1852,8 +2023,20 @@ def build_pos(b):
     """World-space anchor: exact px/py if stored (ring houses / park
     district sit off-grid), else the building's grid lot."""
     if "px" in b:
-        return b["px"], b["py"]
+        return transform_building_point(b)
     return lot_to_world(b["gx"], b["gy"])
+
+
+def hillside_pad_levels(x, y, rotation=0.0, width=8.4, depth=9.0):
+    """Level foundation range for a house on continuous sloping terrain."""
+    c, s = math.cos(rotation), math.sin(rotation)
+    samples = []
+    for lx in (-width/2, 0.0, width/2):
+        for ly in (-depth/2, 0.0, depth/2):
+            wx = x + lx*c - ly*s
+            wy = y + lx*s + ly*c
+            samples.append(terrain_height(wx, wy))
+    return min(samples), max(samples) + .08
 
 # building footprint in lots (per side); milestone buildings can span a whole block
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
@@ -1970,7 +2153,9 @@ def find_free_lots(count, size, occupied, blocked_blocks=None, fill_mode="block"
     raise RuntimeError("Ran out of space")
 
 def place_instance(world_col, b, name):
-    variants = ASSET_VARIANTS[b["type"]]
+    variants = (URBAN_ASSET_VARIANTS
+                if b["type"] == "house" and not b.get("plan_id") and "px" not in b
+                else ASSET_VARIANTS[b["type"]])
     vname, builder = variants[b["seed"] % len(variants)]
     asset = get_asset(vname, builder)
     empty = bpy.data.objects.new(name, None)
@@ -1979,7 +2164,12 @@ def place_instance(world_col, b, name):
     x, y = build_pos(b)
     s = SIZE.get(b["type"], 1)
     if "px" in b:  # exact world placement (district / suburban houses)
-        empty.location = (x, y, b.get("pz", 0.1 if b["type"] == "ringhouse" else 0))
+        authored_z = b.get("pz")
+        if authored_z is None:
+            authored_z = (hillside_pad_levels(x, y, b.get("rot", 0.0))[1]
+                          if b.get("plan_id") else
+                          (0.1 if b["type"] == "ringhouse" else 0))
+        empty.location = (x, y, authored_z)
     else:
         empty.location = (x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2, 0)
     rng = random.Random(b["seed"])
@@ -2005,6 +2195,12 @@ def place_instance(world_col, b, name):
         best = min(dists.values())
         opts = sorted(k for k, v in dists.items() if v == best)
         empty.rotation_euler = (0, 0, opts[rng.randrange(len(opts))])
+    if b["type"] == "house" and not b.get("plan_id") and "px" not in b:
+        # Pull downtown homes into the building line without changing their
+        # grid address or identity. Local -Y is the authored front.
+        facing = empty.rotation_euler.z
+        empty.location.x += -math.sin(facing) * 1.25
+        empty.location.y +=  math.cos(facing) * 1.25
     if b["type"] == "house" and b.get("plan_id"):
         lot_scale = .55 if b["plan_id"] in SUBURBAN_TIGHT_PLAN_IDS else .78
         empty.scale = (lot_scale, lot_scale, max(.75, lot_scale + .20))
@@ -2038,31 +2234,24 @@ def build_roads(world_col, buildings, m):
     for by in range(min_by, max_by + 2):
         y = by * PITCH - ROAD / 2
         add_box(world_col, "roadH", x1 - x0, ROAD, 0.16, (x0 + x1) / 2, y, 0, m["road"])
-        x = x0 + 4
-        while x < x1 - 4:
-            add_box(world_col, "dash", 2.6, 0.45, 0.05, x, y, 0.17, m["dash"])
-            x += 8
-    # streetlights + parked cars at intersections/edges (deterministic)
+    # Parked cars belong along block faces, not scattered through junctions.
+    # The dedicated public-realm pass owns all downtown streetlights.
     rng = random.Random(9000 + (max_bx - min_bx) * 31 + (max_by - min_by))
-    for bx in range(min_bx, max_bx + 2):
-        for by in range(min_by, max_by + 2):
-            ix, iy = bx * PITCH - ROAD / 2, by * PITCH - ROAD / 2
-            if rng.random() < 0.65:
-                b = {"type": "streetlight", "gx": 0, "gy": 0, "seed": 0}
-                e = place_instance(world_col, b, "light")
-                e.location = (ix + ROAD / 2 + 0.6, iy + ROAD / 2 + 0.6, 0)
-                e.rotation_euler = (0, 0, rng.random() * math.tau)
-            if rng.random() < 0.4:
+    for bx in range(min_bx, max_bx + 1):
+        for by in range(min_by, max_by + 1):
+            block_x, block_y = bx * PITCH, by * PITCH
+            if rng.random() < 0.78:
                 b = {"type": "car", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
                 e = place_instance(world_col, b, "car")
-                horiz = rng.random() < 0.5
-                off = (rng.random() - 0.5) * PITCH * 0.7
-                if horiz:
-                    e.location = (ix + off, iy + (1.5 if rng.random() < 0.5 else -1.5), 0.05)
-                    e.rotation_euler = (0, 0, 0 if rng.random() < 0.5 else math.pi)
-                else:
-                    e.location = (ix + (1.5 if rng.random() < 0.5 else -1.5), iy + off, 0.05)
-                    e.rotation_euler = (0, 0, math.pi / 2 * (1 if rng.random() < 0.5 else -1))
+                e.location = (block_x + LOT*(.65+rng.random()*1.7),
+                              block_y - 1.15, .05)
+                e.rotation_euler = (0, 0, 0 if rng.random() < .5 else math.pi)
+            if rng.random() < 0.48:
+                b = {"type": "car", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
+                e = place_instance(world_col, b, "car")
+                e.location = (block_x - 1.15,
+                              block_y + LOT*(.65+rng.random()*1.7), .05)
+                e.rotation_euler = (0, 0, math.pi/2 if rng.random() < .5 else -math.pi/2)
 
 def build_district_roads(world_col, buildings, m):
     """Straight connector from each park district's entrance (the house gap
@@ -2073,7 +2262,7 @@ def build_district_roads(world_col, buildings, m):
     min_bx, max_bx, min_by, max_by = block_extent(buildings)
     x_road = (max_bx + 1) * PITCH - ROAD / 2
     for d in districts:
-        cx, cy = d["px"], d["py"]
+        cx, cy = transform_building_point(d)
         x_in = cx - (d.get("r", 57) - 18)   # reaches into the outer ring road
         if x_in <= x_road:
             continue
@@ -2168,7 +2357,8 @@ def build_suburban_terrain(world_col, m):
 
 def _add_road_strip(world_col, name, points, material, width=ROAD,
                     bottom_offset=.01, top_offset=.19, widths=None,
-                    segment_materials=None):
+                    segment_materials=None, terrain_conform=False,
+                    terrain_origin=None):
     """One continuous, shallow road mesh with mitered bends.
 
     The previous implementation rotated a separate rectangle for every five
@@ -2177,13 +2367,58 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
     """
     if len(points) < 2:
         return None
-    point_widths = list(widths) if widths is not None else [width] * len(points)
+    # Subdivide long authored segments before building the ribbon.  Sampling
+    # terrain only at distant control points let a convex hill rise through the
+    # chord between them, which made the road disappear underground midway up
+    # a grade.
+    dense_points = []
+    dense_widths = []
+    subdivision_counts = []
+    source_widths = list(widths) if widths is not None else [width] * len(points)
+    for index, (a, b) in enumerate(zip(points, points[1:])):
+        length = math.hypot(b[0]-a[0], b[1]-a[1])
+        steps = max(1, int(math.ceil(length / 2.0)))
+        subdivision_counts.append(steps)
+        for step in range(steps):
+            t = step / steps
+            x = a[0] + (b[0]-a[0])*t
+            y = a[1] + (b[1]-a[1])*t
+            authored_z = ((a[2] if len(a) > 2 else 0.0) +
+                          ((b[2] if len(b) > 2 else 0.0) -
+                           (a[2] if len(a) > 2 else 0.0))*t)
+            if terrain_origin is not None:
+                sample_z = max(authored_z,
+                               terrain_height(x+terrain_origin[0],
+                                              y+terrain_origin[1]))
+            else:
+                sample_z = terrain_height(x, y) if terrain_conform else authored_z
+            dense_points.append((x, y, sample_z))
+            dense_widths.append(source_widths[index] +
+                                (source_widths[index+1]-source_widths[index])*t)
+    final_authored = points[-1][2] if len(points[-1]) > 2 else 0.0
+    if terrain_origin is not None:
+        final_z = max(final_authored,
+                      terrain_height(points[-1][0]+terrain_origin[0],
+                                     points[-1][1]+terrain_origin[1]))
+    else:
+        final_z = (terrain_height(points[-1][0], points[-1][1])
+                   if terrain_conform else final_authored)
+    dense_points.append((points[-1][0], points[-1][1], final_z))
+    dense_widths.append(source_widths[-1])
+    points = dense_points
+    point_widths = dense_widths
     if len(point_widths) != len(points):
         raise ValueError("road-strip widths must match the point count")
-    materials_by_segment = (list(segment_materials) if segment_materials is not None
-                            else [material] * (len(points) - 1))
-    if len(materials_by_segment) != len(points) - 1:
-        raise ValueError("road-strip materials must match the segment count")
+    if segment_materials is not None:
+        # Authored per-segment materials are expanded across subdivisions.
+        source_materials = list(segment_materials)
+        if len(source_materials) != len(source_widths) - 1:
+            raise ValueError("road-strip materials must match the segment count")
+        materials_by_segment = []
+        for material_index, count in enumerate(subdivision_counts):
+            materials_by_segment.extend([source_materials[material_index]] * count)
+    else:
+        materials_by_segment = [material] * (len(points) - 1)
     edges = []
     for a, b in zip(points, points[1:]):
         dx, dy = b[0] - a[0], b[1] - a[1]
@@ -2209,9 +2444,22 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
     verts = []
     for z_offset in (bottom_offset, top_offset):
         for point, offset in zip(points, offsets):
-            point_z = point[2] if len(point) > 2 else 0.0
-            verts.extend(((point[0] + offset[0], point[1] + offset[1], point_z + z_offset),
-                          (point[0] - offset[0], point[1] - offset[1], point_z + z_offset)))
+            # Sample both ribbon edges independently.  Sharing the highest
+            # cross-road sample kept the asphalt above ground but produced
+            # raised slab steps on steep terrain.  A two-metre longitudinal
+            # grid plus per-edge heights follows the hillside continuously.
+            left_x, left_y = point[0] + offset[0], point[1] + offset[1]
+            right_x, right_y = point[0] - offset[0], point[1] - offset[1]
+            if terrain_origin is not None:
+                left_z = max(point[2], terrain_height(
+                    left_x+terrain_origin[0], left_y+terrain_origin[1]))
+                right_z = max(point[2], terrain_height(
+                    right_x+terrain_origin[0], right_y+terrain_origin[1]))
+            else:
+                left_z = terrain_height(left_x, left_y) if terrain_conform else point[2]
+                right_z = terrain_height(right_x, right_y) if terrain_conform else point[2]
+            verts.extend(((left_x, left_y, left_z + z_offset),
+                          (right_x, right_y, right_z + z_offset)))
     n = len(points)
     faces = []
     face_materials = []
@@ -2241,6 +2489,31 @@ def _add_road_strip(world_col, name, points, material, width=ROAD,
     return obj
 
 
+def _add_terrain_disc_batch(collection, name, centers, radius, z_offset,
+                            material, sides=18):
+    """Terrain-following junction covers for seamless road connections."""
+    unique = sorted({(round(x, 4), round(y, 4)) for x, y in centers})
+    if not unique:
+        return None
+    vertices, faces = [], []
+    for cx, cy in unique:
+        start = len(vertices)
+        vertices.append((cx, cy, terrain_height(cx, cy)+z_offset))
+        for index in range(sides):
+            angle = math.tau*index/sides
+            x, y = cx+radius*math.cos(angle), cy+radius*math.sin(angle)
+            vertices.append((x, y, terrain_height(x, y)+z_offset))
+        for index in range(sides):
+            faces.append((start, start+1+index, start+1+(index+1)%sides))
+    mesh = bpy.data.meshes.new(name+"_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    return obj
+
+
 def _polyline_sample(points, distance):
     for a, b in zip(points, points[1:]):
         dx, dy = b[0] - a[0], b[1] - a[1]
@@ -2251,6 +2524,20 @@ def _polyline_sample(points, distance):
         distance -= length
     a, b = points[-2], points[-1]
     return b[0], b[1], math.atan2(b[1] - a[1], b[0] - a[0])
+
+
+def _offset_terrain_path(points, offset):
+    """Parallel path sampled from local polyline tangents on the terrain."""
+    result = []
+    for index, point in enumerate(points):
+        before = points[max(0, index-1)]
+        after = points[min(len(points)-1, index+1)]
+        dx, dy = after[0]-before[0], after[1]-before[1]
+        length = max(.001, math.hypot(dx, dy))
+        nx, ny = -dy/length, dx/length
+        x, y = point[0]+nx*offset, point[1]+ny*offset
+        result.append((x, y, terrain_height(x, y)))
+    return result
 
 
 def _polyline_surface_sample(points, distance):
@@ -2313,30 +2600,145 @@ def build_suburban_roads(world_col, buildings, m):
     active = max([b.get("plan_id", 0) for b in buildings] or [0])
     if not active:
         return
+    active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
+    active_house_points = [build_pos(b) for b in buildings
+                           if b.get("type") == "house" and b.get("plan_id")]
+    shoulder_mat = mat("FV_suburban_road_shoulder", (.24, .27, .25), .99)
+    lane_mat = mat("FV_suburban_lane_marking", (.61, .60, .47), 1.0)
+    path_mat = mat("FV_suburban_walking_path", (.52, .49, .42), .99)
+    junction_points = []
+    for district in sorted(active_districts):
+        connector = DISTRICT_CONNECTORS.get(district)
+        if not connector:
+            continue
+        points = [(x, y, terrain_height(x, y)) for x, y in connector]
+        junction_points.extend((x, y) for x, y, _z in points)
+        _add_road_strip(world_col, "district_connector_shoulder_" + district.lower().replace(" ", "_"),
+                        points, shoulder_mat, width=7.35, bottom_offset=.005,
+                        top_offset=.045, terrain_conform=True)
+        _add_road_strip(world_col, "district_connector_" + district.lower().replace(" ", "_"),
+                        points, m["road"], bottom_offset=.015,
+                        top_offset=.085, terrain_conform=True)
+        for side in (-1, 1):
+            path = _offset_terrain_path(points, side*4.45)
+            _add_road_strip(world_col, "district_path_" + district.lower().replace(" ", "_") + str(side),
+                            path, path_mat, width=1.25, bottom_offset=.005,
+                            top_offset=.035, terrain_conform=True)
     by_street = {}
     for segment in SUBURBAN_PLAN["roads"]:
         if segment["reveal_at"] <= active:
             by_street.setdefault(segment["street_index"], []).append(segment)
     for street_index, segments in by_street.items():
-        points = [segments[0]["a"]] + [segment["b"] for segment in segments]
-        _add_road_strip(world_col, "suburban_road_%02d" % street_index, points, m["road"])
+        district = segments[0].get("district")
+        source_points = [segments[0]["a"]] + [segment["b"] for segment in segments]
+        flat_points = [transform_point(point[0], point[1], district=district)
+                       for point in source_points]
+        points = [(point[0], point[1], terrain_height(point[0], point[1]))
+                  for point in flat_points]
+        junction_points.extend(flat_points)
+        _add_road_strip(world_col, "suburban_shoulder_%02d" % street_index, points,
+                        shoulder_mat, width=7.35, bottom_offset=.005,
+                        top_offset=.045, terrain_conform=True)
+        _add_road_strip(world_col, "suburban_road_%02d" % street_index, points,
+                        m["road"], bottom_offset=.015,
+                        top_offset=.085, terrain_conform=True)
+        path = _offset_terrain_path(points, 4.35 if street_index%2==0 else -4.35)
+        _add_road_strip(world_col, "suburban_path_%02d" % street_index, path,
+                        path_mat, width=1.18, bottom_offset=.005,
+                        top_offset=.035, terrain_conform=True)
         # Match the established grid/ring roads: centered pale lane dashes at
         # the same eight-metre rhythm, following the curve tangent.
         total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
                     for a, b in zip(points, points[1:]))
-        distance = 4.0
+        distance = 5.0
         while distance < total - 2.0:
             x, y, angle = _polyline_sample(points, distance)
-            dash = add_box(world_col, "suburban_dash", 2.6, .45, .04,
-                           x, y, .195, m["dash"])
+            dash = add_box(world_col, "suburban_dash", 1.65, .16, .018,
+                           x, y, terrain_height(x, y)+.095, lane_mat)
             dash.rotation_euler.z = angle
-            distance += 8.0
+            distance += 10.0
+        light_distance = 18.0
+        light_index = 0
+        while light_distance < total-8.0:
+            lx, ly, angle = _polyline_sample(points, light_distance)
+            side = 1 if (light_index+street_index)%2==0 else -1
+            nx, ny = -math.sin(angle)*side, math.cos(angle)*side
+            lx, ly = lx+nx*4.55, ly+ny*4.55
+            if any(math.hypot(lx-hx, ly-hy) < 5.4 for hx,hy in active_house_points):
+                light_distance += 34.0
+                light_index += 1
+                continue
+            lamp_data = {"type":"streetlight","gx":0,"gy":0,
+                         "seed":17000+street_index*97+light_index}
+            lamp = place_instance(world_col, lamp_data, "suburban_light")
+            lamp.location = (lx, ly, terrain_height(lx, ly))
+            lamp.rotation_euler = (0, 0, angle)
+            light_distance += 34.0
+            light_index += 1
+    # Rounded, terrain-following covers turn independent road ribbons into one
+    # visually continuous network at bends and junctions. The one-centimetre
+    # lift over each ribbon prevents depth fighting without a visible step.
+    _add_terrain_disc_batch(world_col, "suburban_junction_shoulders",
+                            junction_points, 3.72, .052, shoulder_mat, 20)
+    _add_terrain_disc_batch(world_col, "suburban_junction_surfaces",
+                            junction_points, 3.12, .095, m["road"], 20)
     for bulb in SUBURBAN_PLAN["turnarounds"]:
         if bulb["reveal_at"] <= active:
             # Road boxes top out at z=.19. Put the solid turnaround just above
             # that surface so overlapping faces never depth-fight.
-            _add_ellipse_pad(world_col, "culdesac", bulb["center"][0], bulb["center"][1],
-                             8.2, 8.2, .012, .186, m["road"], 32)
+            bulb_x, bulb_y = transform_point(bulb["center"][0], bulb["center"][1],
+                                             district=bulb.get("district"))
+            bulb_obj = _add_ellipse_pad(world_col, "culdesac", bulb_x, bulb_y,
+                                        8.2, 8.2, .012, .083, m["road"], 32)
+            bulb_obj.location.z = terrain_height(bulb_x, bulb_y)
+
+
+def build_hillside_foundations(world_col, buildings):
+    """Give every revealed winding-road home a level, retained house pad.
+
+    Buildings remain architecturally level, as real houses do, while the
+    stone foundation absorbs the terrain difference instead of leaving the
+    downhill edge floating or letting the uphill slope cut through the home.
+    """
+    wall = mat("FV_hillside_foundation", (.31, .30, .28), .97)
+    cap = mat("FV_hillside_pad", (.34, .53, .27), .99)
+    wall_boxes, cap_boxes = [], []
+    for b in buildings:
+        if b.get("type") != "house" or not b.get("plan_id"):
+            continue
+        x, y = build_pos(b)
+        rotation = b.get("rot", 0.0)
+        low, top = hillside_pad_levels(x, y, rotation)
+        bottom = low - .30
+        wall_boxes.append((x,y,bottom,8.65,9.25,top-bottom,rotation))
+        # Let the pad overlap the first four centimetres of the house base.
+        # Coplanar pad/foundation faces previously competed in the depth buffer
+        # and flickered as the player moved.
+        cap_boxes.append((x,y,top-.14,8.85,9.45,.18,rotation))
+    _add_rotated_box_batch(world_col,"hillside_foundations",wall_boxes,wall)
+    _add_rotated_box_batch(world_col,"hillside_pads",cap_boxes,cap)
+
+
+def _add_rotated_box_batch(collection, name, boxes, material):
+    """Export many oriented solids as one mesh without losing placement."""
+    if not boxes:
+        return None
+    vertices,faces=[],[]
+    for x,y,z,width,depth,height,rotation in boxes:
+        start=len(vertices);hw,hd=width/2,depth/2
+        c,s=math.cos(rotation),math.sin(rotation)
+        def point(lx,ly,lz):
+            return (x+lx*c-ly*s,y+lx*s+ly*c,z+lz)
+        vertices.extend((point(-hw,-hd,0),point(hw,-hd,0),point(hw,hd,0),point(-hw,hd,0),
+                         point(-hw,-hd,height),point(hw,-hd,height),
+                         point(hw,hd,height),point(-hw,hd,height)))
+        faces.extend(((start,start+1,start+2,start+3),(start+4,start+7,start+6,start+5),
+                      (start,start+4,start+5,start+1),(start+1,start+5,start+6,start+2),
+                      (start+2,start+6,start+7,start+3),(start+3,start+7,start+4,start)))
+    mesh=bpy.data.meshes.new(name+"_mesh");mesh.from_pydata(vertices,[],faces)
+    mesh.materials.append(material);mesh.update()
+    obj=bpy.data.objects.new(name,mesh);collection.objects.link(obj)
+    return obj
 
 
 def _add_ellipse_ring_pad(col, name, rx_outer, ry_outer, rx_inner, ry_inner,
@@ -2911,21 +3313,22 @@ def _build_storybook_street_asset(col):
     # Wind around the north side of Founder Park, then rise naturally through
     # the hill shoulder. The centerline is fully continuous with shared road
     # vertices, so bends cannot open into gaps.
-    cx, cy = STORYBOOK_CENTER
-    absolute_access = [(69, 33, 0.0), (92, 56, .02), (126, 72, .02),
-                       (168, 74, .03), (201, 72, .05), (205, 71, .28),
-                       (208, 70, .80), (211, 69, 1.55), (213, 68, 2.30),
-                       (215, 68, 2.62), (219, 67, 2.74),
-                       (229, 65, 2.74), (239, 60, 2.74)]
+    cx, cy = STORYBOOK_LAYOUT_CENTER
+    absolute_access = [(87, 33, 0.0), (112, 56, .02), (149, 72, .02),
+                       (198, 74, .03), (236, 72, .05), (240, 71, .28),
+                       (243, 70, .80), (246, 69, 1.55), (248, 68, 2.30),
+                       (250, 68, 2.62), (254, 67, 2.74),
+                       (264, 65, 2.74), (274, 60, 2.74)]
     access = [(x-cx, y-cy, z) for x, y, z in absolute_access]
     # The access starts as the established asphalt at the existing grid
     # intersection, widens gradually, then transitions into the feature-road
     # color. This avoids laying a bright diagonal slab across the old road.
     access_widths = [6.0, 6.3, 6.7] + [7.0] * (len(access) - 3)
     access_materials = [m["road"], transition] + [road] * (len(access) - 3)
-    _add_road_strip(col, "storybook_access", access, road, 7.0, .01, .18,
+    _add_road_strip(col, "storybook_access", access, road, 7.0, .015, .085,
                     widths=access_widths,
-                    segment_materials=access_materials)
+                    segment_materials=access_materials,
+                    terrain_origin=(cx, cy))
 
     # Main road and its raised golden curbs are solid rings at distinct
     # elevations; they remain stable in long-lens aerial renders.
@@ -2961,7 +3364,7 @@ def _build_storybook_street_asset(col):
                 continue
             dash_material = m["dash"] if segment_index == 0 else dash
             _add_road_surface_dash(col, "storybook_access_dash", access,
-                                   dash_distance, 2.15, .40, .181, .022,
+                                   dash_distance, 2.15, .40, .096, .015,
                                    dash_material)
             break
         dash_distance += 8.0
@@ -3035,7 +3438,7 @@ def build_storybook_street(world_col, buildings):
     empty = bpy.data.objects.new("kaleidoscope_crest_street", None)
     empty.instance_type = "COLLECTION"
     empty.instance_collection = asset
-    empty.location = (STORYBOOK_CENTER[0], STORYBOOK_CENTER[1], 0)
+    empty.location = (STORYBOOK_LAYOUT_CENTER[0], STORYBOOK_LAYOUT_CENTER[1], 0)
     world_col.objects.link(empty)
     return empty
 
@@ -3043,6 +3446,7 @@ def animate_ring_traffic(world_col, buildings, frame_end):
     """A couple of cars slowly loop each park district's ring roads."""
     for d in [b for b in buildings if b["type"] == "parkdistrict"]:
         rng = random.Random(6000 + d["seed"])
+        district_x, district_y = transform_building_point(d)
         for rr in (20.5, 40.5):
             if rng.random() < 0.2:
                 continue
@@ -3058,7 +3462,7 @@ def animate_ring_traffic(world_col, buildings, frame_end):
             for wp in range(wps + 1):
                 fr = 1 + (frame_end - 1) * wp / wps
                 a = a0 + spin * arc * wp / wps
-                e.location = (d["px"] + r * math.cos(a), d["py"] + r * math.sin(a), 0.17)
+                e.location = (district_x + r * math.cos(a), district_y + r * math.sin(a), 0.17)
                 e.rotation_euler = (0, 0, a + spin * math.pi / 2)
                 e.keyframe_insert("location", frame=fr)
                 e.keyframe_insert("rotation_euler", frame=fr)
@@ -3073,13 +3477,20 @@ def scatter_nature(world_col, occupied, buildings):
     suburban roads and house lots become active."""
     min_bx, max_bx, min_by, max_by = block_extent(buildings)
     active_plan_id = max((b.get("plan_id", 0) for b in buildings), default=0)
-    active_segments = [(seg["a"], seg["b"])
+    active_segments = [(transform_point(seg["a"][0], seg["a"][1], district=seg.get("district")),
+                        transform_point(seg["b"][0], seg["b"][1], district=seg.get("district")))
                        for seg in SUBURBAN_PLAN.get("roads", [])
                        if seg.get("reveal_at", 10**9) <= active_plan_id]
-    active_bulbs = [bulb["center"] for bulb in SUBURBAN_PLAN.get("turnarounds", [])
+    active_bulbs = [transform_point(bulb["center"][0], bulb["center"][1],
+                                    district=bulb.get("district"))
+                    for bulb in SUBURBAN_PLAN.get("turnarounds", [])
                     if bulb.get("reveal_at", 10**9) <= active_plan_id]
-    active_house_points = [(b["px"], b["py"]) for b in buildings
+    active_house_points = [transform_building_point(b) for b in buildings
                            if b.get("plan_id") and "px" in b and "py" in b]
+    active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
+    active_segments.extend((a, b) for district in active_districts
+                           for a, b in zip(DISTRICT_CONNECTORS.get(district, ()),
+                                           DISTRICT_CONNECTORS.get(district, ())[1:]))
 
     def distance_to_segment(point, a, b):
         dx, dy = b[0] - a[0], b[1] - a[1]
@@ -3237,8 +3648,8 @@ def build_fireworks(world_col, cx, cy, frame_end):
 # ═══════════════════════ TIME OF DAY / SEASONS (mood) ═══════════════════════════
 
 TODS = {
-    "day":    dict(sun_e=2.6, sun_c=(1.00, 0.95, 0.86), sun_rot=(50, 0, 120),
-                   sky=(0.62, 0.80, 0.92), sky_s=1.3, win=0.0, lamp=0.0),
+    "day":    dict(sun_e=2.0, sun_c=(1.00, 0.95, 0.86), sun_rot=(50, 0, 120),
+                   sky=(0.54, 0.72, 0.86), sky_s=.72, win=0.0, lamp=0.0),
     "sunset": dict(sun_e=2.3, sun_c=(1.00, 0.52, 0.28), sun_rot=(78, 0, 100),
                    sky=(0.93, 0.60, 0.42), sky_s=1.0, win=3.0, lamp=5.0),
     "night":  dict(sun_e=0.30, sun_c=(0.55, 0.65, 1.00), sun_rot=(55, 0, 140),
@@ -3587,7 +3998,77 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # ground
     add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
 
-    if cam == "housefront":
+    if cam == "downtownstreet":
+        # Eye-level audit of the expanded pedestrian realm. This deliberately
+        # looks along a full block face so curb height, clear walking width,
+        # furniture placement, storefront setback and lighting cadence are
+        # all visible in one approval frame.
+        aim = bpy.data.objects.new("DowntownStreetAim", None)
+        aim.location = (-3.0, 39.0, 3.05)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("DowntownStreetCamera")
+        cam_data.lens = 31
+        cam_data.dof.use_dof = False
+        cam_data.clip_start = .25
+        cam_data.clip_end = 1200.0
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        cam_obj.location = (-3.0, 1.5, 2.18)
+        cam_obj.keyframe_insert("location", frame=1)
+        cam_obj.location = (-3.0, 5.5, 2.18)
+        cam_obj.keyframe_insert("location", frame=frame_end)
+        bpy.context.scene.camera = cam_obj
+    elif cam == "storefront":
+        # Approval camera for real first-floor depth: directly faces a legacy
+        # downtown home from across the street and keeps door, glazing,
+        # displays, ceiling lights, sidewalk and upper façade in one frame.
+        aim = bpy.data.objects.new("StorefrontAim", None)
+        aim.location = (19.5, -12.5, 1.75)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("StorefrontCamera")
+        cam_data.lens = 38
+        cam_data.dof.use_dof = False
+        cam_data.clip_start = .18
+        cam_data.clip_end = 800.0
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        cam_obj.location = (19.5, -5.0, 2.08)
+        bpy.context.scene.camera = cam_obj
+    elif cam == "downtown":
+        # Dedicated approval camera for the experimental city redesign: a
+        # close oblique helicopter view that reads building massing, streets,
+        # sidewalks, and the first terrain transition in one frame.
+        aim = bpy.data.objects.new("DowntownAim", None)
+        aim.location = (-3.0, -3.0, 13.0)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("DowntownCamera")
+        cam_data.lens = 42
+        cam_data.dof.use_dof = False
+        cam_data.clip_start = 1.0
+        cam_data.clip_end = 2500.0
+        cam_obj = bpy.data.objects.new("Camera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        cam_obj.location = (108.0, -128.0, 86.0)
+        cam_obj.keyframe_insert("location", frame=1)
+        cam_obj.location = (96.0, -116.0, 78.0)
+        cam_obj.keyframe_insert("location", frame=frame_end)
+        for fc in obj_fcurves(cam_obj):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "housefront":
         # Landing-page loop: stand on the opposite sidewalk and look across
         # the road at a representative house from the newest developed street.
         # Two temporary cars pass between the lens and house; none of this is
@@ -3607,6 +4088,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         subject = street_houses[len(street_houses) // 2]
         hx, hy = build_pos(subject)
         rot = subject.get("rot", 0.0)
+        house_z = hillside_pad_levels(hx, hy, rot)[1]
         # House assets face local -Y; planned-house rot points that front at
         # the road. Local +X therefore supplies the road tangent.
         front = Vector((math.sin(rot), -math.cos(rot), 0))
@@ -3615,7 +4097,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         aim = bpy.data.objects.new("HouseFrontAim", None)
         # Keep the full facade and a strip of road in the portrait frame. A
         # lower aim avoids wasting the upper half of the reel on empty sky.
-        aim.location = (hx, hy, 2.2)
+        aim.location = (hx, hy, house_z + 2.2)
         world_col.objects.link(aim)
         cam_data = bpy.data.cameras.new("HouseFrontCam")
         cam_data.lens = 27
@@ -3626,7 +4108,9 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         tr.target = aim
         tr.track_axis = "TRACK_NEGATIVE_Z"
         tr.up_axis = "UP_Y"
-        across = Vector((hx, hy, 1.65)) + front * 13.0
+        across_xy = Vector((hx, hy, 0)) + front * 13.0
+        across = Vector((across_xy.x, across_xy.y,
+                         terrain_height(across_xy.x, across_xy.y) + 1.82))
         cam_obj.location = across - tangent * 0.6
         cam_obj.keyframe_insert("location", frame=1)
         cam_obj.location = across + tangent * 0.6
@@ -3638,7 +4122,9 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
 
-        road_center = Vector((hx, hy, .05)) + front * 8.5
+        road_xy = Vector((hx, hy, 0)) + front * 8.5
+        road_center = Vector((road_xy.x, road_xy.y,
+                              terrain_height(road_xy.x, road_xy.y) + .19))
         for i, (direction, lane_offset) in enumerate(((1, -1.25), (-1, -0.45))):
             car_data = {"type": "car", "gx": 0, "gy": 0,
                         "seed": 9100 + subject.get("seed", 0) + i}
@@ -3650,6 +4136,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             lane_center = road_center + front * lane_offset
             start = lane_center - tangent * (32.0 * direction)
             finish = lane_center + tangent * (32.0 * direction)
+            start.z = terrain_height(start.x, start.y) + .20
+            finish.z = terrain_height(finish.x, finish.y) + .20
             car.location = start
             car.rotation_euler = (0, 0, math.atan2(tangent.y, tangent.x) +
                                   (0 if direction > 0 else math.pi))
@@ -3669,10 +4157,10 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # built for the entire clip.
         if not any(b.get("feature_id") == STORYBOOK_FEATURE_ID for b in buildings):
             raise RuntimeError("storybookstreet camera needs Kaleidoscope Crest homes")
-        route = [(201.0, 72.0, .05), (205.0, 71.0, .28),
-                 (211.0, 69.0, 1.55), (215.0, 68.0, 2.62),
-                 (229.0, 65.0, 2.74), (239.0, 60.0, 2.98)]
-        cx_story, cy_story = STORYBOOK_CENTER
+        route = [(236.0, 72.0, .05), (240.0, 71.0, .28),
+                 (246.0, 69.0, 1.55), (250.0, 68.0, 2.62),
+                 (264.0, 65.0, 2.74), (274.0, 60.0, 2.98)]
+        cx_story, cy_story = STORYBOOK_LAYOUT_CENTER
         for i in range(11):
             angle = math.pi + math.pi * .92 * i / 10.0
             route.append((cx_story + 31.0 * math.cos(angle),
@@ -3739,7 +4227,9 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                          and seg.get("reveal_at", 10**9) <= built_plan_id]
         if not road_segments:
             raise RuntimeError("newstreet camera found no revealed road for %s" % street_name)
-        road_points = [road_segments[0]["a"]] + [seg["b"] for seg in road_segments]
+        source_road_points = [road_segments[0]["a"]] + [seg["b"] for seg in road_segments]
+        road_points = [transform_point(x, y, district=district_name)
+                       for x, y in source_road_points]
         start_i = 0
         # Stop before the final turnaround. Keeping five road samples ahead
         # gives the portrait camera enough depth to see facades on both sides
@@ -3776,8 +4266,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             frame = 1 + int(round((frame_end - 1) * frac))
             px, py = road_points[idx]
             ax, ay = road_points[aim_idx]
-            cam_obj.location = (px, py, 3.0)
-            aim.location = (ax, ay, 2.3)
+            cam_obj.location = (px, py, terrain_height(px, py) + 1.90)
+            aim.location = (ax, ay, terrain_height(ax, ay) + 1.72)
             cam_obj.keyframe_insert("location", frame=frame)
             aim.keyframe_insert("location", frame=frame)
         for obj in (cam_obj, aim):
@@ -3980,12 +4470,16 @@ def setup_render(state, frame_end, tag=None):
             setattr(sc.eevee, attr, val)
         except Exception:
             pass
-    for vt in ("Standard", "Filmic", "AgX"):  # Standard keeps pastels vivid
+    for vt in ("AgX", "Filmic", "Standard"):
         try:
             sc.view_settings.view_transform = vt
             break
         except Exception:
             pass
+    try:
+        sc.view_settings.look = "AgX - Medium High Contrast"
+    except Exception:
+        pass
     base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")
     name = "day_%03d_" % state["day"] + ((tag + "_") if tag else "")
     sc.render.filepath = os.path.join(base, "renders", name)
@@ -4272,9 +4766,20 @@ def main(cfg=None):
     keep = [b for b in state["buildings"] if id(b) not in rem_ids]
     build_roads(world_col, keep or state["buildings"], m)
     build_district_roads(world_col, keep or state["buildings"], m)
-    build_suburban_terrain(world_col, m)
+    # The redesign supplies one continuous walkable terrain mesh. The older
+    # decorative mound pass is intentionally omitted to avoid intersecting
+    # houses and roads with scenery that has no shared elevation model.
     build_suburban_roads(world_col, keep or state["buildings"], m)
+    build_hillside_foundations(world_col, keep or state["buildings"])
     build_storybook_street(world_col, keep or state["buildings"])
+    # Isolated, state-free public-realm layer. The module owns no houses,
+    # roads, claims, addresses, or browser loading behavior, making this hook
+    # easy to adapt after the district-streaming exporter lands.
+    build_downtown_visuals(
+        world_col, keep or state["buildings"], occupied,
+        {"block_extent": block_extent(keep or state["buildings"]),
+         "block_n": BLOCK_N, "lot": LOT, "road": ROAD, "pitch": PITCH},
+        render_mode=cfg.get("cam"))
     scatter_nature(world_col, occupied, keep or state["buildings"])
 
     # animation timing: sinks first, then rises
@@ -4283,7 +4788,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead"):
+    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
