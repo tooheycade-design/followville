@@ -1078,11 +1078,14 @@ def build_urban_townhouse(col, variant):
     # All storefront surfaces share one exterior plane.  The earlier version
     # placed glass, door and trim at four different Y offsets, so oblique views
     # made the panes look pasted onto the building.
-    front_y=-depth/2-.04
+    # Recess the storefront into the real ground-floor shell plane so the
+    # glazing reads as architecture, not a glass box pasted to the facade.
+    facade_plane_y=.25-depth/2
     facade_depth=.12
-    outer_y=front_y-facade_depth/2
+    front_y=facade_plane_y+facade_depth/2
+    outer_y=facade_plane_y
     glass_depth=.035
-    glass_y=outer_y+glass_depth/2
+    glass_y=facade_plane_y+glass_depth/2
     add_box(col,"storefront_base",width+.12,facade_depth,.30,0,front_y,.18,frame)
     add_box(col,"storefront_lintel",width+.12,facade_depth,.34,0,front_y,2.62,frame)
     add_box(col,"storefront_left_pier",.46,facade_depth,2.44,-width/2+.23,front_y,.48,frame)

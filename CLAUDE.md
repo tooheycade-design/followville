@@ -27,6 +27,20 @@ automatically use the compatible path. The offline review server requires
 `'wasm-unsafe-eval'` only for the local Draco decoder and makes no production
 security change. Read `DOWNTOWN_TERRAIN_HANDOFF.md` before changing this work.
 
+## Camera, streaming, labels, storefront, and chat finish pass (2026-07-18)
+
+The third-person camera can pitch nearly straight up or down and ignores
+walkable ground in its obstruction ray, so it stays attached and shortens
+toward the avatar instead of getting caught. District details now unload past
+112m after loading at 70m, with their low-detail silhouettes restored. Claim
+labels and the active claim marker use the actual loaded GLB roof height,
+including tall and `storybookhouse` models. Downtown shop glass is authored
+flush with the ground-floor facade. Town chat keeps recent messages in a
+compact top-left walking feed; opening it exposes the existing composer and
+history. Preserve the 70m/112m hysteresis and `data-claim-tag-roof-clearance`
+regression when changing these systems. This pass changed no canonical state,
+population, claims, owners, addresses, or Supabase data.
+
 ## Avatar System v1 (released 2026-07-17)
 
 The website has third-person Avatar System v1 with the full-screen Neighborhood

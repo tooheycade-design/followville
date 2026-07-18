@@ -29,11 +29,27 @@ browser-only facade overlays, procedural material shaders, and dynamic shadows
 are available only through `?graphics=ultra`. The local preview CSP was fixed
 to allow Draco WebAssembly decoding locally.
 
-Status: completed local Day 15 design branch; not committed, pushed, or published.
+## 2026-07-18 production follow-up
 
-Base commit: `fa73b14` (`Simplify town pause menu`)
+The integrated Day 16 geometry received one focused correction before the
+next growth run: ground-floor storefront glass and the decorative tower podium
+glass were moved inward so their exterior faces sit flush with their facades.
+The complete GLB, streamed base, affected original-town chunk, and manifest
+were regenerated in replay mode from the authoritative iCloud Blend. The web
+side now unloads detailed districts beyond 112m after loading at 70m, measures
+claim labels from real roof bounds, supports near-vertical camera pitch without
+ground obstruction, and keeps persistent chat in a top-left walking feed.
+`world_state.json`, Day 16 / 272 / 275, addresses, claims, owners, and Supabase
+were unchanged.
 
-Local branch: `codex/downtown-terrain-concept`
+Historical package status (superseded): Zach's source package originated as an
+unpublished Day 15 design branch. It has since been integrated, rebuilt against
+Day 16, and published through the normal repository workflow. Do not deploy the
+package's old binary or use its branch as current state.
+
+Original package base: `fa73b14` (`Simplify town pause menu`)
+
+Original package branch: `codex/downtown-terrain-concept`
 
 Latest authoritative main observed during handoff: `5515226`
 (`Keep little avatars and correct player controls`), Day 16 / population 272 /

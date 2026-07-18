@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1164736,
+    "bytes": 1164472,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "11d8c952f5486e9faac1dcba571761a9403f73778ead20e5448ef4dd1ba41991"
+    "sha256": "c0f763ec35aba6e64d41922c2a252b83ae9088924b70cbe056226bafb3d889ce"
   },
   "chunks": [
     {
@@ -285,10 +285,10 @@
     },
     {
       "asset": {
-        "bytes": 656680,
+        "bytes": 656628,
         "compression": "draco",
         "file": "town_chunks/original-town.glb",
-        "sha256": "5ec0de864183ab3221201dd64b820d832362c1192e666a77964cc8a4330ed77f"
+        "sha256": "ccf5c8ef63dc6602421ac094e04c4a8bc79916ca9bae19b9ab19954d1d3e4142"
       },
       "bounds": {
         "center": [
@@ -687,9 +687,9 @@
     }
   ],
   "fallback": {
-    "bytes": 15659700,
+    "bytes": 15654536,
     "file": "town.glb",
-    "sha256": "63dcf3a15dd01bee9c45dc5a5894c1a066a5d324ab28e2142b3b8ddadccec94b"
+    "sha256": "8e1ce349b98119b31b16b82b16df92f6a54b4eb7589af5c6b5410281fbf75000"
   },
   "state": {
     "building_count": 275,
@@ -699,6 +699,7 @@
   },
   "streaming": {
     "detail_load_distance": 70,
+    "detail_unload_distance": 112,
     "lod": "simple-houses"
   },
   "version": 1,

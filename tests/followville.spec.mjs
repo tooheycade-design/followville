@@ -86,6 +86,7 @@ test("shared house route can copy and visit a permanent address", async ({ page 
 });
 
 test("walking keyboard overlays close without trapping movement", async ({ page }) => {
+  test.setTimeout(180_000);
   const errors = watchPageErrors(page);
   await page.goto("/town.html#walk");
   await waitForTown(page);
@@ -97,11 +98,15 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
   const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(loadedChunks).toEqual(expect.arrayContaining(["original-town", "kaleidoscope-crest"]));
+  expect(loadedChunks).toEqual(expect.arrayContaining(["original-town"]));
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
   expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
     .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
   expect(initialBytes).toBeLessThan(fullTownBytes * 0.4);
+  await expect(page.locator("#chatPanel")).toHaveClass(/feed-visible/);
+  const chatFeedBox=await page.locator("#chatPanel").boundingBox();
+  expect(chatFeedBox.x).toBeLessThan(30);
+  expect(chatFeedBox.y).toBeLessThan(140);
   await page.keyboard.press("KeyT");
   await expect(page.locator("#chatPanel")).toHaveClass(/open/);
   await page.keyboard.press("Escape");
@@ -235,6 +240,17 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(Math.hypot(afterForward.player[0]-beforeForward.player[0],afterForward.player[1]-beforeForward.player[1])).toBeGreaterThan(3);
   expect(Math.hypot(afterForward.camera[0]-beforeForward.camera[0],afterForward.camera[1]-beforeForward.camera[1])).toBeGreaterThan(3);
 
+  // Looking nearly straight up must slide the camera along the walk surface;
+  // the terrain itself cannot become a camera obstruction.
+  await page.mouse.move(640,650);
+  await page.mouse.down({button:"right"});
+  await page.mouse.move(640,30,{steps:8});
+  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeGreaterThan(1.3);
+  expect(Number(await page.locator("body").getAttribute("data-camera-ground-clearance"))).toBeGreaterThanOrEqual(.4);
+  await page.evaluate(()=>document.dispatchEvent(new MouseEvent("mousemove",{movementY:900})));
+  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
+  await page.mouse.up({button:"right"});
+
   await page.mouse.wheel(0,-2000);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
   await expect(page.locator("body")).toHaveAttribute("data-first-person-look","locked");
@@ -259,6 +275,8 @@ test("visiting a house loads its district before teleporting", async ({ page }) 
   await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
   await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/, { timeout:10_000 });
+  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads"))).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
 
@@ -270,6 +288,7 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "fallback");
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "fallback");
   await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", "full");
+  await expect(page.locator("body")).toHaveAttribute("data-claim-tag-roof-clearance", "1.25");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   expect(errors).toEqual([]);

@@ -67,6 +67,19 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-18 web/city finish pass (Cade via Windows Codex): third-person
+  camera pitch now reaches near-vertical views in both directions without the
+  ground acting like an occluding wall; the camera shortens along the ground
+  instead of losing the player. Claimed-home labels and the active claim marker
+  are measured from each loaded building's real GLB roof, including tall
+  founder and Kaleidoscope Crest homes. Downtown ground-floor storefront glass
+  is flush with its facade. Detailed district chunks load within 70m and unload
+  beyond 112m, restoring their lightweight silhouettes so long exploration
+  does not retain the whole town. Persistent town messages now remain visible
+  as a compact top-left feed while walking. Full/streamed GLB validation and
+  focused desktop/fallback/teleport browser flows passed. Day 16 / population
+  272 / 275 buildings, `world_state.json`, addresses, claims, ownership, and
+  Supabase data did not change.
 - Day 16, population 272, 275 buildings (grown 2026-07-17 via Cade's
   Windows Codex: +13 ordinary claimable homes). Seed 263 completed Willow
   Hills at Overlook Circle planned address 116; seeds 264-275 opened Twin

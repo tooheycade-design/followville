@@ -125,6 +125,11 @@ def check_stream_manifest(root, state, fallback_path):
     load_distance = (manifest.get("streaming") or {}).get("detail_load_distance")
     if not isinstance(load_distance, (int, float)) or not 25 <= load_distance <= 250:
         problems.append("manifest streaming.detail_load_distance is missing or unsafe")
+    unload_distance = (manifest.get("streaming") or {}).get("detail_unload_distance")
+    if (not isinstance(load_distance, (int, float)) or
+            not isinstance(unload_distance, (int, float)) or
+            not load_distance < unload_distance <= 400):
+        problems.append("manifest streaming.detail_unload_distance is missing or unsafe")
     if manifest.get("walk_surfaces") != walk_surface_manifest(state):
         problems.append("manifest walk surfaces are missing or stale for world_state.json")
 

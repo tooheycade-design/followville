@@ -359,6 +359,7 @@ def export_web_glb():
         "chunks": chunk_records,
         "streaming": {
             "detail_load_distance": 70,
+            "detail_unload_distance": 112,
             "lod": "simple-houses",
         },
         "walk_surfaces": walk_surface_manifest(state),

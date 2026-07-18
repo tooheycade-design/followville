@@ -384,10 +384,10 @@ def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
             # Transparent podium glazing and dark transoms make the bottom of
             # each tower read as occupied lobby/retail instead of a blank box.
             for lane in (-.29,0,.29):
-                masses[podium_glass].extend(((cx+lane*width,cy-(depth+1.8)/2-.035,.68,width*.20,.09,2.55),
-                                             (cx+lane*width,cy+(depth+1.8)/2+.035,.68,width*.20,.09,2.55)))
-            masses[frame].extend(((cx,cy-(depth+1.8)/2-.07,3.25,width+1.25,.12,.18),
-                                  (cx,cy+(depth+1.8)/2+.07,3.25,width+1.25,.12,.18)))
+                masses[podium_glass].extend(((cx+lane*width,cy-(depth+1.8)/2+.045,.68,width*.20,.09,2.55),
+                                             (cx+lane*width,cy+(depth+1.8)/2-.045,.68,width*.20,.09,2.55)))
+            masses[frame].extend(((cx,cy-(depth+1.8)/2+.06,3.25,width+1.25,.12,.18),
+                                  (cx,cy+(depth+1.8)/2-.06,3.25,width+1.25,.12,.18)))
             # Strong masonry piers give the glass tower believable structure.
             pier=.42
             for sx in (-1,1):

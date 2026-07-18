@@ -3,6 +3,25 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Camera, reversible streaming, roof labels, storefronts, and chat (2026-07-18)
+- Expanded third-person pitch to near-vertical up/down views and excluded
+  walkable ground/roads from the obstruction ray. The collision-safe camera
+  now shortens toward the avatar along the ground instead of becoming stuck.
+- Added reversible district detail streaming: 70m loads full geometry, 112m
+  unloads and disposes it, and the existing lightweight silhouettes return.
+  Map/home teleports still await their required district, and unloaded chunks
+  can be reloaded normally.
+- Replaced type-based claim-label placement with actual loaded GLB roof bounds
+  plus 1.25m clearance. This covers tall founder buildings and Kaleidoscope
+  Crest storybook homes; fallback/full-town QA asserts the clearance.
+- Moved ground-floor downtown glazing and decorative podium glazing inward so
+  the exterior glass face is flush with the building facade.
+- Kept recent persistent town chat visible as a compact translucent top-left
+  walking feed; opening it reveals the existing composer, times, and history.
+- Rebuilt the complete GLB, streamed base, affected original-town chunk, and
+  manifest in replay mode. Day 16 / 272 / 275, `world_state.json`, addresses,
+  claims, owners, and Supabase data are unchanged.
+
 ## Downtown terrain + balanced streaming presentation (2026-07-17)
 - Integrated the approved thirteen-metre downtown layout and rebuilt full plus
   six-district streamed GLBs from the current Day 16 authoritative scene.

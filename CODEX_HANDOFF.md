@@ -1,6 +1,6 @@
 # Codex handoff -- current through Day 16
 
-Updated 2026-07-17 for Cade's next Claude/Codex session.
+Updated 2026-07-18 for Cade's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,19 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- The latest finish pass corrects five connected play-quality issues without
+  changing canon. Third-person pitch reaches near-vertical views and ground no
+  longer traps the follow camera. Loaded district detail uses 70m/112m
+  load/unload hysteresis and returns to lightweight silhouettes when distant.
+  Claimed-home and active-claim labels measure the real GLB roof, including
+  tall founder and Kaleidoscope Crest homes. Ground-floor downtown storefront
+  glass is flush with its facade. Recent persistent chat remains visible as a
+  compact top-left walking feed, while the existing composer opens on demand.
+  The rebuilt full GLB, base, affected original-town chunk, and manifest passed
+  state/hash/coverage validation; focused camera, fallback, and remote-district
+  browser flows passed. Day 16 / 272 / 275, addresses, all claims/owners,
+  `world_state.json`, and Supabase are unchanged.
 
 - Zach's downtown/terrain design package is integrated on Day 16 without a
   growth run. Downtown lots are thirteen metres wide and now have authored

@@ -24,6 +24,15 @@ edges, procedural shaders, and dynamic shadows. Day 16 / population 272 / 275
 buildings, addresses 1-128, claims, owners, Supabase, and `world_state.json`
 were preserved. Read `DOWNTOWN_TERRAIN_HANDOFF.md` before modifying this area.
 
+The 2026-07-18 finish pass keeps the avatar in frame while looking nearly
+straight up/down, excludes walkable ground from camera obstruction, unloads
+detailed districts after 112m (70m load threshold), measures house/claim labels
+from actual GLB roof bounds, makes downtown storefront glazing flush, and
+shows recent persistent chat in a compact top-left walking feed. Keep the
+load/unload hysteresis and full-fallback label-clearance browser regression.
+The town was rebuilt in replay mode only; Day 16 / 272 / 275, addresses,
+claims, owners, `world_state.json`, and Supabase did not change.
+
 ## Current town (Day 16, 2026-07-17)
 
 Population is 272 with 275 buildings. Day 16 added 13 ordinary claimable

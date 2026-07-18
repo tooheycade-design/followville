@@ -738,30 +738,35 @@
     background:#70df7a; border-radius:50%; box-shadow:0 0 7px rgba(112,223,122,.85);
   }
   #chatToggle {
-    position:fixed; right:14px; bottom:18px; z-index:8; border:0; cursor:pointer;
-    padding:10px 16px; border-radius:22px; background:rgba(20,30,48,.88);
+    position:fixed; left:14px; top:64px; z-index:8; border:1px solid rgba(255,255,255,.24); cursor:pointer;
+    padding:7px 12px; border-radius:8px; background:rgba(12,22,36,.62);
     color:#fff; font-family:inherit; font-size:13px; font-weight:700;
-    box-shadow:0 5px 20px rgba(0,0,0,.25);
+    box-shadow:0 3px 12px rgba(0,0,0,.18); backdrop-filter:blur(4px);
   }
   #chatPanel {
-    position:fixed; right:14px; bottom:62px; z-index:16; display:none;
-    width:min(360px, calc(100vw - 28px)); height:min(430px, 62vh);
-    background:rgba(247,243,234,.97); color:#1c2b45; border-radius:16px;
-    box-shadow:0 14px 42px rgba(0,0,0,.36); overflow:hidden;
-    flex-direction:column; touch-action:auto;
+    position:fixed; left:14px; top:102px; z-index:16; display:none;
+    width:min(410px, calc(100vw - 28px)); max-height:min(340px, 48vh);
+    background:rgba(10,20,33,.48); color:#fff; border-radius:8px;
+    border:1px solid rgba(255,255,255,.14); box-shadow:0 5px 18px rgba(0,0,0,.16);
+    overflow:hidden; flex-direction:column; touch-action:auto; backdrop-filter:blur(4px);
   }
-  #chatPanel.open { display:flex; }
+  #chatPanel.feed-visible, #chatPanel.open { display:flex; }
+  #chatPanel.open { background:rgba(10,20,33,.88); pointer-events:auto; box-shadow:0 12px 32px rgba(0,0,0,.34); }
   #chatHeader {
-    display:flex; align-items:center; padding:12px 14px; font-size:14px;
-    font-weight:800; border-bottom:1px solid rgba(28,43,69,.10);
+    display:none; align-items:center; padding:9px 11px; font-size:13px;
+    font-weight:800; border-bottom:1px solid rgba(255,255,255,.12);
   }
+  #chatPanel.open #chatHeader { display:flex; }
   #chatHeader span { flex:1; }
-  #chatClose { border:0; background:none; color:#1c2b45; font-size:20px; cursor:pointer; }
-  #chatMessages { flex:1; overflow:auto; padding:10px 12px; overscroll-behavior:contain; }
-  .chat-message { margin:0 0 9px; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
-  .chat-message .chat-who { font-weight:800; color:#2b6a94; margin-right:6px; }
+  #chatClose { border:0; background:none; color:#fff; font-size:20px; cursor:pointer; }
+  #chatMessages { flex:1; max-height:180px; overflow:hidden; padding:9px 11px; overscroll-behavior:contain; }
+  #chatPanel.open #chatMessages { max-height:220px; overflow:auto; }
+  .chat-message { margin:0 0 6px; font-size:13px; line-height:1.35; overflow-wrap:anywhere; text-shadow:0 1px 3px rgba(0,0,0,.72); }
+  .chat-message .chat-who { font-weight:800; color:#8fd1ff; margin-right:6px; }
   .chat-message .chat-time { font-size:10px; opacity:.46; margin-left:6px; white-space:nowrap; }
-  #chatForm { display:flex; gap:7px; padding:10px; border-top:1px solid rgba(28,43,69,.10); }
+  #chatPanel:not(.open) .chat-time { display:none; }
+  #chatForm { display:none; gap:7px; padding:9px; border-top:1px solid rgba(255,255,255,.12); }
+  #chatPanel.open #chatForm { display:flex; }
   #chatInput {
     flex:1; min-width:0; border:1px solid #c9d1dc; border-radius:10px;
     padding:10px 11px; font-family:inherit; font-size:13px; background:#fff; touch-action:auto;
@@ -769,11 +774,13 @@
   #chatSend { border:0; border-radius:10px; padding:0 13px; background:#1c2b45;
     color:#fff; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; }
   #chatSend:disabled, #chatInput:disabled { opacity:.52; cursor:default; }
-  #chatNote { min-height:16px; padding:0 12px 9px; font-size:11px; opacity:.62; }
+  #chatNote { display:none; min-height:16px; padding:0 11px 8px; font-size:11px; opacity:.72; }
+  #chatPanel.open #chatNote { display:block; }
   @media (max-width: 600px){
     #multiplayerStatus { top:92px; font-size:11px; }
-    #chatToggle { right:18px; bottom:122px; }
-    #chatPanel { right:10px; bottom:172px; width:calc(100vw - 20px); height:min(360px, 54vh); }
+    #chatToggle { left:10px; top:60px; }
+    #chatPanel { left:10px; top:98px; width:calc(100vw - 20px); max-height:44vh; }
+    #chatMessages { max-height:145px; }
   }
 </style>
 </head>
@@ -2015,6 +2022,11 @@ const desiredCameraPosition = new THREE.Vector3();
 const cameraOrbitEuler = new THREE.Euler(-.10,Math.PI,0,"YXZ");
 let cameraOrbitYaw = Math.PI;
 let cameraOrbitPitch = -.10;
+// Roblox-style near-vertical look range. The camera may travel down to the
+// local walk surface while looking skyward instead of stopping at a shallow
+// pitch angle.
+const CAMERA_PITCH_MIN = -1.48;
+const CAMERA_PITCH_MAX = 1.48;
 const cameraOcclusionDirection = new THREE.Vector3();
 const cameraOcclusionRaycaster = new THREE.Raycaster();
 let cameraOcclusionCheckedAt = 0;
@@ -2087,6 +2099,18 @@ function cameraPositionWithCollision(target,desired){
   return desired;
 }
 
+function isCameraWalkSurface(object){
+  const materials=Array.isArray(object?.material)?object.material:[object?.material];
+  if(!materials.length||materials.some(material=>!material))return false;
+  const walkTokens=["road","grass","lawn","terrain","sidewalk","hardscape","courtyard",
+                    "service_lane","paving","crosswalk","parking_bay","curb","ramp",
+                    "tactile","ground","path","sand","ocean","pond"];
+  return materials.every(material=>{
+    const name=(material.name||"").toLowerCase();
+    return walkTokens.some(token=>name.includes(token));
+  });
+}
+
 function cameraPositionWithTownOcclusion(target,desired){
   const desiredDistance=desired.distanceTo(target);
   if(!loadedTownRoot || desiredDistance<.7)return desired;
@@ -2098,7 +2122,8 @@ function cameraPositionWithTownOcclusion(target,desired){
     cameraOcclusionRaycaster.near=.28;
     cameraOcclusionRaycaster.far=desiredDistance;
     const hit=cameraOcclusionRaycaster.intersectObject(loadedTownRoot,true)
-      .find(item=>item.object.visible && !(item.object.material?.transparent && item.object.material.opacity<.18));
+      .find(item=>item.object.visible && !isCameraWalkSurface(item.object) &&
+        !(item.object.material?.transparent && item.object.material.opacity<.18));
     const nextLimit=hit?Math.max(.68,hit.distance-.24):THIRD_PERSON_MAX_DISTANCE;
     cameraOcclusionLimit=nextLimit<cameraOcclusionLimit
       ?nextLimit
@@ -2118,7 +2143,7 @@ function updateThirdPersonCamera(force=false){
   const firstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
   const targetHeight=firstPerson?avatarEyeHeight:Math.max(.92,avatarEyeHeight*.82);
   cameraTarget.set(playerPosition.x,surface+playerJumpOffset+targetHeight,playerPosition.z);
-  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch,-.52,.32);
+  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch,CAMERA_PITCH_MIN,CAMERA_PITCH_MAX);
   cameraOrbitEuler.set(cameraOrbitPitch,cameraOrbitYaw,0,"YXZ");
   cameraLookDirection.set(0,0,-1).applyEuler(cameraOrbitEuler).normalize();
   document.body.dataset.cameraMode=firstPerson?"first-person":"third-person";
@@ -2130,6 +2155,7 @@ function updateThirdPersonCamera(force=false){
     camera.rotation.order="YXZ";
     camera.rotation.set(cameraOrbitPitch,cameraOrbitYaw,0);
     document.body.dataset.cameraDistance="0.00";
+    document.body.dataset.cameraGroundClearance=(camera.position.y-walkSurfaceHeight(camera.position.x,camera.position.z)).toFixed(2);
     document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
     document.body.dataset.cameraPosition=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
     return;
@@ -2140,6 +2166,7 @@ function updateThirdPersonCamera(force=false){
   camera.position.copy(safe);
   camera.lookAt(cameraTarget);
   document.body.dataset.cameraDistance = camera.position.distanceTo(cameraTarget).toFixed(2);
+  document.body.dataset.cameraGroundClearance=(camera.position.y-walkSurfaceHeight(camera.position.x,camera.position.z)).toFixed(2);
   document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
   document.body.dataset.cameraPosition=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
 }
@@ -2482,6 +2509,7 @@ document.addEventListener("visibilitychange", () => {
 
 function beginWalking(){
   gameRunning = true;
+  chatPanel.classList.add("feed-visible");
   pauseMenu.classList.remove("open");
   pauseMenu.setAttribute("aria-hidden", "true");
   startScreenVideo.pause();
@@ -2569,6 +2597,7 @@ function closeChat(resumeWalking = true, withoutPointerLock = false){
 }
 chatToggle.addEventListener("click", openChat);
 chatClose.addEventListener("click", closeChat);
+chatMessages.addEventListener("click",()=>{if(!chatOpen())openChat();});
 chatPanel.addEventListener("mousedown", e => e.stopPropagation());
 chatPanel.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
 chatForm.addEventListener("submit", e => { e.preventDefault(); sendTownChat(); });
@@ -2616,7 +2645,7 @@ document.addEventListener("mousemove",event=>{
   const dy=locked?event.movementY:event.clientY-cameraDragY;
   cameraDragX=event.clientX;cameraDragY=event.clientY;
   cameraOrbitYaw-=dx*.004;
-  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,-.52,.32);
+  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,CAMERA_PITCH_MIN,CAMERA_PITCH_MAX);
   updateThirdPersonCamera(true);
 });
 document.addEventListener("mouseup",event=>{if(cameraDragActive&&event.button===cameraDragButton)endCameraDrag();});
@@ -2804,7 +2833,7 @@ if (isTouch){
       const dx = t.clientX - lastX, dy = t.clientY - lastY;
       lastX = t.clientX; lastY = t.clientY;
       cameraOrbitYaw -= dx * 0.0035;
-      cameraOrbitPitch = THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,-.52,.32);
+      cameraOrbitPitch = THREE.MathUtils.clamp(cameraOrbitPitch-dy*.0035,CAMERA_PITCH_MIN,CAMERA_PITCH_MAX);
       updateThirdPersonCamera(true);
     }
   }, { passive:false });
@@ -3180,12 +3209,13 @@ function buildGLBColliders(root){
   document.body.dataset.kaleidoscopeStatue = hasCatStatue ? "pass" : "fail";
   const storybookEntries = [...houseVisuals.values()].filter(entry =>
     entry.building.type === "storybookhouse");
-  const tightStorybookHitboxes = storybookEntries.length === 10 && storybookEntries.every(entry => {
+  const storybookDetailsLoaded=!townManifest||townLoadedChunks.has("kaleidoscope-crest");
+  const tightStorybookHitboxes = !storybookDetailsLoaded || (storybookEntries.length === 10 && storybookEntries.every(entry => {
     const tight = houseFootprint(entry);
     const fullBounds = localBoundsAtPlayerHeight(entry.root);
     const full = colliderFromLocalBounds(entry.root, fullBounds, "storybook-lot-audit");
     return tight && full && tight.hx*tight.hz < full.hx*full.hz*.82;
-  });
+  }));
   document.body.dataset.storybookHitboxes = tightStorybookHitboxes ? "pass" : "fail";
   refreshYardDecorationColliders();
   const boxes = colliders.filter(collider => collider.kind === "box").length;
@@ -3370,6 +3400,7 @@ const townChunksById = new Map();
 const townChunkByBuilding = new Map();
 const townChunkLoads = new Map();
 const townLoadedChunks = new Set();
+const townChunkRoots = new Map();
 const townChunkLods = new Map();
 let claimSpots = [];            // [{id, x, z}] currently-open claimable houses
 let nearestOpen = null, claiming = false, claimMode = false;
@@ -3393,6 +3424,15 @@ const TAG_HEIGHT = {
   eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
   beachhouse: 8, cottagehouse: 8.5, ringhouse: 9.2, lanehouse: 6.5,
 };
+
+function buildingTagHeight(building){
+  const fallback=TAG_HEIGHT[building.type]??8;
+  const entry=houseVisuals.get(Number(building.seed));
+  if(!entry?.root)return fallback;
+  entry.root.updateWorldMatrix(true,true);
+  const bounds=new THREE.Box3().setFromObject(entry.root);
+  return bounds.isEmpty()?fallback:Math.max(fallback,bounds.max.y+1.25);
+}
 
 const HOME_OPTIONS = {
   wall: [
@@ -3757,7 +3797,20 @@ function indexHouseVisuals(root, buildings){
     document.body.dataset.homeVisualsMapped=`${houseVisuals.size}/${homes.length}`;
     document.body.dataset.homeVisualsMissing=JSON.stringify(missing);
   }
+  let minimumTagClearance=Infinity;
+  for(const entry of houseVisuals.values()){
+    entry.root.updateWorldMatrix(true,true);
+    const bounds=new THREE.Box3().setFromObject(entry.root);
+    if(!bounds.isEmpty())minimumTagClearance=Math.min(
+      minimumTagClearance,buildingTagHeight(entry.building)-bounds.max.y);
+  }
+  document.body.dataset.claimTagRoofClearance=Number.isFinite(minimumTagClearance)
+    ? minimumTagClearance.toFixed(2):"n/a";
   applyAllHomeCustomizations();
+  // Streamed districts can arrive or leave after claim data. Re-measure every
+  // visible tag against the currently loaded roof geometry each time.
+  rebuildNameTags();
+  rebuildClaimSpots();
 }
 
 /* Which way does the front door face? Mirrors neighborhood_blender.py's
@@ -4826,7 +4879,7 @@ function rebuildClaimSpots(){
     const [x, z] = buildingWorldXZ(b);
     claimSpots.push({ id: b.seed, x, z,
                       fronts: frontDirsFor(b),
-                      tagH: TAG_HEIGHT[b.type] ?? 8 });
+                      tagH: buildingTagHeight(b) });
   }
 }
 
@@ -4853,13 +4906,19 @@ function makeTagSprite(text){
   return spr;
 }
 function rebuildNameTags(){
-  nameTags.clear();
+  for(const sprite of [...nameTags.children]){
+    nameTags.remove(sprite);
+    sprite.material?.map?.dispose();
+    sprite.material?.dispose();
+  }
   for (const [id, handle] of claimedBy){
     const b = worldBuildings.find(bb => bb.seed === id);
     if (!b) continue;
     const [x, z] = buildingWorldXZ(b);
     const spr = makeTagSprite("@" + handle);
-    spr.position.set(x, (TAG_HEIGHT[b.type] ?? 8), z);
+    const tagHeight=buildingTagHeight(b);
+    spr.position.set(x,tagHeight,z);
+    spr.userData.houseId=Number(id);
     spr.visible = false;   // shown only when the player is nearby (see animate)
     nameTags.add(spr);
   }
@@ -5737,6 +5796,10 @@ function validateTownManifest(manifest,buildings){
     throw new Error("town stream manifest does not match world_state.json");
   if(!Array.isArray(manifest.walk_surfaces?.segments)||!Array.isArray(manifest.walk_surfaces?.bulbs))
     throw new Error("town stream manifest has no walk-surface data");
+  const loadDistance=Number(manifest.streaming?.detail_load_distance);
+  const unloadDistance=Number(manifest.streaming?.detail_unload_distance);
+  if(!(loadDistance>0&&unloadDistance>loadDistance))
+    throw new Error("town stream manifest has unsafe load/unload distances");
   localWalkSurfaces=manifest.walk_surfaces;
   const canonical=new Set(buildings.map(building=>Number(building.seed)));
   const byId=new Map(buildings.map(building=>[Number(building.seed),building]));
@@ -5788,7 +5851,11 @@ function prepareTownAsset(root){
 
 function mergeTownAsset(group){
   prepareTownAsset(group);
-  while(group.children.length)loadedTownRoot.add(group.children[0]);
+  const roots=[];
+  while(group.children.length){
+    const child=group.children[0];loadedTownRoot.add(child);roots.push(child);
+  }
+  return roots;
 }
 
 function refreshLoadedTownSystems(buildings){
@@ -5876,12 +5943,24 @@ function loadTownChunk(chunkId,buildings){
   const chunk=townChunksById.get(chunkId);
   if(!chunk)return Promise.reject(new Error(`unknown town chunk ${chunkId}`));
   const promise=loadTownAsset(chunk.asset,`town-chunk-${chunk.id}`).then(group=>{
-    mergeTownAsset(group);townLoadedChunks.add(chunk.id);removeTownChunkLod(chunk.id);
+    townChunkRoots.set(chunk.id,mergeTownAsset(group));
+    townLoadedChunks.add(chunk.id);removeTownChunkLod(chunk.id);
     updateLoadedChunkStatus();refreshLoadedTownSystems(buildings);
     console.info(`[Followville] streamed ${chunk.label} (${chunk.building_ids.length} buildings)`);
     return true;
   }).catch(error=>{townChunkLoads.delete(chunkId);throw error;});
   townChunkLoads.set(chunkId,promise);return promise;
+}
+
+function unloadTownChunk(chunk,buildings,{refresh=true}={}){
+  const roots=townChunkRoots.get(chunk.id)||[];
+  for(const root of roots){loadedTownRoot.remove(root);disposeObject(root);}
+  townChunkRoots.delete(chunk.id);townLoadedChunks.delete(chunk.id);townChunkLoads.delete(chunk.id);
+  createTownChunkLod(chunk,buildings);updateLoadedChunkStatus();
+  document.body.dataset.streamedChunkUnloads=String(
+    Number(document.body.dataset.streamedChunkUnloads||0)+1);
+  if(refresh)refreshLoadedTownSystems(buildings);
+  console.info(`[Followville] unloaded distant ${chunk.label}; lightweight district silhouette restored.`);
 }
 
 function ensureTownChunkForBuilding(building){
@@ -5893,15 +5972,22 @@ function updateTownDistrictStreaming(force=false){
   if(!townManifest)return;
   const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
   townStreamLastCheck=now;
+  let unloaded=false;
   for(const chunk of townManifest.chunks){
-    if(townLoadedChunks.has(chunk.id)||townChunkLoads.has(chunk.id))continue;
     let nearest=Infinity;
     for(const [x,z] of chunk.runtimePoints||[])
       nearest=Math.min(nearest,Math.hypot(playerPosition.x-x,playerPosition.z-z));
     const loadDistance=Number(townManifest.streaming?.detail_load_distance||70);
+    const unloadDistance=Number(townManifest.streaming?.detail_unload_distance||112);
+    if(townLoadedChunks.has(chunk.id)){
+      if(nearest>unloadDistance){unloadTownChunk(chunk,worldBuildings,{refresh:false});unloaded=true;}
+      continue;
+    }
+    if(townChunkLoads.has(chunk.id))continue;
     if(nearest<loadDistance)loadTownChunk(chunk.id,worldBuildings).catch(error=>
       console.warn(`[Followville] could not stream ${chunk.label}; its low-detail proxy remains.`,error));
   }
+  if(unloaded)refreshLoadedTownSystems(worldBuildings);
 }
 
 async function loadStreamedTown(buildings){
@@ -5914,8 +6000,12 @@ async function loadStreamedTown(buildings){
     ...initial.map(chunk=>loadTownAsset(chunk.asset,`town-chunk-${chunk.id}`))
   ]);
   loadedTownRoot=new THREE.Group();loadedTownRoot.name="Followville-streamed-town";scene.add(loadedTownRoot);
-  assets.forEach(mergeTownAsset);
-  initial.forEach(chunk=>townLoadedChunks.add(chunk.id));updateLoadedChunkStatus();
+  mergeTownAsset(assets[0]);
+  initial.forEach((chunk,index)=>{
+    townChunkRoots.set(chunk.id,mergeTownAsset(assets[index+1]));
+    townLoadedChunks.add(chunk.id);
+  });
+  updateLoadedChunkStatus();
   configureTownFraming(buildings);refreshLoadedTownSystems(buildings);
   for(const chunk of manifest.chunks)createTownChunkLod(chunk,buildings);
   document.body.dataset.assetMode="streamed";
@@ -5927,7 +6017,7 @@ async function loadStreamedTown(buildings){
 }
 
 function loadFullTown(buildings){
-  townManifest=null;townChunksById.clear();townChunkByBuilding.clear();townChunkLoads.clear();townLoadedChunks.clear();
+  townManifest=null;townChunksById.clear();townChunkByBuilding.clear();townChunkLoads.clear();townLoadedChunks.clear();townChunkRoots.clear();
   return townGltfLoader.loadAsync("town.glb").then(gltf => {
     const root = gltf.scene;
     loadedTownRoot = root;
