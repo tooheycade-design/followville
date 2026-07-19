@@ -788,7 +788,10 @@
     overflow:hidden; flex-direction:column; touch-action:auto; backdrop-filter:blur(4px);
   }
   #chatPanel.feed-visible, #chatPanel.open { display:flex; }
-  #chatPanel.feed-visible:not(.open) { pointer-events:none; }
+  #chatPanel.feed-visible:not(.open) {
+    width:min(340px,calc(100vw - 28px)); max-height:none; overflow:visible; pointer-events:none;
+    background:transparent; border:0; box-shadow:none; backdrop-filter:none;
+  }
   #chatPanel.open { background:rgba(10,20,33,.88); pointer-events:auto; box-shadow:0 12px 32px rgba(0,0,0,.34); }
   #chatHeader {
     display:none; align-items:center; padding:9px 11px; font-size:13px;
@@ -800,6 +803,16 @@
   #chatMessages { flex:1; max-height:180px; overflow:hidden; padding:9px 11px; overscroll-behavior:contain; }
   #chatPanel.open #chatMessages { max-height:220px; overflow:auto; }
   .chat-message { margin:0 0 6px; font-size:13px; line-height:1.35; overflow-wrap:anywhere; text-shadow:0 1px 3px rgba(0,0,0,.72); }
+  #chatPanel.feed-visible:not(.open) #chatMessages {
+    display:grid; gap:4px; max-height:none; overflow:visible; padding:0;
+  }
+  #chatPanel.feed-visible:not(.open) .chat-message { display:none; }
+  #chatPanel.feed-visible:not(.open) .chat-message.chat-fresh {
+    display:block; width:fit-content; max-width:100%; margin:0; padding:6px 9px;
+    border-radius:5px; background:rgba(10,20,33,.72); box-shadow:0 2px 8px rgba(0,0,0,.16);
+    animation:chat-feed-in 160ms ease-out;
+  }
+  @keyframes chat-feed-in { from { opacity:0; transform:translateY(-3px); } }
   .chat-message .chat-who { font-weight:800; color:#8fd1ff; margin-right:6px; }
   .chat-message .chat-time { font-size:10px; opacity:.46; margin-left:6px; white-space:nowrap; }
   #chatPanel:not(.open) .chat-time { display:none; }
@@ -818,6 +831,7 @@
     #multiplayerStatus { top:92px; font-size:11px; }
     #chatToggle { left:10px; top:60px; }
     #chatPanel { left:10px; top:98px; width:calc(100vw - 20px); max-height:44vh; }
+    #chatPanel.feed-visible:not(.open) { width:min(280px,calc(100vw - 20px)); }
     #chatMessages { max-height:145px; }
   }
   @media (any-pointer:coarse) and (orientation:landscape) {
@@ -829,6 +843,7 @@
       left:max(10px,env(safe-area-inset-left)); top:max(88px,calc(env(safe-area-inset-top) + 36px));
       width:min(300px,36vw); max-height:min(220px,calc(100dvh - 100px));
     }
+    #chatPanel.feed-visible:not(.open) { width:min(260px,32vw); }
     #chatPanel.open { width:min(340px,42vw); }
     #chatMessages { max-height:54px; padding:5px 8px; }
     #chatPanel.open #chatMessages { max-height:min(108px,26dvh); }
@@ -2560,6 +2575,7 @@ let gameRunning = false; // true once walking has actually started, desktop or t
 let resumeWalkingAfterChat = false;
 let resumeWalkingAfterMap = false;
 let pauseOpenedAt = -Infinity;
+let chatFeedTimer = null;
 let resumeWalkingAfterOrientation = false;
 let orientationBypassed = false;
 const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|wv\)|Twitter/i.test(navigator.userAgent || "");
@@ -2601,7 +2617,6 @@ function beginWalking(){
     return;
   }
   gameRunning = true;
-  chatPanel.classList.add("feed-visible");
   pauseMenu.classList.remove("open");
   pauseMenu.setAttribute("aria-hidden", "true");
   startScreenVideo.pause();
@@ -2706,11 +2721,30 @@ function clearMovementInput(){
   move.z = 0;
   move.run = false;
 }
+function clearPassiveChatFeed(){
+  clearTimeout(chatFeedTimer);
+  chatFeedTimer = null;
+  chatPanel.classList.remove("feed-visible");
+  for (const item of chatMessages.querySelectorAll(".chat-fresh")) item.classList.remove("chat-fresh");
+  document.body.dataset.chatFeed = "idle";
+}
+function showPassiveChatMessage(item){
+  if (!gameRunning || chatOpen()) return;
+  item.classList.add("chat-fresh");
+  const freshItems = [...chatMessages.querySelectorAll(".chat-fresh")];
+  for (const oldItem of freshItems.slice(0, -2)) oldItem.classList.remove("chat-fresh");
+  chatPanel.classList.add("feed-visible");
+  document.body.dataset.chatFeed = "visible";
+  clearTimeout(chatFeedTimer);
+  chatFeedTimer = setTimeout(clearPassiveChatFeed, 6500);
+}
+document.body.dataset.chatFeed = "idle";
 function openChat(){
   if (chatOpen()){
     if (!chatInput.disabled) chatInput.focus();
     return;
   }
+  clearPassiveChatFeed();
   resumeWalkingAfterChat = gameRunning;
   chatPanel.classList.add("open");
   clearMovementInput();
@@ -5669,15 +5703,30 @@ function addChatMessage(row, showBubble){
   chatMessages.appendChild(item);
   while (chatMessages.children.length > 80) chatMessages.firstElementChild.remove();
   chatMessages.scrollTop = chatMessages.scrollHeight;
-  if (showBubble) showPlayerChatBubble(row);
+  if (showBubble){
+    showPlayerChatBubble(row);
+    showPassiveChatMessage(item);
+  }
 }
 
 async function loadChatHistory(){
   if (!sb) return;
+  const { data:updateRows, error:updateError } = await sb.from("houses")
+    .select("created_at")
+    .eq("day_built", Number(townMapMeta.day))
+    .order("created_at", { ascending:true }).limit(1);
+  if (updateError || !updateRows?.[0]?.created_at){
+    document.body.dataset.publicChatHistory = "live-only";
+    return;
+  }
   const { data, error } = await sb.from("chat_messages")
     .select("id,sender_handle,client_id,body,created_at")
+    .gte("created_at", updateRows[0].created_at)
     .order("created_at", { ascending:false }).limit(50);
-  if (!error && data) for (const row of data.reverse()) addChatMessage(row, false);
+  if (!error && data){
+    for (const row of data.reverse()) addChatMessage(row, false);
+    document.body.dataset.publicChatHistory = `day-${townMapMeta.day}`;
+  }
 }
 
 function updateChatAuthState(){

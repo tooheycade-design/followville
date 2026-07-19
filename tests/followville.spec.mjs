@@ -103,10 +103,9 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
     .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
   expect(initialBytes).toBeLessThan(fullTownBytes * 0.4);
-  await expect(page.locator("#chatPanel")).toHaveClass(/feed-visible/);
-  const chatFeedBox=await page.locator("#chatPanel").boundingBox();
-  expect(chatFeedBox.x).toBeLessThan(30);
-  expect(chatFeedBox.y).toBeLessThan(140);
+  await expect(page.locator("#chatPanel")).toBeHidden();
+  await expect(page.locator("#chatPanel")).not.toHaveClass(/feed-visible/);
+  await expect(page.locator("body")).toHaveAttribute("data-chat-feed", "idle");
   await page.keyboard.press("KeyT");
   await expect(page.locator("#chatPanel")).toHaveClass(/open/);
   await page.keyboard.press("Escape");
@@ -305,7 +304,7 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 
-  test("portrait offers a playable fallback and landscape chat stays compact", async ({ page }) => {
+  test("portrait fallback and transient mobile chat stay compact", async ({ page }) => {
     test.setTimeout(300_000);
     await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
     await expect(page.locator("#orientationGate")).toBeVisible();
@@ -317,12 +316,27 @@ test.describe("mobile town", () => {
     await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-bypassed");
     await waitForTown(page);
     await expect(page.locator("#joystickZone")).toBeVisible();
+    await page.locator("#chatMessages").evaluate(messages => {
+      messages.replaceChildren();
+      for (let index=0; index<3; index++){
+        const item=document.createElement("div");
+        item.className="chat-message"+(index ? " chat-fresh" : "");
+        item.textContent=`@player${index} mobile message ${index}`;
+        messages.appendChild(item);
+      }
+      messages.closest("#chatPanel").classList.add("feed-visible");
+    });
+    await expect(page.locator("#chatPanel")).toBeVisible();
+    await expect(page.locator("#chatPanel .chat-message.chat-fresh")).toHaveCount(2);
+    await expect(page.locator("#chatPanel .chat-message:not(.chat-fresh)")).toBeHidden();
+    const portraitChatBox=await page.locator("#chatPanel").boundingBox();
+    expect(portraitChatBox.width).toBeLessThanOrEqual(282);
+    expect(portraitChatBox.height).toBeLessThan(100);
     await page.setViewportSize({ width:844, height:390 });
     await expect(page.locator("#orientationGate")).toBeHidden();
     await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "landscape");
-    await page.locator("#chatPanel").evaluate(panel=>panel.classList.add("feed-visible"));
     const chatBox=await page.locator("#chatPanel").boundingBox();
-    expect(chatBox.width).toBeLessThan(310);
+    expect(chatBox.width).toBeLessThan(270);
     expect(chatBox.width).toBeLessThan(844*.5);
   });
 
