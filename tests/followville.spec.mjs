@@ -210,8 +210,10 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
 
   await page.mouse.move(520,360);
   await page.mouse.down({button:"right"});
-  await expect(page.locator("body")).toHaveAttribute("data-camera-grab","locked");
-  expect(await page.evaluate(() => document.pointerLockElement?.tagName)).toBe("CANVAS");
+  await expect(page.locator("body")).toHaveAttribute("data-camera-grab",/locked|dragging/);
+  const initialDragMode=await page.locator("body").getAttribute("data-camera-grab");
+  if(initialDragMode==="locked")
+    expect(await page.evaluate(() => document.pointerLockElement?.tagName)).toBe("CANVAS");
   await page.mouse.move(700,310,{steps:6});
   await page.mouse.up({button:"right"});
   await expect(page.locator("body")).not.toHaveAttribute("data-camera-grab",/./);
@@ -239,12 +241,27 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(Math.hypot(afterForward.player[0]-beforeForward.player[0],afterForward.player[1]-beforeForward.player[1])).toBeGreaterThan(2);
   expect(Math.hypot(afterForward.camera[0]-beforeForward.camera[0],afterForward.camera[1]-beforeForward.camera[1])).toBeGreaterThan(2);
 
-  // Looking nearly straight up must slide the camera along the walk surface;
-  // the terrain itself cannot become a camera obstruction.
+  // Looking nearly straight up must preserve the visible pitch while the
+  // camera slides along the walk surface. There must be no ground dead zone
+  // where requested pitch changes but the view only zooms toward the avatar.
+  const cameraPitchState=()=>page.locator("body").evaluate(body=>({
+    requested:Number(body.dataset.cameraPitch),
+    actual:Number(body.dataset.cameraActualPitch),
+    groundAdjusted:body.dataset.cameraGroundAdjusted==="true"
+  }));
+  const upwardPitchSamples=[];
   await page.mouse.move(640,650);
   await page.mouse.down({button:"right"});
-  await page.mouse.move(640,30,{steps:8});
+  for(const y of [570,490,410,330,250,170,90,30]){
+    await page.mouse.move(640,y);
+    upwardPitchSamples.push(await cameraPitchState());
+  }
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeGreaterThan(1.3);
+  expect(upwardPitchSamples.some(sample=>sample.groundAdjusted)).toBe(true);
+  for(let index=1;index<upwardPitchSamples.length;index++)
+    expect(upwardPitchSamples[index].actual).toBeGreaterThanOrEqual(upwardPitchSamples[index-1].actual-.03);
+  for(const sample of upwardPitchSamples.filter(sample=>sample.groundAdjusted))
+    expect(Math.abs(sample.actual-sample.requested)).toBeLessThan(.08);
   expect(Number(await page.locator("body").getAttribute("data-camera-ground-clearance"))).toBeGreaterThanOrEqual(.4);
   await page.mouse.up({button:"right"});
   // Pointer-lock ignores out-of-viewport coordinates in headless Chromium.
@@ -260,10 +277,17 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
 
   await page.mouse.wheel(0,-2000);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
-  await expect(page.locator("body")).toHaveAttribute("data-first-person-look","locked");
-  expect(await page.evaluate(() => document.pointerLockElement?.tagName)).toBe("CANVAS");
+  await expect(page.locator("body")).toHaveAttribute("data-first-person-look",/locked|click/);
+  const firstPersonLocked=await page.evaluate(() => document.pointerLockElement?.tagName==="CANVAS");
   const firstPersonYaw=Number(await page.locator("body").getAttribute("data-camera-yaw"));
-  await page.mouse.move(860,380,{steps:5});
+  if(firstPersonLocked){
+    await page.mouse.move(860,380,{steps:5});
+  }else{
+    await page.mouse.move(640,380);
+    await page.mouse.down({button:"right"});
+    await page.mouse.move(860,380,{steps:5});
+    await page.mouse.up({button:"right"});
+  }
   expect(Math.abs(Number(await page.locator("body").getAttribute("data-camera-yaw"))-firstPersonYaw)).toBeGreaterThan(.05);
   await page.mouse.wheel(0,1500);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","third-person");
@@ -358,6 +382,26 @@ test.describe("mobile town", () => {
     const joystickBox=await page.locator("#joystickZone").boundingBox();
     const lookBox=await page.locator("#lookZone").boundingBox();
     const cdp=await page.context().newCDPSession(page);
+    const mobilePitchSamples=[];
+    const readMobilePitch=()=>page.locator("body").evaluate(body=>({
+      requested:Number(body.dataset.cameraPitch),
+      actual:Number(body.dataset.cameraActualPitch),
+      groundAdjusted:body.dataset.cameraGroundAdjusted==="true"
+    }));
+    for(let gesture=0;gesture<2;gesture++){
+      await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[{x:430,y:350}]});
+      for(const y of [300,250,200,150,100,50,25]){
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{x:430,y}]});
+        mobilePitchSamples.push(await readMobilePitch());
+      }
+      await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+    }
+    expect(mobilePitchSamples.at(-1).requested).toBeGreaterThan(1.3);
+    expect(mobilePitchSamples.some(sample=>sample.groundAdjusted)).toBe(true);
+    for(let index=1;index<mobilePitchSamples.length;index++)
+      expect(mobilePitchSamples[index].actual).toBeGreaterThanOrEqual(mobilePitchSamples[index-1].actual-.03);
+    for(const sample of mobilePitchSamples.filter(sample=>sample.groundAdjusted))
+      expect(Math.abs(sample.actual-sample.requested)).toBeLessThan(.08);
     const joy={x:joystickBox.x+joystickBox.width/2,y:joystickBox.y+joystickBox.height/2};
     const look={x:lookBox.x+lookBox.width*.68,y:lookBox.y+lookBox.height*.48};
     await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[joy]});

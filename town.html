@@ -2104,6 +2104,7 @@ const movementRight = new THREE.Vector3();
 const movementDelta = new THREE.Vector3();
 const cameraTarget = new THREE.Vector3();
 const desiredCameraPosition = new THREE.Vector3();
+const actualCameraLookDirection = new THREE.Vector3();
 const cameraOrbitEuler = new THREE.Euler(-.10,Math.PI,0,"YXZ");
 let cameraOrbitYaw = Math.PI;
 let cameraOrbitPitch = -.10;
@@ -2112,6 +2113,7 @@ let cameraOrbitPitch = -.10;
 // pitch angle.
 const CAMERA_PITCH_MIN = -1.48;
 const CAMERA_PITCH_MAX = 1.48;
+const CAMERA_GROUND_CLEARANCE = .42;
 const cameraOcclusionDirection = new THREE.Vector3();
 const cameraOcclusionRaycaster = new THREE.Raycaster();
 let cameraOcclusionCheckedAt = 0;
@@ -2180,8 +2182,46 @@ function cameraPositionWithCollision(target,desired){
     }
   }
   desired.set(target.x+dx*safeT,target.y+dy*safeT,target.z+dz*safeT);
-  desired.y=Math.max(desired.y,walkSurfaceHeight(desired.x,desired.z)+.42);
+  desired.y=Math.max(desired.y,walkSurfaceHeight(desired.x,desired.z)+CAMERA_GROUND_CLEARANCE);
   return desired;
+}
+
+function cameraPositionForOrbit(target,distance){
+  desiredCameraPosition.copy(target).addScaledVector(cameraLookDirection,-distance);
+  const horizontalLook=Math.hypot(cameraLookDirection.x,cameraLookDirection.z);
+  let floor=walkSurfaceHeight(desiredCameraPosition.x,desiredCameraPosition.z)+CAMERA_GROUND_CLEARANCE;
+  if(cameraLookDirection.y<=0 || desiredCameraPosition.y>=floor || horizontalLook<1e-5){
+    document.body.dataset.cameraGroundAdjusted="false";
+    return desiredCameraPosition;
+  }
+
+  // Once the orbit reaches the ground, preserve the requested look angle by
+  // sliding toward the avatar along the surface. Clamping only Y makes the
+  // visible pitch stall while the camera appears to zoom independently.
+  const directionX=-cameraLookDirection.x/horizontalLook;
+  const directionZ=-cameraLookDirection.z/horizontalLook;
+  const tangent=Math.max(.001,Math.tan(cameraOrbitPitch));
+  const maximumHorizontalDistance=distance*horizontalLook;
+  let horizontalDistance=maximumHorizontalDistance;
+  for(let iteration=0;iteration<5;iteration++){
+    const x=target.x+directionX*horizontalDistance;
+    const z=target.z+directionZ*horizontalDistance;
+    floor=walkSurfaceHeight(x,z)+CAMERA_GROUND_CLEARANCE;
+    const verticalDrop=Math.max(.01,target.y-floor);
+    const nextDistance=Math.min(maximumHorizontalDistance,verticalDrop/tangent);
+    if(Math.abs(nextDistance-horizontalDistance)<.001){
+      horizontalDistance=nextDistance;
+      break;
+    }
+    horizontalDistance=nextDistance;
+  }
+  desiredCameraPosition.set(
+    target.x+directionX*horizontalDistance,
+    walkSurfaceHeight(target.x+directionX*horizontalDistance,target.z+directionZ*horizontalDistance)+CAMERA_GROUND_CLEARANCE,
+    target.z+directionZ*horizontalDistance
+  );
+  document.body.dataset.cameraGroundAdjusted="true";
+  return desiredCameraPosition;
 }
 
 function isCameraWalkSurface(object){
@@ -2240,16 +2280,20 @@ function updateThirdPersonCamera(force=false){
     camera.rotation.order="YXZ";
     camera.rotation.set(cameraOrbitPitch,cameraOrbitYaw,0);
     document.body.dataset.cameraDistance="0.00";
+    document.body.dataset.cameraActualPitch=cameraOrbitPitch.toFixed(4);
+    document.body.dataset.cameraGroundAdjusted="false";
     document.body.dataset.cameraGroundClearance=(camera.position.y-walkSurfaceHeight(camera.position.x,camera.position.z)).toFixed(2);
     document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
     document.body.dataset.cameraPosition=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
     return;
   }
-  desiredCameraPosition.copy(cameraTarget).addScaledVector(cameraLookDirection,-thirdPersonDistance);
   const safe=cameraPositionWithTownOcclusion(cameraTarget,
-    cameraPositionWithCollision(cameraTarget,desiredCameraPosition));
+    cameraPositionWithCollision(cameraTarget,cameraPositionForOrbit(cameraTarget,thirdPersonDistance)));
   camera.position.copy(safe);
   camera.lookAt(cameraTarget);
+  actualCameraLookDirection.subVectors(cameraTarget,camera.position).normalize();
+  document.body.dataset.cameraActualPitch=Math.asin(
+    THREE.MathUtils.clamp(actualCameraLookDirection.y,-1,1)).toFixed(4);
   document.body.dataset.cameraDistance = camera.position.distanceTo(cameraTarget).toFixed(2);
   document.body.dataset.cameraGroundClearance=(camera.position.y-walkSurfaceHeight(camera.position.x,camera.position.z)).toFixed(2);
   document.body.dataset.playerPosition=`${playerPosition.x.toFixed(2)},${playerPosition.z.toFixed(2)}`;
