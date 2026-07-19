@@ -305,11 +305,18 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 
-  test("portrait asks the player to rotate and landscape chat stays compact", async ({ page }) => {
+  test("portrait offers a playable fallback and landscape chat stays compact", async ({ page }) => {
+    test.setTimeout(300_000);
     await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
     await expect(page.locator("#orientationGate")).toBeVisible();
     await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-blocked");
     await expect(page.locator("#joystickZone")).toBeHidden();
+    await expect(page.getByRole("button", { name:"open in browser" })).toBeHidden();
+    await page.getByRole("button", { name:"keep playing here" }).click();
+    await expect(page.locator("#orientationGate")).toBeHidden();
+    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-bypassed");
+    await waitForTown(page);
+    await expect(page.locator("#joystickZone")).toBeVisible();
     await page.setViewportSize({ width:844, height:390 });
     await expect(page.locator("#orientationGate")).toBeHidden();
     await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "landscape");
@@ -365,6 +372,21 @@ test.describe("mobile town", () => {
     await expect(page.locator("#avatarStudio")).toBeHidden();
     await expect(page.locator("#joystickZone")).toBeVisible();
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe("Instagram mobile town", () => {
+  test.use({
+    ...mobileDevice,
+    userAgent:`${mobileDevice.userAgent} Instagram 390.0.0.0`
+  });
+
+  test("shows the external-browser option without trapping portrait visitors", async ({ page }) => {
+    await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
+    await expect(page.locator("body")).toHaveAttribute("data-in-app-browser", "true");
+    await expect(page.locator("#orientationGate")).toBeVisible();
+    await expect(page.getByRole("button", { name:"open in browser" })).toBeVisible();
+    await expect(page.getByRole("button", { name:"keep playing here" })).toBeVisible();
   });
 });
 
