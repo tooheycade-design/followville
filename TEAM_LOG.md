@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-20 - Zach (via Mac Codex) - [WORLD] Completed Day 19 from 321 to 331 followers with one guarded +10 growth: seeds 325-331 finished Lantern Court/Twin Oaks at addresses 178-184 and seeds 332-334 opened Meadow Run at 185-187; inserted all 10 claimable rows, generated the seventh streamed district chunk, added reusable all-new-homes and hovering-drone cameras, and rendered/reviewed two standalone portrait MP4s showing every new home rising plus a completed 12-second downtown/neighborhood drone crescent.
+
 2026-07-19 - Zach (via Mac Codex) - [WORLD] Completed Day 18 from 301 to 321 followers with one guarded +20 growth at Twin Oaks addresses 158-177, finishing Acorn Court and opening Lantern Court; regenerated and pushed exact Day 18 full/six-district assets, inserted all 20 claimable rows, built reusable cinematic and fast-drone replay cameras plus a temporary state-free Godzilla destruction layer with atomic breath, explosions, smoke, shockwaves, debris and collapsing buildings, and rendered/reviewed five standalone 12-second portrait MP4s (growth, clean matched angle, destruction twin, whole-city sky view, fast drone).
 
 2026-07-18 - Cade (via Windows Codex) - [WEB] Made phone gameplay landscape-only with a polished portrait rotation screen, automatic pause/resume across rotation, and a much smaller passive landscape chat feed that expands only when opened; focused mobile automation and portrait/landscape visual QA passed without changing Day 17 state, population, buildings, claims, ownership, GLBs, Blender, or Supabase.

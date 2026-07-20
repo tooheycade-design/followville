@@ -81,6 +81,15 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 19, population 331, 334 buildings (grown 2026-07-20 via Zach's Mac
+  Codex: +10 ordinary claimable homes). Seeds 325-331 completed Lantern Court
+  and Twin Oaks at planned addresses 178-184; seeds 332-334 opened Meadow Run
+  at addresses 185-187. The insert-only Supabase sync added all 10 rows, and
+  address 188 is next. Full and seven-district web assets match exact Day 19 /
+  331 / 334 state and coverage, including the new `meadow-run.glb` chunk. The
+  reviewed delivery is two standalone daytime portrait MP4s: a split-district
+  rise shot framing all 10 new homes and a reusable 12-second `dronehover`
+  crescent flight across downtown and the expanding neighborhoods.
 - Day 18, population 321, 324 buildings (grown 2026-07-19 via Zach's Mac
   Codex: +20 ordinary claimable homes). Seeds 305-308 finished Acorn Court at
   planned addresses 158-161; seeds 309-324 opened Lantern Court at addresses

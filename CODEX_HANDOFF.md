@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 18
+# Codex handoff -- current through Day 19
 
-Updated 2026-07-19 for Cade and Zach's next Claude/Codex session.
+Updated 2026-07-20 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,17 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 19 is population 331 with 334 total buildings. Zach's guarded Mac +10
+  growth consumed plan IDs 178-187: seeds 325-331 completed Lantern Court and
+  Twin Oaks, while seeds 332-334 opened Meadow Run. The insert-only houses sync
+  added all 10 claimable rows. Full and seven-district assets report exact Day
+  19 / 331 / 334 state and coverage, including the new `meadow-run.glb` chunk;
+  address 188 is next. The reviewed delivery is two separate daytime portrait
+  MP4s: all 10 split-district homes rising and a completed 12-second hovering
+  drone crescent across downtown and the neighborhoods. `--cam newgrowthall`
+  frames every home on split-district growth days; `--cam dronehover` is a
+  reusable completed-town replay camera.
 
 - Day 18 is population 321 with 324 total buildings. Zach's guarded Mac +20
   growth consumed Twin Oaks plan IDs 158-177: seeds 305-308 finished Acorn

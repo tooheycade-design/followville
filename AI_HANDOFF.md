@@ -40,9 +40,20 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
-## Current town (Day 18, 2026-07-19)
+## Current town (Day 19, 2026-07-20)
 
-Population is 321 with 324 buildings. Day 18 added 20 ordinary claimable homes:
+Population is 331 with 334 buildings. Day 19 added 10 ordinary claimable homes:
+seeds 325-331 completed Lantern Court and Twin Oaks at plan IDs 178-184, while
+seeds 332-334 opened Meadow Run at plan IDs 185-187. All 10 insert-only
+Supabase rows were added and address 188 is next. Export now contains seven
+district chunks, including `meadow-run.glb`, plus the full fallback. The
+reviewed delivery is two separate daytime portrait MP4s: all 10 split-district
+homes rising and a 12-second hovering drone crescent across downtown and the
+expanding neighborhoods. Use `--cam newgrowthall` when a daily batch spans
+districts and every new home must remain framed; use `--cam dronehover` for the
+completed-city flight.
+
+Day 18 added 20 ordinary claimable homes:
 seeds 305-308 finished Acorn Court at plan IDs 158-161, and seeds 309-324
 opened Lantern Court at plan IDs 162-177. All 20 insert-only Supabase rows were
 added and address 178 is next. The reviewed delivery is five separate
@@ -78,15 +89,17 @@ change the Day 16 town, claims, ownership, population, or Blender assets. Read
 
 The web build now uses production district streaming without changing the
 town. `export_web.py` always produces the complete `town.glb` fallback plus a
-hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and six
-district chunks. Public startup loads the base and two initial districts
+hashed `town_manifest.json`, compressed `town_chunks/base.glb`, and seven
+district chunks, including Day 19's `meadow-run.glb`.
+Public startup loads the base and two initial districts
 (2,800,996 bytes versus 7,916,952 bytes for the monolith), shows low-detail
 silhouettes elsewhere, then loads full homes within 70m or before any map/home
 teleport. If streaming fails, the full GLB loads automatically. Never deploy or
 commit only one of these outputs: `world_state.json`, `town.glb`,
 `town_manifest.json`, and `town_chunks/` must advance together. Both growth
 scripts do this now, and `check_town_glb.py` validates exact 304-building
-coverage plus every asset hash. Run `pnpm test:e2e` (10 flows on current
+coverage on the documented Day 17 baseline, exact current 334-building
+coverage, and every asset hash. Run `pnpm test:e2e` (10 flows on current
 `main`) after loader,
 map, teleport, or mobile-control work.
 
