@@ -111,6 +111,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --still          render one preview PNG after building
 #   --replay         re-animate the last day, change nothing
 #   --cam newgrowth  frame the largest cluster of today's rising houses
+#   --cam newgrowthall  frame every house in today's rising batch
 #   --cam newgrowthoverhead  top-down view of today's rising houses
 #   --cam wholeoverhead  whole-town sky view; all of today's houses rise
 #   --cam newstreet  finished eye-level glide through today's busiest street
@@ -5243,7 +5244,7 @@ def main(cfg=None):
         for b in hero_batch:
             district_groups.setdefault(b.get("district") or "", []).append(b)
         hero_batch = max(district_groups.values(), key=len)
-    if (cfg.get("hero") or cfg.get("cam") in ("newgrowth", "newgrowthoverhead")) and hero_batch:
+    if (cfg.get("hero") or cfg.get("cam") in ("newgrowth", "newgrowthall", "newgrowthoverhead")) and hero_batch:
         pts = []
         for b in hero_batch:
             x, y = build_pos(b)
