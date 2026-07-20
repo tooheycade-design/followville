@@ -119,6 +119,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam football   temporary England v Argentina supporter vignette
 #   --cam cinematic  elevated whole-city skyline reveal
 #   --cam dronezoom  fast whole-city dive and pullback
+#   --cam dronehover  smooth high-altitude crescent hover across the city
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -4701,6 +4702,44 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "dronehover":
+        # Smooth crescent flight along the town's southern edge. Unlike the
+        # fast dronezoom route, this camera holds a steady helicopter-like
+        # altitude while its changing bearing reveals the completed western
+        # suburbs, downtown, and Kaleidoscope Crest through slow parallax.
+        aim = bpy.data.objects.new("DroneHoverAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("DroneHoverCamera")
+        cam_data.lens = 38
+        cam_data.clip_start = 6.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("DroneHoverCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            (1, (cx - ext * .48, cy - ext * .50, ext * .42),
+             (cx - ext * .15, cy - ext * .03, 10.0)),
+            (frame_end // 3, (cx - ext * .19, cy - ext * .57, ext * .39),
+             (cx - ext * .06, cy - ext * .08, 12.0)),
+            (frame_end * 2 // 3, (cx + ext * .12, cy - ext * .56, ext * .37),
+             (cx, cy - ext * .04, 13.0)),
+            (frame_end, (cx + ext * .40, cy - ext * .42, ext * .40),
+             (cx + ext * .06, cy + ext * .01, 12.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "park":
         # in-park showcase: slow low orbit around the park's gazebo, looking
         # across the lawn at the ring houses sweeping by behind it
@@ -5174,7 +5213,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom"):
+    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom", "dronehover"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
