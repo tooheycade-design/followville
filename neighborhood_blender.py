@@ -117,6 +117,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam storybookstreet  finished road-level tour of Kaleidoscope Crest
 #   --cam housefront  sidewalk view of a current house with passing cars
 #   --cam football   temporary England v Argentina supporter vignette
+#   --cam cinematic  elevated whole-city skyline reveal
+#   --cam dronezoom  fast whole-city dive and pullback
+#   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
 #                     buildings across many blocks instead of filling one
@@ -129,7 +132,8 @@ def _cli():
     args = sys.argv[sys.argv.index("--") + 1:]
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
              "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
-             "--parkring": "parkring", "--scatter": "scatter"}
+             "--parkring": "parkring", "--scatter": "scatter",
+             "--godzilla": "godzilla"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -4012,6 +4016,242 @@ def build_football_vignette(world_col, buildings, frame_end):
             kp.interpolation = "BEZIER"
     bpy.context.scene.camera = cam_obj
 
+def build_godzilla_attack(world_col, buildings, building_roots, frame_end):
+    """Build a temporary monster attack and knock down the rendered town.
+
+    The attack is generated only during ``--replay --godzilla``. It never
+    changes world_state.json, exported web assets, or the saved Blend scene.
+    """
+    _town_cx, _town_cy, ext = city_center_and_extent(buildings)
+    # The matched camera is a downtown-forward skyline composition, so the
+    # attack must cross that same visible corridor instead of the geometric
+    # midpoint between far-flung suburban districts.
+    cx, cy = -3.0, -3.0
+    green = mat("NB_godzilla_green", (0.10, 0.23, 0.12), .94)
+    belly = mat("NB_godzilla_belly", (0.28, 0.36, 0.20), .92)
+    dark = mat("NB_godzilla_dark", (0.025, 0.045, 0.03), .88)
+    eye = mat("NB_godzilla_eye", (0.95, 0.78, 0.12), .34)
+    mouth = mat("NB_godzilla_mouth", (0.38, 0.035, 0.035), .7)
+    atomic = mat("NB_atomic_breath", (0.10, 0.68, 1.0), .18, .08)
+    dust = mat("NB_attack_dust", (0.42, 0.36, 0.29), 1.0)
+    smoke = mat("NB_attack_smoke", (0.13, 0.12, 0.105), 1.0)
+    fire = mat("NB_attack_fire", (1.0, 0.24, 0.015), .35)
+    flash = mat("NB_attack_flash", (1.0, 0.78, 0.16), .24)
+    ember = mat("NB_attack_ember", (1.0, 0.18, 0.025), .42)
+    _set_mat_emission("NB_atomic_breath", (0.08, 0.70, 1.0), 9.0)
+    _set_mat_emission("NB_attack_fire", (1.0, 0.07, 0.005), 8.0)
+    _set_mat_emission("NB_attack_flash", (1.0, 0.55, 0.04), 14.0)
+    _set_mat_emission("NB_attack_ember", (1.0, 0.08, 0.01), 5.0)
+
+    monster = bpy.data.objects.new("Godzilla_RenderOnly", None)
+    world_col.objects.link(monster)
+    parts = []
+
+    def sphere(name, radius, x, y, z, material, scale=(1, 1, 1)):
+        obj = add_uv_sphere(world_col, name, radius, x, y, z, material, 10, 16)
+        obj.scale = scale
+        parts.append(obj)
+        return obj
+
+    sphere("godzilla_pelvis", 8.0, 0, 0, 23, green, (1.0, .72, 1.05))
+    sphere("godzilla_torso", 11.5, 0, 0, 36, green, (.82, .68, 1.25))
+    sphere("godzilla_belly", 8.1, 0, -5.5, 34, belly, (.62, .25, 1.15))
+    sphere("godzilla_neck", 7.0, 0, 0, 47, green, (.76, .72, 1.15))
+    sphere("godzilla_head", 8.0, 0, -1.0, 55, green, (1.0, .88, .86))
+    parts.append(add_box(world_col, "godzilla_snout", 10.5, 10.0, 4.8,
+                         0, -6.0, 51.0, green))
+    parts.append(add_box(world_col, "godzilla_mouth", 9.2, 8.8, .65,
+                         0, -7.1, 50.7, mouth))
+    for side in (-1, 1):
+        sphere("godzilla_eye", 1.15, side * 3.35, -7.0, 56.2, eye, (1, .55, 1))
+        sphere("godzilla_pupil", .46, side * 3.35, -7.62, 56.25, dark, (1, .4, 1))
+        parts.append(add_beam_between(world_col, "godzilla_leg",
+                                      (side * 5.6, 0, 24),
+                                      (side * 7.0, -1.0, 7.0), 6.4, green))
+        parts.append(add_box(world_col, "godzilla_foot", 9.0, 14.0, 4.0,
+                             side * 7.0, -5.0, 1.0, green))
+        parts.append(add_beam_between(world_col, "godzilla_arm",
+                                      (side * 7.2, -1.0, 42.0),
+                                      (side * 13.0, -7.5, 30.0), 4.2, green))
+        claw = sphere("godzilla_claw", 3.0, side * 13.0, -8.0, 28.5,
+                      green, (1.0, .78, .65))
+        for finger in (-1.4, 0, 1.4):
+            parts.append(add_ngon_cone(world_col, "godzilla_finger",
+                                        .55, 0, 3.2, 7,
+                                        side * 13.0 + finger,
+                                        -10.1, 27.3, dark))
+
+    # Heavy segmented tail and pale dorsal plates make the silhouette read at
+    # whole-city scale without importing or permanently storing an asset.
+    for i in range(8):
+        t = i / 7.0
+        sphere("godzilla_tail", 6.2 * (1.0 - .68 * t),
+               0, 7.0 + i * 7.0, 25.0 - i * 2.45,
+               green, (1.0, 1.35, .82))
+    for i, z in enumerate(range(20, 55, 5)):
+        spike = add_ngon_cone(world_col, "godzilla_dorsal_plate",
+                              4.8 - abs(37 - z) * .08, 0,
+                              8.0 + (3 if 29 <= z <= 44 else 0), 5,
+                              0, 6.0, z, dark, math.radians(18))
+        spike.rotation_euler.x = math.radians(90)
+        parts.append(spike)
+
+    for obj in parts:
+        obj.parent = monster
+    monster.rotation_euler = (0, 0, math.radians(-45))
+    start = (cx + ext * .62, cy + ext * .48, 0)
+    monster.location = start
+    monster.keyframe_insert("location", frame=1)
+    monster.keyframe_insert("rotation_euler", frame=1)
+    monster.location = start
+    monster.keyframe_insert("location", frame=55)
+    monster.location = (cx + ext * .27, cy + ext * .20, 0)
+    monster.rotation_euler.z = math.radians(-38)
+    monster.keyframe_insert("location", frame=145)
+    monster.keyframe_insert("rotation_euler", frame=145)
+    monster.location = (cx + 18.0, cy + 10.0, 0)
+    monster.rotation_euler.z = math.radians(-30)
+    monster.keyframe_insert("location", frame=235)
+    monster.keyframe_insert("rotation_euler", frame=235)
+    monster.location = (cx + 5.0, cy - 4.0, 1.5)
+    monster.keyframe_insert("location", frame=frame_end)
+    for fc in obj_fcurves(monster):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "BEZIER"
+
+    # Atomic breath sweeps through the middle of town immediately before the
+    # destruction wave. The beam, dust, embers, and debris are render-only.
+    beam = add_beam_between(world_col, "godzilla_atomic_breath",
+                            (0, -11, 51), (-10, -150, 3), 3.1, atomic)
+    beam.parent = monster
+    _keyframe_hidden(beam, 1, True)
+    _keyframe_hidden(beam, 168, False)
+    _keyframe_hidden(beam, 224, True)
+
+    attack_start = 178
+    max_radius = max(ext * .65, 1.0)
+    for index, (building, root) in enumerate(zip(buildings, building_roots)):
+        bx, by = build_pos(building)
+        dx, dy = bx - cx, by - cy
+        distance = math.sqrt(dx * dx + dy * dy)
+        hit = min(frame_end - 35, attack_start + int(92 * distance / max_radius))
+        root.keyframe_insert("location", frame=max(1, hit - 1))
+        root.keyframe_insert("rotation_euler", frame=max(1, hit - 1))
+        direction = Vector((dx, dy, 0))
+        if direction.length < .1:
+            direction = Vector((1, 0, 0))
+        direction.normalize()
+        toss = 5.0 + (index % 7) * 1.5
+        root.location.x += direction.x * toss
+        root.location.y += direction.y * toss
+        root.location.z -= 3.0 + (index % 4)
+        root.rotation_euler.x += (.55 + (index % 5) * .23) * (-1 if index % 2 else 1)
+        root.rotation_euler.y += (.42 + (index % 3) * .31) * (-1 if index % 3 else 1)
+        root.rotation_euler.z += direction.x * .35
+        root.keyframe_insert("location", frame=hit + 28)
+        root.keyframe_insert("rotation_euler", frame=hit + 28)
+        for fc in obj_fcurves(root):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+
+    blast_buildings = buildings[::max(1, len(buildings) // 12)][:12]
+    for i, building in enumerate(blast_buildings):
+        x, y = build_pos(building)
+        blast_frame = attack_start + i * 8
+        core = add_uv_sphere(world_col, "attack_flash", 5.5,
+                             x, y, 5.0, flash, 7, 10)
+        core.scale = (.03, .03, .03)
+        core.keyframe_insert("scale", frame=max(1, blast_frame - 1))
+        core.scale = (2.1, 2.1, 2.1)
+        core.keyframe_insert("scale", frame=blast_frame + 5)
+        core.scale = (.08, .08, .08)
+        core.keyframe_insert("scale", frame=blast_frame + 16)
+
+        fireball = add_uv_sphere(world_col, "attack_fireball", 7.0,
+                                 x, y, 4.5, fire, 7, 11)
+        fireball.scale = (.03, .03, .03)
+        fireball.keyframe_insert("scale", frame=blast_frame)
+        fireball.scale = (1.45, 1.45, 1.75)
+        fireball.keyframe_insert("scale", frame=blast_frame + 12)
+        fireball.location.z += 8.0
+        fireball.scale = (.25, .25, .35)
+        fireball.keyframe_insert("location", frame=blast_frame + 34)
+        fireball.keyframe_insert("scale", frame=blast_frame + 34)
+
+        plume = add_uv_sphere(world_col, "attack_smoke_plume", 8.0,
+                              x, y, 7.0, smoke, 7, 10)
+        plume.scale = (.04, .04, .04)
+        plume.keyframe_insert("scale", frame=blast_frame + 5)
+        plume.scale = (.78, .78, 1.22)
+        plume.location.x += math.cos(i * 1.7) * 5.0
+        plume.location.y += math.sin(i * 1.7) * 5.0
+        plume.location.z += 17.0
+        plume.keyframe_insert("location", frame=min(frame_end, blast_frame + 62))
+        plume.keyframe_insert("scale", frame=min(frame_end, blast_frame + 62))
+
+        shock = add_uv_sphere(world_col, "attack_shockwave", 6.0,
+                              x, y, 1.0, flash, 5, 12)
+        shock.scale = (.08, .08, .025)
+        shock.keyframe_insert("scale", frame=blast_frame)
+        shock.scale = (4.8, 4.8, .035)
+        shock.keyframe_insert("scale", frame=blast_frame + 20)
+        shock.scale = (.02, .02, .01)
+        shock.keyframe_insert("scale", frame=blast_frame + 30)
+
+        light_data = bpy.data.lights.new("AttackFlash", type="POINT")
+        light_data.color = (1.0, .24, .035)
+        light_data.energy = 0.0
+        light_data.keyframe_insert("energy", frame=max(1, blast_frame - 1))
+        light_data.energy = 8500.0
+        light_data.keyframe_insert("energy", frame=blast_frame + 2)
+        light_data.energy = 0.0
+        light_data.keyframe_insert("energy", frame=blast_frame + 12)
+        light_obj = bpy.data.objects.new("AttackFlash", light_data)
+        light_obj.location = (x, y, 13.0)
+        world_col.objects.link(light_obj)
+
+        for j in range(4):
+            debris = add_box(world_col, "attack_debris", 2.2, 1.6, 1.4,
+                             x, y, 1.2, dark)
+            debris.rotation_euler = (j * .4, j * .7, j * .9)
+            debris.keyframe_insert("location", frame=blast_frame)
+            debris.keyframe_insert("rotation_euler", frame=blast_frame)
+            debris.location = (x + math.cos(i + j) * (12 + 4 * j),
+                               y + math.sin(i + j) * (12 + 4 * j),
+                               12.0 + 5.0 * j)
+            debris.rotation_euler = (2.2 + j, 1.4 + i * .2, 3.1 + j)
+            debris.keyframe_insert("location", frame=blast_frame + 20)
+            debris.keyframe_insert("rotation_euler", frame=blast_frame + 20)
+            debris.location.z = -2.0
+            debris.keyframe_insert("location", frame=blast_frame + 48)
+
+        for obj in (core, fireball, plume, shock):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+
+    for i in range(26):
+        angle = math.tau * i / 26.0
+        radius = ext * (.06 + .34 * ((i % 9) / 8.0))
+        x = cx + math.cos(angle) * radius
+        y = cy + math.sin(angle) * radius
+        cloud = add_uv_sphere(world_col, "attack_dust", 5.0 + i % 4,
+                              x, y, 2.0 + i % 3, dust, 6, 9)
+        cloud.scale = (.02, .02, .02)
+        cloud.keyframe_insert("scale", frame=attack_start + i * 3)
+        cloud.scale = (1.28, 1.28, .82)
+        cloud.keyframe_insert("scale", frame=min(frame_end, attack_start + 65 + i * 3))
+        for fc in obj_fcurves(cloud):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+        if i % 3 == 0:
+            spark = add_ngon_cone(world_col, "attack_ember", 1.4, 0, 8.0, 7,
+                                  x, y, 2.5, ember)
+            spark.scale = (.05, .05, .05)
+            spark.keyframe_insert("scale", frame=attack_start + i * 3)
+            spark.scale = (1, 1, 1)
+            spark.keyframe_insert("scale", frame=min(frame_end, attack_start + 38 + i * 3))
+
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
@@ -4395,6 +4635,72 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for fc in obj_fcurves(cam_obj):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+    elif cam == "cinematic":
+        # Elevated skyline reveal used for a clean/destruction matched pair.
+        # The camera is independent from temporary scene layers so both
+        # renders have exactly the same lens, framing, timing, and motion.
+        aim = bpy.data.objects.new("CinematicAim", None)
+        aim.location = (cx, cy, 13.0)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("CinematicCamera")
+        cam_data.lens = 48
+        cam_data.clip_start = 5.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("CinematicCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        cam_obj.location = (108.0, -128.0, 86.0)
+        cam_obj.keyframe_insert("location", frame=1)
+        cam_obj.location = (96.0, -116.0, 78.0)
+        cam_obj.keyframe_insert("location", frame=frame_end)
+        aim.location = (-3.0, -3.0, 13.0)
+        aim.keyframe_insert("location", frame=1)
+        aim.location = (-3.0, -3.0, 13.0)
+        aim.keyframe_insert("location", frame=frame_end)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "dronezoom":
+        # Fast drone dive, lateral sweep, and pullback. Both altitude and
+        # bearing change so this reads as a piloted move, not a lens effect.
+        aim = bpy.data.objects.new("DroneZoomAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("DroneZoomCamera")
+        cam_data.lens = 29
+        cam_data.clip_start = 4.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("DroneZoomCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            (1, (cx - ext * .70, cy - ext * .66, ext * 1.18), (cx, cy, 4.0)),
+            (90, (120.0, -145.0, 95.0), (-3.0, -3.0, 14.0)),
+            (165, (cx + ext * .50, cy - ext * .40, ext * .62),
+             (cx, cy, 6.0)),
+            (245, (-105.0, 120.0, 86.0), (-3.0, -3.0, 13.0)),
+            (frame_end, (cx + ext * .58, cy + ext * .54, ext * 1.08),
+             (cx, cy, 4.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "park":
         # in-park showcase: slow low orbit around the park's gazebo, looking
         # across the lawn at the ring houses sweeping by behind it
@@ -4827,9 +5133,10 @@ def main(cfg=None):
                        if focus_type else new_batch)
     new_ids = {id(b) for b in animation_batch}
     rem_ids = {id(b) for b in removed}
-    rise, sink = [], []
+    rise, sink, building_roots = [], [], []
     for b in state["buildings"]:
         e = place_instance(world_col, b, "%s_d%d" % (b["type"], b.get("day", 0)))
+        building_roots.append(e)
         # Export-only identity.  The web chunker partitions these canonical
         # building roots but leaves roads, terrain, nature, traffic, and public
         # feature dressing in the always-loaded base asset.
@@ -4867,7 +5174,7 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet"):
+    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
@@ -4926,6 +5233,8 @@ def main(cfg=None):
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
     if cfg.get("cam") == "football":
         build_football_vignette(world_col, state["buildings"], frame_end)
+    if cfg.get("godzilla"):
+        build_godzilla_attack(world_col, state["buildings"], building_roots, frame_end)
     if cfg.get("celebrate"):
         # fireworks over today's new batch if there is one (e.g. the day-8
         # park district), otherwise over the founders' custom homes

@@ -81,6 +81,18 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 18, population 321, 324 buildings (grown 2026-07-19 via Zach's Mac
+  Codex: +20 ordinary claimable homes). Seeds 305-308 finished Acorn Court at
+  planned addresses 158-161; seeds 309-324 opened Lantern Court at addresses
+  162-177. All 20 rows were added by the insert-only Supabase sync and address
+  178 is next. Full and six-district web assets match exact Day 18 / 321 / 324
+  state and coverage. The reviewed delivery is five standalone 12-second
+  daytime portrait MP4s: all 20 new homes appearing; a completed angled city
+  showcase; its exact-camera temporary Godzilla destruction twin with atomic
+  breath, explosions, smoke, shockwaves, debris, and collapsing buildings; a
+  completed whole-city sky view; and a fast drone dive/sweep/pullback. New
+  `cinematic` and `dronezoom` cameras are reusable replay modes. `--godzilla`
+  is strictly render-only and never changes world state, GLBs, or the Blend.
 - Day 17, population 301, 304 buildings (grown 2026-07-18 via Cade's
   Windows Codex: +29 ordinary claimable homes). Seeds 276-285 continued Twin
   Oaks Drive at planned addresses 129-138; seeds 286-304 opened Acorn Court at

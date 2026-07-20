@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 17
+# Codex handoff -- current through Day 18
 
-Updated 2026-07-18 for Cade's next Claude/Codex session.
+Updated 2026-07-19 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,19 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 18 is population 321 with 324 total buildings. Zach's guarded Mac +20
+  growth consumed Twin Oaks plan IDs 158-177: seeds 305-308 finished Acorn
+  Court and seeds 309-324 opened Lantern Court. The insert-only houses sync
+  added all 20 claimable rows. Full and six-district web assets report exact
+  Day 18 / 321 / 324 state and coverage; address 178 is next. The reviewed
+  delivery is five separate 12-second daytime portrait MP4s: all 20 homes
+  appearing, a finished downtown-forward helicopter reveal, its frame-matched
+  temporary Godzilla destruction version with breath/explosion/smoke/debris
+  effects, a finished whole-city sky view, and a fast dive/sweep/pullback
+  drone shot. `--cam cinematic`, `--cam dronezoom`, and `--godzilla` are
+  replay/render tools; the destruction layer never changes saved town state,
+  exported assets, or the Blend.
 
 - Day 17 is population 301 with 304 total buildings. The single +29 growth
   consumed Twin Oaks plan IDs 129-157: seeds 276-285 continued Twin Oaks Drive

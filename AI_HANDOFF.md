@@ -40,9 +40,20 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
-## Current town (Day 17, 2026-07-18)
+## Current town (Day 18, 2026-07-19)
 
-Population is 301 with 304 buildings. Day 17 added 29 ordinary claimable homes:
+Population is 321 with 324 buildings. Day 18 added 20 ordinary claimable homes:
+seeds 305-308 finished Acorn Court at plan IDs 158-161, and seeds 309-324
+opened Lantern Court at plan IDs 162-177. All 20 insert-only Supabase rows were
+added and address 178 is next. The reviewed delivery is five separate
+12-second daytime portrait MP4s: all 20 new homes appearing, a completed angled
+city showcase, its exact-camera temporary Godzilla destruction twin, a whole
+city sky view, and a fast drone dive/sweep/pullback. The Godzilla, explosions,
+smoke, debris, breath, and building collapse are replay-only render effects and
+never enter saved state, web exports, or the Blend. Use `--cam cinematic`,
+`--cam dronezoom`, and `--godzilla` for those render workflows.
+
+Day 17 added 29 ordinary claimable homes:
 seeds 276-285 continued Twin Oaks Drive at plan IDs 129-138, and seeds 286-304
 opened Acorn Court at plan IDs 139-157. Export contains six district chunks,
 including `twin-oaks.glb`, plus the full GLB fallback. All 29 new Supabase rows
