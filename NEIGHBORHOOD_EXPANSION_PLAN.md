@@ -3,7 +3,7 @@
 Implemented 2026-07-11 for Cade. This is a permanent deterministic plan for
 the next 366 ordinary houses. It changes no existing building or road.
 
-Current progress: addresses 1-187 are built through Day 19 (population 331).
+Current progress: addresses 1-193 are built through Day 20 (population 337).
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills

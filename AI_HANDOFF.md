@@ -40,6 +40,15 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
+## Current town (Day 20, 2026-07-21)
+
+Population is 337 with 389 buildings. Day 20 added 6 ordinary Meadow Run homes
+(plan IDs 188-193, seeds 336-341), one civic Follow Mart (seed 335, non-claimable),
+and 48 forest trees (seeds 342-389, non-claimable). Founder burjhouse seed 2 kept
+its address; only mesh height was scaled. **All 334 pre-Day-20 building records
+are byte-identical** (ownership/claims safe). Address 194 is next. Live site
+pushed via grow.sh to main.
+
 ## Current town (Day 19, 2026-07-20)
 
 Population is 331 with 334 buildings. Day 19 added 10 ordinary claimable homes:
