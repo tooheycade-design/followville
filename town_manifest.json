@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1612436,
+    "bytes": 1612404,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "d0bdb9dc5b660c6da635d947637e3fd0112abcd3b28f55519ce43590c8b8c2ab"
+    "sha256": "cc3ff6387aad79499892a428cb4e4e77a1a5e5bfb868150ebb57da3145236c67"
   },
   "chunks": [
     {
@@ -888,9 +888,9 @@
     }
   ],
   "fallback": {
-    "bytes": 19135804,
+    "bytes": 19135772,
     "file": "town.glb",
-    "sha256": "e9825bc71eada51b7439e1c40dd00efbd2917c719138ab3f1bb854baac74103e"
+    "sha256": "3c7fb5e30bd006f8c359103c6427bf3cae77c544774027e664739fda2ebd973d"
   },
   "state": {
     "building_count": 389,
