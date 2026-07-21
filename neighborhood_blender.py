@@ -2334,12 +2334,15 @@ def place_instance(world_col, b, name):
             else:
                 authored_z = 0
         empty.location = (x, y, authored_z)
-    # followmart / school: sit slightly above grass on flat downtown pad
-    if b["type"] in ("followmart", "elementaryschool") and "px" not in b:
-        x2, y2 = empty.location.x, empty.location.y
-        empty.location = (x2, y2, max(0.05, terrain_height(x2, y2)))
     else:
-        empty.location = (x + (s - 1) * LOT / 2, y + (s - 1) * LOT / 2, 0)
+        lx = x + (s - 1) * LOT / 2
+        ly = y + (s - 1) * LOT / 2
+        # Civic campuses sit slightly above meadow so pads stay readable.
+        if b["type"] in ("followmart", "elementaryschool"):
+            lz = max(0.05, terrain_height(lx, ly))
+        else:
+            lz = 0
+        empty.location = (lx, ly, lz)
     rng = random.Random(b["seed"])
     if b.get("rot") is not None:  # exact facing (ring houses face their park)
         empty.rotation_euler = (0, 0, b["rot"])
