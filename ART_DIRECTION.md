@@ -29,6 +29,22 @@ Friendly low-poly Instagram town. Readable on a phone. Colorful, clean, walkable
 - Roads: dark asphalt, lighter sidewalks/curbs
 - Grass: soft meadow under pad, never over asphalt
 
+## Walk surface contract (anti-sink)
+
+Players stand on `walkSurfaceHeight()` in `town.html`. Civic pads (Mart, school)
+must not ship mesh tops higher than that function or avatars **sink into the floor**.
+
+| Source | Value |
+|--------|--------|
+| `neighborhood_blender.py` `FM_WALK_LOCAL_TOP` | local parking/pad top |
+| `place_instance` civic floor | ≈ `0.05` |
+| World walk top | `0.05 + FM_WALK_LOCAL_TOP` |
+| `town.html` `CIVIC_WALK.followmart.top` | **must match world walk top** |
+
+If you raise Mart parking, update **both** the Blender constant and `CIVIC_WALK`,
+then run `qa_walk_surfaces.py`. Flag must sit at the **front parking corner**,
+never inside the main box (`fm_body` AABB).
+
 ## QA before ship
 
 ```bash
@@ -37,4 +53,5 @@ export NEIGHBORHOOD_STATE_DIR=~/followville_repo
 bash ~/AgentWorkspace/blender-tools/followville_qa_all.sh
 ```
 
-Inspect street + overhead stills. Fail if roads float or Mart sits on a hill (terrain_height ≫ 0).
+Inspect street + overhead stills. Fail if roads float, Mart sits on a hill
+(terrain_height ≫ 0), walk-surface QA fails, or feet sink into civic pads.

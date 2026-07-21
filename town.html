@@ -3238,15 +3238,61 @@ function suburbanRoadSurfaceHeight(x,z){
   return height;
 }
 
+/* Civic campuses (SIZE 3) ship raised pads/parking. walkSurfaceHeight must
+   match the mesh tops or the avatar sinks into asphalt (Mart day-20 bug).
+   CIVIC_WALK.*.top must stay in lockstep with neighborhood_blender.py
+   (FM_WALK_LOCAL_TOP + place_instance civic lz≈0.05 → world top ≈ 0.19).
+   qa_walk_surfaces.py fails the build if those contracts diverge. */
+const CIVIC_WALK = Object.freeze({
+  followmart: { half: 17.0, top: 0.19, size: 3 },
+  elementaryschool: { half: 15.0, top: 0.28, size: 3 },
+});
+/** Populated by rebuildCivicWalkPads() after world_state loads. */
+let civicWalkPads = [];
+function civicBuildingCenterXZ(b){
+  const spec=CIVIC_WALK[b.type];
+  const size=spec?spec.size:1;
+  if(typeof b.px==="number") return [b.px, -b.py];
+  const [x,y]=lotToWorld(b.gx,b.gy);
+  return [x+(size-1)*LOT/2, -(y+(size-1)*LOT/2)];
+}
+function rebuildCivicWalkPads(buildings){
+  civicWalkPads=[];
+  for(const b of buildings||[]){
+    const spec=CIVIC_WALK[b.type];
+    if(!spec) continue;
+    const [cx,cz]=civicBuildingCenterXZ(b);
+    civicWalkPads.push({type:b.type, cx, cz, half:spec.half, top:spec.top});
+  }
+  // Self-check: Mart parking sample must sit on the civic pad height.
+  const mart=civicWalkPads.find(p=>p.type==="followmart");
+  if(mart){
+    const sample=walkSurfaceHeight(mart.cx, mart.cz - mart.half*0.45);
+    document.body.dataset.martWalkable =
+      sample >= mart.top - 0.02 ? "pass" : "fail";
+  }else{
+    document.body.dataset.martWalkable="missing";
+  }
+}
+function civicCampusSurfaceHeight(x,z){
+  let height=0;
+  for(const p of civicWalkPads){
+    if(Math.abs(x-p.cx)<=p.half && Math.abs(z-p.cz)<=p.half)
+      height=Math.max(height, p.top);
+  }
+  return height;
+}
+
 function walkSurfaceHeight(x,z){
   return Math.max(0,regionalTerrainHeight(x,z),
                   downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
-                  storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z));
+                  storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z),
+                  civicCampusSurfaceHeight(x,z));
 }
 if(localDesignPreview){
   window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
-    downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,
-    surfaces:()=>localWalkSurfaces};
+    downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,civicCampusSurfaceHeight,
+    CIVIC_WALK, civicWalkPads:()=>civicWalkPads, surfaces:()=>localWalkSurfaces};
 }
 document.body.dataset.storybookWalkable =
   walkSurfaceHeight(305,-60)>2.7 && walkSurfaceHeight(246,-69)>1.5 ? "pass" : "fail";
@@ -6374,6 +6420,7 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
     const buildings = state.buildings || [];
     applyWorldLayout(buildings);
     worldBuildings = buildings;
+    rebuildCivicWalkPads(buildings);
     townMapMeta = { day:state.day ?? null, population:state.pop ?? null };
     initSupabase();   // accounts + claiming; no-op until configured
     loadFromGLB(buildings)
