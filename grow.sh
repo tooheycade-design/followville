@@ -22,7 +22,12 @@ for value in "$@"; do
     *) ARGS+=("$value") ;;
   esac
 done
-set -- "${ARGS[@]}"
+# With set -u, an empty array expansion is an error on some bashes.
+if [ "${#ARGS[@]}" -gt 0 ]; then
+  set -- "${ARGS[@]}"
+else
+  set --
+fi
 
 if [ -z "$REPO" ]; then
   echo "FOLLOWVILLE_REPO_DIR (or NEIGHBORHOOD_REPO_DIR) is required. Refusing iCloud-only growth." >&2
