@@ -16,15 +16,16 @@ Friendly low-poly Instagram town. Readable on a phone. Colorful, clean, walkable
 
 ## Scale
 
-| Element | Footprint |
-|---------|-----------|
-| House | 1 lot |
-| School / Follow Mart | 1 full block (SIZE 3) |
-| Burj | 1 lot footprint, tall skyline |
+| Element | Footprint | Height cue |
+|---------|-----------|------------|
+| House | 1 lot | 1–2 story |
+| School | 1 full block (SIZE 3) | ~7–8 m center hall |
+| Follow Mart | 1 full block (SIZE 3) | **tall big-box** walls ~12 m, front parapet ~15 m, deep canopy |
+| Burj | 1 lot footprint, tall skyline | multi-tier tower |
 
 ## Palette cues
 
-- Mart: blue body, yellow trim, white/yellow **FOLLOW MART** lettering, dark asphalt parking
+- Mart: blue panel body, yellow canopy/cornice, dark-blue parapet, large yellow **FOLLOW MART** sign, glass vestibule, asphalt parking + light poles, monument sign at the lot corner
 - Roads: dark asphalt, lighter sidewalks/curbs
 - Grass: soft meadow under pad, never over asphalt
 

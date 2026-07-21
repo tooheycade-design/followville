@@ -1920,13 +1920,14 @@ def build_elementary_school(col, seed):
 
 
 def _add_followmart_text(col, body, size, x, y, z, material,
-                         rot_euler=(math.radians(90), 0.0, 0.0)):
+                         rot_euler=(math.radians(90), 0.0, 0.0),
+                         extrude=0.18, bevel=0.02):
     """Extruded font text on a facade (default faces local -Y, like school front)."""
     curve = bpy.data.curves.new(name="fm_text_curve", type="FONT")
     curve.body = body
     curve.size = size
-    curve.extrude = 0.12
-    curve.bevel_depth = 0.015
+    curve.extrude = extrude
+    curve.bevel_depth = bevel
     curve.align_x = "CENTER"
     curve.align_y = "CENTER"
     # Prefer a clean sans if present; otherwise Blender default Bfont.
@@ -1949,69 +1950,204 @@ def _add_followmart_text(col, body, size, x, y, z, material,
 
 
 def build_followmart(col, seed):
-    """Full-block Follow Mart — school-scale campus that stays on the lot pad."""
+    """Full-block Follow Mart — tall big-box store that reads from first person.
+
+    Classic American box store: tall panel walls, raised front parapet with a
+    huge FOLLOW MART sign, deep yellow entry canopy, glass vestibule, parking
+    lot with poles and cart corrals. Footprint stays inside the 3-lot pad.
+    """
     rng = random.Random(seed)
     m = std_mats()
-    blue = mat("NB_fm_blue", (0.12, 0.38, 0.78), .72)
-    blue_dk = mat("NB_fm_blue_dk", (0.08, 0.22, 0.52), .78)
-    yellow = mat("NB_fm_yellow", (0.98, 0.78, 0.12), .55)
-    red = mat("NB_fm_red", (0.86, 0.18, 0.16), .7)
-    cream = mat("NB_fm_cream", (0.95, 0.93, 0.88), .8)
-    asphalt = mat("NB_fm_asphalt", (0.18, 0.19, 0.21), .95)
-    glass = mat("NB_fm_glass", (0.45, 0.68, 0.82), .2)
-    cart = mat("NB_fm_cart", (0.55, 0.58, 0.62), .45)
-    white = mat("NB_fm_white", (0.97, 0.97, 0.96), .75)
-    # Keep overall footprint inside a 3-lot block (~39m): pad ~34m with margin.
+    blue = mat("NB_fm_blue", (0.10, 0.36, 0.76), .68)
+    blue_mid = mat("NB_fm_blue_mid", (0.14, 0.42, 0.82), .62)
+    blue_dk = mat("NB_fm_blue_dk", (0.06, 0.18, 0.48), .74)
+    yellow = mat("NB_fm_yellow", (0.99, 0.80, 0.10), .48)
+    yellow_dk = mat("NB_fm_yellow_dk", (0.88, 0.62, 0.06), .55)
+    red = mat("NB_fm_red", (0.86, 0.16, 0.14), .68)
+    cream = mat("NB_fm_cream", (0.96, 0.94, 0.90), .78)
+    asphalt = mat("NB_fm_asphalt", (0.16, 0.17, 0.19), .95)
+    glass = mat("NB_fm_glass", (0.42, 0.66, 0.80), .14, .06, 1.0, 0.0, .55)
+    glass_dk = mat("NB_fm_glass_dk", (0.18, 0.32, 0.44), .12, .10, 1.0, 0.0, .62)
+    cart = mat("NB_fm_cart", (0.52, 0.55, 0.58), .42)
+    white = mat("NB_fm_white", (0.97, 0.97, 0.96), .72)
+    concrete = mat("NB_fm_concrete", (0.72, 0.72, 0.70), .92)
+    metal = mat("NB_fm_metal", (0.42, 0.44, 0.46), .38, .55)
+    dark = mat("NB_fm_dark", (0.10, 0.11, 0.13), .55)
+
+    # Keep overall footprint inside a 3-lot block (~39m): pad ~34m with curb margin.
     z0 = 0.12  # sit above regional grass so parking/asphalt stays readable
+    front_y = -3.95   # main front wall (local -Y)
+    body_y = 4.35
+    body_d = 16.2
+    body_w = 26.0
+    wall_h = 11.8     # tall box walls (was ~7.6)
+    parapet_h = 15.4  # raised front parapet for the big sign
 
+    # ── Ground: cream pad, asphalt parking, entry plaza ─────────────────────
     add_box(col, "fm_pad", 34.0, 34.0, .16, 0, 0, z0, cream)
-    # Front parking (local -Y) with clear aisle + stalls — not over city roads.
-    add_box(col, "fm_parking", 30.0, 11.0, .14, 0, -9.5, z0 + .08, asphalt)
-    add_box(col, "fm_drive", 5.5, 11.0, .15, 0, -9.5, z0 + .09, asphalt)
-    for x in range(-12, 13, 3):
-        if abs(x) < 3:
+    add_box(col, "fm_parking", 31.0, 11.6, .14, 0, -9.8, z0 + .08, asphalt)
+    # Center drive aisle toward the doors
+    add_box(col, "fm_drive", 6.2, 11.6, .15, 0, -9.8, z0 + .09, asphalt)
+    # Stall stripes (white) + end stops
+    for x in range(-13, 14, 3):
+        if abs(x) < 3.2:
             continue
-        add_box(col, "fm_stall", .14, 4.6, .04, x, -10.2, z0 + .22, white)
-    add_box(col, "fm_entry_walk", 8.0, 2.4, .12, 0, -3.6, z0 + .1, cream)
+        add_box(col, "fm_stall", .12, 4.8, .035, x, -11.0, z0 + .22, white)
+        add_box(col, "fm_stop", .55, .18, .08, x, -13.15, z0 + .22, yellow)
+    # Cross-aisle dashed line near the storefront
+    for x in range(-14, 15, 2):
+        add_box(col, "fm_aisle_dash", 1.1, .14, .03, x, -6.35, z0 + .22, white)
+    # Wide concrete entry plaza + steps up to doors
+    add_box(col, "fm_plaza", 16.0, 3.6, .14, 0, -4.9, z0 + .12, concrete)
+    add_box(col, "fm_entry_walk", 9.5, 2.0, .12, 0, -3.35, z0 + .18, cream)
+    for i, (yy, ww) in enumerate(((-5.55, 10.5), (-5.85, 11.2), (-6.15, 11.8))):
+        add_box(col, "fm_step", ww, .38, .12, 0, yy, z0 + .12 + i * .10, cream)
 
-    # Big-box store sits back on the pad (positive Y), school-like massing.
-    add_box(col, "fm_body", 24.0, 15.5, 7.6, 0, 4.0, z0 + .16, blue)
-    add_box(col, "fm_body_trim", 24.5, 16.0, .5, 0, 4.0, z0 + 7.5, yellow)
-    add_box(col, "fm_roof", 25.0, 16.5, .55, 0, 4.0, z0 + 7.9, cream)
-    add_box(col, "fm_wing", 7.5, 10.0, 5.6, 12.5, 3.0, z0 + .16, blue_dk)
-    add_box(col, "fm_wing_roof", 8.0, 10.5, .4, 12.5, 3.0, z0 + 5.6, cream)
+    # ── Main big-box mass (tall) ────────────────────────────────────────────
+    add_box(col, "fm_body", body_w, body_d, wall_h, 0, body_y, z0 + .16, blue)
+    # Horizontal panel belts (reads as metal cladding from street)
+    for z in (z0 + 3.2, z0 + 6.4, z0 + 9.6):
+        add_box(col, "fm_belt", body_w + 0.25, body_d + 0.25, .28,
+                0, body_y, z, blue_mid)
+    # Yellow cornice under parapet
+    add_box(col, "fm_cornice", body_w + 0.55, body_d + 0.55, .42,
+            0, body_y, z0 + wall_h - 0.15, yellow)
+    # Flat roof + HVAC lumps (silhouette from drone / tall angles)
+    add_box(col, "fm_roof", body_w + 0.9, body_d + 0.9, .55,
+            0, body_y, z0 + wall_h + 0.2, cream)
+    for hx, hy in ((-6.5, 6.5), (0.0, 8.0), (6.5, 5.5), (-3.0, 2.0), (4.5, 9.0)):
+        add_box(col, "fm_hvac", 2.4, 1.8, 1.1, hx, hy, z0 + wall_h + 0.7, metal)
+        add_box(col, "fm_hvac_cap", 2.55, 1.95, .18, hx, hy, z0 + wall_h + 1.7, dark)
 
-    # Storefront + canopy
-    add_box(col, "fm_storefront", 18.0, .32, 4.6, 0, -3.85, z0 + .35, glass)
-    for x in (-6.5, -3.25, 0, 3.25, 6.5):
-        add_box(col, "fm_mullion", .2, .35, 4.6, x, -3.9, z0 + .35, cream)
-    add_box(col, "fm_door_l", 1.7, .28, 3.1, -.95, -4.05, z0 + .35, glass)
-    add_box(col, "fm_door_r", 1.7, .28, 3.1, .95, -4.05, z0 + .35, glass)
-    add_box(col, "fm_canopy", 20.0, 3.8, .42, 0, -5.5, z0 + 5.0, yellow)
-    for x in (-8.0, -2.7, 2.7, 8.0):
-        add_ngon_cone(col, "fm_canopy_col", .2, .2, 4.7, 8, x, -6.0, z0 + .2, cream)
+    # Side garden / auto wing (shorter, darker blue)
+    add_box(col, "fm_wing", 7.8, 11.5, 8.4, 13.2, 3.2, z0 + .16, blue_dk)
+    add_box(col, "fm_wing_roof", 8.3, 12.0, .4, 13.2, 3.2, z0 + 8.4, cream)
+    add_box(col, "fm_wing_door", 2.4, .28, 2.8, 13.2, -2.65, z0 + .3, glass_dk)
+    add_box(col, "fm_wing_canopy", 4.2, 1.8, .28, 13.2, -3.4, z0 + 3.4, yellow_dk)
 
-    # Big facade sign bar + real 3D text "FOLLOW MART" (readable on web + stills).
-    add_box(col, "fm_sign_bar", 22.5, .9, 2.9, 0, -3.65, z0 + 5.45, blue_dk)
-    add_box(col, "fm_sign_bar_trim", 23.0, .2, .25, 0, -4.05, z0 + 5.45, yellow)
-    add_box(col, "fm_sign_bar_trim2", 23.0, .2, .25, 0, -4.05, z0 + 8.1, yellow)
-    _add_followmart_text(col, "FOLLOW MART", 2.15, 0.0, -4.15, z0 + 6.15, yellow)
-    # Side wall also says FOLLOW MART for drone / side approaches.
-    _add_followmart_text(col, "FOLLOW MART", 1.55, -12.35, 4.0, z0 + 4.2, yellow,
-                         rot_euler=(math.radians(90), 0.0, math.radians(90)))
+    # ── Raised front parapet (the big-box “false front”) ────────────────────
+    # Side wings of parapet sit on the wall; center rises higher for the sign.
+    add_box(col, "fm_parapet_l", 6.5, 1.15, parapet_h - 1.2,
+            -9.8, front_y + 0.35, z0 + .16, blue_dk)
+    add_box(col, "fm_parapet_r", 6.5, 1.15, parapet_h - 1.2,
+            9.8, front_y + 0.35, z0 + .16, blue_dk)
+    add_box(col, "fm_parapet_c", 14.5, 1.35, parapet_h,
+            0, front_y + 0.25, z0 + .16, blue_dk)
+    # Yellow crown on parapet
+    add_box(col, "fm_parapet_crown", 15.2, 1.5, .38,
+            0, front_y + 0.2, z0 + parapet_h, yellow)
+    add_box(col, "fm_parapet_crown_l", 6.9, 1.3, .32,
+            -9.8, front_y + 0.3, z0 + parapet_h - 1.2, yellow)
+    add_box(col, "fm_parapet_crown_r", 6.9, 1.3, .32,
+            9.8, front_y + 0.3, z0 + parapet_h - 1.2, yellow)
+    # Vertical pilasters on the front wall
+    for x in (-12.2, -8.5, -4.5, 4.5, 8.5, 12.2):
+        add_box(col, "fm_pilaster", .55, .55, wall_h + 0.4,
+                x, front_y + 0.15, z0 + .16, blue_mid)
 
-    # Cart corral + side dock (on campus only)
-    for x in (-11.0, -9.2, -7.4):
-        add_box(col, "fm_cart", .85, .65, 1.05, x, -5.2, z0 + .3, cart)
-        add_box(col, "fm_cart_h", .12, .12, .85, x, -5.5, z0 + .85, cart)
-    add_box(col, "fm_dock", 5.5, 3.2, 1.1, 13.0, -4.5, z0 + .2, cream)
-    add_box(col, "fm_dock_ramp", 5.0, 2.2, .3, 13.0, -6.6, z0 + .2, asphalt)
-    for x in (-14.0, 14.0):
-        add_box(col, "fm_planter", 2.0, 1.3, .5, x, -12.5, z0 + .2, cream)
-        build_tree(col, rng, 0.65, x, -12.5)
-    add_ngon_cone(col, "fm_flagpole", .09, .07, 10.0, 8, -13.5, 6.0, z0 + .2, m["metal"])
-    add_box(col, "fm_flag", 2.0, .12, 1.1, -12.3, 6.0, z0 + 8.8, red)
-    add_box(col, "fm_side_banner", .28, 12.0, 2.0, -12.15, 4.0, z0 + 3.2, yellow)
+    # ── Glass curtain storefront + vestibule ────────────────────────────────
+    # Full-width lower glass band
+    add_box(col, "fm_storefront", 20.5, .28, 5.6, 0, front_y - 0.05, z0 + .35, glass)
+    # Horizontal transom bar
+    add_box(col, "fm_transom", 20.8, .32, .28, 0, front_y - 0.08, z0 + 5.9, cream)
+    # Upper clerestory glass strip under the sign
+    add_box(col, "fm_clerestory", 18.0, .22, 1.8, 0, front_y - 0.02, z0 + 6.4, glass_dk)
+    # Mullions
+    for x in (-9.0, -6.0, -3.0, 0.0, 3.0, 6.0, 9.0):
+        add_box(col, "fm_mullion", .18, .38, 5.6, x, front_y - 0.12, z0 + .35, cream)
+    # Projecting glass vestibule (reads as real entry from FP)
+    add_box(col, "fm_vestibule", 6.4, 2.4, 4.0, 0, front_y - 1.35, z0 + .28, cream)
+    add_box(col, "fm_vest_glass_f", 5.6, .16, 3.35, 0, front_y - 2.55, z0 + .55, glass)
+    add_box(col, "fm_vest_glass_l", .16, 2.1, 3.35, -3.1, front_y - 1.35, z0 + .55, glass)
+    add_box(col, "fm_vest_glass_r", .16, 2.1, 3.35, 3.1, front_y - 1.35, z0 + .55, glass)
+    # Sliding double doors
+    add_box(col, "fm_door_l", 1.55, .14, 2.85, -.85, front_y - 2.62, z0 + .45, glass_dk)
+    add_box(col, "fm_door_r", 1.55, .14, 2.85, .85, front_y - 2.62, z0 + .45, glass_dk)
+    add_box(col, "fm_door_frame", .12, .16, 2.95, 0, front_y - 2.68, z0 + .4, metal)
+    add_box(col, "fm_door_bar", 3.2, .14, .12, 0, front_y - 2.68, z0 + 2.0, metal)
+    # Bollards flanking the vestibule
+    for x in (-4.0, 4.0):
+        add_ngon_cone(col, "fm_bollard", .16, .14, 0.95, 10, x, front_y - 2.9, z0 + .2, yellow)
+        add_ngon_cone(col, "fm_bollard_cap", .17, .12, 0.12, 10, x, front_y - 2.9, z0 + 1.1, metal)
+
+    # ── Deep yellow entry canopy (big-box porch) ────────────────────────────
+    canopy_z = z0 + 5.15
+    add_box(col, "fm_canopy", 22.0, 5.2, .48, 0, front_y - 2.7, canopy_z, yellow)
+    add_box(col, "fm_canopy_edge", 22.4, .35, .55, 0, front_y - 5.2, canopy_z - 0.05, yellow_dk)
+    add_box(col, "fm_canopy_stripe", 22.2, 5.0, .12, 0, front_y - 2.7, canopy_z + 0.42, blue_dk)
+    # Support columns + base pads
+    for x in (-9.5, -4.5, 0.0, 4.5, 9.5):
+        add_ngon_cone(col, "fm_canopy_col", .22, .20, canopy_z - z0 - 0.15, 10,
+                      x, front_y - 4.6, z0 + .2, cream)
+        add_box(col, "fm_col_base", .55, .55, .14, x, front_y - 4.6, z0 + .18, concrete)
+    # Canopy underside lights
+    for x in (-7.0, -2.5, 2.5, 7.0):
+        add_box(col, "fm_canopy_light", .7, .45, .12, x, front_y - 3.2, canopy_z - 0.08, white)
+
+    # ── Giant facade sign: dark bar + FOLLOW MART ───────────────────────────
+    sign_z = z0 + 10.6
+    add_box(col, "fm_sign_bar", 20.5, 1.05, 3.6, 0, front_y - 0.15, sign_z, blue_dk)
+    add_box(col, "fm_sign_trim_bot", 21.0, .28, .28, 0, front_y - 0.55, sign_z, yellow)
+    add_box(col, "fm_sign_trim_top", 21.0, .28, .28, 0, front_y - 0.55, sign_z + 3.35, yellow)
+    add_box(col, "fm_sign_trim_l", .28, .28, 3.6, -10.3, front_y - 0.55, sign_z, yellow)
+    add_box(col, "fm_sign_trim_r", .28, .28, 3.6, 10.3, front_y - 0.55, sign_z, yellow)
+    # Sparkle spark on the left of the wordmark
+    add_box(col, "fm_logo_spark", 1.15, .35, 1.15, -9.2, front_y - 0.7, sign_z + 1.15, yellow)
+    _add_followmart_text(col, "FOLLOW MART", 2.85, 0.55, front_y - 0.85, sign_z + 1.05,
+                         yellow, extrude=0.22, bevel=0.025)
+    # Side wall lettering for approaches along the street
+    add_box(col, "fm_side_banner", .32, 14.0, 2.4, -body_w / 2 - 0.05, body_y, z0 + 7.5, yellow)
+    # Face outward (-X): +90 yaw alone mirrors the letters when viewed from the street.
+    _add_followmart_text(col, "FOLLOW MART", 1.85, -body_w / 2 - 0.28, body_y, z0 + 8.2, blue_dk,
+                         rot_euler=(math.radians(90), 0.0, math.radians(-90)),
+                         extrude=0.14, bevel=0.015)
+    # OPEN 24 HRS strip under canopy edge (small readable plaque)
+    add_box(col, "fm_hours_plaque", 4.2, .22, .7, 7.5, front_y - 5.15, canopy_z - 0.85, red)
+    _add_followmart_text(col, "OPEN", 0.55, 7.5, front_y - 5.35, canopy_z - 0.55,
+                         white, extrude=0.06, bevel=0.008)
+
+    # ── Parking lot light poles (FP vertical scale) ─────────────────────────
+    for x, y in ((-12.0, -12.5), (12.0, -12.5), (-12.0, -7.5), (12.0, -7.5)):
+        add_ngon_cone(col, "fm_pole", .12, .10, 8.2, 8, x, y, z0 + .2, metal)
+        add_box(col, "fm_pole_arm", 1.6, .12, .12, x + 0.7, y, z0 + 8.1, metal)
+        add_box(col, "fm_pole_lamp", .55, .35, .22, x + 1.35, y, z0 + 7.95, white)
+        add_box(col, "fm_pole_base", .4, .4, .18, x, y, z0 + .18, concrete)
+
+    # ── Cart corrals ────────────────────────────────────────────────────────
+    for base_x in (-11.5, -8.8):
+        add_box(col, "fm_corral_rail", 2.4, .12, 1.05, base_x, -5.6, z0 + .3, metal)
+        add_box(col, "fm_corral_rail", 2.4, .12, 1.05, base_x, -4.55, z0 + .3, metal)
+        for dx in (-0.9, 0.0, 0.9):
+            add_box(col, "fm_cart", .7, .55, .95, base_x + dx, -5.1, z0 + .28, cart)
+            add_box(col, "fm_cart_h", .1, .1, .75, base_x + dx, -5.35, z0 + .85, metal)
+
+    # ── Loading dock (east wing side) ───────────────────────────────────────
+    add_box(col, "fm_dock", 6.2, 3.6, 1.35, 13.5, -3.8, z0 + .2, concrete)
+    add_box(col, "fm_dock_bay", 3.2, .25, 2.8, 13.5, -2.05, z0 + 1.5, dark)
+    add_box(col, "fm_dock_ramp", 5.4, 2.6, .35, 13.5, -6.0, z0 + .2, asphalt)
+    add_box(col, "fm_dock_bumper", 3.4, .35, .45, 13.5, -2.2, z0 + 1.2, dark)
+
+    # ── Monument roadside sign (readable walking up from the street) ────────
+    add_box(col, "fm_monument_base", 3.4, 1.1, .45, -13.5, -13.2, z0 + .2, concrete)
+    add_box(col, "fm_monument_post", .55, .55, 3.4, -13.5, -13.2, z0 + .6, blue_dk)
+    add_box(col, "fm_monument_face", 3.8, .45, 1.9, -13.5, -13.2, z0 + 3.6, blue)
+    add_box(col, "fm_monument_trim", 4.0, .2, .18, -13.5, -13.45, z0 + 3.6, yellow)
+    add_box(col, "fm_monument_trim2", 4.0, .2, .18, -13.5, -13.45, z0 + 5.3, yellow)
+    _add_followmart_text(col, "FOLLOW", 0.72, -13.5, -13.55, z0 + 4.55, yellow,
+                         extrude=0.08, bevel=0.01)
+    _add_followmart_text(col, "MART", 0.72, -13.5, -13.55, z0 + 3.85, yellow,
+                         extrude=0.08, bevel=0.01)
+
+    # ── Landscaping + flag (keep parking centerline clear for FP approach) ──
+    for x in (-15.2, 15.2):
+        add_box(col, "fm_planter", 2.0, 1.3, .55, x, -14.2, z0 + .2, concrete)
+        build_tree(col, rng, 0.62, x, -14.2)
+    for x in (-11.5, -8.0, 8.0, 11.5):
+        add_ngon_cone(col, "fm_shrub", .5, .26, .65, 10, x, -5.85, z0 + .2, m["lawn"])
+    add_ngon_cone(col, "fm_flagpole", .10, .07, 14.0, 8, -14.2, 8.5, z0 + .2, m["metal"])
+    add_box(col, "fm_flag", 2.4, .12, 1.25, -12.8, 8.5, z0 + 12.2, red)
+    # Small “entrance” arrow pavement mark
+    add_box(col, "fm_arrow", 1.4, 2.2, .04, 0, -8.2, z0 + .24, yellow)
 
 
 def build_ring_house(col, seed):
@@ -2168,7 +2304,7 @@ ASSET_VARIANTS = {
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
-    "followmart":  [("AST_followmart_0", lambda c: build_followmart(c, 2600))],
+    "followmart":  [("AST_followmart_3", lambda c: build_followmart(c, 2600))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
