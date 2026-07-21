@@ -1919,6 +1919,35 @@ def build_elementary_school(col, seed):
     add_box(col, "school_bus_stop_arm", .12, .95, .95, 7.7, -12.65, 1.25, red)
 
 
+def _add_followmart_text(col, body, size, x, y, z, material,
+                         rot_euler=(math.radians(90), 0.0, 0.0)):
+    """Extruded font text on a facade (default faces local -Y, like school front)."""
+    curve = bpy.data.curves.new(name="fm_text_curve", type="FONT")
+    curve.body = body
+    curve.size = size
+    curve.extrude = 0.12
+    curve.bevel_depth = 0.015
+    curve.align_x = "CENTER"
+    curve.align_y = "CENTER"
+    # Prefer a clean sans if present; otherwise Blender default Bfont.
+    for font_name in ("Inter", "Helvetica", "Arial", "Bfont"):
+        font = bpy.data.fonts.get(font_name)
+        if font is None:
+            continue
+        curve.font = font
+        break
+    obj = bpy.data.objects.new("fm_text", curve)
+    obj.location = (x, y, z)
+    obj.rotation_euler = rot_euler
+    if material is not None:
+        if obj.data.materials:
+            obj.data.materials[0] = material
+        else:
+            obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+
 def build_followmart(col, seed):
     """Full-block Follow Mart — school-scale campus that stays on the lot pad."""
     rng = random.Random(seed)
@@ -1962,16 +1991,14 @@ def build_followmart(col, seed):
     for x in (-8.0, -2.7, 2.7, 8.0):
         add_ngon_cone(col, "fm_canopy_col", .2, .2, 4.7, 8, x, -6.0, z0 + .2, cream)
 
-    # Readable FOLLOW MART sign (10 letter blocks + bar).
-    add_box(col, "fm_sign_bar", 22.0, .85, 2.6, 0, -3.7, z0 + 5.55, blue_dk)
-    # F O L L O W   M A R T
-    letters = (-9.5, -7.5, -5.5, -3.5, -1.5, .5, 3.2, 5.2, 7.2, 9.2)
-    for i, x in enumerate(letters):
-        h = 1.5 if i not in (5, 6) else 1.7
-        colr = yellow if i < 6 else white
-        add_box(col, "fm_letter", 1.55, .4, h, x, -4.2, z0 + 5.75, colr)
-    add_box(col, "fm_sign_word", 11.5, .25, .35, -3.5, -4.35, z0 + 7.55, yellow)
-    add_box(col, "fm_sign_word2", 8.5, .25, .35, 6.2, -4.35, z0 + 7.55, white)
+    # Big facade sign bar + real 3D text "FOLLOW MART" (readable on web + stills).
+    add_box(col, "fm_sign_bar", 22.5, .9, 2.9, 0, -3.65, z0 + 5.45, blue_dk)
+    add_box(col, "fm_sign_bar_trim", 23.0, .2, .25, 0, -4.05, z0 + 5.45, yellow)
+    add_box(col, "fm_sign_bar_trim2", 23.0, .2, .25, 0, -4.05, z0 + 8.1, yellow)
+    _add_followmart_text(col, "FOLLOW MART", 2.15, 0.0, -4.15, z0 + 6.15, yellow)
+    # Side wall also says FOLLOW MART for drone / side approaches.
+    _add_followmart_text(col, "FOLLOW MART", 1.55, -12.35, 4.0, z0 + 4.2, yellow,
+                         rot_euler=(math.radians(90), 0.0, math.radians(90)))
 
     # Cart corral + side dock (on campus only)
     for x in (-11.0, -9.2, -7.4):
