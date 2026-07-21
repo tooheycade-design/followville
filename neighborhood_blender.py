@@ -135,7 +135,7 @@ def _cli():
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
              "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
              "--parkring": "parkring", "--scatter": "scatter",
-             "--godzilla": "godzilla"}
+             "--godzilla": "godzilla", "--forest": "forest"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -1477,22 +1477,37 @@ def build_flower_house(col, seed):
         add_ngon_cone(col, "step", 0.45, 0.45, 0.08, 8, 0, -3.3 - i * 0.9, 0, pinks[1])
 
 def build_burj_house(col, seed):
-    """Founder #7: a livable mini Burj Khalifa."""
+    """Founder seed-2 Burj: skyscraper-scale vs the low-poly town (game ~112m)."""
     m = std_mats()
-    glass = mat("NB_burj_glass", (0.52, 0.63, 0.74), 0.25)
-    trim = mat("NB_burj_trim", (0.88, 0.90, 0.93), 0.6)
-    tiers = [(2.6, 2.3, 6.0, 0.0), (2.0, 1.75, 5.5, 6.0),
-             (1.5, 1.3, 5.0, 11.5), (1.0, 0.85, 4.0, 16.5)]
+    glass = mat("NB_burj_glass", (0.52, 0.63, 0.74), 0.22)
+    trim = mat("NB_burj_trim", (0.88, 0.90, 0.93), 0.55)
+    dark = mat("NB_burj_dark", (0.22, 0.28, 0.34), 0.35)
+    # Stepped tower tall enough to dominate houses (~5–8m) and school.
+    tiers = [
+        (11.5, 10.2, 18.0, 0.0),
+        (9.4, 8.2, 16.0, 18.0),
+        (7.4, 6.3, 15.0, 34.0),
+        (5.6, 4.6, 14.0, 49.0),
+        (4.0, 3.2, 13.0, 63.0),
+        (2.7, 2.0, 12.0, 76.0),
+        (1.6, 1.0, 10.0, 88.0),
+    ]
     for i, (rb, rt, h, z) in enumerate(tiers):
-        add_ngon_cone(col, "tier%d" % i, rb, rt, h, 6, 0, 0, z, glass)
-        add_ngon_cone(col, "trim%d" % i, rb + 0.12, rb + 0.06, 0.35, 6, 0, 0, z, trim)
-    add_ngon_cone(col, "spire", 0.4, 0.0, 4.5, 6, 0, 0, 20.5, trim)
-    add_ngon_cone(col, "beacon", 0.14, 0.1, 0.25, 6, 0, 0, 24.2, m["bulb"])
-    # street-level entrance
-    add_box(col, "lobby", 3.4, 3.4, 1.6, 0, 0, 0, trim)
-    add_box(col, "door", 1.2, 0.3, 1.4, 0, -1.75, 0, m["door"])
-    add_box(col, "awning", 2.0, 0.9, 0.2, 0, -2.3, 1.6, glass)
-    build_tree(col, random.Random(seed), 0.6, 2.9, -2.4)
+        add_ngon_cone(col, "tier%d" % i, rb, rt, h, 8, 0, 0, z, glass)
+        add_ngon_cone(col, "trim%d" % i, rb + 0.35, rb + 0.12, 0.55, 8, 0, 0, z, trim)
+        if i < 5:
+            add_ngon_cone(col, "belt%d" % i, rb * 0.92, rt * 0.95, 0.22, 8,
+                          0, 0, z + h * 0.45, dark)
+    add_ngon_cone(col, "spire", 0.85, 0.05, 14.0, 8, 0, 0, 98.0, trim)
+    add_ngon_cone(col, "beacon", 0.35, 0.2, 0.8, 8, 0, 0, 111.5, m["bulb"])
+    add_box(col, "podium", 18.0, 18.0, 0.35, 0, 0, 0, trim)
+    add_box(col, "lobby", 9.5, 9.5, 4.2, 0, 0, 0.35, trim)
+    add_box(col, "lobby_glass", 8.2, 0.25, 3.4, 0, -4.85, 0.7, glass)
+    add_box(col, "door", 2.4, 0.35, 3.0, 0, -5.0, 0.45, m["door"])
+    add_box(col, "awning", 5.5, 2.2, 0.35, 0, -6.2, 3.6, glass)
+    for ang in (0.4, 1.5, 2.6, 3.7, 4.8, 5.9):
+        build_tree(col, random.Random(seed + int(ang * 10)), 0.85,
+                   math.cos(ang) * 10.5, math.sin(ang) * 10.5)
 
 def build_toilet_house(col, seed):
     """A large livable toilet. The people asked."""
@@ -1903,6 +1918,68 @@ def build_elementary_school(col, seed):
     add_box(col, "school_bus_stop_arm", .12, .95, .95, 7.7, -12.65, 1.25, red)
 
 
+def build_followmart(col, seed):
+    """Full-block Follow Mart superstore — civic landmark, school-scale footprint."""
+    rng = random.Random(seed)
+    m = std_mats()
+    blue = mat("NB_fm_blue", (0.12, 0.38, 0.78), .72)
+    blue_dk = mat("NB_fm_blue_dk", (0.08, 0.22, 0.52), .78)
+    yellow = mat("NB_fm_yellow", (0.98, 0.78, 0.12), .55)
+    red = mat("NB_fm_red", (0.86, 0.18, 0.16), .7)
+    cream = mat("NB_fm_cream", (0.95, 0.93, 0.88), .8)
+    asphalt = mat("NB_fm_asphalt", (0.22, 0.23, 0.25), .95)
+    glass = mat("NB_fm_glass", (0.45, 0.68, 0.82), .2)
+    cart = mat("NB_fm_cart", (0.55, 0.58, 0.62), .45)
+    green = mat("NB_fm_lawn", (0.30, 0.55, 0.28), .9)
+
+    # Campus pad + parking lot (front = local -Y, same convention as school).
+    add_box(col, "fm_lawn", 30.0, 30.0, .18, 0, 0, 0, green)
+    add_box(col, "fm_parking", 28.0, 10.5, .14, 0, -8.8, .18, asphalt)
+    for x in range(-11, 12, 3):
+        add_box(col, "fm_stall", .12, 4.2, .03, x, -9.6, .34, cream)
+    add_box(col, "fm_drive", 6.5, 10.5, .15, 0, -8.8, .19, asphalt)
+
+    # Main big-box volume + side wing.
+    add_box(col, "fm_body", 22.0, 14.5, 7.2, 0, 3.2, .25, blue)
+    add_box(col, "fm_body_trim", 22.4, 14.9, .45, 0, 3.2, 7.2, yellow)
+    add_box(col, "fm_wing", 8.5, 10.0, 5.4, 12.2, 2.0, .25, blue_dk)
+    add_box(col, "fm_roof", 23.0, 15.5, .55, 0, 3.2, 7.55, cream)
+    add_box(col, "fm_roof_wing", 9.0, 10.6, .45, 12.2, 2.0, 5.55, cream)
+
+    # Glass storefront + entry canopy + sliding doors.
+    add_box(col, "fm_storefront", 16.0, .35, 4.8, 0, -4.15, .4, glass)
+    add_box(col, "fm_mullion_c", .28, .4, 4.8, 0, -4.2, .4, cream)
+    for x in (-6.0, -3.0, 3.0, 6.0):
+        add_box(col, "fm_mullion", .22, .4, 4.8, x, -4.2, .4, cream)
+    add_box(col, "fm_door_l", 1.6, .3, 3.2, -1.0, -4.35, .35, glass)
+    add_box(col, "fm_door_r", 1.6, .3, 3.2, 1.0, -4.35, .35, glass)
+    add_box(col, "fm_canopy", 18.0, 4.2, .4, 0, -5.8, 5.0, yellow)
+    for x in (-7.5, -2.5, 2.5, 7.5):
+        add_ngon_cone(col, "fm_canopy_col", .22, .22, 4.6, 8, x, -6.4, .3, cream)
+
+    # Giant FOLLOW MART sign bar + letter blocks (readable from drone).
+    add_box(col, "fm_sign_bar", 18.5, .8, 2.4, 0, -4.0, 5.6, blue_dk)
+    for i, x in enumerate((-7.2, -5.0, -2.8, -0.6, 1.6, 3.8, 6.0)):
+        h = 1.35 if i % 2 == 0 else 1.55
+        add_box(col, "fm_sign_letter", 1.55, .35, h, x, -4.55, 5.85, yellow)
+    add_box(col, "fm_sign_dot", .55, .35, .55, 8.0, -4.55, 6.4, red)
+
+    # Loading dock, carts, planters, flag.
+    add_box(col, "fm_dock", 6.0, 3.5, 1.2, 12.5, -5.5, .25, cream)
+    add_box(col, "fm_dock_ramp", 5.5, 2.0, .35, 12.5, -7.2, .25, asphalt)
+    for x in (-10.5, -8.5, -6.5):
+        add_box(col, "fm_cart", .9, .7, 1.1, x, -5.5, .35, cart)
+        add_box(col, "fm_cart_h", .15, .15, .9, x, -5.85, .9, cart)
+    for x in (-12.0, 12.0):
+        add_box(col, "fm_planter", 2.2, 1.4, .55, x, -11.5, .25, cream)
+        build_tree(col, rng, 0.7, x, -11.5)
+    add_ngon_cone(col, "fm_flagpole", .1, .08, 11.0, 8, -12.5, 6.5, .3, m["metal"])
+    add_box(col, "fm_flag", 2.2, .12, 1.2, -11.2, 6.5, 9.8, red)
+
+    # Side wall logo stripe
+    add_box(col, "fm_side_stripe", .3, 12.0, 1.8, -11.15, 3.2, 3.5, yellow)
+
+
 def build_ring_house(col, seed):
     """Park-ring homes (day 8+): same cute pastel style, more variety --
     cottages, two-story family homes and skinny townhouses."""
@@ -2057,6 +2134,7 @@ ASSET_VARIANTS = {
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
+    "followmart":  [("AST_followmart_0", lambda c: build_followmart(c, 2600))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2119,7 +2197,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
-        "elementaryschool": 3}
+        "elementaryschool": 3, "followmart": 3}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2249,8 +2327,8 @@ def place_instance(world_col, b, name):
     rng = random.Random(b["seed"])
     if b.get("rot") is not None:  # exact facing (ring houses face their park)
         empty.rotation_euler = (0, 0, b["rot"])
-    elif b["type"] == "elementaryschool":
-        # The campus asset is authored with its main doors facing local -Y;
+    elif b["type"] in ("elementaryschool", "followmart"):
+        # Campus assets are authored with main doors facing local -Y;
         # keep that deliberate frontage instead of applying lot-house rotation.
         empty.rotation_euler = (0, 0, 0)
     elif b.get("face"):  # explicit facing override stored in the state file
@@ -4974,6 +5052,8 @@ def main(cfg=None):
     n_apart = cfg.get("apartments", 0)
     n_parks = cfg.get("parks", 0)
     n_trees = cfg.get("trees", 0)
+    if cfg.get("forest") and n_trees <= 0:
+        n_trees = 48  # dense low-poly grove for --forest
     n_mush = cfg.get("mushrooms", 0)
     if "pop" in cfg:
         delta = cfg["pop"] - state["pop"]

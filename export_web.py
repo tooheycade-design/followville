@@ -55,7 +55,7 @@ def _building_xz(building):
         by, iy = divmod(gy, BLOCK_N)
         x = bx * PITCH + ix * LOT + LOT / 2
         y = by * PITCH + iy * LOT + LOT / 2
-        size = 3 if building.get("type") == "elementaryschool" else 1
+        size = 3 if building.get("type") in ("elementaryschool", "followmart") else 1
         x += (size - 1) * LOT / 2
         y += (size - 1) * LOT / 2
     return x, -y  # Three.js glTF coordinates: Blender +Y becomes Three -Z.
