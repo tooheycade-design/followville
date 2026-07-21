@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1612284,
+    "bytes": 1291108,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "ea0ea10ee567e4cba98b7f38296aef43638564dba91113b85ccd4419e10e0eb1"
+    "sha256": "69851500f6e1b6fbeed6c2288b4e1254f865817a9d04b1713ac8ea307edb376e"
   },
   "chunks": [
     {
@@ -138,10 +138,10 @@
     },
     {
       "asset": {
-        "bytes": 718188,
+        "bytes": 718192,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "60da84a973fe26960d1241d7aeedc13b7c242990d973552b3afd0c69819ca2dc"
+        "sha256": "3cc8f571103493012c66e5d05b939b0023c66934decf8d130eecbe0896c33f2d"
       },
       "bounds": {
         "center": [
@@ -325,17 +325,86 @@
     },
     {
       "asset": {
-        "bytes": 765928,
+        "bytes": 40532,
         "compression": "draco",
-        "file": "town_chunks/original-town.glb",
-        "sha256": "87daf075a40d0eb05d66c2e43162d8fe6a18335025151c4f050f879f6e342a5c"
+        "file": "town_chunks/north-woods.glb",
+        "sha256": "282d350bb8f2595589f6a94fb0209c61b574e718aa37ca2b6e4fc68c897eff4c"
       },
       "bounds": {
         "center": [
-          -10.146,
-          1.931
+          -206.174,
+          -200.876
         ],
-        "radius": 147.707
+        "radius": 61.099
+      },
+      "building_ids": [
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389
+      ],
+      "house_ids": [],
+      "id": "north-woods",
+      "initial": false,
+      "label": "North Woods"
+    },
+    {
+      "asset": {
+        "bytes": 728376,
+        "compression": "draco",
+        "file": "town_chunks/original-town.glb",
+        "sha256": "3f3fc5fb5aa5ea729a817575d7b2a6bab5268a624bb906b310185752119a5922"
+      },
+      "bounds": {
+        "center": [
+          -7.021,
+          5.146
+        ],
+        "radius": 144.645
       },
       "building_ids": [
         1,
@@ -433,55 +502,7 @@
         135,
         136,
         172,
-        335,
-        342,
-        343,
-        344,
-        345,
-        346,
-        347,
-        348,
-        349,
-        350,
-        351,
-        352,
-        353,
-        354,
-        355,
-        356,
-        357,
-        358,
-        359,
-        360,
-        361,
-        362,
-        363,
-        364,
-        365,
-        366,
-        367,
-        368,
-        369,
-        370,
-        371,
-        372,
-        373,
-        374,
-        375,
-        376,
-        377,
-        378,
-        379,
-        380,
-        381,
-        382,
-        383,
-        384,
-        385,
-        386,
-        387,
-        388,
-        389
+        335
       ],
       "house_ids": [
         1,
@@ -888,9 +909,9 @@
     }
   ],
   "fallback": {
-    "bytes": 19135652,
+    "bytes": 15828132,
     "file": "town.glb",
-    "sha256": "393039da4f746b43bb19e0fa9a140d059340eb678c89e0cb3b0206faaa912756"
+    "sha256": "f524b8086df5ee9310ea45cfdc13971eb6d3309acc05d24e5c7e058683b45e8f"
   },
   "state": {
     "building_count": 389,
