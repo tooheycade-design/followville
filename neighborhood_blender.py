@@ -2396,17 +2396,20 @@ def block_extent(buildings):
             min(min(bys), -1), max(max(bys), 1))
 
 def build_roads(world_col, buildings, m):
+    """Grid asphalt for the flat downtown platform.
+
+    Important: do NOT lift every road to max(terrain) across the whole map —
+    that floats downtown streets above the sidewalks when hills exist at the
+    map edge. Downtown grid roads live on the engineered flat platform (z≈0).
+    Suburban roads already terrain-follow in build_suburban_roads.
+    """
     min_bx, max_bx, min_by, max_by = block_extent(buildings)
     x0, x1 = min_bx * PITCH - ROAD, (max_bx + 1) * PITCH
     y0, y1 = min_by * PITCH - ROAD, (max_by + 1) * PITCH
-    # Road top must clear regional grass (terrain_height + .015). Sample a few
-    # points so asphalt stays readable on every grid street.
-    samples = []
-    for t in (0.0, 0.25, 0.5, 0.75, 1.0):
-        samples.append(terrain_height(x0 + (x1 - x0) * t, (y0 + y1) / 2))
-        samples.append(terrain_height((x0 + x1) / 2, y0 + (y1 - y0) * t))
-    road_z = max(0.05, max(samples) + 0.04)
-    road_h = 0.22
+    # Bottom of asphalt slightly above z=0 so it wins z-fighting with terrain
+    # mesh without floating (sidewalks/hardscape are ~0.10–0.16 high).
+    road_z = 0.02
+    road_h = 0.14
     for bx in range(min_bx, max_bx + 2):
         x = bx * PITCH - ROAD / 2
         add_box(world_col, "roadV", ROAD, y1 - y0, road_h, x, (y0 + y1) / 2, road_z, m["road"])
@@ -2419,17 +2422,18 @@ def build_roads(world_col, buildings, m):
     for bx in range(min_bx, max_bx + 1):
         for by in range(min_by, max_by + 1):
             block_x, block_y = bx * PITCH, by * PITCH
+            car_z = road_z + road_h + 0.02
             if rng.random() < 0.78:
                 b = {"type": "car", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
                 e = place_instance(world_col, b, "car")
                 e.location = (block_x + LOT*(.65+rng.random()*1.7),
-                              block_y - 1.15, .05)
+                              block_y - 1.15, car_z)
                 e.rotation_euler = (0, 0, 0 if rng.random() < .5 else math.pi)
             if rng.random() < 0.48:
                 b = {"type": "car", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
                 e = place_instance(world_col, b, "car")
                 e.location = (block_x - 1.15,
-                              block_y + LOT*(.65+rng.random()*1.7), .05)
+                              block_y + LOT*(.65+rng.random()*1.7), car_z)
                 e.rotation_euler = (0, 0, math.pi/2 if rng.random() < .5 else -math.pi/2)
 
 def build_district_roads(world_col, buildings, m):
