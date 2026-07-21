@@ -105,7 +105,8 @@ def _terrain_mesh(collection):
         y = y0+(y1-y0)*iy/(ny-1)
         for ix in range(nx):
             x = x0+(x1-x0)*ix/(nx-1)
-            vertices.append((x,y,terrain_height(x,y)+.015))
+            # Keep meadow slightly under paved surfaces so roads/sidewalks win.
+            vertices.append((x,y,max(0.0, terrain_height(x,y)-.02)))
     faces = []
     for iy in range(ny-1):
         for ix in range(nx-1):
@@ -365,7 +366,11 @@ def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
     for bx in range(min_bx,max_bx+1):
         for by in range(min_by,max_by+1):
             center_cell=(bx*block_n+1,by*block_n+1)
-            if center_cell in occupied or (bx,by)==(-1,-1):
+            # Skip any block that already has real city content (homes, school,
+            # Follow Mart, pond, etc.). Also skip the founder plaza cell.
+            block_cells={(bx*block_n+ix, by*block_n+iy)
+                         for ix in range(block_n) for iy in range(block_n)}
+            if block_cells & occupied or (bx,by)==(-1,-1):
                 continue
             rng=random.Random(50000+bx*991+by*313)
             cx,cy=bx*pitch+block_size/2,by*pitch+block_size/2
