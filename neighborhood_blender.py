@@ -5123,7 +5123,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (1, (nx - 10.0, ny - 42.0, 72.0), (nx, ny, 4.0)),
             (frame_end // 3, (-118.0, -118.0, 66.0), (-105.0, -104.0, 7.0)),
             (frame_end * 2 // 3, (-22.0, -55.0, 58.0), (-18.0, -10.0, 11.0)),
-            (frame_end, (112.0, 50.0, 48.0), (57.0, 41.0, 8.5)),
+            (frame_end, (145.0, 95.0, 78.0), (55.0, 47.0, 9.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
