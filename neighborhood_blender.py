@@ -1984,6 +1984,20 @@ def build_followmart(col, seed):
     FM_WALK_LOCAL_TOP = 0.14
     FM_PLACE_Z = 0.05  # mirrors place_instance civic floor; documented only
     z0 = 0.0  # ground pieces start on the local floor (no extra lift)
+    # Ground layers stack toward the entrance (pad -> parking -> drive lane ->
+    # plaza -> entry walk), each overlapping the one before it in plan view.
+    # Giving every layer the *same* top height (as before) put coincident
+    # faces in the same plane -- classic z-fighting: the renderer has no
+    # consistent answer for which face is in front, so it flickers between
+    # them depending on camera angle/distance. A tiny, strictly increasing
+    # offset per layer (a few mm -- invisible, and still "near
+    # FM_WALK_LOCAL_TOP" for the walk-surface contract above) gives the depth
+    # buffer an unambiguous order instead.
+    FM_LAYER_EPS = 0.003
+    PARK_TOP = FM_WALK_LOCAL_TOP + FM_LAYER_EPS
+    DRIVE_TOP = FM_WALK_LOCAL_TOP + 2 * FM_LAYER_EPS
+    PLAZA_TOP = FM_WALK_LOCAL_TOP + 3 * FM_LAYER_EPS
+    ENTRY_TOP = FM_WALK_LOCAL_TOP + 4 * FM_LAYER_EPS
     front_y = -3.95   # main front wall (local -Y)
     body_y = 4.35
     body_d = 16.2
@@ -1995,23 +2009,23 @@ def build_followmart(col, seed):
     # ── Ground: cream pad, asphalt parking, entry plaza ─────────────────────
     # Thin decks: tops land at FM_WALK_LOCAL_TOP so feet match walkSurfaceHeight.
     add_box(col, "fm_pad", 34.0, 34.0, FM_WALK_LOCAL_TOP, 0, 0, z0, cream)
-    add_box(col, "fm_parking", 31.0, 11.6, FM_WALK_LOCAL_TOP - 0.02, 0, -9.8, z0 + 0.02, asphalt)
+    add_box(col, "fm_parking", 31.0, 11.6, PARK_TOP - 0.02, 0, -9.8, z0 + 0.02, asphalt)
     # Center drive aisle toward the doors
-    add_box(col, "fm_drive", 6.2, 11.6, FM_WALK_LOCAL_TOP - 0.01, 0, -9.8, z0 + 0.01, asphalt)
-    # Stall stripes (white) + end stops — painted ON the walk top, not above it
+    add_box(col, "fm_drive", 6.2, 11.6, DRIVE_TOP - 0.01, 0, -9.8, z0 + 0.01, asphalt)
+    # Stall stripes (white) + end stops — painted ON the parking top, not above it
     for x in range(-13, 14, 3):
         if abs(x) < 3.2:
             continue
-        add_box(col, "fm_stall", .12, 4.8, .03, x, -11.0, FM_WALK_LOCAL_TOP, white)
-        add_box(col, "fm_stop", .55, .18, .06, x, -13.15, FM_WALK_LOCAL_TOP, yellow)
+        add_box(col, "fm_stall", .12, 4.8, .03, x, -11.0, PARK_TOP, white)
+        add_box(col, "fm_stop", .55, .18, .06, x, -13.15, PARK_TOP, yellow)
     # Cross-aisle dashed line near the storefront
     for x in range(-14, 15, 2):
-        add_box(col, "fm_aisle_dash", 1.1, .14, .025, x, -6.35, FM_WALK_LOCAL_TOP, white)
-    # Wide concrete entry plaza (same walk plane — no raised pedestal)
-    add_box(col, "fm_plaza", 16.0, 3.6, FM_WALK_LOCAL_TOP - 0.02, 0, -4.9, z0 + 0.02, concrete)
-    add_box(col, "fm_entry_walk", 9.5, 2.0, FM_WALK_LOCAL_TOP - 0.02, 0, -3.35, z0 + 0.02, cream)
+        add_box(col, "fm_aisle_dash", 1.1, .14, .025, x, -6.35, DRIVE_TOP, white)
+    # Wide concrete entry plaza (own layer — no raised pedestal)
+    add_box(col, "fm_plaza", 16.0, 3.6, PLAZA_TOP - 0.02, 0, -4.9, z0 + 0.02, concrete)
+    add_box(col, "fm_entry_walk", 9.5, 2.0, ENTRY_TOP - 0.02, 0, -3.35, z0 + 0.02, cream)
     # Decorative curb lip only (not a stair that lifts the walk plane)
-    add_box(col, "fm_entry_lip", 10.5, .35, .06, 0, -5.7, FM_WALK_LOCAL_TOP, cream)
+    add_box(col, "fm_entry_lip", 10.5, .35, .06, 0, -5.7, ENTRY_TOP, cream)
 
     # ── Main big-box mass (tall) ────────────────────────────────────────────
     add_box(col, "fm_body", body_w, body_d, wall_h, 0, body_y, body_floor, blue)
