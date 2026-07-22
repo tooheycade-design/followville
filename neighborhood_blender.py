@@ -5121,7 +5121,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         tr.up_axis = "UP_Y"
         beats = (
             (1, (nx - 10.0, ny - 42.0, 72.0), (nx, ny, 4.0)),
-            (frame_end // 3, (-118.0, -118.0, 66.0), (-105.0, -104.0, 7.0)),
+            (frame_end // 3, (-124.0, -106.0, 62.0), (-54.0, -28.0, 10.0)),
             (frame_end * 2 // 3, (-22.0, -55.0, 58.0), (-18.0, -10.0, 11.0)),
             (frame_end, (145.0, 95.0, 78.0), (55.0, 47.0, 9.0)),
         )
