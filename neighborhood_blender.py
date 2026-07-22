@@ -2648,9 +2648,13 @@ def place_instance(world_col, b, name):
     rng = random.Random(b["seed"])
     if b.get("rot") is not None:  # exact facing (ring houses face their park)
         empty.rotation_euler = (0, 0, b["rot"])
-    elif b["type"] in ("elementaryschool", "followmart", "coffeetruck"):
+    elif b["type"] == "coffeetruck":
+        # This lot's public street is on +Y. Rotate the authored -Y service
+        # hatch toward it so customers order from the sidewalk side.
+        empty.rotation_euler = (0, 0, math.pi)
+    elif b["type"] in ("elementaryschool", "followmart"):
         # Campus assets are authored with main doors facing local -Y;
-        # the coffee truck uses the same rule for its service hatch.
+        # keep that deliberate frontage instead of lot-house rotation.
         empty.rotation_euler = (0, 0, 0)
     elif b.get("face"):  # explicit facing override stored in the state file
         empty.rotation_euler = (0, 0, {"s": 0.0, "e": math.pi / 2,
@@ -5078,8 +5082,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         tr.track_axis = "TRACK_NEGATIVE_Z"
         tr.up_axis = "UP_Y"
         beats = (
-            (1, (tx + 22.0, ty - 20.0, 12.5), (tx - .8, ty + .8, 2.5)),
-            (92, (tx + 19.0, ty - 17.0, 11.3), (tx - .7, ty + 1.0, 2.7)),
+            (1, (tx + 22.0, ty + 20.0, 12.5), (tx - .8, ty - .8, 2.5)),
+            (92, (tx + 19.0, ty + 17.0, 11.3), (tx - .7, ty - 1.0, 2.7)),
             (93, (hx + 39.0, hy - 50.0, 43.0), (hx, hy, 4.1)),
             (frame_end, (hx + 31.0, hy - 43.0, 37.0), (hx, hy, 4.5)),
         )
@@ -5119,7 +5123,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (1, (nx - 10.0, ny - 42.0, 72.0), (nx, ny, 4.0)),
             (frame_end // 3, (-118.0, -118.0, 66.0), (-105.0, -104.0, 7.0)),
             (frame_end * 2 // 3, (-22.0, -55.0, 58.0), (-18.0, -10.0, 11.0)),
-            (frame_end, (108.0, -2.0, 47.0), (64.5, 47.0, 8.5)),
+            (frame_end, (112.0, 50.0, 48.0), (57.0, 41.0, 8.5)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
