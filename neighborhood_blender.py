@@ -121,6 +121,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam cinematic  elevated whole-city skyline reveal
 #   --cam dronezoom  fast whole-city dive and pullback
 #   --cam dronehover  smooth high-altitude crescent hover across the city
+#   --cam day21growth  coffee-truck reveal followed by the five new homes
+#   --cam day21drone  eight-second neighborhood-to-downtown drone glide
+#   --cam day21skyline  eight-second angled skyline push
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -2179,6 +2182,112 @@ def build_followmart(col, seed):
     _ = FM_PLACE_Z  # referenced in comments / qa_walk_surfaces.py contract
 
 
+def build_coffee_truck(col, seed):
+    """Cheerful, phone-readable coffee truck for the Follow Mart forecourt."""
+    m = std_mats()
+    teal = mat("NB_coffee_teal", (0.08, 0.48, 0.48), rough=.62)
+    teal_dark = mat("NB_coffee_teal_dark", (0.035, 0.20, 0.22), rough=.58)
+    cream = mat("NB_coffee_cream", (0.96, 0.88, 0.69), rough=.72)
+    coral = mat("NB_coffee_coral", (0.83, 0.24, 0.20), rough=.68)
+    gold = mat("NB_coffee_gold", (0.97, 0.65, 0.12), rough=.62)
+    wood = mat("NB_coffee_wood", (0.42, 0.20, 0.08), rough=.78)
+    black = mat("NB_coffee_black", (0.025, 0.035, 0.04), rough=.42)
+    steel = mat("NB_coffee_steel", (0.38, 0.43, 0.45), rough=.30, metallic=.72)
+    glass = mat("NB_coffee_glass", (0.14, 0.32, 0.36), rough=.18, metallic=.08)
+    warm = mat("NB_coffee_warm_light", (1.0, 0.56, 0.18), rough=.35)
+    chalk = mat("NB_coffee_chalk", (0.045, 0.075, 0.065), rough=.90)
+    white = mat("NB_coffee_white", (0.96, 0.96, 0.92), rough=.68)
+
+    # A small paved pull-off keeps the truck grounded without reading as a
+    # building foundation. Local -Y is the customer/service side.
+    add_box(col, "coffee_pull_off", 12.3, 8.2, .08, 0, 0, 0, m["road"])
+    for x in (-5.4, 5.4):
+        add_box(col, "coffee_edge_mark", .12, 7.1, .025, x, 0, .08, cream)
+
+    # Vehicle shell: compact delivery cab, long cafe box and roof cap.
+    add_box(col, "coffee_box", 7.0, 4.7, 3.9, 1.25, 0, .38, teal)
+    add_box(col, "coffee_roof", 7.45, 5.0, .32, 1.25, 0, 4.27, cream)
+    add_box(col, "coffee_lower_band", 7.15, 4.82, .42, 1.25, 0, .40, teal_dark)
+    add_box(col, "coffee_cab", 3.35, 4.45, 3.15, -3.75, 0, .38, cream)
+    hood = add_tapered_box(col, "coffee_hood", 1.75, 4.15, 1.25, 3.85,
+                           1.45, -5.45, 0, .55, .12, 0, cream)
+    hood.rotation_euler.z = 0
+    add_box(col, "coffee_bumper", .28, 4.35, .42, -6.05, 0, .38, steel)
+    add_box(col, "coffee_windshield", .16, 3.55, 1.35, -5.18, 0, 2.08, glass)
+    add_box(col, "coffee_side_window", 1.65, .14, 1.35, -3.85, -2.28, 2.08, glass)
+    add_box(col, "coffee_door", 1.75, .12, 2.15, -3.65, -2.34, .62, teal)
+    add_box(col, "coffee_door_handle", .34, .08, .09, -3.15, -2.45, 1.63, steel)
+    for y in (-1.45, 1.45):
+        add_box(col, "coffee_headlight", .12, .62, .48, -6.22, y, .86, warm)
+
+    # Four chunky wheels with cream hubs. Cylinders are authored vertically,
+    # then turned onto the truck axles.
+    for x in (-3.75, 3.55):
+        for y in (-2.16, 2.16):
+            tire = add_ngon_cone(col, "coffee_tire", .78, .78, .42, 12,
+                                 x, y, .82, black)
+            tire.rotation_euler.x = math.pi / 2
+            hub = add_ngon_cone(col, "coffee_hub", .34, .34, .45, 12,
+                                x, y, .82, cream)
+            hub.rotation_euler.x = math.pi / 2
+
+    # Open service window, lit interior, espresso machine and pickup shelf.
+    add_box(col, "coffee_window_recess", 4.55, .15, 2.15,
+            1.05, -2.42, 1.48, chalk)
+    add_box(col, "coffee_interior_glow", 4.20, .10, 1.80,
+            1.05, -2.52, 1.62, warm)
+    add_box(col, "coffee_counter", 5.05, .72, .20,
+            1.05, -2.73, 1.35, wood)
+    add_box(col, "coffee_espresso", 1.25, .34, .82,
+            .15, -2.65, 1.55, steel)
+    add_box(col, "coffee_espresso_top", 1.05, .28, .14,
+            .15, -2.68, 2.34, black)
+    for x in (1.45, 1.78, 2.11, 2.44):
+        add_ngon_cone(col, "coffee_cup", .12, .10, .34, 10,
+                      x, -2.67, 1.52, white)
+    add_box(col, "coffee_pastry_case", 1.10, .38, .72,
+            2.85, -2.67, 1.50, glass)
+
+    # Lifted striped hatch with visible support arms and warm downlights.
+    awning = add_box(col, "coffee_hatch", 5.15, 1.70, .18,
+                     1.05, -2.87, 3.95, teal_dark)
+    awning.rotation_euler.x = math.radians(-18)
+    for x in (-1.05, .0, 1.05, 2.10, 3.15):
+        stripe = add_box(col, "coffee_awning_stripe", .52, 1.62, .06,
+                         x, -2.93, 4.06, gold if int((x + 1.05) / 1.05) % 2 else cream)
+        stripe.rotation_euler.x = math.radians(-18)
+    for x in (-1.35, 3.45):
+        add_beam_between(col, "coffee_hatch_arm", (x, -2.42, 3.38),
+                         (x, -3.45, 4.25), .07, steel)
+    for x in (-.35, 2.40):
+        add_box(col, "coffee_service_light", .42, .24, .10,
+                x, -3.10, 3.84, warm)
+
+    # Branding reads in both close shots and the finished skyline frame.
+    add_box(col, "coffee_logo_panel", 2.05, .16, 2.25,
+            4.26, -2.42, 1.52, cream)
+    add_text(col, "coffee_logo", "COFFEE", .42, .06,
+             4.26, -2.54, 2.70, teal_dark,
+             rotation=(math.radians(90), 0, 0))
+    add_text(col, "coffee_daily", "DAILY", .31, .05,
+             4.26, -2.54, 2.08, coral,
+             rotation=(math.radians(90), 0, 0))
+    add_text(col, "coffee_grind", "GRIND", .31, .05,
+             4.26, -2.54, 1.58, coral,
+             rotation=(math.radians(90), 0, 0))
+
+    # Freestanding chalkboard and a tiny two-person pickup rail.
+    add_box(col, "coffee_menu", 1.55, .16, 2.05, 4.30, -3.38, .12, chalk)
+    add_box(col, "coffee_menu_frame", 1.72, .22, .12, 4.30, -3.38, 2.08, wood)
+    for z in (.72, 1.10, 1.48):
+        add_box(col, "coffee_menu_line", 1.05, .05, .055,
+                4.30, -3.51, z, cream)
+    for x in (-1.85, -3.20):
+        add_ngon_cone(col, "coffee_stool_post", .11, .11, .80, 10,
+                      x, -3.35, .10, steel)
+        add_ngon_cone(col, "coffee_stool_seat", .38, .34, .16, 12,
+                      x, -3.35, .88, wood)
+
 def build_ring_house(col, seed):
     """Park-ring homes (day 8+): same cute pastel style, more variety --
     cottages, two-story family homes and skinny townhouses."""
@@ -2334,6 +2443,7 @@ ASSET_VARIANTS = {
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
     "followmart":  [("AST_followmart_4", lambda c: build_followmart(c, 2600))],
+    "coffeetruck": [("AST_coffeetruck_0", lambda c: build_coffee_truck(c, 2700))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2396,7 +2506,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
-        "elementaryschool": 3, "followmart": 3}
+        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2538,9 +2648,9 @@ def place_instance(world_col, b, name):
     rng = random.Random(b["seed"])
     if b.get("rot") is not None:  # exact facing (ring houses face their park)
         empty.rotation_euler = (0, 0, b["rot"])
-    elif b["type"] in ("elementaryschool", "followmart"):
+    elif b["type"] in ("elementaryschool", "followmart", "coffeetruck"):
         # Campus assets are authored with main doors facing local -Y;
-        # keep that deliberate frontage instead of applying lot-house rotation.
+        # the coffee truck uses the same rule for its service hatch.
         empty.rotation_euler = (0, 0, 0)
     elif b.get("face"):  # explicit facing override stored in the state file
         empty.rotation_euler = (0, 0, {"s": 0.0, "e": math.pi / 2,
@@ -4938,6 +5048,119 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for fc in obj_fcurves(cam_obj):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+    elif cam == "day21growth":
+        # Edited two-part reveal: the coffee truck and new subdivision are too
+        # far apart for one useful wide frame, so this camera makes a clean
+        # cut after the truck reveal and gives the five homes their own shot.
+        coffee = next((b for b in reversed(buildings)
+                       if b["type"] == "coffeetruck"), None)
+        new_homes = [b for b in buildings
+                     if b["type"] == "house" and b.get("day") == max(
+                         item.get("day", 0) for item in buildings)]
+        tx, ty = build_pos(coffee) if coffee else (64.5, 32.5)
+        if new_homes:
+            home_points = [build_pos(b) for b in new_homes]
+            hx = sum(p[0] for p in home_points) / len(home_points)
+            hy = sum(p[1] for p in home_points) / len(home_points)
+        else:
+            hx, hy = cx, cy
+        aim = bpy.data.objects.new("Day21GrowthAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day21GrowthCamera")
+        cam_data.lens = 46
+        cam_data.clip_start = .5
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day21GrowthCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            (1, (tx + 22.0, ty - 20.0, 12.5), (tx - .8, ty + .8, 2.5)),
+            (92, (tx + 19.0, ty - 17.0, 11.3), (tx - .7, ty + 1.0, 2.7)),
+            (93, (hx + 39.0, hy - 50.0, 43.0), (hx, hy, 4.1)),
+            (frame_end, (hx + 31.0, hy - 43.0, 37.0), (hx, hy, 4.5)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "CONSTANT" if kp.co.x == 92 else "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day21drone":
+        # Eight-second route unique to Day 21: begin over the newest edge of
+        # Meadow Run, skim the district connector, then finish on Follow Mart
+        # and the new coffee truck instead of repeating the prior crescent.
+        newest = [b for b in buildings if b["type"] == "house" and
+                  b.get("day") == max(item.get("day", 0) for item in buildings)]
+        points = [build_pos(b) for b in newest]
+        nx = sum(p[0] for p in points) / len(points) if points else cx
+        ny = sum(p[1] for p in points) / len(points) if points else cy
+        aim = bpy.data.objects.new("Day21DroneAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day21DroneCamera")
+        cam_data.lens = 34
+        cam_data.clip_start = 5.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day21DroneCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            (1, (nx - 10.0, ny - 42.0, 72.0), (nx, ny, 4.0)),
+            (frame_end // 3, (-118.0, -118.0, 66.0), (-105.0, -104.0, 7.0)),
+            (frame_end * 2 // 3, (-22.0, -55.0, 58.0), (-18.0, -10.0, 11.0)),
+            (frame_end, (108.0, -2.0, 47.0), (64.5, 47.0, 8.5)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day21skyline":
+        # A restrained oblique skyline push from the southeast. The low pitch
+        # keeps roofs, streets and the downtown silhouette layered in depth.
+        aim = bpy.data.objects.new("Day21SkylineAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day21SkylineCamera")
+        cam_data.lens = 52
+        cam_data.clip_start = 4.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day21SkylineCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            (1, (156.0, -122.0, 83.0), (-8.0, 0.0, 12.0)),
+            (frame_end, (137.0, -105.0, 72.0), (-3.0, 4.0, 13.5)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "cinematic":
         # Elevated skyline reveal used for a clean/destruction matched pair.
         # The camera is independent from temporary scene layers so both
@@ -5517,7 +5740,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom", "dronehover"):
+    if cfg.get("cam") in ("day21growth", "day21drone", "day21skyline"):
+        frame_end = max(frame_end, FPS * 8)
+    elif cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom", "dronehover"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
@@ -5527,9 +5752,20 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    for e in rise:
-        animate_rise(e, f)
-        f += stagger
+    if cfg.get("cam") == "day21growth":
+        truck_roots = [e for e in rise if e.name.startswith("coffeetruck_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for e in truck_roots:
+            animate_rise(e, 28)
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 112 + index * 9)
+        for e in rise:
+            if e not in truck_roots and e not in home_roots:
+                animate_rise(e, 112)
+    else:
+        for e in rise:
+            animate_rise(e, f)
+            f += stagger
 
     # mood + life
     tod = cfg.get("time") or auto_time(state["day"])
