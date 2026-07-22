@@ -1,7 +1,7 @@
 {
- "day": 20,
- "pop": 337,
- "seed_counter": 390,
+ "day": 21,
+ "pop": 342,
+ "seed_counter": 396,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -4283,6 +4283,78 @@
    "day": 20,
    "district": "North Woods",
    "feature_id": "edge_forest_day20"
+  },
+  {
+   "type": "coffeetruck",
+   "gx": 4,
+   "gy": 2,
+   "seed": 390,
+   "day": 21
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -100.12,
+   "py": -129.502,
+   "rot": -1.60717,
+   "plan_id": 194,
+   "district": "Meadow Run",
+   "street": "Meadow Run",
+   "seed": 391,
+   "day": 21
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -100.213,
+   "py": -135.675,
+   "rot": -1.53263,
+   "plan_id": 195,
+   "district": "Meadow Run",
+   "street": "Meadow Run",
+   "seed": 392,
+   "day": 21
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -116.663,
+   "py": -142.044,
+   "rot": 1.75212,
+   "plan_id": 196,
+   "district": "Meadow Run",
+   "street": "Meadow Run",
+   "seed": 393,
+   "day": 21
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -115.443,
+   "py": -147.817,
+   "rot": 1.82343,
+   "plan_id": 197,
+   "district": "Meadow Run",
+   "street": "Meadow Run",
+   "seed": 394,
+   "day": 21
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -97.438,
+   "py": -148.808,
+   "rot": -1.24905,
+   "plan_id": 198,
+   "district": "Meadow Run",
+   "street": "Meadow Run",
+   "seed": 395,
+   "day": 21
   }
  ],
  "milestones": []
