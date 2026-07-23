@@ -124,6 +124,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day21growth  coffee-truck reveal followed by the five new homes
 #   --cam day21drone  eight-second neighborhood-to-downtown drone glide
 #   --cam day21skyline  eight-second angled skyline push
+#   --cam day22reveal  14-second skyline, ten-home, and fire-station reveal
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -2288,6 +2289,172 @@ def build_coffee_truck(col, seed):
         add_ngon_cone(col, "coffee_stool_seat", .38, .34, .16, 12,
                       x, -3.35, .88, wood)
 
+
+def build_fire_station(col, seed):
+    """Full-block Followville Fire & Rescue campus, front facing local -Y."""
+    rng = random.Random(seed)
+    m = std_mats()
+    brick = mat("NB_fire_brick", (.56, .12, .09), .88)
+    brick_dark = mat("NB_fire_brick_dark", (.31, .065, .045), .92)
+    cream = mat("NB_fire_cream", (.92, .87, .75), .78)
+    red = mat("NB_fire_engine_red", (.82, .035, .025), .62)
+    red_dark = mat("NB_fire_engine_dark", (.38, .025, .02), .76)
+    glass = mat("NB_fire_glass", (.10, .24, .30), .14, .10, 1.0, 0.0, .62)
+    bay_glass = mat("NB_fire_bay_glass", (.16, .27, .30), .18, .08, 1.0, 0.0, .52)
+    asphalt = mat("NB_fire_asphalt", (.15, .16, .17), .96)
+    concrete = mat("NB_fire_concrete", (.68, .69, .67), .92)
+    white = mat("NB_fire_white", (.97, .96, .91), .72)
+    yellow = mat("NB_fire_yellow", (.98, .68, .05), .54)
+    metal = mat("NB_fire_metal", (.35, .38, .40), .42, .55)
+    dark = mat("NB_fire_dark", (.075, .085, .09), .58)
+    warm = mat("NB_fire_warm_light", (1.0, .60, .19), .30)
+    lawn = mat("NB_fire_lawn", (.24, .45, .25), .94)
+
+    # A complete 3x3-lot civic block with a broad apparatus apron to the road.
+    add_box(col, "fire_campus_lawn", 36.0, 36.0, .14, 0, 0, 0, lawn)
+    add_box(col, "fire_apron", 31.5, 12.2, .12, 0, -11.8, .14, concrete)
+    for x in (-9.5, -3.2, 3.2, 9.5):
+        add_box(col, "fire_apron_joint", .08, 11.7, .018,
+                x, -11.8, .26, cream)
+    add_box(col, "fire_side_drive", 6.0, 27.0, .12, 14.2, .8, .14, asphalt)
+    add_box(col, "fire_rear_service", 30.0, 5.2, .12, 0, 14.4, .14, asphalt)
+
+    # Main apparatus hall and a taller civic watch tower.
+    add_box(col, "fire_hall", 29.0, 17.4, 7.4, 0, 3.4, .26, brick)
+    add_box(col, "fire_hall_roof", 29.8, 18.2, .48, 0, 3.4, 7.66, dark)
+    add_box(col, "fire_front_belt", 29.5, .42, .42, 0, -5.35, 6.78, cream)
+    add_box(col, "fire_parapet", 29.7, 1.0, 1.2, 0, -5.20, 7.35, brick_dark)
+    add_box(col, "fire_parapet_cap", 30.2, 1.15, .28, 0, -5.20, 8.55, cream)
+
+    tower_x = -10.9
+    add_box(col, "fire_tower", 6.4, 7.2, 13.2, tower_x, 4.7, .26, brick_dark)
+    add_box(col, "fire_tower_cap", 7.0, 7.8, .48, tower_x, 4.7, 13.46, cream)
+    add_prism_roof(col, "fire_tower_roof", 7.4, 8.2, 2.1,
+                   tower_x, 4.7, 13.94, dark)
+    for side_x in (-1, 1):
+        add_box(col, "fire_tower_louver", 1.15, .16, 2.25,
+                tower_x + side_x * 1.55, 1.02, 9.55, glass)
+        for dx in (-.34, 0, .34):
+            add_box(col, "fire_tower_mullion", .09, .20, 2.25,
+                    tower_x + side_x * 1.55 + dx, .92, 9.55, cream)
+    add_text(col, "fire_tower_number", "1", 2.15, .09,
+             tower_x, .80, 5.75, white)
+
+    # Three correctly proportioned apparatus bays. Two are glazed overhead
+    # doors; the center is open so the detailed engine is unmistakable.
+    bay_centers = (-7.6, 0.0, 7.6)
+    for bay_x in bay_centers:
+        add_box(col, "fire_bay_frame", 6.55, .40, 6.15,
+                bay_x, -5.48, .42, cream)
+        add_box(col, "fire_bay_opening", 5.75, .28, 5.45,
+                bay_x, -5.72, .66, dark)
+        add_box(col, "fire_bay_header", 6.8, .52, .52,
+                bay_x, -5.60, 6.37, brick_dark)
+    for bay_x in (-7.6, 7.6):
+        add_box(col, "fire_bay_door", 5.45, .12, 5.15,
+                bay_x, -5.88, .80, bay_glass)
+        for z in (1.72, 2.68, 3.64, 4.60, 5.56):
+            add_box(col, "fire_door_rail", 5.45, .08, .09,
+                    bay_x, -5.97, z, cream)
+        for xoff in (-1.78, 0, 1.78):
+            add_box(col, "fire_door_mullion", .09, .08, 5.15,
+                    bay_x + xoff, -5.97, .80, cream)
+
+    def add_engine(prefix, x, y, visible=True):
+        # Engine front points toward local -Y and sits naturally inside a bay.
+        add_box(col, prefix + "_body", 4.55, 7.4, 2.75, x, y, .46,
+                red if visible else red_dark)
+        add_box(col, prefix + "_cab", 4.35, 2.55, 3.15, x, y - 3.25, .46, red)
+        add_box(col, prefix + "_windshield", 3.65, .12, 1.18,
+                x, y - 4.56, 2.10, glass)
+        add_box(col, prefix + "_bumper", 4.65, .38, .38,
+                x, y - 4.72, .50, metal)
+        add_box(col, prefix + "_grille", 2.25, .10, .72,
+                x, y - 4.94, .94, dark)
+        for lx in (-1.58, 1.58):
+            add_box(col, prefix + "_headlight", .48, .10, .42,
+                    x + lx, y - 4.95, 1.05, warm)
+        for wx in (-1.95, 1.95):
+            for wy in (y - 2.55, y + 2.15):
+                wheel = add_ngon_cone(col, prefix + "_wheel", .70, .70, .34, 12,
+                                      x + wx, wy, .38, dark)
+                wheel.rotation_euler.y = math.pi / 2
+        add_box(col, prefix + "_equipment", 4.15, 3.65, 2.35,
+                x, y + 1.45, 2.95, red_dark)
+        for side in (-1, 1):
+            add_box(col, prefix + "_locker", .10, 3.15, 1.65,
+                    x + side * 2.15, y + 1.45, 2.15, metal)
+        add_box(col, prefix + "_ladder", 3.75, .42, .30,
+                x, y + .65, 5.38, cream)
+        for rung_y in (y - .4, y + .35, y + 1.1, y + 1.85):
+            add_box(col, prefix + "_ladder_rung", 3.75, .10, .10,
+                    x, rung_y, 5.43, metal)
+        add_box(col, prefix + "_lightbar", 2.35, .38, .24,
+                x, y - 3.35, 3.82, red)
+
+    add_engine("fire_engine_center", 0, -2.4, True)
+    # Side engines remain behind the glass for depth and a staffed-station feel.
+    add_engine("fire_engine_left", -7.6, .25, False)
+    add_engine("fire_engine_right", 7.6, .25, False)
+
+    # Administration entrance and street-readable identity.
+    add_box(col, "fire_admin_entry", 4.6, 1.8, 4.3, 11.9, -5.95, .28, cream)
+    add_box(col, "fire_admin_glass", 3.7, .12, 3.30,
+            11.9, -6.92, .72, glass)
+    add_box(col, "fire_admin_split", .12, .16, 3.25,
+            11.9, -7.02, .72, metal)
+    add_box(col, "fire_admin_canopy", 5.2, 2.2, .30,
+            11.9, -6.45, 4.45, red_dark)
+    add_text(col, "fire_title", "FOLLOWVILLE FIRE & RESCUE", .78, .07,
+             0, -5.86, 7.52, white)
+    add_text(col, "fire_station_label", "STATION 1", .48, .06,
+             11.9, -7.10, 3.80, red_dark)
+
+    # Side and rear fenestration, rooftop systems, radio mast, and solar array.
+    for y in (-1.0, 2.4, 5.8, 9.2):
+        add_box(col, "fire_side_window_frame", .30, 1.78, 1.75,
+                14.58, y, 2.85, cream)
+        add_box(col, "fire_side_window", .18, 1.42, 1.38,
+                14.77, y, 3.04, glass)
+    for hx, hy in ((4.8, 5.4), (9.0, 5.4)):
+        add_box(col, "fire_hvac", 2.8, 2.0, 1.05, hx, hy, 8.14, metal)
+        add_box(col, "fire_hvac_cap", 3.0, 2.2, .18, hx, hy, 9.19, dark)
+    for sx in (-4.2, 0, 4.2):
+        panel = add_box(col, "fire_solar", 3.5, 1.7, .16,
+                        sx, 8.0, 8.30, glass)
+        panel.rotation_euler.x = math.radians(12)
+    add_ngon_cone(col, "fire_radio_mast", .10, .07, 7.0, 10,
+                  tower_x, 4.7, 16.05, metal)
+    for z in (18.2, 20.2):
+        add_box(col, "fire_radio_crossbar", 2.4, .10, .10,
+                tower_x, 4.7, z, metal)
+    add_uv_sphere(col, "fire_siren", .55, tower_x, 4.7, 23.0, red, 6, 10)
+
+    # Operational street details: flag, hydrant, monument sign, and parking.
+    add_ngon_cone(col, "fire_flagpole", .10, .07, 10.5, 10,
+                  -15.0, -8.8, .26, metal)
+    flag_mesh = bpy.data.meshes.new("fire_flag_mesh")
+    flag_mesh.from_pydata([(-14.9, -8.8, 9.5), (-11.4, -8.8, 8.8),
+                           (-14.9, -8.8, 8.15)], [], [(0, 1, 2)])
+    flag_mesh.materials.append(red)
+    flag_mesh.update()
+    flag_obj = bpy.data.objects.new("fire_flag", flag_mesh)
+    col.objects.link(flag_obj)
+    add_box(col, "fire_sign_base", 6.2, 1.2, .45, -10.6, -14.5, .26, concrete)
+    add_box(col, "fire_sign", 5.5, .68, 1.55, -10.6, -14.5, .65, brick_dark)
+    add_text(col, "fire_sign_text", "FIRE  1", .50, .05,
+             -10.6, -14.88, 1.68, white)
+    add_ngon_cone(col, "fire_hydrant_body", .32, .27, .95, 10,
+                  14.9, -13.4, .27, red)
+    add_ngon_cone(col, "fire_hydrant_cap", .43, .22, .42, 10,
+                  14.9, -13.4, 1.22, red_dark)
+    for y in (10.6, 13.1, 15.6):
+        add_box(col, "fire_parking_stripe", 5.2, .10, .025,
+                14.2, y, .28, white)
+    for x in (-15.5, 15.5):
+        build_tree(col, rng, .62 + rng.random() * .12, x, 12.8)
+
+
 def build_ring_house(col, seed):
     """Park-ring homes (day 8+): same cute pastel style, more variety --
     cottages, two-story family homes and skinny townhouses."""
@@ -2444,6 +2611,7 @@ ASSET_VARIANTS = {
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
     "followmart":  [("AST_followmart_4", lambda c: build_followmart(c, 2600))],
     "coffeetruck": [("AST_coffeetruck_0", lambda c: build_coffee_truck(c, 2700))],
+    "firestation": [("AST_firestation_0", lambda c: build_fire_station(c, 2800))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2506,7 +2674,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
-        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1}
+        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1, "firestation": 3}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2640,7 +2808,7 @@ def place_instance(world_col, b, name):
         lx = x + (s - 1) * LOT / 2
         ly = y + (s - 1) * LOT / 2
         # Civic campuses sit slightly above meadow so pads stay readable.
-        if b["type"] in ("followmart", "elementaryschool"):
+        if b["type"] in ("followmart", "elementaryschool", "firestation"):
             lz = max(0.05, terrain_height(lx, ly))
         else:
             lz = 0
@@ -2652,7 +2820,7 @@ def place_instance(world_col, b, name):
         # This lot's public street is on +Y. Rotate the authored -Y service
         # hatch toward it so customers order from the sidewalk side.
         empty.rotation_euler = (0, 0, math.pi)
-    elif b["type"] in ("elementaryschool", "followmart"):
+    elif b["type"] in ("elementaryschool", "followmart", "firestation"):
         # Campus assets are authored with main doors facing local -Y;
         # keep that deliberate frontage instead of lot-house rotation.
         empty.rotation_euler = (0, 0, 0)
@@ -5052,6 +5220,64 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         for fc in obj_fcurves(cam_obj):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+    elif cam == "day22reveal":
+        # One continuous 14-second edit: establish the finished skyline, fly
+        # to Meadow Run and hold for ten homes, then settle at Station 1 before
+        # that campus rises. Reveal timing is coordinated in main().
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        new_homes = [b for b in buildings
+                     if b["type"] == "house" and b.get("day") == latest_day]
+        station = next((b for b in reversed(buildings)
+                        if b["type"] == "firestation"), None)
+        home_points = [build_pos(b) for b in new_homes]
+        hx = sum(p[0] for p in home_points) / len(home_points) if home_points else cx
+        hy = sum(p[1] for p in home_points) / len(home_points) if home_points else cy
+        if station:
+            sx, sy = build_pos(station)
+            station_size = SIZE.get(station["type"], 1)
+            sx += (station_size - 1) * LOT / 2
+            sy += (station_size - 1) * LOT / 2
+        else:
+            sx, sy = 64.5, -70.5
+
+        aim = bpy.data.objects.new("Day22RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day22RevealCamera")
+        cam_data.lens = 43
+        cam_data.clip_start = 5.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day22RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.2s: restrained southeast skyline push.
+            (1, (158.0, -124.0, 84.0), (-8.0, 0.0, 12.0)),
+            (96, (139.0, -106.0, 73.0), (-3.0, 4.0, 13.5)),
+            # 3.2-5.7s: drone crosses to the newest Meadow Run frontage.
+            (128, (45.0, -125.0, 75.0), (hx, hy, 5.0)),
+            (170, (hx + 47.0, hy - 52.0, 54.0), (hx, hy, 4.2)),
+            # 5.7-8.8s: almost-still hover while all ten homes rise.
+            (265, (hx + 42.0, hy - 47.0, 49.0), (hx, hy, 4.8)),
+            # 8.8-11.0s: arc northeast into the fire-station block.
+            (295, (-5.0, -145.0, 68.0), (35.0, -95.0, 8.0)),
+            (330, (sx + 48.0, sy - 50.0, 44.0), (sx, sy, 6.2)),
+            # 11.0-14.0s: station reveal and a slow architectural push.
+            (frame_end, (sx + 39.0, sy - 42.0, 36.0), (sx, sy, 7.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day21growth":
         # Edited two-part reveal: the coffee truck and new subdivision are too
         # far apart for one useful wide frame, so this camera makes a clean
@@ -5744,7 +5970,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("day21growth", "day21drone", "day21skyline"):
+    if cfg.get("cam") == "day22reveal":
+        frame_end = max(frame_end, FPS * 14)
+    elif cfg.get("cam") in ("day21growth", "day21drone", "day21skyline"):
         frame_end = max(frame_end, FPS * 8)
     elif cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom", "dronehover"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
@@ -5756,7 +5984,17 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day21growth":
+    if cfg.get("cam") == "day22reveal":
+        station_roots = [e for e in rise if e.name.startswith("firestation_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 176 + index * 6, dur=24)
+        for e in station_roots:
+            animate_rise(e, 334, dur=34)
+        for e in rise:
+            if e not in station_roots and e not in home_roots:
+                animate_rise(e, 176)
+    elif cfg.get("cam") == "day21growth":
         truck_roots = [e for e in rise if e.name.startswith("coffeetruck_d")]
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         for e in truck_roots:
