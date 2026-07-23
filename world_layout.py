@@ -84,8 +84,10 @@ def walk_surface_manifest(state):
             x, y = ax + (bx - ax) * t, ay + (by - ay) * t
             samples.append((x, y, terrain_height(x, y)))
         for a, b in zip(samples, samples[1:]):
-            segments.append([a[0], -a[1], stable_height(a[2]),
-                             b[0], -b[1], stable_height(b[2]), half_width])
+            segments.append([stable_height(a[0]), stable_height(-a[1]),
+                             stable_height(a[2]), stable_height(b[0]),
+                             stable_height(-b[1]), stable_height(b[2]),
+                             half_width])
 
     active_districts = {building.get("district")
                         for building in state.get("buildings", [])
@@ -105,5 +107,6 @@ def walk_surface_manifest(state):
         if bulb["reveal_at"] > active:
             continue
         x, y = transform_point(*bulb["center"], district=bulb.get("district"))
-        bulbs.append([x, -y, stable_height(terrain_height(x, y)), 8.35])
+        bulbs.append([stable_height(x), stable_height(-y),
+                      stable_height(terrain_height(x, y)), 8.35])
     return {"activePlanId": active, "segments": segments, "bulbs": bulbs}

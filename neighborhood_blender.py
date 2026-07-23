@@ -2311,7 +2311,9 @@ def build_fire_station(col, seed):
     lawn = mat("NB_fire_lawn", (.24, .45, .25), .94)
 
     # A complete 3x3-lot civic block with a broad apparatus apron to the road.
-    add_box(col, "fire_campus_lawn", 36.0, 36.0, .14, 0, 0, 0, lawn)
+    # All campus decks finish at local z=.26; with the civic placement lift
+    # (.05 on this flat block), browser feet belong at world z=.31.
+    add_box(col, "fire_campus_lawn", 36.0, 36.0, .26, 0, 0, 0, lawn)
     add_box(col, "fire_apron", 31.5, 12.2, .12, 0, -11.8, .14, concrete)
     for x in (-9.5, -3.2, 3.2, 9.5):
         add_box(col, "fire_apron_joint", .08, 11.7, .018,

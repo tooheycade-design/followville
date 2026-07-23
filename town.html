@@ -3246,6 +3246,7 @@ function suburbanRoadSurfaceHeight(x,z){
 const CIVIC_WALK = Object.freeze({
   followmart: { half: 17.0, top: 0.19, size: 3 },
   elementaryschool: { half: 15.0, top: 0.28, size: 3 },
+  firestation: { half: 18.0, top: 0.31, size: 3 },
 });
 /** Populated by rebuildCivicWalkPads() after world_state loads. */
 let civicWalkPads = [];
@@ -4145,7 +4146,8 @@ function frontDirsFor(b){
    claims feed as the 3D name tags. A normal growth/export therefore updates
    the map without a second map file or any hand-maintained coordinates. */
 const MAP_LANDMARK_NAMES = {
-  elementaryschool:"Followville Elementary", parkdistrict:"Founder Park",
+  elementaryschool:"Followville Elementary", firestation:"Followville Fire & Rescue",
+  parkdistrict:"Founder Park",
   park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
   stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
   skyscraper:"Downtown tower"
