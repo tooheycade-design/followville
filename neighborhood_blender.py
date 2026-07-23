@@ -5260,7 +5260,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (1, (158.0, -124.0, 84.0), (-8.0, 0.0, 12.0)),
             (96, (139.0, -106.0, 73.0), (-3.0, 4.0, 13.5)),
             # 3.2-5.7s: drone crosses to the newest Meadow Run frontage.
-            (128, (45.0, -125.0, 75.0), (hx, hy, 5.0)),
+            (125, (78.0, -118.0, 78.0), (-32.0, -48.0, 10.0)),
+            (145, (-45.0, -155.0, 62.0), (hx + 10.0, hy + 20.0, 7.0)),
             (170, (hx + 47.0, hy - 52.0, 54.0), (hx, hy, 4.2)),
             # 5.7-8.8s: almost-still hover while all ten homes rise.
             (265, (hx + 42.0, hy - 47.0, 49.0), (hx, hy, 4.8)),
