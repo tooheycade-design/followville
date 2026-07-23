@@ -67,6 +67,28 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 22, population 352, 406 buildings (grown 2026-07-23 via Zach's Mac
+  Codex: +10 ordinary claimable homes plus one non-population fire station).
+  Fire Station 1 is seed 396, a non-claimable full 3x3 civic campus centered
+  at Blender `(64.5,-70.5)` / website `(64.5,70.5)`, replacing the procedural
+  tree in that otherwise empty block. It has three apparatus bays, three
+  engines, a watch/radio tower, operations entrance, apron, signage, rooftop
+  systems, parking, flag, and hydrant. Seeds 397-406 are Meadow Run plan IDs
+  199-208; address 209 is next. All 395 pre-Day-22 records are byte-identical.
+  Supabase inserted the 11 new rows once, with the station non-claimable; final
+  replays inserted zero. The full GLB, base, manifest, and eight streamed
+  chunks pass exact 406-building/hash/state/walk-surface validation. The
+  reviewed delivery is one 14.000-second, 1080x1920, 30fps portrait MP4 using
+  `--cam day22reveal`: completed skyline, flight to all ten homes rising, then
+  flight to the empty civic block before Station 1 rises. The authoritative
+  and repo Blend copies are saved at the finished Day 22 frame.
+- Day 21, population 342, 395 buildings (grown 2026-07-22 via Zach's Mac
+  Codex: +5 ordinary claimable homes and one non-population coffee truck).
+  Seed 390 is the non-claimable street-facing coffee truck beside Follow Mart;
+  seeds 391-395 are Meadow Run plan IDs 194-198. Full/streamed web assets were
+  regenerated and pushed. The approved delivery is three separate 8-second
+  portrait MP4s: coffee truck plus homes appearing, a finished-city drone
+  flight, and an angled skyline push.
 - Day 19, population 331, 334 buildings (grown 2026-07-20 via Zach's Mac
   Codex: +10 ordinary claimable homes). Seeds 325-331 completed Lantern Court
   and Twin Oaks at planned addresses 178-184; seeds 332-334 opened Meadow Run

@@ -3,6 +3,21 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 22 fire station + exact civic walking (2026-07-23)
+- Added Fire Station 1 as a permanent non-claimable full-block civic landmark
+  at website `(64.5,70.5)`, replacing procedural landscaping rather than any
+  canonical building or claim.
+- Added a 3x3 export footprint and browser civic walk pad matching the station's
+  level campus top, plus the public landmark name `Followville Fire & Rescue`.
+- Stabilized all derived walk-manifest coordinates to four decimal places so
+  Blender and standalone Python validation cannot disagree at floating-point
+  noise scale.
+- Rebuilt and pushed the full GLB fallback, base, manifest, and eight streamed
+  chunks. `check_town_glb.py` passes exact hashes, Day 22 / population 352 /
+  seed 407 metadata, walk surfaces, and one-to-one coverage of all 406 records.
+- Supabase contains the ten new claimable homes and the non-claimable station;
+  final replay sync inserted zero rows.
+
 ## Mobile landscape play + compact chat (2026-07-18)
 - Made the 3D town landscape-only on coarse-pointer phones. Portrait displays
   a dedicated Followville rotation screen, pauses active movement, and resumes
