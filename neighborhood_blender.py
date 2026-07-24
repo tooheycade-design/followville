@@ -125,6 +125,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day21drone  eight-second neighborhood-to-downtown drone glide
 #   --cam day21skyline  eight-second angled skyline push
 #   --cam day22reveal  14-second skyline, ten-home, and fire-station reveal
+#   --cam day23reveal  16-second skyline, homes, civic road, and City Hall reveal
+#   --cityhall       add the permanent City Hall and its terrain-following road
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -139,7 +141,8 @@ def _cli():
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
              "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
              "--parkring": "parkring", "--scatter": "scatter",
-             "--godzilla": "godzilla", "--forest": "forest"}
+             "--godzilla": "godzilla", "--forest": "forest",
+             "--cityhall": "cityhall"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -2311,15 +2314,15 @@ def build_fire_station(col, seed):
     lawn = mat("NB_fire_lawn", (.24, .45, .25), .94)
 
     # A complete 3x3-lot civic block with a broad apparatus apron to the road.
-    # All campus decks finish at local z=.26; with the civic placement lift
-    # (.05 on this flat block), browser feet belong at world z=.31.
+    # The paved surfaces use millimetre-scale top offsets above the lawn. Their
+    # former exactly coplanar tops z-fought between green and grey at distance.
     add_box(col, "fire_campus_lawn", 36.0, 36.0, .26, 0, 0, 0, lawn)
-    add_box(col, "fire_apron", 31.5, 12.2, .12, 0, -11.8, .14, concrete)
+    add_box(col, "fire_apron", 31.5, 12.2, .123, 0, -11.8, .14, concrete)
     for x in (-9.5, -3.2, 3.2, 9.5):
         add_box(col, "fire_apron_joint", .08, 11.7, .018,
-                x, -11.8, .26, cream)
-    add_box(col, "fire_side_drive", 6.0, 27.0, .12, 14.2, .8, .14, asphalt)
-    add_box(col, "fire_rear_service", 30.0, 5.2, .12, 0, 14.4, .14, asphalt)
+                x, -11.8, .266, cream)
+    add_box(col, "fire_side_drive", 6.0, 27.0, .126, 14.2, .8, .14, asphalt)
+    add_box(col, "fire_rear_service", 30.0, 5.2, .129, 0, 14.4, .14, asphalt)
 
     # Main apparatus hall and a taller civic watch tower.
     add_box(col, "fire_hall", 29.0, 17.4, 7.4, 0, 3.4, .26, brick)
@@ -2455,6 +2458,170 @@ def build_fire_station(col, seed):
                 14.2, y, .28, white)
     for x in (-15.5, 15.5):
         build_tree(col, rng, .62 + rng.random() * .12, x, 12.8)
+
+
+CITY_HALL_X = -3.0
+CITY_HALL_Y = -134.0
+CITY_HALL_ROAD_Y = -93.0
+
+
+def build_city_hall_road(col, seed):
+    """Terrain-following extension from the central grid to City Hall."""
+    m = std_mats()
+    shoulder = mat("NB_cityhall_road_shoulder", (.25, .28, .25), .98)
+    walk = mat("NB_cityhall_walk", (.67, .65, .59), .94)
+    marking = mat("NB_cityhall_lane_marking", (.88, .82, .58), .80)
+    origin = (CITY_HALL_X, CITY_HALL_ROAD_Y)
+    points = [(0, 0, 0), (0, -10, 0), (0, -21, 0), (0, -27, 0)]
+    _add_road_strip(col, "cityhall_road_shoulder", points, shoulder,
+                    width=7.6, bottom_offset=.006, top_offset=.046,
+                    terrain_origin=origin)
+    _add_road_strip(col, "cityhall_road", points, m["road"],
+                    width=6.1, bottom_offset=.016, top_offset=.091,
+                    terrain_origin=origin)
+    for side in (-1, 1):
+        side_points = [(side * 4.55, y, z) for _x, y, z in points]
+        _add_road_strip(col, "cityhall_sidewalk", side_points, walk,
+                        width=1.35, bottom_offset=.012, top_offset=.062,
+                        terrain_origin=origin)
+    for distance in (5.0, 15.0, 24.0):
+        y = -distance
+        z = terrain_height(CITY_HALL_X, CITY_HALL_ROAD_Y + y)
+        add_box(col, "cityhall_road_dash", .18, 2.4, .018,
+                0, y, z + .094, marking)
+
+
+def build_city_hall(col, seed):
+    """Neoclassical civic capitol integrated into Followville's south slope."""
+    rng = random.Random(seed)
+    limestone = mat("NB_cityhall_limestone", (.83, .81, .74), .78)
+    limestone_light = mat("NB_cityhall_limestone_light", (.94, .92, .85), .70)
+    stone = mat("NB_cityhall_foundation", (.35, .36, .34), .96)
+    roof = mat("NB_cityhall_roof", (.20, .29, .31), .72, .32)
+    copper = mat("NB_cityhall_copper", (.28, .48, .43), .66, .22)
+    glass = mat("NB_cityhall_glass", (.12, .28, .35), .18, .08, 1.0, 0.0, .54)
+    door = mat("NB_cityhall_door", (.22, .12, .075), .78)
+    bronze = mat("NB_cityhall_bronze", (.42, .29, .12), .58, .55)
+    concrete = mat("NB_cityhall_plaza", (.72, .70, .65), .90)
+    lawn = mat("NB_cityhall_lawn", (.30, .52, .27), .98)
+    flag_blue = mat("NB_cityhall_flag_blue", (.09, .22, .46), .78)
+    flag_gold = mat("NB_cityhall_flag_gold", (.92, .69, .18), .66)
+
+    def grade(lx, ly):
+        return terrain_height(CITY_HALL_X + lx, CITY_HALL_Y + ly)
+
+    # The structural floor is level while the exposed stone foundation absorbs
+    # the natural grade. Terraced lawn pieces follow the hillside at each side.
+    samples = [grade(x, y) for x in (-21, 0, 21) for y in (-9, 0, 9)]
+    floor_z = max(samples) + .16
+    low_z = min(samples) - .06
+    add_box(col, "cityhall_embedded_foundation", 45.0, 20.0,
+            floor_z - low_z, 0, -1.0, low_z, stone)
+    for x in (-18.5, 18.5):
+        side_grade = grade(x, 8)
+        add_box(col, "cityhall_terrace_lawn", 8.0, 10.0, .12,
+                x, 8.0, side_grade + .02, lawn)
+        add_box(col, "cityhall_terrace_wall", 8.5, .42,
+                max(.35, floor_z - side_grade), x, 3.1, side_grade, stone)
+
+    # Symmetrical wings and a taller central rotunda block.
+    add_box(col, "cityhall_left_wing", 16.0, 16.5, 8.3,
+            -14.0, 0, floor_z, limestone)
+    add_box(col, "cityhall_right_wing", 16.0, 16.5, 8.3,
+            14.0, 0, floor_z, limestone)
+    add_box(col, "cityhall_center", 15.5, 18.8, 11.1,
+            0, -.6, floor_z, limestone_light)
+    add_offset_pyramid(col, "cityhall_left_roof", 17.0, 17.4, 2.2,
+                       -14.0, 0, floor_z + 8.3, 0, 0, roof)
+    add_offset_pyramid(col, "cityhall_right_roof", 17.0, 17.4, 2.2,
+                       14.0, 0, floor_z + 8.3, 0, 0, roof)
+
+    # Portico, columns and pediment face north toward the existing city grid.
+    portico_y = 10.0
+    add_box(col, "cityhall_portico_floor", 20.0, 5.2, .42,
+            0, portico_y, floor_z, limestone_light)
+    for x in (-7.6, -5.05, -2.52, 0, 2.52, 5.05, 7.6):
+        add_ngon_cone(col, "cityhall_column_base", .58, .58, .30, 16,
+                      x, 11.25, floor_z + .42, limestone_light)
+        add_ngon_cone(col, "cityhall_column", .43, .36, 7.9, 16,
+                      x, 11.25, floor_z + .72, limestone_light)
+        add_ngon_cone(col, "cityhall_column_cap", .62, .62, .34, 16,
+                      x, 11.25, floor_z + 8.62, limestone_light)
+    add_box(col, "cityhall_portico_entablature", 20.5, 4.9, .85,
+            0, 10.1, floor_z + 8.96, limestone_light)
+    pediment = add_prism_roof(col, "cityhall_pediment", 21.0, 5.1, 3.1,
+                             0, 10.1, floor_z + 9.81, limestone_light)
+    pediment.rotation_euler.z = 0
+
+    # Broad public stairs descend naturally into the terrain-following plaza.
+    for index in range(6):
+        width = 21.0 + (5 - index) * .75
+        y = 13.1 + index * .9
+        top = floor_z - index * .16
+        ground = grade(0, y)
+        add_box(col, "cityhall_front_step", width, 1.05,
+                max(.14, top - ground), 0, y, ground, limestone_light)
+    plaza_points = [(0, 20.0, 0), (0, 17.2, 0)]
+    _add_road_strip(col, "cityhall_entry_plaza", plaza_points, concrete,
+                    width=20.5, bottom_offset=.014, top_offset=.074,
+                    terrain_origin=(CITY_HALL_X, CITY_HALL_Y))
+
+    # Doors, windows and trim give the facade readable civic scale.
+    for x in (-2.0, 0, 2.0):
+        add_box(col, "cityhall_entry_door", 1.55, .22, 3.2,
+                x, 9.55, floor_z + .45, door)
+        add_box(col, "cityhall_door_glass", 1.12, .08, 1.3,
+                x, 9.71, floor_z + 1.65, glass)
+    for wing_x in (-14.0, 14.0):
+        for xoff in (-5.0, -1.7, 1.7, 5.0):
+            for level in (2.0, 5.25):
+                add_box(col, "cityhall_window", 1.55, .16, 1.95,
+                        wing_x + xoff, 8.32, floor_z + level, glass)
+                add_box(col, "cityhall_window_cap", 1.9, .28, .20,
+                        wing_x + xoff, 8.43, floor_z + level + 1.95,
+                        limestone_light)
+    add_text(col, "cityhall_title", "FOLLOWVILLE  CITY  HALL", .58, .055,
+             0, 12.62, floor_z + 9.35, bronze,
+             rotation=(math.pi / 2, 0, math.pi))
+
+    # Central drum, oxidized civic dome, lantern and flag.
+    add_ngon_cone(col, "cityhall_drum", 5.0, 4.7, 3.1, 24,
+                  0, -.6, floor_z + 11.1, limestone_light)
+    for angle in [i * math.tau / 8 for i in range(8)]:
+        add_box(col, "cityhall_drum_window", .85, .18, 1.25,
+                3.98 * math.cos(angle), -.6 + 3.98 * math.sin(angle),
+                floor_z + 12.05, glass).rotation_euler.z = angle + math.pi / 2
+    dome = add_uv_sphere(col, "cityhall_dome", 4.85, 0, -.6,
+                         floor_z + 15.05, copper, 10, 24)
+    dome.scale.z = .62
+    add_ngon_cone(col, "cityhall_lantern", 1.25, 1.0, 2.35, 16,
+                  0, -.6, floor_z + 17.55, limestone_light)
+    add_ngon_cone(col, "cityhall_cupola", 1.45, 0, 1.35, 16,
+                  0, -.6, floor_z + 19.9, copper)
+    add_ngon_cone(col, "cityhall_flagpole", .09, .055, 7.2, 12,
+                  0, -.6, floor_z + 21.0, bronze)
+    flag_mesh = bpy.data.meshes.new("cityhall_flag_mesh")
+    z0 = floor_z + 27.2
+    flag_mesh.from_pydata([(0, -.6, z0), (4.0, -.6, z0 - .72),
+                           (0, -.6, z0 - 1.55)], [], [(0, 1, 2)])
+    flag_mesh.materials.append(flag_blue)
+    flag_mesh.update()
+    flag = bpy.data.objects.new("cityhall_flag", flag_mesh)
+    col.objects.link(flag)
+    add_ngon_cone(col, "cityhall_flag_seal", .34, .34, .04, 16,
+                  1.15, -.64, z0 - .82, flag_gold, rot=math.pi / 16)
+
+    # Restrained civic landscaping, kept low so the architecture stays legible.
+    for side in (-1, 1):
+        for y in (10.0, 15.2):
+            build_tree(col, rng, .52, side * 15.8, y)
+        add_box(col, "cityhall_planter", 5.8, 1.2, .48,
+                side * 12.2, 13.4, grade(side * 12.2, 13.4) + .05, stone)
+        for xoff in (-1.7, 0, 1.7):
+            add_uv_sphere(col, "cityhall_shrub", .62,
+                          side * 12.2 + xoff, 13.4,
+                          grade(side * 12.2 + xoff, 13.4) + .47,
+                          lawn, 6, 10)
 
 
 def build_ring_house(col, seed):
@@ -2614,6 +2781,8 @@ ASSET_VARIANTS = {
     "followmart":  [("AST_followmart_4", lambda c: build_followmart(c, 2600))],
     "coffeetruck": [("AST_coffeetruck_0", lambda c: build_coffee_truck(c, 2700))],
     "firestation": [("AST_firestation_0", lambda c: build_fire_station(c, 2800))],
+    "cityhallroad": [("AST_cityhallroad_0", lambda c: build_city_hall_road(c, 2900))],
+    "cityhall": [("AST_cityhall_0", lambda c: build_city_hall(c, 3000))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2676,7 +2845,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
-        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1, "firestation": 3}
+        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1, "firestation": 3,
+        "cityhallroad": 1, "cityhall": 4}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2684,7 +2854,7 @@ MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 def footprint(b):
     # Planned suburban houses use exact world positions on curving roads, not
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
-    if b.get("plan_id") or b.get("feature_id"):
+    if b.get("plan_id") or b.get("feature_id") or b["type"] in ("cityhallroad", "cityhall"):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -4146,6 +4316,10 @@ def scatter_nature(world_col, occupied, buildings):
                     if bulb.get("reveal_at", 10**9) <= active_plan_id]
     active_house_points = [transform_building_point(b) for b in buildings
                            if b.get("plan_id") and "px" in b and "py" in b]
+    city_hall_present = any(b.get("type") == "cityhall" for b in buildings)
+    if city_hall_present:
+        active_segments.append(((CITY_HALL_X, CITY_HALL_ROAD_Y),
+                                (CITY_HALL_X, CITY_HALL_Y + 18.0)))
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_segments.extend((a, b) for district in active_districts
                            for a, b in zip(DISTRICT_CONNECTORS.get(district, ()),
@@ -4177,6 +4351,10 @@ def scatter_nature(world_col, occupied, buildings):
                 continue
             if any(math.hypot(point[0] - x, point[1] - y) < 10.5
                    for x, y in active_bulbs):
+                continue
+            if city_hall_present and (
+                    abs(point[0] - CITY_HALL_X) < 27.0 and
+                    abs(point[1] - CITY_HALL_Y) < 26.0):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()
@@ -4427,6 +4605,23 @@ def animate_rise(empty, f_start, dur=22):
     empty.scale = rest
     empty.keyframe_insert("scale", frame=f_start + dur)
     _ease_scale(empty, "EASE_OUT")
+
+
+def animate_road_extend(empty, f_start, dur=36):
+    """Reveal a southbound road from its existing-grid connection."""
+    rest = tuple(empty.get("nb_rest_scale", empty.scale))
+    _keyframe_hidden(empty, 1, True)
+    _keyframe_hidden(empty, f_start, False)
+    empty.scale = (rest[0], max(.001, rest[1] * .001), rest[2])
+    empty.keyframe_insert("scale", frame=f_start)
+    empty.scale = rest
+    empty.keyframe_insert("scale", frame=f_start + dur)
+    for fc in obj_fcurves(empty):
+        if fc.data_path == "scale":
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+                kp.easing = "EASE_OUT"
+
 
 def animate_sink(empty, f_start, dur=20):
     """Follower lost: the house sinks back into the ground, then vanishes."""
@@ -5281,6 +5476,57 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day23reveal":
+        # One continuous 16-second civic-growth flight: skyline, all nineteen
+        # homes, the new central road, then City Hall after the camera settles.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        new_homes = [b for b in buildings
+                     if b["type"] == "house" and b.get("day") == latest_day]
+        home_points = [build_pos(b) for b in new_homes]
+        hx = sum(p[0] for p in home_points) / len(home_points) if home_points else cx
+        hy = sum(p[1] for p in home_points) / len(home_points) if home_points else cy
+
+        aim = bpy.data.objects.new("Day23RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day23RevealCamera")
+        cam_data.lens = 42
+        cam_data.clip_start = 5.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day23RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.2s: elevated southeast skyline with the established city.
+            (1, (178.0, -142.0, 96.0), (-8.0, -2.0, 12.0)),
+            (96, (151.0, -119.0, 84.0), (-12.0, -8.0, 13.5)),
+            # 3.2-5.5s: fast but readable crossing toward Larkspur Loop.
+            (126, (55.0, -148.0, 105.0), (hx + 8.0, hy, 7.0)),
+            (165, (hx + 112.0, hy - 132.0, 116.0), (hx, hy, 5.0)),
+            # 5.5-9.0s: steady wide hover while all nineteen homes rise.
+            (270, (hx + 104.0, hy - 122.0, 106.0), (hx, hy, 5.5)),
+            # 9.0-11.5s: high civic arc back across the southern city edge.
+            (305, (-102.0, -118.0, 102.0), (-18.0, -112.0, 6.0)),
+            (345, (35.0, -68.0, 55.0), (CITY_HALL_X, -107.0, 3.0)),
+            # 11.5-13.2s: travel along the newly extending center road.
+            (395, (66.0, -73.0, 52.0), (CITY_HALL_X, CITY_HALL_Y, 8.5)),
+            # 13.2-16.0s: City Hall rises after the architectural view settles.
+            (frame_end, (60.0, -79.0, 46.0),
+             (CITY_HALL_X, CITY_HALL_Y, 10.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day21growth":
         # Edited two-part reveal: the coffee truck and new subdivision are too
         # far apart for one useful wide frame, so this camera makes a clean
@@ -5808,7 +6054,8 @@ def main(cfg=None):
                                 ("mushroomhouse", n_mush, None),
                                 ("apartment", n_apart, None), ("park", n_parks, None),
                                 ("tree", n_trees, None)]
-        if gained or lost or n_apart or n_parks or n_trees or n_mush or specials:
+        if (gained or lost or n_apart or n_parks or n_trees or n_mush or
+                specials or cfg.get("cityhall")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -5878,6 +6125,23 @@ def main(cfg=None):
                 state["seed_counter"] += 1
                 state["buildings"].append(hb)
                 new_batch.append(hb)
+        if cfg.get("cityhall"):
+            if any(b["type"] in ("cityhall", "cityhallroad")
+                   for b in state["buildings"]):
+                raise RuntimeError("City Hall civic campus already exists")
+            civic_records = (
+                {"type": "cityhallroad", "gx": 0, "gy": 0,
+                 "px": CITY_HALL_X, "py": CITY_HALL_ROAD_Y, "pz": 0.0,
+                 "rot": 0.0},
+                {"type": "cityhall", "gx": 0, "gy": 0,
+                 "px": CITY_HALL_X, "py": CITY_HALL_Y, "pz": 0.0,
+                 "rot": 0.0},
+            )
+            for civic in civic_records:
+                civic.update({"seed": state["seed_counter"], "day": state["day"]})
+                state["seed_counter"] += 1
+                state["buildings"].append(civic)
+                new_batch.append(civic)
         for btype, n, target in additions:
             size = SIZE.get(btype, 1)
             if n <= 0:
@@ -5973,7 +6237,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day22reveal":
+    if cfg.get("cam") == "day23reveal":
+        frame_end = max(frame_end, FPS * 16)
+    elif cfg.get("cam") == "day22reveal":
         frame_end = max(frame_end, FPS * 14)
     elif cfg.get("cam") in ("day21growth", "day21drone", "day21skyline"):
         frame_end = max(frame_end, FPS * 8)
@@ -5987,7 +6253,20 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day22reveal":
+    if cfg.get("cam") == "day23reveal":
+        road_roots = [e for e in rise if e.name.startswith("cityhallroad_d")]
+        hall_roots = [e for e in rise if e.name.startswith("cityhall_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 166 + index * 4, dur=25)
+        for e in road_roots:
+            animate_road_extend(e, 326, dur=44)
+        for e in hall_roots:
+            animate_rise(e, 400, dur=42)
+        for e in rise:
+            if e not in road_roots and e not in hall_roots and e not in home_roots:
+                animate_rise(e, 166)
+    elif cfg.get("cam") == "day22reveal":
         station_roots = [e for e in rise if e.name.startswith("firestation_d")]
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         for index, e in enumerate(home_roots):
