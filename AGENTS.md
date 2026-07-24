@@ -67,6 +67,23 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 23, population 371, 427 buildings (grown 2026-07-24 via Zach's Mac
+  Codex: +19 ordinary claimable homes plus the non-population City Hall and
+  its separately animated civic road). Seeds 407-408 are the non-claimable
+  terrain-following road and City Hall at Blender `(-3,-134)` / website
+  `(-3,134)`. The capitol-style complex has an embedded hillside foundation,
+  broad stairs, seven-column portico, pediment, symmetrical wings, detailed
+  windows and doors, dome, cupola, flag, plaza, and landscaping. Seeds 409-427
+  consumed plan IDs 209-227: address 209 completed Meadow Run and 210-227
+  opened Larkspur Loop; address 228 is next. Fire Station 1's formerly
+  coplanar lawn and paved tops now use tiny distinct elevations, removing its
+  green/grey distance flicker. Supabase inserted all 21 new rows once with
+  both civic records non-claimable. Full and streamed GLBs pass exact
+  427-building/hash/state validation. Exact street-name map searches now show
+  every home on streets larger than 24 lots. The reviewed delivery is one
+  16.000-second, 1080x1920, 30fps portrait MP4 using `--cam day23reveal`:
+  skyline, all 19 homes rising, civic road extending, then City Hall rising.
+  Both Blend copies are saved at finished frame 480.
 - Day 22, population 352, 406 buildings (grown 2026-07-23 via Zach's Mac
   Codex: +10 ordinary claimable homes plus one non-population fire station).
   Fire Station 1 is seed 396, a non-claimable full 3x3 civic campus centered

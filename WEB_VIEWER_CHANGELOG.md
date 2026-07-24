@@ -3,6 +3,18 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 23 City Hall + larger street search (2026-07-24)
+- Added Followville City Hall and its center-grid road as permanent,
+  non-claimable GLB landmarks at website `(-3,134)`.
+- Rebuilt and pushed the full fallback, base, manifest, and eight streamed
+  chunks with exact one-to-one coverage of all 427 Day 23 records.
+- Added the public `Followville City Hall` map label.
+- Exact street-name searches now prefer that street over broader district
+  text matches and can display 48 results, so all 25 Larkspur Loop homes
+  remain visible after the Day 23 expansion.
+- Separated Fire Station 1's lawn, apron, side drive, rear service area, and
+  markings by millimetre-scale elevations to eliminate depth flicker.
+
 ## Day 22 fire station + exact civic walking (2026-07-23)
 - Added Fire Station 1 as a permanent non-claimable full-block civic landmark
   at website `(64.5,70.5)`, replacing procedural landscaping rather than any
