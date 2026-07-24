@@ -4252,7 +4252,10 @@ function townMapFilteredItems(){
     }else if(rawQuery.startsWith("@")){
       items = mapState.items.filter(item => item.isHome && item.ownerKey.includes(query));
     }else{
-      items = mapState.items.filter(item => terms.every(term => item.search.includes(term)));
+      const exactStreet = mapState.items.filter(item =>
+        item.isHome && String(item.building.street||"").toLowerCase() === query);
+      items = exactStreet.length ? exactStreet :
+        mapState.items.filter(item => terms.every(term => item.search.includes(term)));
     }
     items.sort((a,b) => {
       const score = item =>
@@ -4295,7 +4298,7 @@ function townMapStreetGroups(items){
     a.district.localeCompare(b.district) || a.street.localeCompare(b.street));
 }
 
-function townMapLocationMarkup(items,limit=24){
+function townMapLocationMarkup(items,limit=48){
   const selectedKey = mapState.selected?.key;
   return items.slice(0,limit).map(item => `
       <button type="button" class="map-result ${item.key===selectedKey?"selected":""}" data-map-key="${item.key}">
@@ -4318,7 +4321,7 @@ function renderTownMapResults(){
     return;
   }
   if(showLocations){
-    const limit=24;
+    const limit=48;
     const shown=Math.min(items.length,limit);
     const countCopy=items.length>limit
       ? `${items.length} matches · showing the first ${shown}; keep typing to narrow it down`
