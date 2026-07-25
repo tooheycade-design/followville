@@ -67,6 +67,23 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- Day 24, population 400, 457 buildings (grown 2026-07-25 via Zach's Mac
+  Codex: +29 ordinary claimable homes plus permanent non-population Civic
+  Square). Seed 428 is the non-claimable square at Blender `(43,-134)` /
+  website `(43,134)`, beside City Hall; seeds 429-457 consumed plan IDs
+  228-256. Addresses 228-234 completed Larkspur Loop and 235-256 opened
+  Sunset Court; address 257 is next. The terrain-following square includes
+  paving, fountain, benches, lamps, planters, a connector, and a small stage.
+  Every horizontal top surface was elevation-separated and an explicit
+  coplanar-overlap audit returned zero, preventing the former parking-lot
+  flicker. Supabase inserted all 30 records once, with Civic Square
+  non-claimable. Full and streamed GLBs pass exact 457-building/hash/state
+  validation. The reviewed delivery is one 20.000-second, 1080x1920, 30fps
+  dusk portrait MP4 using `--cam day24reveal`: skyline, all 29 homes rising
+  across two areas, then Civic Square rising before a temporary 400-person
+  election joke and colored fireworks. The 400 display, crowd, signs, podiums,
+  balloons, and fireworks are video-only. Both Blend copies are saved at
+  finished frame 600.
 - Day 23, population 371, 427 buildings (grown 2026-07-24 via Zach's Mac
   Codex: +19 ordinary claimable homes plus the non-population City Hall and
   its separately animated civic road). Seeds 407-408 are the non-claimable

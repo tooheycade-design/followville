@@ -3,6 +3,17 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 24 Civic Square + 400 population (2026-07-25)
+- Added permanent non-claimable Civic Square beside City Hall at website
+  `(43,134)`, with a public map label and matching browser walk surface.
+- Added 29 claimable homes at Larkspur Loop and Sunset Court and rebuilt the
+  full fallback, base, manifest, and streamed chunks with exact one-to-one
+  coverage of all 457 Day 24 records.
+- Kept the `400` display, crowd, election signs, podiums, balloons, and
+  fireworks render-only; none are exported to the public town.
+- Audited Civic Square's paving, border, connector, water, stage, and signage
+  for zero coplanar horizontal top overlaps to prevent distance flicker.
+
 ## Day 23 City Hall + larger street search (2026-07-24)
 - Added Followville City Hall and its center-grid road as permanent,
   non-claimable GLB landmarks at website `(-3,134)`.
