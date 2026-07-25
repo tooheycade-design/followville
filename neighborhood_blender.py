@@ -126,7 +126,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day21skyline  eight-second angled skyline push
 #   --cam day22reveal  14-second skyline, ten-home, and fire-station reveal
 #   --cam day23reveal  16-second skyline, homes, civic road, and City Hall reveal
+#   --cam day24reveal  20-second dusk milestone flight through homes and Civic Square
 #   --cityhall       add the permanent City Hall and its terrain-following road
+#   --civicsquare    add the permanent terrain-following square beside City Hall
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -142,7 +144,7 @@ def _cli():
              "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
              "--parkring": "parkring", "--scatter": "scatter",
              "--godzilla": "godzilla", "--forest": "forest",
-             "--cityhall": "cityhall"}
+             "--cityhall": "cityhall", "--civicsquare": "civicsquare"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -2463,6 +2465,8 @@ def build_fire_station(col, seed):
 CITY_HALL_X = -3.0
 CITY_HALL_Y = -134.0
 CITY_HALL_ROAD_Y = -93.0
+CIVIC_SQUARE_X = 43.0
+CIVIC_SQUARE_Y = -134.0
 
 
 def build_city_hall_road(col, seed):
@@ -2624,6 +2628,126 @@ def build_city_hall(col, seed):
                           lawn, 6, 10)
 
 
+def build_civic_square(col, seed):
+    """Permanent public square that follows the hillside beside City Hall."""
+    rng = random.Random(seed)
+    paver = mat("NB_civic_square_paver", (.57, .58, .57), .92)
+    border = mat("NB_civic_square_border", (.76, .74, .67), .88)
+    stone = mat("NB_civic_square_stone", (.43, .44, .42), .94)
+    water = mat("NB_civic_square_water", (.17, .52, .66), .18, .08)
+    bronze = mat("NB_civic_square_bronze", (.38, .27, .13), .58, .55)
+    wood = mat("NB_civic_square_wood", (.35, .19, .10), .78)
+    flower_a = mat("NB_civic_flower_a", (.86, .23, .28), .72)
+    flower_b = mat("NB_civic_flower_b", (.96, .72, .18), .68)
+    m = std_mats()
+
+    def grade(lx, ly):
+        return terrain_height(CIVIC_SQUARE_X + lx, CIVIC_SQUARE_Y + ly)
+
+    # A subdivided surface follows the actual regional terrain. This avoids
+    # both a hovering slab and a hillside cutting through a flat plaza.
+    xs = [-17.0, -11.5, -5.75, 0.0, 5.75, 11.5, 17.0]
+    ys = [-16.0, -10.7, -5.35, 0.0, 5.35, 10.7, 16.0]
+    verts = [(x, y, grade(x, y) + .065) for y in ys for x in xs]
+    faces = []
+    row = len(xs)
+    for iy in range(len(ys) - 1):
+        for ix in range(len(xs) - 1):
+            a = iy * row + ix
+            faces.append((a, a + 1, a + row + 1, a + row))
+    mesh = bpy.data.meshes.new("civic_square_terrain_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(paver)
+    mesh.update()
+    plaza = bpy.data.objects.new("civic_square_terrain", mesh)
+    col.objects.link(plaza)
+
+    origin = (CIVIC_SQUARE_X, CIVIC_SQUARE_Y)
+    edges = (
+        [(-17, -16, 0), (17, -16, 0)],
+        [(17, -16, 0), (17, 16, 0)],
+        [(17, 16, 0), (-17, 16, 0)],
+        [(-17, 16, 0), (-17, -16, 0)],
+    )
+    for points in edges:
+        _add_road_strip(col, "civic_square_border", points, border,
+                        width=1.15, bottom_offset=.062, top_offset=.115,
+                        terrain_origin=origin)
+    # Short, terrain-following connector from City Hall's east terrace.
+    _add_road_strip(col, "civic_square_cityhall_walk",
+                    [(-23.0, 8.5, 0), (-16.4, 8.5, 0)], border,
+                    width=4.4, bottom_offset=.018, top_offset=.078,
+                    terrain_origin=origin)
+
+    # Fountain foundation is intentionally embedded into the slope.
+    fountain_grade = grade(-1.0, 1.0)
+    add_ngon_cone(col, "civic_fountain_foundation", 5.0, 5.0, .72, 32,
+                  -1.0, 1.0, fountain_grade - .22, stone)
+    add_ngon_cone(col, "civic_fountain_basin", 4.55, 4.25, .62, 32,
+                  -1.0, 1.0, fountain_grade + .25, border)
+    add_ngon_cone(col, "civic_fountain_water", 3.82, 3.82, .08, 32,
+                  -1.0, 1.0, fountain_grade + .76, water)
+    add_ngon_cone(col, "civic_fountain_pedestal", 1.35, .82, 2.1, 20,
+                  -1.0, 1.0, fountain_grade + .78, stone)
+    add_ngon_cone(col, "civic_fountain_finial", .70, 0, 1.45, 20,
+                  -1.0, 1.0, fountain_grade + 2.88, bronze)
+    for angle in (0, math.pi / 2, math.pi, 3 * math.pi / 2):
+        x, y = -1.0 + 1.65 * math.cos(angle), 1.0 + 1.65 * math.sin(angle)
+        jet = add_ngon_cone(col, "civic_fountain_jet", .055, .028, 1.25, 8,
+                            x, y, fountain_grade + .82, water)
+        jet.rotation_euler.x = math.radians(12) * math.sin(angle)
+        jet.rotation_euler.y = -math.radians(12) * math.cos(angle)
+
+    # A modest permanent stage at the south edge supports future civic events.
+    stage_y = -11.8
+    stage_samples = [grade(x, y) for x in (-6.8, 0, 6.8)
+                     for y in (stage_y - 2.5, stage_y + 2.5)]
+    stage_top = max(stage_samples) + .24
+    stage_low = min(stage_samples) - .04
+    add_box(col, "civic_stage_foundation", 14.2, 5.4,
+            stage_top - stage_low, 0, stage_y, stage_low, stone)
+    add_box(col, "civic_stage_deck", 13.8, 5.0, .22,
+            0, stage_y, stage_top + .006, wood)
+    for index in range(3):
+        y = stage_y + 3.0 + index * .55
+        g = grade(0, y)
+        add_box(col, "civic_stage_step", 7.0 + index * .75, .65,
+                max(.12, stage_top - index * .16 - g),
+                0, y, g, border)
+
+    # Benches, lamps and low planting preserve clear sightlines to the stage.
+    for x, y, rot in ((-12.8, 6.5, math.pi / 2), (12.8, 6.5, -math.pi / 2),
+                      (-12.8, -5.0, math.pi / 2), (12.8, -5.0, -math.pi / 2)):
+        z = grade(x, y) + .11
+        seat = add_box(col, "civic_bench_seat", 3.2, .62, .28, x, y, z, wood)
+        back = add_box(col, "civic_bench_back", 3.2, .18, 1.05,
+                       x, y + .34, z + .22, wood)
+        seat.rotation_euler.z = rot
+        back.rotation_euler.z = rot
+        for dx in (-1.15, 1.15):
+            leg = add_box(col, "civic_bench_leg", .18, .42, .72,
+                          x + dx * math.cos(rot), y + dx * math.sin(rot),
+                          z - .03, bronze)
+            leg.rotation_euler.z = rot
+    for x, y in ((-14.5, 13.0), (14.5, 13.0), (-14.5, -13.5), (14.5, -13.5)):
+        z = grade(x, y) + .10
+        add_ngon_cone(col, "civic_lamp_post", .13, .08, 4.7, 10,
+                      x, y, z, bronze)
+        add_uv_sphere(col, "civic_lamp_globe", .36, x, y, z + 4.72,
+                      m["bulb"], 6, 10)
+    for side in (-1, 1):
+        x = side * 14.0
+        for y in (-8.0, 0.0, 8.0):
+            z = grade(x, y) + .10
+            add_box(col, "civic_planter", 2.3, 1.45, .48,
+                    x, y, z, stone)
+            for index, dx in enumerate((-.65, 0, .65)):
+                add_uv_sphere(col, "civic_flower", .28,
+                              x + dx, y, z + .52,
+                              flower_a if (index + side) % 2 else flower_b,
+                              5, 8)
+
+
 def build_ring_house(col, seed):
     """Park-ring homes (day 8+): same cute pastel style, more variety --
     cottages, two-story family homes and skinny townhouses."""
@@ -2783,6 +2907,7 @@ ASSET_VARIANTS = {
     "firestation": [("AST_firestation_0", lambda c: build_fire_station(c, 2800))],
     "cityhallroad": [("AST_cityhallroad_0", lambda c: build_city_hall_road(c, 2900))],
     "cityhall": [("AST_cityhall_0", lambda c: build_city_hall(c, 3000))],
+    "civicsquare": [("AST_civicsquare_0", lambda c: build_civic_square(c, 3100))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2846,7 +2971,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
         "elementaryschool": 3, "followmart": 3, "coffeetruck": 1, "firestation": 3,
-        "cityhallroad": 1, "cityhall": 4}
+        "cityhallroad": 1, "cityhall": 4, "civicsquare": 3}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2854,7 +2979,8 @@ MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 def footprint(b):
     # Planned suburban houses use exact world positions on curving roads, not
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
-    if b.get("plan_id") or b.get("feature_id") or b["type"] in ("cityhallroad", "cityhall"):
+    if (b.get("plan_id") or b.get("feature_id") or
+            b["type"] in ("cityhallroad", "cityhall", "civicsquare")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -4317,6 +4443,7 @@ def scatter_nature(world_col, occupied, buildings):
     active_house_points = [transform_building_point(b) for b in buildings
                            if b.get("plan_id") and "px" in b and "py" in b]
     city_hall_present = any(b.get("type") == "cityhall" for b in buildings)
+    civic_square_present = any(b.get("type") == "civicsquare" for b in buildings)
     if city_hall_present:
         active_segments.append(((CITY_HALL_X, CITY_HALL_ROAD_Y),
                                 (CITY_HALL_X, CITY_HALL_Y + 18.0)))
@@ -4355,6 +4482,10 @@ def scatter_nature(world_col, occupied, buildings):
             if city_hall_present and (
                     abs(point[0] - CITY_HALL_X) < 27.0 and
                     abs(point[1] - CITY_HALL_Y) < 26.0):
+                continue
+            if civic_square_present and (
+                    abs(point[0] - CIVIC_SQUARE_X) < 23.0 and
+                    abs(point[1] - CIVIC_SQUARE_Y) < 22.0):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()
@@ -4436,7 +4567,8 @@ def animate_ducks(world_col, buildings, frame_end):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
 
-def build_fireworks(world_col, cx, cy, frame_end):
+def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
+                    end_frame=None, burst_count=6):
     """One-off celebration: firework bursts above an area. Not saved to the
     world state — they exist only in videos rendered with --celebrate."""
     rng = random.Random(4242)
@@ -4455,11 +4587,14 @@ def build_fireworks(world_col, cx, cy, frame_end):
         except Exception:
             pass
         fmats.append(fm)
-    for k in range(6):
+    first = 25 if start_frame is None else int(start_frame)
+    last = max(first + 24, frame_end - 100) if end_frame is None else int(end_frame)
+    for k in range(burst_count):
         bx = cx + rng.uniform(-26, 26)
         by = cy + rng.uniform(-20, 20)
         bz = 28 + rng.uniform(0, 12)
-        t0 = int(25 + (max(frame_end - 100, 30)) * k / 6 + rng.uniform(0, 8))
+        span = max(1, last - first - 22)
+        t0 = int(first + span * k / max(1, burst_count - 1) + rng.uniform(0, 5))
         fm = fmats[k % len(fmats)]
         for _ in range(12):
             th = rng.uniform(0, math.tau)
@@ -4482,6 +4617,175 @@ def build_fireworks(world_col, cx, cy, frame_end):
             p.keyframe_insert("scale", frame=t0 + 22)
             p.keyframe_insert("location", frame=t0 + 22)
 
+
+def build_milestone_fireworks(world_col, cx, cy, frame_end):
+    """Dusk-friendly radial bursts for Day 24, with retained color and shape."""
+    rng = random.Random(40024)
+    colors = ((1.0, .22, .30), (1.0, .68, .12), (.22, .58, 1.0),
+              (.35, 1.0, .55), (.72, .36, 1.0))
+    mats = []
+    for index, color in enumerate(colors):
+        material = mat("NB_milestone_firework_%d" % index, color, .28)
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
+        if bsdf:
+            try:
+                bsdf.inputs["Emission Color"].default_value = (*color, 1.0)
+                bsdf.inputs["Emission Strength"].default_value = 4.5
+            except Exception:
+                pass
+        mats.append(material)
+    burst_offsets = ((-20, -5, 35), (15, 7, 39), (-5, -12, 32),
+                     (24, -8, 36), (-24, 10, 38), (5, 14, 34),
+                     (18, -15, 40), (-10, 3, 37))
+    for burst_index, (offset_x, offset_y, burst_z) in enumerate(burst_offsets):
+        root = bpy.data.objects.new("milestone_firework_burst", None)
+        root.location = (cx + offset_x, cy + offset_y, burst_z)
+        world_col.objects.link(root)
+        material = mats[burst_index % len(mats)]
+        for ray_index in range(14):
+            theta = math.tau * ray_index / 14 + rng.uniform(-.11, .11)
+            phi = math.acos(rng.uniform(-1.0, 1.0))
+            length = rng.uniform(5.0, 8.2)
+            end = (length * math.sin(phi) * math.cos(theta),
+                   length * math.sin(phi) * math.sin(theta),
+                   length * math.cos(phi))
+            ray = add_beam_between(world_col, "milestone_firework_ray",
+                                   (0, 0, 0), end, .16, material)
+            ray.parent = root
+        flash = add_uv_sphere(world_col, "milestone_firework_flash", .46,
+                              0, 0, 0, material, 6, 10)
+        flash.parent = root
+        t0 = 500 + burst_index * 11
+        root.hide_viewport = True
+        root.hide_render = True
+        root.keyframe_insert("hide_viewport", frame=1)
+        root.keyframe_insert("hide_render", frame=1)
+        root.hide_viewport = False
+        root.hide_render = False
+        root.keyframe_insert("hide_viewport", frame=t0)
+        root.keyframe_insert("hide_render", frame=t0)
+        root.scale = (.001, .001, .001)
+        root.keyframe_insert("scale", frame=t0)
+        root.scale = (1.0, 1.0, 1.0)
+        root.keyframe_insert("scale", frame=t0 + 8)
+        root.scale = (1.22, 1.22, 1.22)
+        root.keyframe_insert("scale", frame=t0 + 22)
+        root.hide_viewport = True
+        root.hide_render = True
+        root.keyframe_insert("hide_viewport", frame=t0 + 25)
+        root.keyframe_insert("hide_render", frame=t0 + 25)
+        for fc in obj_fcurves(root):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+
+
+def build_day24_election_kickoff(world_col, frame_end):
+    """Temporary humorous 400-follower election rally for the Day 24 video."""
+    rng = random.Random(240400)
+    navy = mat("NB_day24_navy", (.055, .12, .27), .72)
+    red = mat("NB_day24_red", (.78, .08, .08), .68)
+    gold = mat("NB_day24_gold", (.95, .67, .12), .48, .38)
+    white = mat("NB_day24_white", (.96, .95, .90), .70)
+    wood = mat("NB_day24_podium", (.33, .17, .08), .78)
+    dark = mat("NB_day24_dark", (.055, .06, .07), .70)
+    skin = mat("NB_day24_skin", (.78, .53, .38), .76)
+    shirt_mats = [
+        mat("NB_day24_shirt_blue", (.10, .33, .62), .72),
+        mat("NB_day24_shirt_green", (.15, .48, .29), .76),
+        mat("NB_day24_shirt_red", (.65, .13, .12), .74),
+        mat("NB_day24_shirt_gold", (.84, .56, .10), .72),
+    ]
+
+    root = bpy.data.objects.new("Day24_ElectionKickoff_RenderOnly", None)
+    root.location = (CIVIC_SQUARE_X, CIVIC_SQUARE_Y, 0)
+    root["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    world_col.objects.link(root)
+    parts = []
+
+    def attach(obj):
+        obj.parent = root
+        parts.append(obj)
+        return obj
+
+    def local_grade(x, y):
+        return terrain_height(CIVIC_SQUARE_X + x, CIVIC_SQUARE_Y + y)
+
+    # The temporary milestone sculpture occupies the permanent event stage.
+    stage_z = max(local_grade(x, -11.8 + y)
+                  for x in (-6.8, 0, 6.8) for y in (-2.5, 2.5)) + .52
+    attach(add_text(world_col, "day24_400", "400", 5.2, .42,
+                    0, -13.9, stage_z + 3.1, gold,
+                    rotation=(math.pi / 2, 0, math.pi)))
+    attach(add_text(world_col, "day24_banner", "400 PEOPLE. 400 MAYORS?",
+                    .72, .075, 0, -13.97, stage_z + 7.7, white,
+                    rotation=(math.pi / 2, 0, math.pi)))
+    banner = attach(add_box(world_col, "day24_banner_board", 21.0, .30, 1.65,
+                            0, -14.15, stage_z + 6.9, navy))
+
+    # Three podiums make the joke visible before individual signs can be read.
+    for index, x in enumerate((-4.6, 0, 4.6)):
+        attach(add_box(world_col, "day24_podium", 2.5, 1.7, 2.7,
+                       x, -9.9, stage_z, wood))
+        attach(add_box(world_col, "day24_podium_card", 2.1, .12, 1.05,
+                       x, -9.00, stage_z + .92,
+                       (red, navy, gold)[index]))
+        attach(add_text(world_col, "day24_podium_text",
+                        ("ME", "ALSO ME", "WHY NOT?")[index],
+                        .34 if index != 1 else .27, .045,
+                        x, -8.91, stage_z + 1.45, white,
+                        rotation=(math.pi / 2, 0, math.pi)))
+        attach(add_ngon_cone(world_col, "day24_microphone", .055, .04,
+                             1.25, 8, x, -9.75, stage_z + 2.65, dark))
+
+    def add_candidate(index, x, y, sign_text=None):
+        z = local_grade(x, y) + .13
+        shirt = shirt_mats[index % len(shirt_mats)]
+        attach(add_box(world_col, "day24_person_legs", .78, .52, 1.45,
+                       x, y, z, dark))
+        attach(add_ngon_cone(world_col, "day24_person_body", .72, .48, 1.65,
+                             10, x, y, z + 1.42, shirt))
+        attach(add_uv_sphere(world_col, "day24_person_head", .43,
+                             x, y, z + 3.43, skin, 7, 10))
+        if not sign_text:
+            return
+        pole_z = z + 2.1
+        attach(add_ngon_cone(world_col, "day24_sign_pole", .055, .045,
+                             2.8, 8, x, y, pole_z, wood))
+        attach(add_box(world_col, "day24_campaign_sign", 3.25, .16, 1.38,
+                       x, y + .03, pole_z + 2.35,
+                       red if index % 2 else navy))
+        attach(add_text(world_col, "day24_campaign_text", sign_text,
+                        .40 if len(sign_text) < 8 else .30, .045,
+                        x, y + .13, pole_z + 3.04, white,
+                        rotation=(math.pi / 2, 0, math.pi)))
+
+    sign_people = (
+        (-10.5, 4.0, "VOTE ME"),
+        (-5.3, 6.2, "NO, ME"),
+        (5.2, 6.0, "WHY NOT?"),
+        (10.4, 3.7, "FREE SNACKS"),
+    )
+    for index, (x, y, text) in enumerate(sign_people):
+        add_candidate(index, x, y, text)
+    for index, (x, y) in enumerate((
+            (-12.0, -1.2), (-8.0, -.4), (-3.2, 5.0), (0, 8.2),
+            (3.2, 4.6), (8.0, -.2), (12.0, -1.1), (-7.0, 10.7),
+            (7.2, 10.5), (-1.8, -3.8), (2.0, -3.7))):
+        add_candidate(index + 4, x, y)
+
+    # A few restrained balloons lift above the crowd without obscuring bursts.
+    for index, (x, y) in enumerate(((-13, 9), (13, 9), (-9, -5), (9, -5))):
+        z = local_grade(x, y)
+        attach(add_ngon_cone(world_col, "day24_balloon_string", .018, .014,
+                             5.5, 6, x, y, z + .1, white))
+        attach(add_uv_sphere(world_col, "day24_balloon", .58, x, y,
+                             z + 5.75, (red, gold, navy, red)[index], 7, 10))
+
+    animate_rise(root, 505, dur=28)
+    build_milestone_fireworks(world_col, CIVIC_SQUARE_X, CIVIC_SQUARE_Y,
+                              frame_end)
+    return root
+
 # ═══════════════════════ TIME OF DAY / SEASONS (mood) ═══════════════════════════
 
 TODS = {
@@ -4489,6 +4793,8 @@ TODS = {
                    sky=(0.54, 0.72, 0.86), sky_s=.72, win=0.0, lamp=0.0),
     "sunset": dict(sun_e=2.3, sun_c=(1.00, 0.52, 0.28), sun_rot=(78, 0, 100),
                    sky=(0.93, 0.60, 0.42), sky_s=1.0, win=3.0, lamp=5.0),
+    "dusk":   dict(sun_e=.82, sun_c=(1.00, 0.58, 0.38), sun_rot=(79, 0, 108),
+                   sky=(0.16, 0.22, 0.34), sky_s=.68, win=6.0, lamp=18.0),
     "night":  dict(sun_e=0.30, sun_c=(0.55, 0.65, 1.00), sun_rot=(55, 0, 140),
                    sky=(0.05, 0.07, 0.14), sky_s=0.7, win=9.0, lamp=35.0),
 }
@@ -5476,6 +5782,68 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day24reveal":
+        # One controlled 20-second milestone flight. Camera motion is mostly
+        # forward or lateral; there are no repeated orbits or full spins.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        new_homes = [b for b in buildings
+                     if b["type"] == "house" and b.get("day") == latest_day]
+        larkspur = [build_pos(b) for b in new_homes
+                    if b.get("street") == "Larkspur Loop"]
+        sunset = [build_pos(b) for b in new_homes
+                  if b.get("street") == "Sunset Court"]
+
+        def center(points, fallback):
+            if not points:
+                return fallback
+            return (sum(p[0] for p in points) / len(points),
+                    sum(p[1] for p in points) / len(points))
+
+        lx, ly = center(larkspur, (-257.0, -217.0))
+        sx, sy = center(sunset, (-193.0, -264.0))
+        aim = bpy.data.objects.new("Day24RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day24RevealCamera")
+        cam_data.lens = 40
+        cam_data.clip_start = 5.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day24RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.5s: dusk skyline push over the established city.
+            (1, (184.0, -148.0, 100.0), (-8.0, -4.0, 13.0)),
+            (105, (150.0, -128.0, 88.0), (-12.0, -8.0, 14.0)),
+            # 3.5-7.5s: one direct transfer and steady Larkspur reveal.
+            (140, (-130.0, -302.0, 116.0), (lx, ly, 6.0)),
+            (165, (-175.0, -300.0, 98.0), (lx, ly, 5.0)),
+            (225, (-166.0, -302.0, 92.0), (lx, ly, 5.5)),
+            # 7.5-12.0s: lateral tracking pass as Sunset Court grows.
+            (245, (-154.0, -335.0, 98.0), (sx - 42.0, sy, 5.0)),
+            (330, (-74.0, -330.0, 88.0), (sx + 8.0, sy, 5.5)),
+            (360, (-54.0, -307.0, 88.0), (sx + 38.0, sy + 5.0, 5.5)),
+            # 12.0-15.7s: one high, readable transfer back to City Hall.
+            (405, (18.0, -252.0, 106.0), (-24.0, -180.0, 8.0)),
+            (445, (112.0, -164.0, 79.0), (25.0, -137.0, 8.0)),
+            (470, (125.0, -58.0, 70.0), (20.0, -134.0, 9.0)),
+            # 15.7-20.0s: settled civic-square push, election joke, fireworks.
+            (520, (101.0, -74.0, 55.0), (37.0, -134.0, 8.0)),
+            (frame_end, (88.0, -82.0, 48.0), (40.0, -134.0, 8.5)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day23reveal":
         # One continuous 16-second civic-growth flight: skyline, all nineteen
         # homes, the new central road, then City Hall after the camera settles.
@@ -6055,7 +6423,7 @@ def main(cfg=None):
                                 ("apartment", n_apart, None), ("park", n_parks, None),
                                 ("tree", n_trees, None)]
         if (gained or lost or n_apart or n_parks or n_trees or n_mush or
-                specials or cfg.get("cityhall")):
+                specials or cfg.get("cityhall") or cfg.get("civicsquare")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -6142,6 +6510,16 @@ def main(cfg=None):
                 state["seed_counter"] += 1
                 state["buildings"].append(civic)
                 new_batch.append(civic)
+        if cfg.get("civicsquare"):
+            if any(b["type"] == "civicsquare" for b in state["buildings"]):
+                raise RuntimeError("Civic Square already exists")
+            square = {"type": "civicsquare", "gx": 0, "gy": 0,
+                      "px": CIVIC_SQUARE_X, "py": CIVIC_SQUARE_Y, "pz": 0.0,
+                      "rot": 0.0, "seed": state["seed_counter"],
+                      "day": state["day"]}
+            state["seed_counter"] += 1
+            state["buildings"].append(square)
+            new_batch.append(square)
         for btype, n, target in additions:
             size = SIZE.get(btype, 1)
             if n <= 0:
@@ -6237,7 +6615,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day23reveal":
+    if cfg.get("cam") == "day24reveal":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day23reveal":
         frame_end = max(frame_end, FPS * 16)
     elif cfg.get("cam") == "day22reveal":
         frame_end = max(frame_end, FPS * 14)
@@ -6253,7 +6633,21 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day23reveal":
+    if cfg.get("cam") == "day24reveal":
+        square_roots = [e for e in rise if e.name.startswith("civicsquare_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        larkspur_roots = home_roots[:7]
+        sunset_roots = home_roots[7:]
+        for index, e in enumerate(larkspur_roots):
+            animate_rise(e, 165 + index * 7, dur=25)
+        for index, e in enumerate(sunset_roots):
+            animate_rise(e, 225 + index * 4, dur=25)
+        for e in square_roots:
+            animate_rise(e, 460, dur=35)
+        for e in rise:
+            if e not in square_roots and e not in home_roots:
+                animate_rise(e, 165)
+    elif cfg.get("cam") == "day23reveal":
         road_roots = [e for e in rise if e.name.startswith("cityhallroad_d")]
         hall_roots = [e for e in rise if e.name.startswith("cityhall_d")]
         home_roots = [e for e in rise if e.name.startswith("house_d")]
@@ -6334,6 +6728,8 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "day24reveal":
+        build_day24_election_kickoff(world_col, frame_end)
     if cfg.get("cam") == "football":
         build_football_vignette(world_col, state["buildings"], frame_end)
     if cfg.get("godzilla"):

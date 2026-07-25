@@ -35,6 +35,7 @@ import urllib.error
 NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "streetlight", "car",
                        "elementaryschool", "followmart", "coffeetruck", "firestation",
                        "cityhallroad", "cityhall",
+                       "civicsquare",
                        "tree", "bush", "rock", "duck"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))

@@ -205,7 +205,12 @@ function Sync-Houses {
         $ExistingIds = @{}
         foreach ($row in @($Existing)) { $ExistingIds[[int64]$row.id] = $true }
         # keep in sync with NON_CLAIMABLE_TYPES in sync_houses.py
-        $NonClaimable = @('pond', 'park', 'parkdistrict', 'lanestreet', 'plaza', 'streetlight', 'car', 'elementaryschool')
+        $NonClaimable = @(
+            'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
+            'streetlight', 'car', 'elementaryschool', 'followmart',
+            'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
+            'civicsquare', 'tree', 'bush', 'rock', 'duck'
+        )
         $NewRows = @()
         foreach ($b in $State.buildings) {
             if ($ExistingIds.ContainsKey([int64]$b.seed)) { continue }

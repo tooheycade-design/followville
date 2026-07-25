@@ -4147,7 +4147,7 @@ function frontDirsFor(b){
    the map without a second map file or any hand-maintained coordinates. */
 const MAP_LANDMARK_NAMES = {
   elementaryschool:"Followville Elementary", firestation:"Followville Fire & Rescue",
-  cityhall:"Followville City Hall",
+  cityhall:"Followville City Hall", civicsquare:"Civic Square",
   parkdistrict:"Founder Park",
   park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
   stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
@@ -4630,6 +4630,10 @@ function rebuildTownMap3D(){
       geometry=new THREE.CylinderGeometry(8,8,1.1,32);material=new THREE.MeshStandardMaterial({color:0x6ca366,roughness:.95});
     }else if(item.building.type==="pond"){
       geometry=new THREE.CylinderGeometry(7,7,.5,32);material=new THREE.MeshStandardMaterial({color:0x4f9bc2,roughness:.45,metalness:.05});
+    }else if(item.building.type==="civicsquare"){
+      geometry=new THREE.BoxGeometry(16,.45,14);material=new THREE.MeshStandardMaterial({color:0xb9b5a9,roughness:.88});
+    }else if(item.building.type==="cityhall"){
+      geometry=new THREE.BoxGeometry(18,7,11);material=new THREE.MeshStandardMaterial({color:0xd8d1bd,roughness:.78});
     }else{
       geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
       material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});
