@@ -7,12 +7,22 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Applied a narrow runtime polygon depth preference to exported curb,
   storefront, podium-glass, and facade-frame materials so current Day 24 GLBs
   no longer alternate coplanar faces as the walking camera moves.
+- Removed the ultra wall shader's unfiltered narrow siding bands, which
+  shimmered between pixels during movement, and retained only broad,
+  low-contrast wall variation.
+- Disabled depth writes for transparent storefront, podium, and shelter glass
+  in every graphics mode so those panes cannot destabilize the opaque wall or
+  interior behind them.
+- Replaced the future-export townhouse door glass/transom pair with one
+  continuous pane, removing their exact shared internal face.
 - Reserved the outer 0.28m downtown curb strip in the source public-realm
   geometry instead of overlapping it with sidewalk and furnishing-band walls.
 - Offset downtown podium glazing/transoms and urban-townhouse storefront
   assemblies 12mm outside their structural shells for future exports.
-- Blender Python compilation and all 13 Playwright stories passed. No current
-  GLB, Blend, state, population, building, claim, or Supabase data changed.
+- Blender Python compilation, patched ultra visual review, all 13 first-pass
+  Playwright stories, and the focused wall-follow-up walking-camera story
+  passed. No current GLB, Blend, state, population, building, claim, or
+  Supabase data changed.
 
 ## Day 24 Civic Square + 400 population (2026-07-25)
 - Added permanent non-claimable Civic Square beside City Hall at website

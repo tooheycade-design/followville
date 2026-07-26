@@ -70,14 +70,20 @@ later in this file.
 - 2026-07-25 walking depth-stability fix (Cade via Windows Codex): Day 24's
   public viewer now applies a narrow polygon depth preference to exported curb
   and facade-detail materials, stopping their coplanar faces from flickering as
-  the walking camera moves. The source generator also reserves the curb's
+  the walking camera moves. A wall-specific follow-up removed the ultra
+  shader's narrow unfiltered siding bands, reduced wall variation to a broad
+  low-contrast treatment, and disables depth writes for transparent storefront,
+  podium, and shelter glass in every graphics mode. The townhouse generator
+  also combines its contiguous door glass/transom into one pane, eliminating
+  their shared internal face. The source generator reserves the curb's
   outer 0.28m strip instead of overlapping it with sidewalk/furnishing walls,
   moves downtown podium glazing/transoms 12mm outside their shells, and moves
   urban-townhouse storefront assemblies 12mm outside the ground-floor shell.
   The browser fix works with the current Day 24 GLBs immediately; the physical
   geometry corrections take effect on the next guarded replay/growth rebuild.
-  Blender Python compilation and all 13 Playwright stories passed. Day 24,
-  population 400, 457 building records, claims, ownership, Supabase,
+  Blender Python compilation, all 13 Playwright stories for the first pass,
+  and the focused full walking-camera story for the wall follow-up passed.
+  Day 24, population 400, 457 building records, claims, ownership, Supabase,
   `world_state.json`, current GLBs, and both Blend copies are unchanged.
 - Day 24, population 400, 457 buildings (grown 2026-07-25 via Zach's Mac
   Codex: +29 ordinary claimable homes plus permanent non-population Civic

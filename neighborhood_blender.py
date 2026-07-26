@@ -1116,8 +1116,9 @@ def build_urban_townhouse(col, variant):
     add_box(col,"door_right_stile",.18,facade_depth,2.37,door_x+.50,front_y,.24,door)
     add_box(col,"door_bottom_rail",.82,facade_depth,.24,door_x,front_y,.24,door)
     add_box(col,"door_top_rail",.82,facade_depth,.15,door_x,front_y,2.46,door)
-    add_box(col,"door_glass",.82,glass_depth,1.67,door_x,glass_y,.48,storefront_glass)
-    add_box(col,"door_transom",.82,glass_depth,.31,door_x,glass_y,2.15,storefront_glass)
+    # One continuous pane avoids the duplicate internal face produced when
+    # the former door glass and same-material transom met at exactly z=2.15.
+    add_box(col,"door_glass",.82,glass_depth,1.98,door_x,glass_y,.48,storefront_glass)
     sidelight_left=-width/2+.46
     sidelight_right=door_x-.59
     sidelight_width=max(.24,sidelight_right-sidelight_left)
