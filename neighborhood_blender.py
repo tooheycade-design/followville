@@ -30,6 +30,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in global
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+from downtown_visual_plan import mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           transform_building_point, transform_point)
@@ -1106,8 +1107,17 @@ def build_urban_townhouse(col, variant):
     glass_y=facade_plane_y+glass_depth/2
     add_box(col,"storefront_base",width+.12,facade_depth,.30,0,front_y,.18,frame)
     add_box(col,"storefront_lintel",width+.12,facade_depth,.34,0,front_y,2.62,frame)
-    add_box(col,"storefront_left_pier",.46,facade_depth,2.44,-width/2+.23,front_y,.48,frame)
-    add_box(col,"storefront_right_pier",.46,facade_depth,2.44,width/2-.23,front_y,.48,frame)
+    corner_pier_width=.46
+    corner_clearance=.06
+    left_pier_x=mounted_face_center(-width/2,-1,corner_pier_width,corner_clearance)
+    right_pier_x=mounted_face_center(width/2,1,corner_pier_width,corner_clearance)
+    # The structural side walls and these corner piers formerly ended on the
+    # same X planes. Their competing side faces produced a faint vertical
+    # shimmer at oblique walking angles even after the front plane was fixed.
+    add_box(col,"storefront_left_pier",corner_pier_width,facade_depth,2.44,
+            left_pier_x,front_y,.48,frame)
+    add_box(col,"storefront_right_pier",corner_pier_width,facade_depth,2.44,
+            right_pier_x,front_y,.48,frame)
     add_box(col,"storefront_center_pier",.48,facade_depth,2.44,-width*.10,front_y,.48,frame)
     door_x=-width*.28
     # A framed glazed door replaces the old solid door with a glass rectangle

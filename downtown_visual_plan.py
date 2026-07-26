@@ -5,16 +5,29 @@ import math
 
 TERRAIN_BOUNDS = (-520.0, 520.0, -330.0, 520.0)
 FACADE_ATTACHMENT_EMBED = 0.01
+MIN_VISIBLE_SURFACE_CLEARANCE = 0.05
+
+
+def mounted_face_center(face, outward, thickness, visible_clearance):
+    """Mount a detail across a support plane without sharing its visible face."""
+    if outward not in (-1, 1):
+        raise ValueError("outward must be -1 or 1")
+    if not 0 < visible_clearance < thickness:
+        raise ValueError("visible clearance must be between zero and thickness")
+    return face + outward * (visible_clearance - thickness / 2)
 
 
 def mounted_surface_center(face, outward, depth,
                            embed=FACADE_ATTACHMENT_EMBED):
     """Center a facade layer with a small anchor inside its supporting wall."""
-    if outward not in (-1, 1):
-        raise ValueError("outward must be -1 or 1")
     if depth <= embed or embed <= 0:
         raise ValueError("facade depth must exceed its positive embed")
-    return face + outward * (depth / 2 - embed)
+    return mounted_face_center(face, outward, depth, depth - embed)
+
+
+def visible_face_clearance(face, outward, center, thickness):
+    """Signed distance from a support plane to an attachment's visible face."""
+    return (center + outward * thickness / 2 - face) * outward
 
 
 def _smoothstep(edge0, edge1, value):

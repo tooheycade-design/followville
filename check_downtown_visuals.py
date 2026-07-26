@@ -5,10 +5,13 @@ import math
 
 from downtown_visual_plan import (
     FACADE_ATTACHMENT_EMBED,
+    MIN_VISIBLE_SURFACE_CLEARANCE,
     audit_terrain,
+    mounted_face_center,
     mounted_surface_center,
     sample_road_points,
     terrain_height,
+    visible_face_clearance,
 )
 from neighborhood_plan import PLAN, validate_plan
 from world_layout import DISTRICT_CONNECTORS, transform_building_point, transform_point
@@ -47,14 +50,27 @@ def main():
     for label, depth in (("podium glazing", .09), ("podium frame", .12)):
         for outward in (-1, 1):
             center=mounted_surface_center(0.0,outward,depth)
-            visible_clearance=(center+outward*depth/2)*outward
+            visible_clearance=visible_face_clearance(
+                0.0,outward,center,depth)
             inner_embed=-(center-outward*depth/2)*outward
-            if visible_clearance < .05:
+            if visible_clearance < MIN_VISIBLE_SURFACE_CLEARANCE:
                 errors.append("%s projects only %.3f m from wall" %
                               (label,visible_clearance))
             if abs(inner_embed-FACADE_ATTACHMENT_EMBED) > 1e-9:
                 errors.append("%s embed %.3f differs from %.3f" %
                               (label,inner_embed,FACADE_ATTACHMENT_EMBED))
+    # Urban-townhouse corner piers must own the exposed side edge instead of
+    # ending on the same X plane as the structural ground-floor side walls.
+    corner_pier_width=.46
+    corner_clearance=.06
+    for outward in (-1,1):
+        center=mounted_face_center(
+            0.0,outward,corner_pier_width,corner_clearance)
+        clearance=visible_face_clearance(
+            0.0,outward,center,corner_pier_width)
+        if clearance < MIN_VISIBLE_SURFACE_CLEARANCE:
+            errors.append("storefront corner pier projects only %.3f m" %
+                          clearance)
     # The full rectangular downtown datum must stay clear of meadow terrain.
     # This includes outer grid corners and the elementary-school campus; the
     # old circular mask clipped these diagonals and buried paved surfaces.

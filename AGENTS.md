@@ -66,6 +66,25 @@ ownership, `world_state.json`, town GLBs, or `neighborhood.blend`. Read
 This block and the actual current scripts override conflicting historical text
 later in this file.
 
+## Visible-surface depth rule (mandatory)
+
+- Never place two independently rendered visible faces on the same plane.
+  This includes tops, bottoms, front/back faces, side faces, corner trim,
+  glazing, markings, paving, foundations, signs, and transparent layers.
+- A permanent fix must physically separate the geometry. Browser
+  `polygonOffset` may be a temporary compatibility fallback, but it is not a
+  substitute for corrected Blender/source geometry.
+- Facade details that visually sit on a supporting wall must use
+  `mounted_face_center` or an audited equivalent. Their visible face needs at
+  least `MIN_VISIBLE_SURFACE_CLEARANCE` (currently 5cm) from the support plane,
+  while the hidden side may remain embedded for a connected appearance.
+- Horizontal hardscape layers need distinct elevations and no overlapping
+  vertical side walls. Coplanar or near-coplanar surfaces must fail a
+  standalone geometry check before any video render, GLB export, or deploy.
+- Review every new repeated asset head-on and from both oblique side angles.
+  A front-only screenshot is not sufficient because shared corner/side planes
+  can remain hidden until the camera moves.
+
 ## Current canon (update this section each day!)
 - 2026-07-26 final downtown facade rebuild (Zach via Mac Codex): the complete
   Day 24 town and all 23 streamed chunks were replayed after Cade's curb,
