@@ -19,7 +19,7 @@ Supabase schema are not changed by this foundation.
 | Local workflow simulation | Implemented | Deterministic and API-free |
 | Database schema | Proposed | Migration is not applied |
 | Agent profiles | Implemented | Seed fixtures, no provider calls |
-| Owner dashboard | Planned | Phase 1 after architecture approval |
+| Owner dashboard | Implemented (local) | `apps/company-dashboard`; goals, approvals, agents, audit, build status. Local JSON store and a dev owner picker until the development Supabase project exists |
 | Model providers | Planned | No API package or credential required |
 | Durable workflow provider | Planned | Inngest recommended for MVP |
 | GitHub App | Planned | Read-only first, then scoped write tools |

@@ -1,3 +1,6 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   ApprovalRequestSchema,
   AuditEventSchema,
@@ -45,6 +48,30 @@ export interface SimulationInput {
   title: string;
   objective: string;
   now?: string;
+  /**
+   * Optional UUID factory. When omitted the simulator uses fixed identifiers
+   * so existing deterministic tests and CLI output stay stable. Callers that
+   * persist more than one simulated goal (for example the owner dashboard)
+   * must provide a real factory such as `crypto.randomUUID` to avoid
+   * identifier collisions between goals.
+   */
+  idFactory?: () => string;
+  /**
+   * Real filesystem root of the repository, used by the policy engine's
+   * canonical-path containment check. Defaults to the checkout containing
+   * this source file, which is correct for the CLI and tests; bundled
+   * callers (for example the Next.js dashboard) must pass it explicitly.
+   */
+  repositoryRoot?: string;
+}
+
+function defaultRepositoryRoot(): string {
+  return path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "..",
+  );
 }
 
 function transition(task: Task, status: TaskStatus, now: string): Task {
@@ -60,6 +87,8 @@ function transition(task: Task, status: TaskStatus, now: string): Task {
 function audit(
   sequence: number,
   input: {
+    id: string;
+    correlationId: string;
     taskId?: string;
     runId?: string;
     actorType: "human" | "agent" | "system";
@@ -75,7 +104,7 @@ function audit(
   },
 ): AuditEvent {
   return AuditEventSchema.parse({
-    id: `60000000-0000-4000-8000-${sequence.toString().padStart(12, "0")}`,
+    id: input.id,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: input.taskId ?? null,
@@ -87,7 +116,7 @@ function audit(
     targetId: input.targetId,
     outcome: input.outcome,
     reason: input.reason,
-    correlationId: IDS.correlation,
+    correlationId: input.correlationId,
     idempotencyKey: digest({
       sequence,
       action: input.action,
@@ -102,8 +131,23 @@ function audit(
 
 export function simulateGoal(input: SimulationInput): SimulationResult {
   const now = input.now ?? new Date().toISOString();
+  const makeId = input.idFactory;
+  const ids = makeId
+    ? {
+        goal: makeId(),
+        task: makeId(),
+        criterion: makeId(),
+        run: makeId(),
+        approval: makeId(),
+        correlation: makeId(),
+      }
+    : IDS;
+  const auditId = (sequence: number): string =>
+    makeId
+      ? makeId()
+      : `60000000-0000-4000-8000-${sequence.toString().padStart(12, "0")}`;
   const goal = GoalSchema.parse({
-    id: IDS.goal,
+    id: ids.goal,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     createdByUserId: OWNER_USER_ID,
@@ -124,7 +168,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
   });
 
   let task = TaskSchema.parse({
-    id: IDS.task,
+    id: ids.task,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     goalId: goal.id,
@@ -140,7 +184,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
     dependencyIds: [],
     acceptanceCriteria: [
       {
-        id: IDS.criterion,
+        id: ids.criterion,
         description: "The requested behavior is implemented and verified.",
         verificationMethod: "Independent reviewer checks scoped evidence and tests.",
         required: true,
@@ -185,7 +229,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
     capability: "repository_write",
     repository: "followville_repo",
     relativePath: "company-os/README.md",
-    repositoryRoot: fileURLToPath(new URL("../../../", import.meta.url)),
+    repositoryRoot: input.repositoryRoot ?? defaultRepositoryRoot(),
     environment: "local",
     estimatedCostUsdMicros: 0,
     agentDailySpendUsdMicros: 0,
@@ -199,7 +243,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
   }
 
   const run = RunSchema.parse({
-    id: IDS.run,
+    id: ids.run,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
@@ -232,7 +276,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
     commitSha,
   });
   const approvalRequest = ApprovalRequestSchema.parse({
-    id: IDS.approval,
+    id: ids.approval,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
@@ -262,6 +306,8 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
 
   const auditEvents = [
     audit(1, {
+      id: auditId(1),
+      correlationId: ids.correlation,
       actorType: "human",
       actorId: OWNER_USER_ID,
       action: "goal.accepted_for_simulation",
@@ -274,6 +320,8 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
       now,
     }),
     audit(2, {
+      id: auditId(2),
+      correlationId: ids.correlation,
       taskId: task.id,
       runId: run.id,
       actorType: "system",
@@ -288,6 +336,8 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
       now,
     }),
     audit(3, {
+      id: auditId(3),
+      correlationId: ids.correlation,
       taskId: task.id,
       runId: run.id,
       actorType: "agent",
@@ -302,6 +352,8 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
       now,
     }),
     audit(4, {
+      id: auditId(4),
+      correlationId: ids.correlation,
       taskId: task.id,
       runId: run.id,
       actorType: "system",
@@ -328,4 +380,3 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
     totalModelCostUsdMicros: 0,
   };
 }
-import { fileURLToPath } from "node:url";

@@ -1,6 +1,12 @@
 packages:
   - "."
   - "company-os"
+  - "apps/*"
+
+allowBuilds:
+  esbuild: true
+  sharp: true
 
 onlyBuiltDependencies:
   - esbuild
+  - sharp
