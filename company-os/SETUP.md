@@ -15,8 +15,10 @@ Development Supabase project: `followville-company-os-dev`, ref
 | 3. Dashboard credentials in `.env.local` | Done |
 | 4. Migration 0002 applied | Done, verified |
 | 5. Seed applied | Done, verified |
-| 6. Owner accounts created | **Owner action** |
-| 7. Owner membership rows | **Owner action** |
+| 6. Owner accounts created | Done |
+| 7. Owner membership rows | Done, both owners active |
+| 8. Migration 0003 applied | Done |
+| 9. Live end-to-end loop verified | Done |
 
 Verified after step 5: `company_os_load()` returns all seven collections; the
 `company_ops` schema remains unreachable through PostgREST; and a goal write

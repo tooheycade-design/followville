@@ -21,6 +21,7 @@ import { companyRepository, type CompanyRepository } from "./state";
 export interface SubmitGoalInput {
   title: string;
   objective: string;
+  createdByUserId: string;
 }
 
 export interface SubmitGoalResult {
@@ -61,6 +62,7 @@ export async function submitGoal(
     now: new Date().toISOString(),
     idFactory: randomUUID,
     repositoryRoot: repositoryRoot(),
+    createdByUserId: input.createdByUserId,
   });
 
   await repository.appendGoalSimulation({

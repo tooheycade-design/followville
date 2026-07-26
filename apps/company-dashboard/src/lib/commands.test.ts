@@ -20,11 +20,11 @@ function newRepository(): FileCompanyRepository {
 test("submitting two goals persists distinct entities up to pending approval", async () => {
   const repository = newRepository();
   const first = await submitGoal(
-    { title: "First goal", objective: "Do the first thing." },
+    { title: "First goal", objective: "Do the first thing.", createdByUserId: OWNER_USER_ID },
     repository,
   );
   const second = await submitGoal(
-    { title: "Second goal", objective: "Do the second thing." },
+    { title: "Second goal", objective: "Do the second thing.", createdByUserId: OWNER_USER_ID },
     repository,
   );
   assert.equal(first.ok, true);
@@ -49,14 +49,14 @@ test("submitting two goals persists distinct entities up to pending approval", a
 
 test("blank goals are rejected without touching the store", async () => {
   const repository = newRepository();
-  const result = await submitGoal({ title: "  ", objective: "x" }, repository);
+  const result = await submitGoal({ title: "  ", objective: "x", createdByUserId: OWNER_USER_ID }, repository);
   assert.equal(result.ok, false);
   assert.equal((await repository.load()).goals.length, 0);
 });
 
 test("an owner approval resolves the request and advances the task", async () => {
   const repository = newRepository();
-  await submitGoal({ title: "Approve me", objective: "Test." }, repository);
+  await submitGoal({ title: "Approve me", objective: "Test.", createdByUserId: OWNER_USER_ID }, repository);
   const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
@@ -83,7 +83,7 @@ test("an owner approval resolves the request and advances the task", async () =>
 
 test("a stale scope digest is refused and recorded in the audit trail", async () => {
   const repository = newRepository();
-  await submitGoal({ title: "Stale digest", objective: "Test." }, repository);
+  await submitGoal({ title: "Stale digest", objective: "Test.", createdByUserId: OWNER_USER_ID }, repository);
   const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
@@ -113,7 +113,7 @@ test("a stale scope digest is refused and recorded in the audit trail", async ()
 
 test("a rejection moves the task to rejected", async () => {
   const repository = newRepository();
-  await submitGoal({ title: "Reject me", objective: "Test." }, repository);
+  await submitGoal({ title: "Reject me", objective: "Test.", createdByUserId: OWNER_USER_ID }, repository);
   const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
@@ -136,7 +136,7 @@ test("a rejection moves the task to rejected", async () => {
 
 test("a decision on an already-resolved request is refused", async () => {
   const repository = newRepository();
-  await submitGoal({ title: "Double decide", objective: "Test." }, repository);
+  await submitGoal({ title: "Double decide", objective: "Test.", createdByUserId: OWNER_USER_ID }, repository);
   const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 

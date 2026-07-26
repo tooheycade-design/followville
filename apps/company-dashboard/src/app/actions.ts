@@ -16,9 +16,13 @@ export async function submitGoalAction(
   _previous: ActionState | null,
   formData: FormData,
 ): Promise<ActionState> {
+  const cookieStore = await cookies();
+  const owner = ownerById(cookieStore.get(OWNER_COOKIE)?.value);
+
   const result = await submitGoal({
     title: String(formData.get("title") ?? ""),
     objective: String(formData.get("objective") ?? ""),
+    createdByUserId: owner.id,
   });
   revalidatePath("/", "layout");
   return { ok: result.ok, message: result.message };

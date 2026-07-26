@@ -63,6 +63,12 @@ export interface SimulationInput {
    * callers (for example the Next.js dashboard) must pass it explicitly.
    */
   repositoryRoot?: string;
+  /**
+   * The human who created the goal. Defaults to the fixed development owner.
+   * A persistent backend requires a real account identifier, because the
+   * database enforces that every goal has a genuine creator.
+   */
+  createdByUserId?: string;
 }
 
 function defaultRepositoryRoot(): string {
@@ -150,7 +156,7 @@ export function simulateGoal(input: SimulationInput): SimulationResult {
     id: ids.goal,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
-    createdByUserId: OWNER_USER_ID,
+    createdByUserId: input.createdByUserId ?? OWNER_USER_ID,
     title: input.title,
     objective: input.objective,
     successDefinition:

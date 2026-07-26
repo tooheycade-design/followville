@@ -19,20 +19,18 @@ import {
   type GoalSimulationRecord,
 } from "./types";
 
-const SCHEMA = "company_ops";
-
 /**
- * The client is schema-parameterized, so the private schema produces a
- * different type than the default public one.
+ * The client targets the default `public` schema, where the control-plane
+ * functions live. The `company_ops` tables are deliberately not exposed to the
+ * Data API and cannot be addressed directly.
  */
-function createCompanyOpsClient(url: string, secretKey: string) {
+function createControlPlaneClient(url: string, secretKey: string) {
   return createClient(url, secretKey, {
-    db: { schema: SCHEMA },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
-type CompanyOpsClient = ReturnType<typeof createCompanyOpsClient>;
+type ControlPlaneClient = ReturnType<typeof createControlPlaneClient>;
 
 type Row = Record<string, unknown>;
 
@@ -187,46 +185,28 @@ function auditFromRow(row: Row) {
   });
 }
 
-function auditToRow(event: AuditEvent): Row {
-  return {
-    id: event.id,
-    organization_id: event.organizationId,
-    project_id: event.projectId,
-    task_id: event.taskId,
-    run_id: event.runId,
-    actor_type: event.actorType,
-    actor_id: event.actorId,
-    action: event.action,
-    target_type: event.targetType,
-    target_id: event.targetId,
-    outcome: event.outcome,
-    reason: event.reason,
-    correlation_id: event.correlationId,
-    idempotency_key: event.idempotencyKey,
-    request_digest: event.requestDigest,
-    result_digest: event.resultDigest,
-    evidence_artifact_ids: event.evidenceArtifactIds,
-    created_at: event.createdAt,
-  };
-}
 
 /**
  * Shared-state backend for the Company OS control plane.
  *
- * The database owns the invariants. `approval_requests` may only be inserted
- * as pending and cannot be updated, so approval status is read from the
+ * All access goes through transactional `SECURITY DEFINER` functions in
+ * `public`. The `company_ops` tables are not exposed to the Data API and
+ * cannot be reached directly, and PostgREST has no cross-request transaction,
+ * so a multi-table write such as a goal simulation must happen inside one
+ * function call or it could leave a partial record.
+ *
+ * The database owns its invariants. `approval_requests` may only be inserted
+ * as pending and cannot be updated, so status is read from the
  * `approval_request_states` view and a decision is recorded solely by
- * inserting an `approval_decisions` row. A database trigger independently
- * re-checks the pending state, expiry, scope digest, prior terminal decisions,
- * and the decider's active membership in the required role — so the policy
- * kernel's answer is verified rather than trusted. Task updates pass a second
- * trigger that validates the transition and, for approved or merged, requires
- * a genuinely approved request.
+ * inserting a decision row. A trigger independently re-checks pending state,
+ * expiry, scope digest, prior terminal decisions, and the decider's active
+ * membership in the required role, so the policy kernel's answer is verified
+ * rather than trusted.
  */
 export class SupabaseCompanyRepository implements CompanyRepository {
   readonly backend = "supabase" as const;
 
-  constructor(private readonly client: CompanyOpsClient) {}
+  constructor(private readonly client: ControlPlaneClient) {}
 
   static fromEnvironment(): SupabaseCompanyRepository | null {
     const url = process.env.SUPABASE_URL;
@@ -239,224 +219,66 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     ) {
       return null;
     }
-    return new SupabaseCompanyRepository(createCompanyOpsClient(url, key));
+    return new SupabaseCompanyRepository(createControlPlaneClient(url, key));
   }
 
   async load(): Promise<CompanyState> {
-    const state = emptyState();
-    const from = (table: string) => this.client.from(table).select("*");
+    const { data, error } = await this.client.rpc("company_os_load");
+    failOn("company_os_load", error);
 
-    const [goals, tasks, runs, requests, states, decisions, audits] =
-      await Promise.all([
-        from("goals").order("created_at"),
-        from("tasks").order("created_at"),
-        from("runs").order("created_at"),
-        from("approval_requests").order("created_at"),
-        from("approval_request_states"),
-        from("approval_decisions").order("decided_at"),
-        from("audit_events").order("sequence"),
-      ]);
-
-    failOn("goals read", goals.error);
-    failOn("tasks read", tasks.error);
-    failOn("runs read", runs.error);
-    failOn("approval_requests read", requests.error);
-    failOn("approval_request_states read", states.error);
-    failOn("approval_decisions read", decisions.error);
-    failOn("audit_events read", audits.error);
+    const payload = (data ?? {}) as Record<string, Row[]>;
+    const rows = (key: string): Row[] => payload[key] ?? [];
 
     const derived = new Map<string, string>(
-      (states.data ?? []).map((row) => [
-        String((row as Row).approval_request_id),
-        String((row as Row).status),
+      rows("approval_states").map((row) => [
+        String(row.approval_request_id),
+        String(row.status),
       ]),
     );
 
-    state.goals = (goals.data ?? []).map((row) => goalFromRow(row as Row));
-    state.tasks = (tasks.data ?? []).map((row) => taskFromRow(row as Row));
-    state.runs = (runs.data ?? []).map((row) => runFromRow(row as Row));
-    state.approvalRequests = (requests.data ?? []).map((row) =>
-      approvalRequestFromRow(
-        row as Row,
-        derived.get(String((row as Row).id)) ?? "pending",
-      ),
+    const state = emptyState();
+    state.goals = rows("goals").map(goalFromRow);
+    state.tasks = rows("tasks").map(taskFromRow);
+    state.runs = rows("runs").map(runFromRow);
+    state.approvalRequests = rows("approval_requests").map((row) =>
+      approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),
     );
-    state.approvalDecisions = (decisions.data ?? []).map((row) =>
-      decisionFromRow(row as Row),
-    );
-    state.auditEvents = (audits.data ?? []).map((row) =>
-      auditFromRow(row as Row),
-    );
+    state.approvalDecisions = rows("approval_decisions").map(decisionFromRow);
+    state.auditEvents = rows("audit_events").map(auditFromRow);
     return state;
   }
 
   async appendGoalSimulation(record: GoalSimulationRecord): Promise<void> {
-    const { goal, task, run, approvalRequest } = record;
-
-    failOn(
-      "goal insert",
-      (
-        await this.client.from("goals").insert({
-          id: goal.id,
-          organization_id: goal.organizationId,
-          project_id: goal.projectId,
-          created_by_user_id: goal.createdByUserId,
-          title: goal.title,
-          objective: goal.objective,
-          success_definition: goal.successDefinition,
-          constraints: goal.constraints,
-          risk_level: goal.riskLevel,
-          budget_usd_micros: goal.budgetUsdMicros,
-          status: goal.status,
-          created_at: goal.createdAt,
-        })
-      ).error,
-    );
-
-    failOn(
-      "task insert",
-      (
-        await this.client.from("tasks").insert({
-          id: task.id,
-          organization_id: task.organizationId,
-          project_id: task.projectId,
-          goal_id: task.goalId,
-          parent_task_id: task.parentTaskId,
-          title: task.title,
-          objective: task.objective,
-          reason: task.reason,
-          status: task.status,
-          priority: task.priority,
-          risk_level: task.riskLevel,
-          assigned_agent_id: task.assignedAgentId,
-          reviewer_agent_id: task.reviewerAgentId,
-          dependency_ids: task.dependencyIds,
-          acceptance_criteria: task.acceptanceCriteria,
-          allowed_capabilities: task.allowedCapabilities,
-          repository_scopes: task.repositoryScopes,
-          budget_usd_micros: task.budgetUsdMicros,
-          estimated_cost_usd_micros: task.estimatedCostUsdMicros,
-          actual_cost_usd_micros: task.actualCostUsdMicros,
-          retry_count: task.retryCount,
-          review_cycle_count: task.reviewCycleCount,
-          branch_name: task.branchName,
-          expected_outputs: task.expectedOutputs,
-          test_requirements: task.testRequirements,
-          approval_required: task.approvalRequired,
-          version: task.version,
-          created_at: task.createdAt,
-          updated_at: task.updatedAt,
-        })
-      ).error,
-    );
-
-    failOn(
-      "run insert",
-      (
-        await this.client.from("runs").insert({
-          id: run.id,
-          organization_id: run.organizationId,
-          project_id: run.projectId,
-          task_id: run.taskId,
-          agent_id: run.agentId,
-          reviewer_agent_id: run.reviewerAgentId,
-          trigger: run.trigger,
-          mode: run.mode,
-          status: run.status,
-          model_provider: run.modelProvider,
-          model_id: run.modelId,
-          prompt_version: run.promptVersion,
-          context_manifest_digest: run.contextManifestDigest,
-          workspace_id: run.workspaceId,
-          budget_reservation_usd_micros: run.budgetReservationUsdMicros,
-          actual_cost_usd_micros: run.actualCostUsdMicros,
-          retry_count: run.retryCount,
-          started_at: run.startedAt,
-          completed_at: run.completedAt,
-        })
-      ).error,
-    );
-
-    failOn(
-      "approval_request insert",
-      (
-        await this.client.from("approval_requests").insert({
-          id: approvalRequest.id,
-          organization_id: approvalRequest.organizationId,
-          project_id: approvalRequest.projectId,
-          task_id: approvalRequest.taskId,
-          run_id: approvalRequest.runId,
-          requested_by_type: approvalRequest.requestedByType,
-          requested_by_id: approvalRequest.requestedById,
-          action: approvalRequest.action,
-          summary: approvalRequest.summary,
-          reason: approvalRequest.reason,
-          scope_digest: approvalRequest.scopeDigest,
-          commit_sha: approvalRequest.commitSha,
-          evidence_artifact_ids: approvalRequest.evidenceArtifactIds,
-          tests_completed: approvalRequest.testsCompleted,
-          risk_level: approvalRequest.riskLevel,
-          reversible: approvalRequest.reversible,
-          rollback_plan: approvalRequest.rollbackPlan,
-          estimated_cost_usd_micros: approvalRequest.estimatedCostUsdMicros,
-          recommendation: approvalRequest.recommendation,
-          alternatives: approvalRequest.alternatives,
-          required_approvals: approvalRequest.requiredApprovals,
-          required_role: approvalRequest.requiredRole,
-          idempotency_key: approvalRequest.idempotencyKey,
-          created_at: approvalRequest.createdAt,
-          expires_at: approvalRequest.expiresAt,
-        })
-      ).error,
-    );
-
-    await this.#insertAudits(record.auditEvents);
+    const { error } = await this.client.rpc("company_os_record_goal_simulation", {
+      payload: {
+        goal: record.goal,
+        task: record.task,
+        run: record.run,
+        approvalRequest: record.approvalRequest,
+        auditEvents: record.auditEvents,
+      },
+    });
+    failOn("company_os_record_goal_simulation", error);
   }
 
   async appendApprovalDecision(record: ApprovalDecisionRecord): Promise<void> {
-    const { decision, updatedTask } = record;
-
-    failOn(
-      "approval_decision insert",
-      (
-        await this.client.from("approval_decisions").insert({
-          id: decision.id,
-          approval_request_id: decision.approvalRequestId,
-          decided_by_user_id: decision.decidedByUserId,
-          decision: decision.decision,
-          comment: decision.comment,
-          request_scope_digest: decision.requestScopeDigest,
-        })
-      ).error,
+    const { error } = await this.client.rpc(
+      "company_os_record_approval_decision",
+      {
+        payload: {
+          decision: record.decision,
+          updatedTask: record.updatedTask,
+          auditEvent: record.auditEvent,
+        },
+      },
     );
-
-    if (updatedTask !== null) {
-      failOn(
-        "task status update",
-        (
-          await this.client
-            .from("tasks")
-            .update({ status: updatedTask.status })
-            .eq("id", updatedTask.id)
-        ).error,
-      );
-    }
-
-    await this.#insertAudits([record.auditEvent]);
+    failOn("company_os_record_approval_decision", error);
   }
 
   async appendAuditEvent(event: AuditEvent): Promise<void> {
-    await this.#insertAudits([event]);
-  }
-
-  async #insertAudits(events: readonly AuditEvent[]): Promise<void> {
-    if (events.length === 0) {
-      return;
-    }
-    failOn(
-      "audit_events insert",
-      (await this.client.from("audit_events").insert(events.map(auditToRow)))
-        .error,
-    );
+    const { error } = await this.client.rpc("company_os_append_audit_events", {
+      events: [event],
+    });
+    failOn("company_os_append_audit_events", error);
   }
 }
