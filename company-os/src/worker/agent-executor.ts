@@ -1,0 +1,177 @@
+import type { AgentProfile, Task } from "../domain/schemas.js";
+import type { ModelProvider } from "../providers/types.js";
+import { createPathGuard } from "./path-guard.js";
+import type { TaskExecutor, WorkResult } from "./types.js";
+import { WorktreeManager, type Worktree } from "./worktree.js";
+
+export interface AgentExecutorOptions {
+  agent: AgentProfile;
+  provider: ModelProvider;
+  worktrees: WorktreeManager;
+  repository: string;
+  /** Wall-clock ceiling for one provider invocation. */
+  invocationTimeoutMs: number;
+  /**
+   * Subscription providers report zero dollars, so a dollar budget can never
+   * bound them. This caps how long one task may occupy the subscription.
+   */
+  maxSubscriptionRunsPerTask: number;
+}
+
+function buildPrompt(task: Task, worktreePath: string): string {
+  const criteria = task.acceptanceCriteria
+    .map((criterion, index) => `${index + 1}. ${criterion.description}`)
+    .join("\n");
+  const scopes = task.repositoryScopes
+    .map(
+      (scope) =>
+        `- allowed: ${scope.allowedPathPrefixes.join(", ")}` +
+        (scope.deniedPathPrefixes.length > 0
+          ? `\n- never touch: ${scope.deniedPathPrefixes.join(", ")}`
+          : ""),
+    )
+    .join("\n");
+
+  return [
+    "You are an agent working for the Followville Company OS.",
+    "",
+    "Rules you must follow:",
+    "- Work only inside this working directory: " + worktreePath,
+    "- Stay strictly within the allowed paths below. Never modify denied paths.",
+    "- Do not run git commit, git push, or any deployment command.",
+    "- Do not modify the canonical town files (world_state.json, town.glb, neighborhood.blend).",
+    "- If the task cannot be completed safely, say so plainly instead of guessing.",
+    "",
+    "Repository scope:",
+    scopes,
+    "",
+    `Task: ${task.title}`,
+    `Objective: ${task.objective}`,
+    "",
+    "Acceptance criteria:",
+    criteria,
+    "",
+    "When finished, summarize in plain prose what you changed and what evidence",
+    "supports that it works. If you changed nothing, say so and explain why.",
+  ].join("\n");
+}
+
+/**
+ * Runs a task with a real model inside a disposable worktree.
+ *
+ * The worktree is the containment boundary: the provider is pointed at it and
+ * nowhere else, so an agent that ignores its instructions still cannot reach
+ * the operator's checkout. Every file it touched is then re-checked against
+ * the policy engine, because a prompt is guidance, not enforcement — an agent
+ * that wandered outside its scope fails the task rather than reaching review.
+ */
+export class AgentTaskExecutor implements TaskExecutor {
+  readonly name: string;
+
+  constructor(private readonly options: AgentExecutorOptions) {
+    this.name = `agent:${options.provider.name}`;
+  }
+
+  async execute(task: Task, signal: AbortSignal): Promise<WorkResult> {
+    const availability = await this.options.provider.checkAvailability();
+    if (!availability.available) {
+      return {
+        outcome: "blocked",
+        summary: `Provider unavailable (${availability.reason}): ${availability.detail}`,
+        evidence: [],
+        filesChanged: [],
+        modelProvider: this.options.provider.name,
+        modelId: null,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsdMicros: 0,
+      };
+    }
+
+    let worktree: Worktree | null = null;
+    try {
+      worktree = await this.options.worktrees.create(task.id);
+      const response = await this.options.provider.invoke({
+        workingDirectory: worktree.path,
+        prompt: buildPrompt(task, worktree.path),
+        timeoutMs: this.options.invocationTimeoutMs,
+        signal,
+      });
+
+      const changes = await this.options.worktrees.changes(worktree);
+      const filesChanged = changes.map((change) => change.file);
+
+      if (!response.ok) {
+        return {
+          outcome: "failed",
+          summary: response.failureReason ?? "The provider failed.",
+          evidence: [],
+          filesChanged,
+          modelProvider: this.options.provider.name,
+          modelId: response.model,
+          inputTokens: response.usage.inputTokens,
+          outputTokens: response.usage.outputTokens,
+          costUsdMicros: response.usage.costUsdMicros,
+        };
+      }
+
+      // A prompt is not a permission system. Verify every touched path.
+      const guard = createPathGuard(
+        this.options.agent,
+        task,
+        this.options.repository,
+        worktree.path,
+      );
+      const violations = filesChanged.filter(
+        (file) => guard.check("repository_write", file).outcome !== "allowed",
+      );
+      if (violations.length > 0) {
+        return {
+          outcome: "failed",
+          summary:
+            `The agent modified ${violations.length} path(s) outside its approved scope: ` +
+            violations.slice(0, 5).join(", "),
+          evidence: [],
+          filesChanged,
+          modelProvider: this.options.provider.name,
+          modelId: response.model,
+          inputTokens: response.usage.inputTokens,
+          outputTokens: response.usage.outputTokens,
+          costUsdMicros: response.usage.costUsdMicros,
+        };
+      }
+
+      const evidence = [
+        `provider=${this.options.provider.name}`,
+        `branch=${worktree.branch}`,
+        `base=${worktree.baseCommit.slice(0, 12)}`,
+        `files_changed=${filesChanged.length}`,
+        `tokens_in=${response.usage.inputTokens} tokens_out=${response.usage.outputTokens}`,
+      ];
+      if (response.sessionId !== null) {
+        evidence.push(`session=${response.sessionId}`);
+      }
+      if (filesChanged.length > 0) {
+        evidence.push(`changed: ${filesChanged.slice(0, 20).join(", ")}`);
+      }
+
+      return {
+        outcome: "completed",
+        summary: response.text.trim().slice(0, 2000) || "The agent reported no summary.",
+        evidence,
+        filesChanged,
+        modelProvider: this.options.provider.name,
+        modelId: response.model,
+        inputTokens: response.usage.inputTokens,
+        outputTokens: response.usage.outputTokens,
+        costUsdMicros: response.usage.costUsdMicros,
+      };
+    } finally {
+      if (worktree !== null) {
+        // Best effort: a leaked worktree is noise, not a correctness problem,
+        // and must not mask the real result.
+        await this.options.worktrees.remove(worktree).catch(() => undefined);
+      }
+    }
+  }
+}
