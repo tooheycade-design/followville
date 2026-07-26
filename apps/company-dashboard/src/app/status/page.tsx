@@ -4,7 +4,7 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Owner approval decisions", "implemented", "Digest-pinned kernel; owner-role enforcement"],
   ["Dashboard persistence", "simulated", "Local JSON store; Supabase adapter replaces it"],
   ["Development database", "implemented", "Migration applied to followville-company-os-dev and verified isolated"],
-  ["Dashboard → Supabase adapter", "planned", "Next task: replace the JSON store with the dev database"],
+  ["Supabase adapter", "requires human setup", "Written and type-checked; unverified against a live database until keys and seed are in place"],
   ["Owner sign-in", "planned", "Supabase Auth against the dev project, replacing the local owner picker"],
   ["Real coding worker + reviewer", "planned", "Phase 2, draft PRs only"],
   ["Durable scheduling and events", "planned", "Phase 3, Inngest pilot"],

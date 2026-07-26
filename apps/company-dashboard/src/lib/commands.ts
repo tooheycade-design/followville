@@ -16,7 +16,7 @@ import {
 } from "@followville/company-os-core";
 
 import { OWNER_REGISTRY, ownerName } from "./config";
-import { mutateState, type CompanyState } from "./store";
+import { companyRepository, type CompanyRepository } from "./state";
 
 export interface SubmitGoalInput {
   title: string;
@@ -44,7 +44,7 @@ function repositoryRoot(): string {
 
 export async function submitGoal(
   input: SubmitGoalInput,
-  statePath?: string,
+  repository: CompanyRepository = companyRepository(),
 ): Promise<SubmitGoalResult> {
   const title = input.title.trim();
   const objective = input.objective.trim();
@@ -63,18 +63,19 @@ export async function submitGoal(
     repositoryRoot: repositoryRoot(),
   });
 
-  return mutateState((state) => {
-    state.goals.push(result.goal);
-    state.tasks.push(result.task);
-    state.runs.push(result.run);
-    state.approvalRequests.push(result.approvalRequest);
-    state.auditEvents.push(...result.auditEvents);
-    return {
-      ok: true,
-      message: `Simulated "${title}" through to a pending human approval.`,
-      goalId: result.goal.id,
-    };
-  }, statePath);
+  await repository.appendGoalSimulation({
+    goal: result.goal,
+    task: result.task,
+    run: result.run,
+    approvalRequest: result.approvalRequest,
+    auditEvents: result.auditEvents,
+  });
+
+  return {
+    ok: true,
+    message: `Simulated "${title}" through to a pending human approval.`,
+    goalId: result.goal.id,
+  };
 }
 
 export interface DecideApprovalInput {
@@ -92,11 +93,11 @@ export interface DecideApprovalResult {
 }
 
 function decisionAudit(
-  state: CompanyState,
   input: DecideApprovalInput,
   outcome: "succeeded" | "denied" | "failed",
   reason: string,
   taskId: string | null,
+  priorDecisionCount: number,
 ): AuditEvent {
   return AuditEventSchema.parse({
     id: randomUUID(),
@@ -116,7 +117,7 @@ function decisionAudit(
       approvalRequestId: input.approvalRequestId,
       deciderUserId: input.deciderUserId,
       decision: input.decision,
-      priorDecisions: state.approvalDecisions.length,
+      priorDecisions: priorDecisionCount,
     }),
     requestDigest: digest(input),
     resultDigest: null,
@@ -127,81 +128,85 @@ function decisionAudit(
 
 export async function decideApproval(
   input: DecideApprovalInput,
-  statePath?: string,
+  repository: CompanyRepository = companyRepository(),
 ): Promise<DecideApprovalResult> {
   const comment = input.comment.trim();
   if (comment.length === 0) {
     return { ok: false, message: "A decision needs a written comment." };
   }
 
-  return mutateState((state) => {
-    const requestIndex = state.approvalRequests.findIndex(
-      (request) => request.id === input.approvalRequestId,
+  const state = await repository.load();
+  const request = state.approvalRequests.find(
+    (candidate) => candidate.id === input.approvalRequestId,
+  );
+  if (request === undefined) {
+    return { ok: false, message: "That approval request does not exist." };
+  }
+
+  const decision = ApprovalDecisionSchema.parse({
+    id: randomUUID(),
+    approvalRequestId: request.id,
+    decidedByUserId: input.deciderUserId,
+    decision: input.decision,
+    comment,
+    requestScopeDigest: input.viewedScopeDigest,
+    decidedAt: new Date().toISOString(),
+  });
+
+  const outcome = applyApprovalDecision({
+    request,
+    decision,
+    owners: OWNER_REGISTRY,
+    priorDecisions: state.approvalDecisions,
+    now: decision.decidedAt,
+  });
+
+  if (outcome.outcome !== "applied") {
+    await repository.appendAuditEvent(
+      decisionAudit(
+        input,
+        outcome.outcome === "expired" ? "failed" : "denied",
+        outcome.reason,
+        request.taskId,
+        state.approvalDecisions.length,
+      ),
     );
-    const request = state.approvalRequests[requestIndex];
-    if (request === undefined) {
-      return { ok: false, message: "That approval request does not exist." };
-    }
+    return { ok: false, message: outcome.reason };
+  }
 
-    const decision = ApprovalDecisionSchema.parse({
-      id: randomUUID(),
-      approvalRequestId: request.id,
-      decidedByUserId: input.deciderUserId,
-      decision: input.decision,
-      comment,
-      requestScopeDigest: input.viewedScopeDigest,
-      decidedAt: new Date().toISOString(),
-    });
+  let updatedTask = null;
+  let message = `Recorded ${ownerName(input.deciderUserId)}'s ${input.decision.replaceAll("_", " ")}.`;
 
-    const outcome = applyApprovalDecision({
-      request,
-      decision,
-      owners: OWNER_REGISTRY,
-      priorDecisions: state.approvalDecisions,
-      now: decision.decidedAt,
-    });
-
-    if (outcome.outcome === "denied") {
-      state.auditEvents.push(
-        decisionAudit(state, input, "denied", outcome.reason, request.taskId),
-      );
-      return { ok: false, message: outcome.reason };
-    }
-
-    if (outcome.outcome === "expired") {
-      state.approvalRequests[requestIndex] = outcome.request;
-      state.auditEvents.push(
-        decisionAudit(state, input, "failed", outcome.reason, request.taskId),
-      );
-      return { ok: false, message: outcome.reason };
-    }
-
-    state.approvalRequests[requestIndex] = outcome.request;
-    state.approvalDecisions.push(decision);
-
-    let message = `Recorded ${ownerName(input.deciderUserId)}'s ${input.decision.replaceAll("_", " ")}.`;
-    if (outcome.taskStatusTarget !== null) {
-      const taskIndex = state.tasks.findIndex(
-        (task) => task.id === request.taskId,
-      );
-      const task = state.tasks[taskIndex];
-      if (task !== undefined) {
-        assertTaskTransition(task.status, outcome.taskStatusTarget);
-        state.tasks[taskIndex] = TaskSchema.parse({
-          ...task,
-          status: outcome.taskStatusTarget,
-          version: task.version + 1,
-          updatedAt: decision.decidedAt,
-        });
-        message += ` Task is now ${outcome.taskStatusTarget.replaceAll("_", " ")}.`;
-      }
-    } else {
-      message += ` Waiting for a second distinct owner (${outcome.distinctApprovers}/${outcome.request.requiredApprovals}).`;
-    }
-
-    state.auditEvents.push(
-      decisionAudit(state, input, "succeeded", message, request.taskId),
+  if (outcome.taskStatusTarget !== null) {
+    const task = state.tasks.find(
+      (candidate) => candidate.id === request.taskId,
     );
-    return { ok: true, message };
-  }, statePath);
+    if (task !== undefined) {
+      assertTaskTransition(task.status, outcome.taskStatusTarget);
+      updatedTask = TaskSchema.parse({
+        ...task,
+        status: outcome.taskStatusTarget,
+        version: task.version + 1,
+        updatedAt: decision.decidedAt,
+      });
+      message += ` Task is now ${outcome.taskStatusTarget.replaceAll("_", " ")}.`;
+    }
+  } else {
+    message += ` Waiting for a second distinct owner (${outcome.distinctApprovers}/${outcome.request.requiredApprovals}).`;
+  }
+
+  await repository.appendApprovalDecision({
+    decision,
+    resolvedRequest: outcome.request,
+    updatedTask,
+    auditEvent: decisionAudit(
+      input,
+      "succeeded",
+      message,
+      request.taskId,
+      state.approvalDecisions.length,
+    ),
+  });
+
+  return { ok: true, message };
 }

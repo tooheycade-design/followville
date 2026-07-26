@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { OWNER_COOKIE, OWNERS, ownerById } from "@/lib/config";
+import { companyRepository } from "@/lib/state";
 import { switchOwnerAction } from "./actions";
 import { Nav } from "./nav";
 import "./globals.css";
@@ -29,7 +30,12 @@ export default async function RootLayout({
             <h1>
               Followville <span>Company OS</span>
             </h1>
-            <span className="sim-flag">Simulation only · $0 model budget</span>
+            <span className="sim-flag">
+              Simulation only · $0 model budget ·{" "}
+              {companyRepository().backend === "supabase"
+                ? "shared database"
+                : "local store"}
+            </span>
           </header>
           <div className="nav">
             <Nav />

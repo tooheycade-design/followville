@@ -1,11 +1,11 @@
-import { readState } from "@/lib/store";
+import { companyRepository } from "@/lib/state";
 import { formatWhen, label, shortId } from "@/lib/format";
 import { GoalForm } from "./goal-form";
 
 export const dynamic = "force-dynamic";
 
-export default function GoalsPage() {
-  const state = readState();
+export default async function GoalsPage() {
+  const state = await companyRepository().load();
   const tasksByGoal = new Map(
     state.tasks.map((task) => [task.goalId, task] as const),
   );

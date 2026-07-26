@@ -32,6 +32,28 @@ Run inside the development project's SQL editor immediately after applying
 The development project was additionally created with **Automatically expose
 new tables** disabled.
 
+## Connecting the dashboard (owner steps)
+
+1. In the development project, open **Project Settings → API** and copy the
+   project URL, the publishable key, and the secret key.
+2. Create `company-os/.env.local` (gitignored) from `.env.example` and paste
+   them in. Never commit real values.
+3. Run `db/seed/0001_company_seed.sql` in that project's SQL editor. It creates
+   the organization, project, and five agent profiles using the same fixed
+   identifiers the application uses.
+4. Have Cade and Zach each create an account in the development project, then
+   run the owner-membership statement recorded at the bottom of the seed file
+   once per owner.
+
+Until step 4 is complete, the `approval_decisions` trigger refuses every
+decision, because no account is yet a registered owner. That refusal is the
+system working, not a bug.
+
+The dashboard picks its backend from the environment: with `SUPABASE_URL` and
+`SUPABASE_SECRET_KEY` present it uses the database, otherwise it falls back to
+the local JSON store. The active backend is displayed in the dashboard header
+so the difference is never silent.
+
 ## Security posture
 
 The tables live in the private `company_ops` schema, not `public`. Browser

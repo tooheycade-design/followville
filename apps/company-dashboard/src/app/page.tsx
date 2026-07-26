@@ -1,12 +1,12 @@
 import Link from "next/link";
 
-import { readState } from "@/lib/store";
+import { companyRepository } from "@/lib/state";
 import { formatUsdMicros, formatWhen, label, shortId } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function OverviewPage() {
-  const state = readState();
+export default async function OverviewPage() {
+  const state = await companyRepository().load();
   const pending = state.approvalRequests.filter(
     (request) => request.status === "pending",
   );

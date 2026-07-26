@@ -4,15 +4,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { emptyState, mutateState, readState, writeState } from "./store";
+import { FileCompanyRepository, readState, writeState } from "./file-repository";
+import { emptyState } from "./types";
 
 function temporaryStatePath(): string {
   return path.join(mkdtempSync(path.join(tmpdir(), "fv-store-")), "state.json");
 }
 
 test("reading a missing store returns an empty validated state", () => {
-  const state = readState(temporaryStatePath());
-  assert.deepEqual(state, emptyState());
+  assert.deepEqual(readState(temporaryStatePath()), emptyState());
 });
 
 test("writing then reading round-trips and validates", () => {
@@ -33,32 +33,24 @@ test("writing then reading round-trips and validates", () => {
 test("corrupt store content fails loudly instead of returning bad data", () => {
   const statePath = temporaryStatePath();
   writeFileSync(statePath, '{"goals": [{"nonsense": true}]}', "utf8");
-  assert.throws(() => {
-    readState(statePath);
-  });
+  assert.throws(() => readState(statePath));
+
   const invalid = emptyState();
   (invalid.goals as unknown[]).push({ nonsense: true });
-  assert.throws(() => {
-    writeState(invalid, temporaryStatePath());
-  });
+  assert.throws(() => writeState(invalid, temporaryStatePath()));
 });
 
 test("mutations are serialized in submission order", async () => {
-  const statePath = temporaryStatePath();
+  const repository = new FileCompanyRepository(temporaryStatePath());
   const order: number[] = [];
   await Promise.all([
-    mutateState((state) => {
-      order.push(1);
-      return state;
-    }, statePath),
-    mutateState((state) => {
-      order.push(2);
-      return state;
-    }, statePath),
-    mutateState((state) => {
-      order.push(3);
-      return state;
-    }, statePath),
+    repository.load().then(() => order.push(1)),
+    repository.load().then(() => order.push(2)),
+    repository.load().then(() => order.push(3)),
   ]);
   assert.deepEqual(order, [1, 2, 3]);
+});
+
+test("the file repository identifies its backend", () => {
+  assert.equal(new FileCompanyRepository(temporaryStatePath()).backend, "file");
 });

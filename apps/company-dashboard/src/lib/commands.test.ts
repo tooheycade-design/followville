@@ -7,28 +7,30 @@ import { test } from "node:test";
 import { OWNER_USER_ID } from "@followville/company-os-core";
 
 import { decideApproval, submitGoal } from "./commands";
-import { readState } from "./store";
+import { FileCompanyRepository } from "./state";
 
 const ZACH_ID = "30000000-0000-4000-8000-000000000002";
 
-function temporaryStatePath(): string {
-  return path.join(mkdtempSync(path.join(tmpdir(), "fv-cmd-")), "state.json");
+function newRepository(): FileCompanyRepository {
+  return new FileCompanyRepository(
+    path.join(mkdtempSync(path.join(tmpdir(), "fv-cmd-")), "state.json"),
+  );
 }
 
 test("submitting two goals persists distinct entities up to pending approval", async () => {
-  const statePath = temporaryStatePath();
+  const repository = newRepository();
   const first = await submitGoal(
     { title: "First goal", objective: "Do the first thing." },
-    statePath,
+    repository,
   );
   const second = await submitGoal(
     { title: "Second goal", objective: "Do the second thing." },
-    statePath,
+    repository,
   );
   assert.equal(first.ok, true);
   assert.equal(second.ok, true);
 
-  const state = readState(statePath);
+  const state = await repository.load();
   assert.equal(state.goals.length, 2);
   assert.equal(state.tasks.length, 2);
   assert.equal(state.approvalRequests.length, 2);
@@ -36,21 +38,26 @@ test("submitting two goals persists distinct entities up to pending approval", a
   assert.ok(
     state.approvalRequests.every((request) => request.status === "pending"),
   );
-  assert.ok(state.tasks.every((task) => task.status === "awaiting_human_approval"));
-  assert.equal(state.runs.reduce((sum, run) => sum + run.actualCostUsdMicros, 0), 0);
+  assert.ok(
+    state.tasks.every((task) => task.status === "awaiting_human_approval"),
+  );
+  assert.equal(
+    state.runs.reduce((sum, run) => sum + run.actualCostUsdMicros, 0),
+    0,
+  );
 });
 
 test("blank goals are rejected without touching the store", async () => {
-  const statePath = temporaryStatePath();
-  const result = await submitGoal({ title: "  ", objective: "x" }, statePath);
+  const repository = newRepository();
+  const result = await submitGoal({ title: "  ", objective: "x" }, repository);
   assert.equal(result.ok, false);
-  assert.equal(readState(statePath).goals.length, 0);
+  assert.equal((await repository.load()).goals.length, 0);
 });
 
 test("an owner approval resolves the request and advances the task", async () => {
-  const statePath = temporaryStatePath();
-  await submitGoal({ title: "Approve me", objective: "Test." }, statePath);
-  const request = readState(statePath).approvalRequests[0];
+  const repository = newRepository();
+  await submitGoal({ title: "Approve me", objective: "Test." }, repository);
+  const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
   const result = await decideApproval(
@@ -61,11 +68,11 @@ test("an owner approval resolves the request and advances the task", async () =>
       deciderUserId: OWNER_USER_ID,
       viewedScopeDigest: request.scopeDigest,
     },
-    statePath,
+    repository,
   );
   assert.equal(result.ok, true);
 
-  const state = readState(statePath);
+  const state = await repository.load();
   assert.equal(state.approvalRequests[0]?.status, "approved");
   assert.equal(state.tasks[0]?.status, "approved");
   assert.equal(state.approvalDecisions.length, 1);
@@ -75,9 +82,9 @@ test("an owner approval resolves the request and advances the task", async () =>
 });
 
 test("a stale scope digest is refused and recorded in the audit trail", async () => {
-  const statePath = temporaryStatePath();
-  await submitGoal({ title: "Stale digest", objective: "Test." }, statePath);
-  const request = readState(statePath).approvalRequests[0];
+  const repository = newRepository();
+  await submitGoal({ title: "Stale digest", objective: "Test." }, repository);
+  const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
   const result = await decideApproval(
@@ -88,11 +95,11 @@ test("a stale scope digest is refused and recorded in the audit trail", async ()
       deciderUserId: ZACH_ID,
       viewedScopeDigest: "0".repeat(64),
     },
-    statePath,
+    repository,
   );
   assert.equal(result.ok, false);
 
-  const state = readState(statePath);
+  const state = await repository.load();
   assert.equal(state.approvalRequests[0]?.status, "pending");
   assert.equal(state.tasks[0]?.status, "awaiting_human_approval");
   assert.equal(state.approvalDecisions.length, 0);
@@ -105,9 +112,9 @@ test("a stale scope digest is refused and recorded in the audit trail", async ()
 });
 
 test("a rejection moves the task to rejected", async () => {
-  const statePath = temporaryStatePath();
-  await submitGoal({ title: "Reject me", objective: "Test." }, statePath);
-  const request = readState(statePath).approvalRequests[0];
+  const repository = newRepository();
+  await submitGoal({ title: "Reject me", objective: "Test." }, repository);
+  const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
   const result = await decideApproval(
@@ -118,19 +125,19 @@ test("a rejection moves the task to rejected", async () => {
       deciderUserId: ZACH_ID,
       viewedScopeDigest: request.scopeDigest,
     },
-    statePath,
+    repository,
   );
   assert.equal(result.ok, true);
 
-  const state = readState(statePath);
+  const state = await repository.load();
   assert.equal(state.approvalRequests[0]?.status, "rejected");
   assert.equal(state.tasks[0]?.status, "rejected");
 });
 
 test("a decision on an already-resolved request is refused", async () => {
-  const statePath = temporaryStatePath();
-  await submitGoal({ title: "Double decide", objective: "Test." }, statePath);
-  const request = readState(statePath).approvalRequests[0];
+  const repository = newRepository();
+  await submitGoal({ title: "Double decide", objective: "Test." }, repository);
+  const request = (await repository.load()).approvalRequests[0];
   assert.ok(request);
 
   await decideApproval(
@@ -141,7 +148,7 @@ test("a decision on an already-resolved request is refused", async () => {
       deciderUserId: OWNER_USER_ID,
       viewedScopeDigest: request.scopeDigest,
     },
-    statePath,
+    repository,
   );
   const second = await decideApproval(
     {
@@ -151,8 +158,11 @@ test("a decision on an already-resolved request is refused", async () => {
       deciderUserId: ZACH_ID,
       viewedScopeDigest: request.scopeDigest,
     },
-    statePath,
+    repository,
   );
   assert.equal(second.ok, false);
-  assert.equal(readState(statePath).approvalRequests[0]?.status, "approved");
+  assert.equal(
+    (await repository.load()).approvalRequests[0]?.status,
+    "approved",
+  );
 });

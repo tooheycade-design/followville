@@ -1,12 +1,12 @@
-import { readState } from "@/lib/store";
+import { companyRepository } from "@/lib/state";
 import { ownerName } from "@/lib/config";
 import { formatUsdMicros, formatWhen, label, shortId } from "@/lib/format";
 import { DecisionForm } from "./decision-form";
 
 export const dynamic = "force-dynamic";
 
-export default function ApprovalsPage() {
-  const state = readState();
+export default async function ApprovalsPage() {
+  const state = await companyRepository().load();
   const pending = state.approvalRequests.filter(
     (request) => request.status === "pending",
   );

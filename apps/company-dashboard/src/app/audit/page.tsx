@@ -1,10 +1,10 @@
-import { readState } from "@/lib/store";
+import { companyRepository } from "@/lib/state";
 import { formatWhen, label, shortId } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function AuditPage() {
-  const state = readState();
+export default async function AuditPage() {
+  const state = await companyRepository().load();
 
   return (
     <>
