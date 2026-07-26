@@ -67,6 +67,18 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-25 walking depth-stability fix (Cade via Windows Codex): Day 24's
+  public viewer now applies a narrow polygon depth preference to exported curb
+  and facade-detail materials, stopping their coplanar faces from flickering as
+  the walking camera moves. The source generator also reserves the curb's
+  outer 0.28m strip instead of overlapping it with sidewalk/furnishing walls,
+  moves downtown podium glazing/transoms 12mm outside their shells, and moves
+  urban-townhouse storefront assemblies 12mm outside the ground-floor shell.
+  The browser fix works with the current Day 24 GLBs immediately; the physical
+  geometry corrections take effect on the next guarded replay/growth rebuild.
+  Blender Python compilation and all 13 Playwright stories passed. Day 24,
+  population 400, 457 building records, claims, ownership, Supabase,
+  `world_state.json`, current GLBs, and both Blend copies are unchanged.
 - Day 24, population 400, 457 buildings (grown 2026-07-25 via Zach's Mac
   Codex: +29 ordinary claimable homes plus permanent non-population Civic
   Square). Seed 428 is the non-claimable square at Blender `(43,-134)` /

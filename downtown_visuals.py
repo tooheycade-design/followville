@@ -207,7 +207,10 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     crosswalks=[];bollards=[];bike_racks=[];street_signs=[];street_sign_poles=[]
     shelter_frames=[];shelter_glazing=[];shelter_roofs=[];shelter_seats=[];transit_markers=[]
     bus_stop_blocks={(-1,0),(0,-1)}
-    walk=3.40; furniture_width=1.12; apron_width=.62
+    walk=3.40; furniture_width=1.12; apron_width=.62; curb_width=.28
+    sidewalk_depth=walk-curb_width
+    sidewalk_center=(walk+curb_width)/2
+    furnishing_center=curb_width+furniture_width/2
     for bx in range(min_bx,max_bx+1):
         for by in range(min_by,max_by+1):
             x0,y0=bx*pitch,by*pitch;cx,cy=x0+block_size/2,y0+block_size/2
@@ -234,20 +237,25 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
                     courtyard_planters.append((hx,hy,.19,3.2,1.35,.42))
                     courtyard_soil.append((hx,hy,.612,2.82,.98,.08))
                     courtyard_hedges.append((hx,hy,.69,2.48,.62,.62))
-            sidewalks.extend(((cx,y0+walk/2,.12,block_size,walk,.16),
-                              (cx,y0+block_size-walk/2,.12,block_size,walk,.16),
-                              (x0+walk/2,cy,.12,walk,block_size,.16),
-                              (x0+block_size-walk/2,cy,.12,walk,block_size,.16)))
-            furnishing.extend(((cx,y0+furniture_width/2,.281,block_size,furniture_width,.028),
-                               (cx,y0+block_size-furniture_width/2,.281,block_size,furniture_width,.028),
-                               (x0+furniture_width/2,cy,.281,furniture_width,block_size,.028),
-                               (x0+block_size-furniture_width/2,cy,.281,furniture_width,block_size,.028)))
+            # The curb owns the outermost strip. Starting the sidewalk and
+            # furnishing band behind it avoids coincident street-facing walls
+            # that flicker in the browser as the walking camera moves.
+            sidewalks.extend(((cx,y0+sidewalk_center,.12,block_size,sidewalk_depth,.16),
+                              (cx,y0+block_size-sidewalk_center,.12,block_size,sidewalk_depth,.16),
+                              (x0+sidewalk_center,cy,.12,sidewalk_depth,block_size,.16),
+                              (x0+block_size-sidewalk_center,cy,.12,sidewalk_depth,block_size,.16)))
+            furnishing.extend(((cx,y0+furnishing_center,.281,block_size,furniture_width,.028),
+                               (cx,y0+block_size-furnishing_center,.281,block_size,furniture_width,.028),
+                               (x0+furnishing_center,cy,.281,furniture_width,block_size,.028),
+                               (x0+block_size-furnishing_center,cy,.281,furniture_width,block_size,.028)))
             aprons.extend(((cx,y0+walk-apron_width/2,.282,block_size,apron_width,.026),
                            (cx,y0+block_size-walk+apron_width/2,.282,block_size,apron_width,.026),
                            (x0+walk-apron_width/2,cy,.282,apron_width,block_size,.026),
                            (x0+block_size-walk+apron_width/2,cy,.282,apron_width,block_size,.026)))
-            curbs.extend(((cx,y0+.14,.12,block_size,.28,.26),(cx,y0+block_size-.14,.12,block_size,.28,.26),
-                          (x0+.14,cy,.12,.28,block_size,.26),(x0+block_size-.14,cy,.12,.28,block_size,.26)))
+            curbs.extend(((cx,y0+curb_width/2,.12,block_size,curb_width,.26),
+                          (cx,y0+block_size-curb_width/2,.12,block_size,curb_width,.26),
+                          (x0+curb_width/2,cy,.12,curb_width,block_size,.26),
+                          (x0+block_size-curb_width/2,cy,.12,curb_width,block_size,.26)))
 
             for ox,oy,sx,sy in ((1.05,1.05,1,1),(block_size-1.05,1.05,-1,1),
                                 (1.05,block_size-1.05,1,-1),(block_size-1.05,block_size-1.05,-1,-1)):
@@ -388,11 +396,18 @@ def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
             masses[facade].append((cx,cy,setback_z,upper_width-.48,upper_depth-.48,height-setback_z))
             # Transparent podium glazing and dark transoms make the bottom of
             # each tower read as occupied lobby/retail instead of a blank box.
+            # Offset glazing and transoms 12 mm outside the podium shell.
+            # Their former outer faces shared the shell plane exactly.
+            facade_gap=.012
             for lane in (-.29,0,.29):
-                masses[podium_glass].extend(((cx+lane*width,cy-(depth+1.8)/2+.045,.68,width*.20,.09,2.55),
-                                             (cx+lane*width,cy+(depth+1.8)/2-.045,.68,width*.20,.09,2.55)))
-            masses[frame].extend(((cx,cy-(depth+1.8)/2+.06,3.25,width+1.25,.12,.18),
-                                  (cx,cy+(depth+1.8)/2-.06,3.25,width+1.25,.12,.18)))
+                masses[podium_glass].extend(
+                    ((cx+lane*width,cy-(depth+1.8)/2+.045-facade_gap,
+                      .68,width*.20,.09,2.55),
+                     (cx+lane*width,cy+(depth+1.8)/2-.045+facade_gap,
+                      .68,width*.20,.09,2.55)))
+            masses[frame].extend(
+                ((cx,cy-(depth+1.8)/2+.06-facade_gap,3.25,width+1.25,.12,.18),
+                 (cx,cy+(depth+1.8)/2-.06+facade_gap,3.25,width+1.25,.12,.18)))
             # Strong masonry piers give the glass tower believable structure.
             pier=.42
             for sx in (-1,1):

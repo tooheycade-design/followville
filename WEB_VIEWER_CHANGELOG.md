@@ -3,6 +3,17 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Walking facade + curb depth stability (2026-07-25)
+- Applied a narrow runtime polygon depth preference to exported curb,
+  storefront, podium-glass, and facade-frame materials so current Day 24 GLBs
+  no longer alternate coplanar faces as the walking camera moves.
+- Reserved the outer 0.28m downtown curb strip in the source public-realm
+  geometry instead of overlapping it with sidewalk and furnishing-band walls.
+- Offset downtown podium glazing/transoms and urban-townhouse storefront
+  assemblies 12mm outside their structural shells for future exports.
+- Blender Python compilation and all 13 Playwright stories passed. No current
+  GLB, Blend, state, population, building, claim, or Supabase data changed.
+
 ## Day 24 Civic Square + 400 population (2026-07-25)
 - Added permanent non-claimable Civic Square beside City Hall at website
   `(43,134)`, with a public map label and matching browser walk surface.

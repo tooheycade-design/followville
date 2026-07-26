@@ -1095,7 +1095,10 @@ def build_urban_townhouse(col, variant):
     # made the panes look pasted onto the building.
     # Recess the storefront into the real ground-floor shell plane so the
     # glazing reads as architecture, not a glass box pasted to the facade.
-    facade_plane_y=.25-depth/2
+    # Keep the assembled storefront visually flush while placing it just
+    # outside the ground-floor shell. Exact coplanarity with the shell made
+    # facade pieces flicker as the web camera moved.
+    facade_plane_y=.25-depth/2-.012
     facade_depth=.12
     front_y=facade_plane_y+facade_depth/2
     outer_y=facade_plane_y

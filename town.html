@@ -1801,6 +1801,21 @@ function tuneTownMaterial(material){
   material.needsUpdate = true;
 }
 
+/* Some Day 24 GLB surfaces were exported exactly coplanar. Prefer the detail
+   layer by a tiny depth-buffer bias until the next geometry export bakes in
+   the physical separation from the generator. */
+function stabilizeTownMaterialDepth(material){
+  if (!material || material.userData.followvilleDepthStable) return;
+  material.userData.followvilleDepthStable = true;
+  const name = (material.name || "").toLowerCase();
+  if (["curb", "storefront", "podium_glass", "facade_frame"].some(token => name.includes(token))){
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -1;
+    material.polygonOffsetUnits = -1;
+    material.needsUpdate = true;
+  }
+}
+
 function frameFounderPreview(){
   document.body.classList.add("preview-mode");
   if (previewView === "buildings"){
@@ -6166,7 +6181,9 @@ function prepareTownAsset(root){
     const materials=Array.isArray(obj.material)?obj.material:[obj.material];
     for(const material of materials){
       if(material&&!tunedMaterials.has(material)){
-        tunedMaterials.add(material);if(ultraGraphics)tuneTownMaterial(material);
+        tunedMaterials.add(material);
+        stabilizeTownMaterialDepth(material);
+        if(ultraGraphics)tuneTownMaterial(material);
       }
     }
   });
@@ -6464,6 +6481,7 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
             for (const material of materials){
               if (material && !tunedMaterials.has(material)){
                 tunedMaterials.add(material);
+                stabilizeTownMaterialDepth(material);
                 if (ultraGraphics) tuneTownMaterial(material);
               }
             }
