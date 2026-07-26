@@ -9,19 +9,21 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Step | State |
 | --- | --- |
 | Dev project created | Done |
-| Migrations 0001-0008 applied | Done |
+| Migrations 0001-0010 applied | Done |
 | Dashboard credentials in `.env.local` | Done |
 | Owner accounts and membership | Done, both owners active |
 | Shared-database loop verified live | Done |
 | Worker runtime verified live | Done |
 | Independent review verified live | Done |
+| Chief Executive verified live | Done |
+| Scheduled wake-ups verified live | Done |
 | **Real model execution** | **Blocked on one owner step, below** |
 
 ## The one step still needed: sign the CLI in
 
-The worker can run a real Claude model on Cade's existing subscription, but
-the CLI has its own sign-in and authentication is not something an agent
-should perform. Run this once, in a terminal:
+The worker can run a real Claude model on Cade's existing subscription, but the
+CLI has its own sign-in, and authentication is not something an agent should
+perform. Run this once, in a terminal:
 
 ```
 "C:\Users\cadet\AppData\Roaming\Claude\claude-code\2.1.219\claude.exe" auth login
@@ -34,8 +36,24 @@ pnpm --dir apps/company-dashboard worker -- --check
 ```
 
 It currently reports `not_authenticated`; after signing in it reports `ready`.
-Until then the worker falls back to the deterministic executor, which is real
-but calls no model.
+Until then the worker uses the deterministic executor, which is real but calls
+no model and spends nothing.
+
+## Directing the company
+
+Open the **CEO** page in the dashboard and say what you want in plain language.
+The Chief Executive turns it into bounded tasks and queues them for the
+workers.
+
+It decides what should happen, never what an agent is allowed to do. Whatever
+it proposes, capabilities are intersected with a fixed grantable set, so a plan
+asking for `production_deploy` or `payment_charge` simply does not get it and
+the refusal is shown to you.
+
+It holds anything that is your call rather than deciding it: monetization and
+pricing, releasing to production, anything public, brand and identity,
+destructive changes, and the canonical town. Those arrive as proposed work
+waiting for you, with the reason named.
 
 ## Running the company
 
@@ -53,21 +71,26 @@ colliding:
 
 ```
 pnpm --dir apps/company-dashboard worker              # one pass, then exit
-pnpm --dir apps/company-dashboard worker -- --watch   # keep polling
+pnpm --dir apps/company-dashboard worker -- --watch   # scheduled, keeps running
 pnpm --dir apps/company-dashboard worker -- --check   # readiness only
 pnpm --dir apps/company-dashboard worker -- --deterministic  # no model
 ```
 
-The worker leases queued tasks, runs them in a disposable git worktree,
-reviews finished work with a different agent, and leaves results in the
-owner approval queue.
+In `--watch` mode the scheduler runs the queue every two minutes, reclaims
+stalled leases every five, and produces a daily report and cost audit. Schedule
+state is kept on disk, so restarting does not replay every daily job.
+
+Scheduling is interval-based rather than cron on purpose. These machines sleep,
+and a wall-clock cron would silently skip everything due while a laptop was
+closed. A machine coming back online notices it is overdue and catches up once.
 
 ## What the machine will and will not do
 
-It will: plan a goal into a task, lease it without colliding with another
-machine, run it under policy, refuse work that strays outside its approved
-paths, require evidence before accepting success, have a second agent check
-the result, and put the outcome in front of an owner.
+It will: interpret your intent, plan bounded tasks, lease work without
+colliding with another machine, run it under policy in a disposable worktree,
+refuse work that strays outside its approved paths, require evidence before
+accepting success, have a second agent check the result, and put the outcome in
+front of you.
 
 It will not: merge, deploy, publish, spend, or touch the canonical town files.
 Those need an owner decision, and the database enforces that independently of
@@ -88,6 +111,8 @@ numbered migration.
 | 0006 | Review leasing |
 | 0007 | Fix an ambiguous parameter in 0006 |
 | 0008 | Permit review bookkeeping on a reviewed task |
+| 0009 | Register the Chief Executive agent |
+| 0010 | Record a CEO initiative atomically |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -96,8 +121,8 @@ To apply a new one, copy it to the clipboard and paste into the SQL editor at
 cat "company-os/db/migrations/NAME.sql" | clip.exe
 ```
 
-If the editor hangs on a spinner, close the tab and open a fresh one. That is
-a dashboard bug, not a database problem.
+If the editor hangs on a spinner, close the tab and open a fresh one. That is a
+dashboard bug, not a database problem.
 
 ## Owner membership
 
@@ -111,11 +136,11 @@ on conflict (organization_id, user_id)
   do update set role = 'owner', active = true;
 ```
 
-Until a person has an owner row, the database refuses their approval
-decisions. That refusal is the system working.
+Until a person has an owner row, the database refuses their approval decisions.
+That refusal is the system working.
 
 ## Next
 
-Scheduled wake-ups so workers run without being started by hand, a GitHub App
-so completed work arrives as a draft pull request, and the Followville
-specialists described in `docs/ROADMAP.md`.
+A GitHub App so completed work arrives as a draft pull request, a model-backed
+planner behind the same CEO clamping, and the Followville specialists described
+in `docs/ROADMAP.md`.
