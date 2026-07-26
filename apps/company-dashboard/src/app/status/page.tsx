@@ -2,7 +2,6 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Domain contracts and policy kernel", "implemented", "28 core tests; strict TypeScript"],
   ["Deterministic goal simulation", "implemented", "Runs from the Goals page; zero side effects"],
   ["Owner approval decisions", "implemented", "Digest-pinned kernel; owner-role enforcement"],
-  ["Dashboard persistence", "simulated", "Local JSON store; Supabase adapter replaces it"],
   ["Development database", "implemented", "Migration applied to followville-company-os-dev and verified isolated"],
   ["Shared database backend", "implemented", "Verified live: goal, refusal, approval, and audit all recorded transactionally"],
   ["Worker runtime", "implemented", "Leases queued work across machines; verified two workers race and exactly one wins"],
@@ -12,10 +11,10 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Owner sign-in", "planned", "Supabase Auth session, replacing the owner picker; the database already rejects non-owners"],
   ["Chief Executive", "implemented", "Plans owner intent into bounded work; cannot widen agent permissions"],
   ["Scheduled wake-ups", "implemented", "Interval-based scheduler with failure backoff; survives machines that sleep"],
+  ["Model-backed CEO planning", "planned", "Same clamping, a real model instead of the heuristic planner"],
   ["Draft pull requests", "planned", "GitHub App so completed work arrives as a reviewable PR"],
-  ["Real coding worker + reviewer", "planned", "Phase 2, draft PRs only"],
-  ["Durable scheduling and events", "planned", "Phase 3, Inngest pilot"],
-  ["Model providers and cost ledger", "planned", "Phase 4; $0 budget until configured"],
+  ["Cost ledger", "planned", "Usage is recorded per run; the per-provider ledger and budgets come next"],
+  ["Followville specialists", "planned", "World QA, Blender, social drafting; see docs/ROADMAP.md"],
   ["Production merge / deploy / publish", "blocked", "By constitution, owner approval only"],
 ];
 
