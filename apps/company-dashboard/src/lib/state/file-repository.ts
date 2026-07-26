@@ -1,6 +1,8 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import type { Goal, Task } from "@followville/company-os-core";
+
 import {
   CompanyStateSchema,
   emptyState,
@@ -92,6 +94,13 @@ export class FileCompanyRepository implements CompanyRepository {
         }
       }
       state.auditEvents.push(record.auditEvent);
+    });
+  }
+
+  appendInitiative(goal: Goal, tasks: readonly Task[]): Promise<void> {
+    return this.#mutate((state) => {
+      state.goals.push(goal);
+      state.tasks.push(...tasks);
     });
   }
 

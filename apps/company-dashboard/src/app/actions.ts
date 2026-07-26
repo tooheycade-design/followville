@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { decideApproval, submitGoal } from "@/lib/commands";
+import { decideApproval, directCeo, submitGoal } from "@/lib/commands";
 import { OWNER_COOKIE, OWNERS, ownerById } from "@/lib/config";
 
 export interface ActionState {
@@ -66,4 +66,27 @@ export async function switchOwnerAction(formData: FormData): Promise<void> {
     });
   }
   redirect(String(formData.get("returnTo") ?? "/"));
+}
+
+export interface CeoActionState {
+  ok: boolean;
+  message: string;
+  escalations: readonly string[];
+  clamped: readonly string[];
+}
+
+export async function directCeoAction(
+  _previous: CeoActionState | null,
+  formData: FormData,
+): Promise<CeoActionState> {
+  const cookieStore = await cookies();
+  const owner = ownerById(cookieStore.get(OWNER_COOKIE)?.value);
+
+  const result = await directCeo({
+    title: String(formData.get("title") ?? ""),
+    detail: String(formData.get("detail") ?? ""),
+    createdByUserId: owner.id,
+  });
+  revalidatePath("/", "layout");
+  return result;
 }

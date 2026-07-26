@@ -73,6 +73,8 @@ export interface CompanyRepository {
   load(): Promise<CompanyState>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;
   appendApprovalDecision(record: ApprovalDecisionRecord): Promise<void>;
+  /** Records a planned initiative: one goal and its tasks, written together. */
+  appendInitiative(goal: Goal, tasks: readonly Task[]): Promise<void>;
   /** Records a refused or failed attempt, which produces no state change. */
   appendAuditEvent(event: AuditEvent): Promise<void>;
 }

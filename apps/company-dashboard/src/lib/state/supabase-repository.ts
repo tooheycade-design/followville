@@ -9,6 +9,8 @@ import {
   TaskSchema,
   type ApprovalRequest,
   type AuditEvent,
+  type Goal,
+  type Task,
 } from "@followville/company-os-core";
 
 import {
@@ -273,6 +275,13 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       },
     );
     failOn("company_os_record_approval_decision", error);
+  }
+
+  async appendInitiative(goal: Goal, tasks: readonly Task[]): Promise<void> {
+    const { error } = await this.client.rpc("company_os_record_initiative", {
+      payload: { goal, tasks },
+    });
+    failOn("company_os_record_initiative", error);
   }
 
   async appendAuditEvent(event: AuditEvent): Promise<void> {

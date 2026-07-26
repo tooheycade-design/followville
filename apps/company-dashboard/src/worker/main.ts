@@ -10,6 +10,7 @@
  *   pnpm --dir apps/company-dashboard worker -- --check # report readiness only
  */
 import { randomUUID } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import path from "node:path";
 
@@ -29,9 +30,13 @@ import {
 } from "../lib/state/supabase-queue";
 import { companyRepository } from "../lib/state";
 import {
+  DEFAULT_SCHEDULE,
   EvidenceReviewer,
   assertIndependentReviewer,
+  dueJobs,
+  recordRun,
   reviewAuditEvent,
+  type ScheduleState,
 } from "@followville/company-os-core";
 
 const args = new Set(process.argv.slice(2));
@@ -155,15 +160,39 @@ process.on("SIGINT", () => {
   log("stopping after the current task");
 });
 
-do {
-  const reclaimed = await queue.reclaimExpiredLeases();
-  if (reclaimed > 0) {
-    log(`requeued ${reclaimed} task(s) whose worker stopped reporting`);
+/**
+ * Schedule state is kept on disk so a restarted worker does not immediately
+ * rerun every daily job. It is local bookkeeping, not company state, which is
+ * why it lives beside the process rather than in the shared database.
+ */
+const scheduleStatePath = path.join(process.cwd(), ".data", "schedule.json");
+const scheduleStates = new Map<string, ScheduleState>();
+try {
+  const raw = JSON.parse(readFileSync(scheduleStatePath, "utf8")) as ScheduleState[];
+  for (const entry of raw) {
+    scheduleStates.set(entry.name, entry);
   }
+} catch {
+  // No prior state; every job is simply due.
+}
 
+function saveScheduleStates(): void {
+  try {
+    mkdirSync(path.dirname(scheduleStatePath), { recursive: true });
+    writeFileSync(
+      scheduleStatePath,
+      JSON.stringify([...scheduleStates.values()], null, 2),
+      "utf8",
+    );
+  } catch (error) {
+    log(`could not persist schedule state: ${(error as Error).message}`);
+  }
+}
+
+async function runWorkQueueJob(): Promise<void> {
   const outcomes = await runWorker(
     executor,
-    queue,
+    queue!,
     {
       workerId,
       leaseSeconds: 300,
@@ -173,18 +202,79 @@ do {
     },
     randomUUID,
   );
-
   for (const outcome of outcomes) {
     log(`task ${outcome.taskId.slice(0, 8)} -> ${outcome.status}: ${outcome.summary}`);
   }
-
   const reviewed = await runReviewPass();
   if (reviewed > 0) {
     log(`reviewed ${reviewed} task(s)`);
   }
-  if (outcomes.length === 0 && watch && !stopping) {
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
+}
+
+const JOBS: Record<string, () => Promise<void>> = {
+  "work-queue": runWorkQueueJob,
+  "reclaim-leases": async () => {
+    const reclaimed = await queue!.reclaimExpiredLeases();
+    if (reclaimed > 0) {
+      log(`requeued ${reclaimed} task(s) whose worker stopped reporting`);
+    }
+  },
+  "daily-report": async () => {
+    const state = await companyRepository().load();
+    const pending = state.approvalRequests.filter((r) => r.status === "pending");
+    const open = state.tasks.filter(
+      (t) => !["approved", "rejected", "merged", "deployed", "canceled"].includes(t.status),
+    );
+    log(
+      `daily report: ${state.goals.length} goal(s), ${open.length} open task(s), ` +
+        `${pending.length} awaiting an owner, ${state.auditEvents.length} audit event(s)`,
+    );
+  },
+  "cost-audit": async () => {
+    const state = await companyRepository().load();
+    const spent = state.runs.reduce((sum, run) => sum + run.actualCostUsdMicros, 0);
+    log(`cost audit: $${(spent / 1_000_000).toFixed(2)} recorded model spend`);
+  },
+};
+
+if (!watch) {
+  // A single pass runs the work queue directly, ignoring the schedule.
+  await JOBS["reclaim-leases"]!();
+  await runWorkQueueJob();
+} else {
+  log(
+    `scheduler active: ${DEFAULT_SCHEDULE.map((j) => `${j.name} every ${Math.round(j.intervalMs / 60000)}m`).join(", ")}`,
+  );
+  while (!stopping) {
+    const now = Date.now();
+    const due = dueJobs(DEFAULT_SCHEDULE, scheduleStates, now);
+    for (const job of due) {
+      if (stopping) {
+        break;
+      }
+      const handler = JOBS[job.name];
+      if (handler === undefined) {
+        continue;
+      }
+      try {
+        await handler();
+        scheduleStates.set(
+          job.name,
+          recordRun(scheduleStates.get(job.name), job.name, "succeeded", new Date().toISOString()),
+        );
+      } catch (error) {
+        log(`job ${job.name} failed: ${(error as Error).message}`);
+        scheduleStates.set(
+          job.name,
+          recordRun(scheduleStates.get(job.name), job.name, "failed", new Date().toISOString()),
+        );
+      }
+      saveScheduleStates();
+    }
+    if (!stopping) {
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
   }
-} while (watch && !stopping);
+}
 
 log("worker finished");

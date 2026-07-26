@@ -5,10 +5,12 @@ import path from "node:path";
 import {
   ApprovalDecisionSchema,
   AuditEventSchema,
+  HeuristicPlanner,
   ORGANIZATION_ID,
   PROJECT_ID,
   TaskSchema,
   applyApprovalDecision,
+  planInitiative,
   assertTaskTransition,
   digest,
   simulateGoal,
@@ -77,6 +79,74 @@ export async function submitGoal(
     ok: true,
     message: `Simulated "${title}" through to a pending human approval.`,
     goalId: result.goal.id,
+  };
+}
+
+export interface DirectCeoInput {
+  title: string;
+  detail: string;
+  createdByUserId: string;
+}
+
+export interface DirectCeoResult {
+  ok: boolean;
+  message: string;
+  escalations: readonly string[];
+  clamped: readonly string[];
+}
+
+/**
+ * Hands owner intent to the CEO, which turns it into queued work.
+ *
+ * The CEO decides what should happen; it cannot widen what any agent is
+ * permitted to do. Capabilities it asked for and did not get are returned so
+ * an attempt to exceed its authority is visible rather than silent.
+ */
+export async function directCeo(
+  input: DirectCeoInput,
+  repository: CompanyRepository = companyRepository(),
+): Promise<DirectCeoResult> {
+  const title = input.title.trim();
+  const detail = input.detail.trim();
+  if (title.length === 0 || title.length > 180) {
+    return {
+      ok: false,
+      message: "Give the CEO a short title of 1-180 characters.",
+      escalations: [],
+      clamped: [],
+    };
+  }
+  if (detail.length === 0) {
+    return {
+      ok: false,
+      message: "Tell the CEO what you actually want.",
+      escalations: [],
+      clamped: [],
+    };
+  }
+
+  const initiative = await planInitiative({
+    intent: { title, detail, createdByUserId: input.createdByUserId },
+    planner: new HeuristicPlanner(),
+    idFactory: randomUUID,
+  });
+
+  await repository.appendInitiative(initiative.goal, initiative.tasks);
+
+  const queued = initiative.tasks.filter((task) => task.status === "queued").length;
+  const held = initiative.tasks.length - queued;
+  const message =
+    held > 0
+      ? `The CEO planned ${initiative.tasks.length} task(s) and held ${held} for your decision.`
+      : `The CEO queued ${queued} task(s) for the workers.`;
+
+  return {
+    ok: true,
+    message,
+    escalations: initiative.escalations,
+    clamped: initiative.clampedCapabilities.map(
+      (entry) => `${entry.task}: removed ${entry.removed.join(", ")}`,
+    ),
   };
 }
 
