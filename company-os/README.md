@@ -17,7 +17,7 @@ Supabase schema are not changed by this foundation.
 | Domain contracts | Implemented | Strict TypeScript and Zod schemas |
 | Policy engine | Implemented | Budgets, capabilities, approval gates |
 | Local workflow simulation | Implemented | Deterministic and API-free |
-| Database schema | Proposed | Migration is not applied |
+| Database schema | Applied to development | `followville-company-os-dev`; verified isolated from browser roles. See `db/README.md` |
 | Agent profiles | Implemented | Seed fixtures, no provider calls |
 | Owner dashboard | Implemented (local) | `apps/company-dashboard`; goals, approvals, agents, audit, build status. Local JSON store and a dev owner picker until the development Supabase project exists |
 | Model providers | Planned | No API package or credential required |
