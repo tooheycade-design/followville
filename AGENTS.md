@@ -67,6 +67,18 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-26 final downtown facade rebuild (Zach via Mac Codex): the complete
+  Day 24 town and all 23 streamed chunks were replayed after Cade's curb,
+  apron, storefront, wall-shader, camera, hitbox, and block-streaming fixes.
+  Downtown podium glazing and horizontal facade frames now use one shared
+  mounting rule: each remains anchored 1cm inside its supporting wall while
+  its visible face projects at least 5cm beyond it. A standalone regression
+  audit prevents exact shared planes from returning. Full/streamed GLB
+  validation, downtown validation, four focused Playwright walking/streaming
+  stories, and head-on/left/right browser facade reviews passed. The embedded
+  generator and both Blend copies were synchronized to the rebuilt geometry.
+  Day 24, population 400, all 457 building records, addresses, claims,
+  ownership, `world_state.json`, and Supabase are unchanged.
 - 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
   pale building apron no longer competes with the bottom of downtown facades;
   the browser pushes the current exported apron behind opaque walls, while the
