@@ -118,8 +118,9 @@ def check_stream_manifest(root, state, fallback_path):
     chunk_ids = [chunk.get("id") for chunk in chunks]
     if len(chunk_ids) != len(set(chunk_ids)):
         problems.append("manifest contains duplicate chunk IDs")
-    if "original-town" not in chunk_ids:
-        problems.append("manifest has no original-town chunk")
+    if ("original-town" not in chunk_ids and
+            not any(str(chunk_id).startswith("downtown-block-") for chunk_id in chunk_ids)):
+        problems.append("manifest has no original-town or block-streamed downtown chunks")
     if not any(chunk.get("initial") for chunk in chunks):
         problems.append("manifest has no initial district chunk")
     load_distance = (manifest.get("streaming") or {}).get("detail_load_distance")

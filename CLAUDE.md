@@ -32,12 +32,12 @@ security change. Read `DOWNTOWN_TERRAIN_HANDOFF.md` before changing this work.
 The third-person camera can pitch nearly straight up or down and ignores
 walkable ground in its obstruction ray, so it stays attached and shortens
 toward the avatar instead of getting caught. District details now unload past
-112m after loading at 70m, with their low-detail silhouettes restored. Claim
+84m after loading at 52m, with their low-detail silhouettes restored. Claim
 labels and the active claim marker use the actual loaded GLB roof height,
 including tall and `storybookhouse` models. Downtown shop glass is authored
 flush with the ground-floor facade. Town chat keeps recent messages in a
 compact top-left walking feed; opening it exposes the existing composer and
-history. Preserve the 70m/112m hysteresis and `data-claim-tag-roof-clearance`
+history. Preserve the manifest-driven 52m/84m hysteresis and `data-claim-tag-roof-clearance`
 regression when changing these systems. This pass changed no canonical state,
 population, claims, owners, addresses, or Supabase data.
 
@@ -81,6 +81,21 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
+  pale building apron no longer competes with the bottom of downtown facades;
+  the browser pushes the current exported apron behind opaque walls, while the
+  source apron is now a thin flat strip with a 30cm facade gap for the next
+  guarded scene rebuild. Burj Khalifa, Follow Mart, Fire Station 1, and City
+  Hall use landmark-specific multi-part hitboxes instead of broad generic
+  bounds. Third-person wall contact feeds mesh and footprint obstruction into
+  one smoothly damped camera arm. The former 101-building `original-town`
+  stream was replaced by individual downtown blocks plus separate civic,
+  Follow Mart, fire, and school chunks; detail loads within 52m and unloads
+  beyond 84m. Admins also have a copy-coordinates button under the live
+  coordinate readout. Full and 23-chunk assets were regenerated from the
+  authoritative Blend and exact 457-building/hash/state validation passed.
+  Day 24, population 400, world state, claims, ownership, Supabase, curbs, and
+  both Blend copies are unchanged.
 - Day 19, population 331, 334 buildings (grown 2026-07-20 via Zach's Mac
   Codex: +10 ordinary claimable homes). Seeds 325-331 completed Lantern Court
   and Twin Oaks at planned addresses 178-184; seeds 332-334 opened Meadow Run

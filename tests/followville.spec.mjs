@@ -94,11 +94,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-hill-clearance", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-walkable", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
+  await expect(page.locator("body")).toHaveAttribute("data-landmark-hitboxes", "pass");
+  await expect(page.locator("#adminCoordsCopy")).toHaveCount(1);
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
   const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(loadedChunks).toEqual(expect.arrayContaining(["original-town"]));
+  expect(loadedChunks).toContain("creekside-bend");
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
   expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
     .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
@@ -186,11 +188,14 @@ test("Avatar Studio only offers the animated character library and persists it",
 test("player camera follows, right-drag orbits, wheel reaches first person, and A/D are correct", async ({ page }) => {
   test.setTimeout(420_000);
   const errors=watchPageErrors(page);
-  await page.goto("/town.html#walk");
+  await page.goto("/town.html?admin=1#walk");
   await waitForTown(page);
   await expect(page.locator("#startScreen")).toBeHidden();
   await expect(page.locator("body")).toHaveAttribute("data-player-ready","true");
   await expect(page.locator("#crosshair")).toBeHidden();
+  await expect(page.locator("#adminCoordsCopy")).toBeVisible();
+  await page.locator("#adminCoordsCopy").click();
+  await expect(page.locator("#adminCoordsCopy")).toHaveAttribute("data-copy-state","copied");
   const positions=()=>page.locator("body").evaluate(body=>{
     const parse=name=>(body.dataset[name]||"0,0").split(",").map(Number);
     return {player:parse("playerPosition"),camera:parse("cameraPosition")};
@@ -321,6 +326,8 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
   await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", "full");
   await expect(page.locator("body")).toHaveAttribute("data-claim-tag-roof-clearance", "1.25");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-landmark-hitboxes-mapped","burjhouse,cityhall,firestation,followmart");
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   expect(errors).toEqual([]);
 });

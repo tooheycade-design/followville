@@ -67,6 +67,21 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
+  pale building apron no longer competes with the bottom of downtown facades;
+  the browser pushes the current exported apron behind opaque walls, while the
+  source apron is now a thin flat strip with a 30cm facade gap for the next
+  guarded scene rebuild. Burj Khalifa, Follow Mart, Fire Station 1, and City
+  Hall use landmark-specific multi-part hitboxes instead of broad generic
+  bounds. Third-person wall contact feeds mesh and footprint obstruction into
+  one smoothly damped camera arm. The former 101-building `original-town`
+  stream was replaced by individual downtown blocks plus separate civic,
+  Follow Mart, fire, and school chunks; detail loads within 52m and unloads
+  beyond 84m. Admins also have a copy-coordinates button under the live
+  coordinate readout. Full and 23-chunk assets were regenerated from the
+  authoritative Blend and exact 457-building/hash/state validation passed.
+  Day 24, population 400, world state, claims, ownership, Supabase, curbs, and
+  both Blend copies are unchanged.
 - 2026-07-25 walking depth-stability fix (Cade via Windows Codex): Day 24's
   public viewer now applies a narrow polygon depth preference to exported curb
   and facade-detail materials, stopping their coplanar faces from flickering as

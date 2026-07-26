@@ -833,8 +833,14 @@
     padding:5px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.18);
     background:rgba(8,16,28,.72); color:#b8e0ff; font:600 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     text-shadow:0 1px 3px rgba(0,0,0,.55); backdrop-filter:blur(4px);
-    pointer-events:none; user-select:text; max-width:min(280px,calc(100vw - 28px));
+    pointer-events:auto; user-select:text; max-width:min(280px,calc(100vw - 28px));
   }
+  #adminCoordsCopy {
+    display:block; width:100%; margin-top:5px; padding:5px 7px; border:1px solid rgba(184,224,255,.28);
+    border-radius:5px; background:rgba(184,224,255,.10); color:#e5f4ff;
+    font:600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; cursor:pointer;
+  }
+  #adminCoordsCopy:hover { background:rgba(184,224,255,.18); }
   body.admin-coords #adminCoords { display:block; }
   body.admin-coords #chatPanel { top:132px; }
   @media (max-width: 600px){
@@ -943,7 +949,10 @@
 <div id="hint">ESC to release mouse</div>
 <div id="multiplayerStatus"><span class="dot"></span><span id="onlineCount">connecting...</span></div>
 <button id="chatToggle" type="button">town chat</button>
-<div id="adminCoords" aria-live="polite" hidden>xyz —</div>
+<div id="adminCoords" hidden>
+  <div id="adminCoordsValue" aria-live="polite">xyz -</div>
+  <button id="adminCoordsCopy" type="button">copy coordinates</button>
+</div>
 <section id="chatPanel" aria-label="Followville town chat">
   <div id="chatHeader"><span>Town chat</span><button id="chatClose" type="button" aria-label="Close chat">&times;</button></div>
   <div id="chatMessages"></div>
@@ -1816,6 +1825,15 @@ function stabilizeTownMaterialDepth(material){
     // opaque wall/interior behind them is rendered.
     material.depthWrite = false;
   }
+  if (name.includes("building_apron")){
+    // Existing Day 24 GLBs still contain the old apron box against the
+    // ground-floor facade. Push that pale surface behind opaque walls until
+    // the next guarded export bakes in the flat, physically separated strip.
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = 2;
+    material.polygonOffsetUnits = 4;
+    material.needsUpdate = true;
+  }
   if (["curb", "storefront", "podium_glass", "facade_frame"].some(token => name.includes(token))){
     material.polygonOffset = true;
     material.polygonOffsetFactor = -1;
@@ -2162,6 +2180,8 @@ const cameraOcclusionDirection = new THREE.Vector3();
 const cameraOcclusionRaycaster = new THREE.Raycaster();
 let cameraOcclusionCheckedAt = 0;
 let cameraOcclusionLimit = THIRD_PERSON_MAX_DISTANCE;
+let cameraOcclusionTarget = THIRD_PERSON_MAX_DISTANCE;
+let cameraOcclusionSmoothedAt = performance.now();
 let thirdPersonReady = false;
 
 const AVATAR_STORAGE_KEY = "followville_avatar_v1";
@@ -2214,20 +2234,20 @@ function pointInsideCameraCollider(x,z,collider,padding=.20){
   return Math.abs(localX)<collider.hx+padding && Math.abs(localZ)<collider.hz+padding;
 }
 
-function cameraPositionWithCollision(target,desired){
+function cameraColliderDistanceLimit(target,desired){
   const dx=desired.x-target.x,dy=desired.y-target.y,dz=desired.z-target.z;
+  const desiredDistance=desired.distanceTo(target);
+  if(desiredDistance<.7)return desiredDistance;
   let safeT=1;
-  for(let i=2;i<=18;i++){
-    const t=i/18;
+  for(let i=2;i<=28;i++){
+    const t=i/28;
     const sampleX=target.x+dx*t,sampleZ=target.z+dz*t;
     for(const collider of colliders){
       if(!pointInsideCameraCollider(sampleX,sampleZ,collider))continue;
-      safeT=Math.max(.12,(i-1)/18);i=19;break;
+      safeT=Math.max(.12,(i-1)/28);i=29;break;
     }
   }
-  desired.set(target.x+dx*safeT,target.y+dy*safeT,target.z+dz*safeT);
-  desired.y=Math.max(desired.y,walkSurfaceHeight(desired.x,desired.z)+CAMERA_GROUND_CLEARANCE);
-  return desired;
+  return desiredDistance*safeT;
 }
 
 function cameraPositionForOrbit(target,distance){
@@ -2284,6 +2304,7 @@ function cameraPositionWithTownOcclusion(target,desired){
   const desiredDistance=desired.distanceTo(target);
   if(!loadedTownRoot || desiredDistance<.7)return desired;
   const now=performance.now();
+  const colliderLimit=cameraColliderDistanceLimit(target,desired);
   if(now-cameraOcclusionCheckedAt>80){
     cameraOcclusionCheckedAt=now;
     cameraOcclusionDirection.subVectors(desired,target).normalize();
@@ -2293,15 +2314,23 @@ function cameraPositionWithTownOcclusion(target,desired){
     const hit=cameraOcclusionRaycaster.intersectObject(loadedTownRoot,true)
       .find(item=>item.object.visible && !isCameraWalkSurface(item.object) &&
         !(item.object.material?.transparent && item.object.material.opacity<.18));
-    const nextLimit=hit?Math.max(.68,hit.distance-.24):THIRD_PERSON_MAX_DISTANCE;
-    cameraOcclusionLimit=nextLimit<cameraOcclusionLimit
-      ?nextLimit
-      :THREE.MathUtils.lerp(cameraOcclusionLimit,nextLimit,.34);
+    const meshLimit=hit?Math.max(.68,hit.distance-.24):THIRD_PERSON_MAX_DISTANCE;
+    cameraOcclusionTarget=Math.min(meshLimit,colliderLimit);
   }
+  // Both mesh hits and fallback footprint hits feed one camera arm. Smooth
+  // inward as well as outward so an edge crossing cannot snap the camera
+  // between two distances on consecutive frames.
+  cameraOcclusionTarget=Math.min(cameraOcclusionTarget,colliderLimit);
+  const smoothingDt=Math.min(.1,Math.max(0,(now-cameraOcclusionSmoothedAt)/1000));
+  cameraOcclusionSmoothedAt=now;
+  const smoothingRate=cameraOcclusionTarget<cameraOcclusionLimit?16:8;
+  cameraOcclusionLimit=THREE.MathUtils.lerp(cameraOcclusionLimit,cameraOcclusionTarget,
+    1-Math.exp(-smoothingRate*smoothingDt));
   if(desiredDistance>cameraOcclusionLimit){
     cameraOcclusionDirection.subVectors(desired,target).normalize();
     desired.copy(target).addScaledVector(cameraOcclusionDirection,cameraOcclusionLimit);
   }
+  desired.y=Math.max(desired.y,walkSurfaceHeight(desired.x,desired.z)+CAMERA_GROUND_CLEARANCE);
   return desired;
 }
 
@@ -2332,8 +2361,8 @@ function updateThirdPersonCamera(force=false){
     updateAdminCoordsHud();
     return;
   }
-  const safe=cameraPositionWithTownOcclusion(cameraTarget,
-    cameraPositionWithCollision(cameraTarget,cameraPositionForOrbit(cameraTarget,thirdPersonDistance)));
+  const safe=cameraPositionWithTownOcclusion(
+    cameraTarget,cameraPositionForOrbit(cameraTarget,thirdPersonDistance));
   camera.position.copy(safe);
   camera.lookAt(cameraTarget);
   actualCameraLookDirection.subVectors(cameraTarget,camera.position).normalize();
@@ -2354,6 +2383,7 @@ function adminCoordsEnabled(){
 }
 function updateAdminCoordsHud(){
   const el=document.getElementById("adminCoords");
+  const value=document.getElementById("adminCoordsValue");
   if(!el) return;
   const on=adminCoordsEnabled();
   document.body.classList.toggle("admin-coords", on);
@@ -2361,9 +2391,36 @@ function updateAdminCoordsHud(){
   if(!on) return;
   const x=playerPosition.x, z=playerPosition.z, y=playerPosition.y;
   const gx=Math.floor(x), gz=Math.floor(z);
-  el.textContent=`xyz ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}  ·  xz ${gx}, ${gz}`;
+  value.textContent=`xyz ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}  |  xz ${gx}, ${gz}`;
   el.title="Admin player position (Three.js world: x right, y up, z depth)";
 }
+
+document.getElementById("adminCoordsCopy").addEventListener("click",async event=>{
+  const button=event.currentTarget;
+  const coordinates=[
+    Number(playerPosition.x.toFixed(3)),
+    Number(playerPosition.y.toFixed(3)),
+    Number(playerPosition.z.toFixed(3))
+  ].join(", ");
+  button.textContent="copied";
+  button.dataset.copyState="copied";
+  clearTimeout(button._copyReset);
+  button._copyReset=setTimeout(()=>{
+    button.textContent="copy coordinates";
+    delete button.dataset.copyState;
+  },2400);
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error("clipboard API unavailable");
+    await Promise.race([
+      navigator.clipboard.writeText(coordinates),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("clipboard timeout")),500))
+    ]);
+  }catch(_){
+    const field=document.createElement("textarea");
+    field.value=coordinates;field.style.position="fixed";field.style.opacity="0";
+    document.body.appendChild(field);field.select();document.execCommand("copy");field.remove();
+  }
+});
 
 function setGameplayCameraDistance(distance){
   const wasFirstPerson=thirdPersonDistance<=FIRST_PERSON_THRESHOLD;
@@ -3488,6 +3545,67 @@ function addTrunkColliderFromMesh(mesh, label="tree-trunk", owner=null){
     colliders.push(circleCollider(center.x, center.z, radius, label, owner));
 }
 
+function rootLocalBoxCollider(root, localX, localZ, halfX, halfZ, label){
+  root.updateWorldMatrix(true,true);
+  const center=new THREE.Vector3(localX,0,localZ);
+  root.localToWorld(center);
+  const scale=root.getWorldScale(new THREE.Vector3());
+  const quaternion=root.getWorldQuaternion(new THREE.Quaternion());
+  const u=new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+  const v=new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+  return boxCollider(center.x,center.z,u.x,u.z,v.x,v.z,
+    halfX*Math.abs(scale.x)+.08,halfZ*Math.abs(scale.z)+.08,label);
+}
+
+function landmarkRoot(root, building){
+  const [x,z]=buildingWorldXZ(building);
+  const candidates=root.children.filter(child=>child.name.startsWith(`${building.type}_d`));
+  // These landmark types are canonical singletons. The 3x3 civic campuses
+  // export from their centered pad while older state records retain the
+  // southwest grid anchor, so their unique type root is more reliable than
+  // comparing that anchor to the GLB transform.
+  if(candidates.length===1)return candidates[0];
+  let best=null,bestDistance=Infinity;
+  for(const child of candidates){
+    const distance=Math.hypot(child.position.x-x,child.position.z-z);
+    if(distance<bestDistance){best=child;bestDistance=distance;}
+  }
+  return bestDistance<2?best:null;
+}
+
+function addLandmarkColliders(root){
+  const mapped=new Set();
+  const configured=new Set();
+  for(const building of worldBuildings){
+    if(!["burjhouse","followmart","firestation","cityhall"].includes(building.type))continue;
+    configured.add(building.type);
+    const visual=landmarkRoot(root,building);
+    if(!visual)continue;
+    if(building.type==="burjhouse"){
+      visual.updateWorldMatrix(true,true);
+      const center=visual.getWorldPosition(new THREE.Vector3());
+      const scale=visual.getWorldScale(new THREE.Vector3());
+      colliders.push(circleCollider(center.x,center.z,4.6*Math.max(Math.abs(scale.x),Math.abs(scale.z)),
+        `landmark-burj-${building.seed}`));
+    }else if(building.type==="followmart"){
+      colliders.push(rootLocalBoxCollider(visual,0,-4.35,13,8.1,"landmark-followmart-body"));
+      colliders.push(rootLocalBoxCollider(visual,13.2,-3.2,3.9,5.75,"landmark-followmart-wing"));
+      colliders.push(rootLocalBoxCollider(visual,0,5.3,3.2,1.2,"landmark-followmart-vestibule"));
+    }else if(building.type==="firestation"){
+      colliders.push(rootLocalBoxCollider(visual,0,-3.4,14.5,8.7,"landmark-firestation-hall"));
+      colliders.push(rootLocalBoxCollider(visual,11.9,5.95,2.3,.9,"landmark-firestation-entry"));
+    }else{
+      colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
+      colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
+      colliders.push(rootLocalBoxCollider(visual,0,.6,7.75,9.4,"landmark-cityhall-center"));
+    }
+    mapped.add(building.type);
+  }
+  const expected=["burjhouse","followmart","firestation","cityhall"];
+  document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
+  document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
+}
+
 function buildGLBColliders(root){
   colliders.length = 0;
   for (const entry of houseVisuals.values()){
@@ -3511,6 +3629,7 @@ function buildGLBColliders(root){
     const x=bx*PITCH+BLOCK_N*LOT/2, z=by*PITCH+BLOCK_N*LOT/2;
     colliders.push(boxCollider(x,z,1,0,0,1,5.25,5.25,`downtown-tower-${bx}-${by}`));
   }
+  addLandmarkColliders(root);
   root.traverse(obj => {
     const name = obj.name || "";
     if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);

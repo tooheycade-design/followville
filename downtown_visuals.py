@@ -208,6 +208,8 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     shelter_frames=[];shelter_glazing=[];shelter_roofs=[];shelter_seats=[];transit_markers=[]
     bus_stop_blocks={(-1,0),(0,-1)}
     walk=3.40; furniture_width=1.12; apron_width=.62; curb_width=.28
+    apron_gap=.30
+    apron_center=walk-apron_gap-apron_width/2
     sidewalk_depth=walk-curb_width
     sidewalk_center=(walk+curb_width)/2
     furnishing_center=curb_width+furniture_width/2
@@ -248,10 +250,14 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
                                (cx,y0+block_size-furnishing_center,.281,block_size,furniture_width,.028),
                                (x0+furnishing_center,cy,.281,furniture_width,block_size,.028),
                                (x0+block_size-furnishing_center,cy,.281,furniture_width,block_size,.028)))
-            aprons.extend(((cx,y0+walk-apron_width/2,.282,block_size,apron_width,.026),
-                           (cx,y0+block_size-walk+apron_width/2,.282,block_size,apron_width,.026),
-                           (x0+walk-apron_width/2,cy,.282,apron_width,block_size,.026),
-                           (x0+block_size-walk+apron_width/2,cy,.282,apron_width,block_size,.026)))
+            # Keep the pale apron as a genuinely flat inlaid strip. Its old
+            # inner wall ended on the townhouse facade plane, leaving a white
+            # face behind the colored ground-floor shell that z-fought while
+            # walking. The ordinary sidewalk fills this 30cm building-side gap.
+            aprons.extend(((cx,y0+apron_center,.282,block_size,apron_width,.008),
+                           (cx,y0+block_size-apron_center,.282,block_size,apron_width,.008),
+                           (x0+apron_center,cy,.282,apron_width,block_size,.008),
+                           (x0+block_size-apron_center,cy,.282,apron_width,block_size,.008)))
             curbs.extend(((cx,y0+curb_width/2,.12,block_size,curb_width,.26),
                           (cx,y0+block_size-curb_width/2,.12,block_size,curb_width,.26),
                           (x0+curb_width/2,cy,.12,curb_width,block_size,.26),

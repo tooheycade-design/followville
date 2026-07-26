@@ -1,17 +1,41 @@
 {
   "base": {
-    "bytes": 1697188,
+    "bytes": 1697288,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "e0824bd7517640fab839e22df611a265113d8bf223b96cf790e19dbcb0d62b9e"
+    "sha256": "ca29b3ea3097ac1abb37c12196e8495682e1359dc8944e10b57466c54c58e064"
   },
   "chunks": [
     {
       "asset": {
-        "bytes": 778680,
+        "bytes": 234744,
+        "compression": "draco",
+        "file": "town_chunks/civic-center.glb",
+        "sha256": "7595d58119eade1c793db12009f7e6bf693fbd8322f720e7c9face8bebe3237c"
+      },
+      "bounds": {
+        "center": [
+          12.333,
+          120.333
+        ],
+        "radius": 51.574
+      },
+      "building_ids": [
+        407,
+        408,
+        428
+      ],
+      "house_ids": [],
+      "id": "civic-center",
+      "initial": false,
+      "label": "Civic Center"
+    },
+    {
+      "asset": {
+        "bytes": 778644,
         "compression": "draco",
         "file": "town_chunks/creekside-bend.glb",
-        "sha256": "15bdcfd26354bba0c9aad00ab0dfc2f8af93694b9247813368ba7201a78f0224"
+        "sha256": "ca9371e074815334c86d4030e1c5326d03689dd1593db7e15fc83fce6c6b3ee4"
       },
       "bounds": {
         "center": [
@@ -138,10 +162,528 @@
     },
     {
       "asset": {
-        "bytes": 718356,
+        "bytes": 130212,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m1-m1.glb",
+        "sha256": "3aef30cc24e0cb041b330898fca1b71390dbc2df8c87d883a1d2e2a6b149f148"
+      },
+      "bounds": {
+        "center": [
+          -25.5,
+          25.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        4,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "house_ids": [
+        4,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "id": "downtown-block-m1-m1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 124872,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m1-m2.glb",
+        "sha256": "6456f37c20a383e6bc813bb512df5a53e8808fa308f1734b863b5d0ed48d518b"
+      },
+      "bounds": {
+        "center": [
+          -25.5,
+          70.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        20,
+        22,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ],
+      "house_ids": [
+        20,
+        22,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ],
+      "id": "downtown-block-m1-m2",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 132572,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m1-p0.glb",
+        "sha256": "2589b5ab3cced09f7fd81cd99042ca0997000a17a3ad340405a886bd40ebae79"
+      },
+      "bounds": {
+        "center": [
+          -25.5,
+          -19.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        1,
+        3,
+        6,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "house_ids": [
+        1,
+        3,
+        6,
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "id": "downtown-block-m1-p0",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 108200,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m1-p1.glb",
+        "sha256": "d95a956645334277c31001f8ed8ef4c27adbaca9ff84e6064884779a6c0e054f"
+      },
+      "bounds": {
+        "center": [
+          -25.5,
+          -64.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        18,
+        21,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "house_ids": [
+        18,
+        21,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "id": "downtown-block-m1-p1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 107616,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m2-m1.glb",
+        "sha256": "03f28371f53538bdf41e7714478b2d129c79eedc732a01e5de08d1a5c2f0b2f5"
+      },
+      "bounds": {
+        "center": [
+          -70.5,
+          25.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        19,
+        25,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "house_ids": [
+        19,
+        25,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "id": "downtown-block-m2-m1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 94092,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-m2-p0.glb",
+        "sha256": "99715b8553df7db72486cc693df9a8be8d5a41acfb884234ed06da2e7879589e"
+      },
+      "bounds": {
+        "center": [
+          -70.5,
+          -19.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        24,
+        26,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "house_ids": [
+        24,
+        26,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "id": "downtown-block-m2-p0",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 138180,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p0-m1.glb",
+        "sha256": "95ee58bf4e7753a74b030531d0b86c9612591ccc2b488dfcbb0dbb5b2ceadc05"
+      },
+      "bounds": {
+        "center": [
+          19.5,
+          25.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        7,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91
+      ],
+      "house_ids": [
+        7,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91
+      ],
+      "id": "downtown-block-p0-m1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 109948,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p0-m2.glb",
+        "sha256": "65d44801b2bfa580203aac76ca2f2496c82a1278cc226a586c06c55e41993a4a"
+      },
+      "bounds": {
+        "center": [
+          19.5,
+          70.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        17,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122
+      ],
+      "house_ids": [
+        17,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122
+      ],
+      "id": "downtown-block-p0-m2",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 210372,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p0-p0.glb",
+        "sha256": "298bfe4f3fc8f1ef4ee102cd2410452ae0d9241ac5225004b1206e3789d53950"
+      },
+      "bounds": {
+        "center": [
+          19.5,
+          -19.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        2,
+        5,
+        8,
+        9,
+        12,
+        27,
+        28,
+        29,
+        30
+      ],
+      "house_ids": [
+        2,
+        5,
+        8,
+        9,
+        12,
+        28,
+        29,
+        30
+      ],
+      "id": "downtown-block-p0-p0",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 122928,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p0-p1.glb",
+        "sha256": "ebfdd97f12bb0867cc5c8bae148fb7aad16623b9311302d8a3c5bd9df567eccb"
+      },
+      "bounds": {
+        "center": [
+          19.5,
+          -64.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        13,
+        16,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128
+      ],
+      "house_ids": [
+        13,
+        16,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128
+      ],
+      "id": "downtown-block-p0-p1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 94460,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p1-m1.glb",
+        "sha256": "a6927fd3cfe684a67ad18bee346b19ac09b0d307d5e44cecf5b9d92502d10bbf"
+      },
+      "bounds": {
+        "center": [
+          64.5,
+          25.5
+        ],
+        "radius": 36.385
+      },
+      "building_ids": [
+        10,
+        14,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134
+      ],
+      "house_ids": [
+        10,
+        14,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134
+      ],
+      "id": "downtown-block-p1-m1",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 164152,
+        "compression": "draco",
+        "file": "town_chunks/downtown-block-p1-p0.glb",
+        "sha256": "34e294f25bf94013624e3ad1b32a777408b486f0c847008f7fb337009b91250c"
+      },
+      "bounds": {
+        "center": [
+          60.167,
+          -17.333
+        ],
+        "radius": 38.44
+      },
+      "building_ids": [
+        11,
+        15,
+        23,
+        135,
+        136,
+        390
+      ],
+      "house_ids": [
+        11,
+        15,
+        23,
+        135,
+        136
+      ],
+      "id": "downtown-block-p1-p0",
+      "initial": false,
+      "label": "Downtown block"
+    },
+    {
+      "asset": {
+        "bytes": 176456,
+        "compression": "draco",
+        "file": "town_chunks/elementary-school.glb",
+        "sha256": "3e2ea938ff08a5be95a570c7293f653c71ec81258adeb4a96225c02666a60f60"
+      },
+      "bounds": {
+        "center": [
+          -70.5,
+          70.5
+        ],
+        "radius": 18.0
+      },
+      "building_ids": [
+        172
+      ],
+      "house_ids": [],
+      "id": "elementary-school",
+      "initial": false,
+      "label": "Elementary School"
+    },
+    {
+      "asset": {
+        "bytes": 224548,
+        "compression": "draco",
+        "file": "town_chunks/fire-station.glb",
+        "sha256": "9e011bfc99441bb9975108f6378d445d84414a1d2eb85f437474b39b07d6c573"
+      },
+      "bounds": {
+        "center": [
+          64.5,
+          70.5
+        ],
+        "radius": 18.0
+      },
+      "building_ids": [
+        396
+      ],
+      "house_ids": [],
+      "id": "fire-station",
+      "initial": false,
+      "label": "Fire Station"
+    },
+    {
+      "asset": {
+        "bytes": 235888,
+        "compression": "draco",
+        "file": "town_chunks/follow-mart.glb",
+        "sha256": "d7d74aff8f4ff7a6fb95f96d2c3473b003d49956eae758193c89d36b012c960f"
+      },
+      "bounds": {
+        "center": [
+          64.5,
+          -64.5
+        ],
+        "radius": 18.0
+      },
+      "building_ids": [
+        335
+      ],
+      "house_ids": [],
+      "id": "follow-mart",
+      "initial": false,
+      "label": "Follow Mart"
+    },
+    {
+      "asset": {
+        "bytes": 718400,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "03326d501caae9beed0b627a3b10368b07ee8338264921087b7b0df7325b3e51"
+        "sha256": "26db18d0233f96a6006d565657487580be7dc51e1adc1d03c475c8967bc9a069"
       },
       "bounds": {
         "center": [
@@ -243,10 +785,10 @@
     },
     {
       "asset": {
-        "bytes": 236164,
+        "bytes": 236180,
         "compression": "draco",
         "file": "town_chunks/kaleidoscope-crest.glb",
-        "sha256": "4b5d4d49c2d0dcf0572d6328e417899d94d4d0392aaa04cfb041a4031a8e7e86"
+        "sha256": "7e043d8abecfe911ea1afd466010810b77fe693f6ab826f67046bccda701a899"
       },
       "bounds": {
         "center": [
@@ -285,10 +827,10 @@
     },
     {
       "asset": {
-        "bytes": 923504,
+        "bytes": 923416,
         "compression": "draco",
         "file": "town_chunks/meadow-run.glb",
-        "sha256": "6148884587c497b17c5da76768317d4496e319fa2952b26c6c5c9bd2eb65797e"
+        "sha256": "79fa6b7d67b7efaa108059e3e612943c31e0ca9fc2f9ef88e5f86c5e4c3442b0"
       },
       "bounds": {
         "center": [
@@ -451,10 +993,10 @@
     },
     {
       "asset": {
-        "bytes": 40532,
+        "bytes": 40500,
         "compression": "draco",
         "file": "town_chunks/north-woods.glb",
-        "sha256": "f786cbc09565dad98fe7b4952c15f7c25d3faf8b2824e252758ff78152f9d7c3"
+        "sha256": "2ce14164704499ca64c945b8a6796d388e35e9411d7a2613b18dac1dffad2cf8"
       },
       "bounds": {
         "center": [
@@ -520,226 +1062,10 @@
     },
     {
       "asset": {
-        "bytes": 1471100,
-        "compression": "draco",
-        "file": "town_chunks/original-town.glb",
-        "sha256": "a50445f40584449f14a64a94af241b37d30cb30a13cb24bd0d5968ccbeb756de"
-      },
-      "bounds": {
-        "center": [
-          -3.248,
-          7.505
-        ],
-        "radius": 152.684
-      },
-      "building_ids": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        73,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        91,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-        116,
-        117,
-        118,
-        119,
-        120,
-        121,
-        122,
-        123,
-        124,
-        125,
-        126,
-        127,
-        128,
-        129,
-        130,
-        131,
-        132,
-        133,
-        134,
-        135,
-        136,
-        172,
-        335,
-        390,
-        396,
-        407,
-        408,
-        428
-      ],
-      "house_ids": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        28,
-        29,
-        30,
-        73,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        91,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-        116,
-        117,
-        118,
-        119,
-        120,
-        121,
-        122,
-        123,
-        124,
-        125,
-        126,
-        127,
-        128,
-        129,
-        130,
-        131,
-        132,
-        133,
-        134,
-        135,
-        136
-      ],
-      "id": "original-town",
-      "initial": true,
-      "label": "Original town"
-    },
-    {
-      "asset": {
-        "bytes": 975108,
+        "bytes": 974960,
         "compression": "draco",
         "file": "town_chunks/twin-oaks.glb",
-        "sha256": "3092e6b3301e5b2448e3b2b326db8a6cd8c2419a6d90f42d6f5199ffbca2ee83"
+        "sha256": "a602f2e045bfe63237823e4253f50e0188fd589aee4ff7b69fad8cecbb0f477e"
       },
       "bounds": {
         "center": [
@@ -894,10 +1220,10 @@
     },
     {
       "asset": {
-        "bytes": 896260,
+        "bytes": 896296,
         "compression": "draco",
         "file": "town_chunks/willow-hills.glb",
-        "sha256": "ae341f815a5843b757d0ca2430e75a8bccbafe47e91b3dc69d37972b42fd250f"
+        "sha256": "5c7c65ab0c07d02770da1cc3207c4a37b56242b9f0417d71193238c13d54dcdf"
       },
       "bounds": {
         "center": [
@@ -1040,9 +1366,9 @@
     }
   ],
   "fallback": {
-    "bytes": 20930688,
+    "bytes": 20930584,
     "file": "town.glb",
-    "sha256": "27e29ecebd22e92ef94dff3375048c11a6ae4628782cd066d8184e99f0b584da"
+    "sha256": "50c3e9a5915bef51565e807b5faf8ae3834a9999635293933e9c5f060c52203b"
   },
   "state": {
     "building_count": 457,
@@ -1051,8 +1377,8 @@
     "seed_counter": 458
   },
   "streaming": {
-    "detail_load_distance": 70,
-    "detail_unload_distance": 112,
+    "detail_load_distance": 52,
+    "detail_unload_distance": 84,
     "lod": "simple-houses"
   },
   "version": 1,

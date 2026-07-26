@@ -3,6 +3,24 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Downtown walking, hitboxes, and block streaming (2026-07-26)
+- Removed the lower-facade depth conflict by pushing the current exported
+  building apron behind opaque walls and changing its source geometry to a
+  thin flat strip 30cm away from the facade.
+- Added authored local-footprint colliders for the Burj, Follow Mart's body,
+  wing and vestibule, Fire Station 1's hall and entry, and City Hall's three
+  structural masses.
+- Combined mesh ray hits and fallback footprint hits into one time-smoothed
+  third-person camera arm so walls no longer cause abrupt camera jumps.
+- Replaced the 101-building original-town chunk with 12 downtown-block chunks
+  and dedicated civic-center, Follow Mart, fire-station, and school chunks.
+  Detail loads at 52m and unloads at 84m; the full GLB remains the fallback.
+- Added an admin-only copy-coordinates button below the live xyz readout.
+- Regenerated the complete GLB, shared base, manifest, and 23 chunks from the
+  authoritative Blend. Exact 457-building/hash/state/walk-surface validation
+  passed; Day 24 state, population, claims, Supabase, curbs, and Blend files
+  are unchanged.
+
 ## Walking facade + curb depth stability (2026-07-25)
 - Applied a narrow runtime polygon depth preference to exported curb,
   storefront, podium-glass, and facade-frame materials so current Day 24 GLBs

@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-26 - Cade (via Windows Codex) - [BOTH] Finished the downtown walking/performance pass: separated the pale building apron from facade bottoms, added accurate multi-part Burj/Follow Mart/Fire Station/City Hall hitboxes, smoothed camera-wall obstruction, split the former 101-building center asset into block and civic chunks with 52m/84m streaming, and added an admin copy-coordinates button; regenerated and exactly validated the full plus 23-chunk Day 24 assets without changing population, state, claims, Supabase, curbs, or either Blend.
+
 2026-07-25 - Cade (via Windows Codex) - [BOTH] Followed up the walking-depth fix after curbs were confirmed stable but walls still shimmered: removed the ultra wall shader's unfiltered narrow siding bands, reduced its remaining variation to broad low-contrast grain, disabled transparent facade depth writes in every graphics mode, and replaced the townhouse door glass/transom pair with one continuous future-export pane; Blender Python compilation, patched ultra visual review, and the full focused walking-camera Playwright story passed, with the prior curb fix and all Day 24 state/assets/data preserved.
 
 2026-07-25 - Cade (via Windows Codex) - [BOTH] Fixed walking-camera flicker on downtown building fronts and curbs: the current Day 24 web assets receive a narrowly scoped facade/curb polygon depth preference, while the Blender generator now gives curb, sidewalk, furnishing, podium-glass, transom, and townhouse-storefront surfaces distinct physical planes for the next guarded rebuild; Blender Python compilation and all 13 Playwright stories passed, with Day 24 state, current GLBs/Blend files, claims, and Supabase unchanged.

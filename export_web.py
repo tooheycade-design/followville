@@ -43,7 +43,24 @@ def _chunk_id_for_building(building):
         return "-".join(part for part in slug.split("-") if part)
     if building.get("type") in ("ringhouse", "parkdistrict"):
         return "founder-park"
-    return "original-town"
+    building_type = str(building.get("type") or "")
+    civic_chunks = {
+        "cityhall": "civic-center",
+        "cityhallroad": "civic-center",
+        "civicsquare": "civic-center",
+        "elementaryschool": "elementary-school",
+        "firestation": "fire-station",
+        "followmart": "follow-mart",
+    }
+    if building_type in civic_chunks:
+        return civic_chunks[building_type]
+    # The legacy center used to be one 101-building chunk. Keep each authored
+    # city block independent so a civic campus does not retain all downtown.
+    bx = math.floor(int(building.get("gx", 0)) / BLOCK_N)
+    by = math.floor(int(building.get("gy", 0)) / BLOCK_N)
+    block_x = ("m%d" % abs(bx)) if bx < 0 else ("p%d" % bx)
+    block_y = ("m%d" % abs(by)) if by < 0 else ("p%d" % by)
+    return "downtown-block-%s-%s" % (block_x, block_y)
 
 
 def _building_xz(building):
@@ -308,10 +325,9 @@ def export_web_glb():
         grouped.setdefault(_chunk_id_for_building(building), []).append(building)
 
     chunk_records = []
-    # Original town frames the first view, Creekside borders the player spawn,
-    # and Kaleidoscope is a current hero district with runtime geometry audits.
-    # Await all three so the loading screen never reveals a nearby proxy pop.
-    initial_ids = {"original-town", "creekside-bend", "kaleidoscope-crest"}
+    # Creekside borders the player spawn and Kaleidoscope carries runtime
+    # geometry audits. Downtown and civic chunks now stream only when nearby.
+    initial_ids = {"creekside-bend", "kaleidoscope-crest"}
     for chunk_id in sorted(grouped):
         chunk_buildings = grouped[chunk_id]
         chunk_objects = []
@@ -324,7 +340,11 @@ def export_web_glb():
         districts = sorted({str(building.get("district")) for building in chunk_buildings
                             if building.get("district")})
         label = ("Founder Park" if chunk_id == "founder-park" else
-                 "Original town" if chunk_id == "original-town" else
+                 "Civic Center" if chunk_id == "civic-center" else
+                 "Follow Mart" if chunk_id == "follow-mart" else
+                 "Fire Station" if chunk_id == "fire-station" else
+                 "Elementary School" if chunk_id == "elementary-school" else
+                 "Downtown block" if chunk_id.startswith("downtown-block-") else
                  (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))
         building_ids = sorted(int(building["seed"]) for building in chunk_buildings)
         house_ids = sorted(int(building["seed"]) for building in chunk_buildings
@@ -360,8 +380,8 @@ def export_web_glb():
         "base": _asset_record(base, base_path, compression="draco"),
         "chunks": chunk_records,
         "streaming": {
-            "detail_load_distance": 70,
-            "detail_unload_distance": 112,
+            "detail_load_distance": 52,
+            "detail_unload_distance": 84,
             "lod": "simple-houses",
         },
         "walk_surfaces": walk_surface_manifest(state),
