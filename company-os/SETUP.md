@@ -13,10 +13,16 @@ Development Supabase project: `followville-company-os-dev`, ref
 | 1. Dev project created | Done |
 | 2. Migration 0001 applied and verified | Done |
 | 3. Dashboard credentials in `.env.local` | Done |
-| 4. Migration 0002 applied | **Owner action** |
-| 5. Seed applied | **Owner action** |
+| 4. Migration 0002 applied | Done, verified |
+| 5. Seed applied | Done, verified |
 | 6. Owner accounts created | **Owner action** |
 | 7. Owner membership rows | **Owner action** |
+
+Verified after step 5: `company_os_load()` returns all seven collections; the
+`company_ops` schema remains unreachable through PostgREST; and a goal write
+correctly fails on `goals_created_by_user_id_fkey` and rolls back completely,
+leaving zero rows. That failure is step 6 not being done yet, and it also
+demonstrates that partial writes cannot occur.
 
 ## Step 4 and 5 — apply the SQL
 

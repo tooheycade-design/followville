@@ -9,7 +9,6 @@
     "build": "next build",
     "start": "next start --port 4100",
     "typecheck": "tsc --noEmit",
-    "seed:dev": "tsx --env-file=.env.local scripts/seed-dev.ts",
     "test": "tsx --test src/lib/state/file-repository.test.ts src/lib/state/file-repository.readonly.test.ts src/lib/commands.test.ts"
   },
   "dependencies": {
