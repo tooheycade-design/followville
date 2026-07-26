@@ -1,0 +1,13 @@
+{
+  "title": "Improve downtown walking performance",
+  "objective": "Measure and reduce avoidable frame-time spikes near the government building without changing world state or production assets.",
+  "successDefinition": "A review branch contains a measured improvement, focused regression coverage, and before/after evidence.",
+  "constraints": [
+    "Do not edit world_state.json",
+    "Do not grow the canonical Blender world",
+    "Do not deploy or merge",
+    "Use a separate reviewer"
+  ],
+  "riskLevel": "medium",
+  "budgetUsdMicros": 0
+}
