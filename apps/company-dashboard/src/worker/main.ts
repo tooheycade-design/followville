@@ -23,7 +23,16 @@ import {
   type TaskExecutor,
 } from "@followville/company-os-core";
 
-import { SupabaseWorkQueue } from "../lib/state/supabase-queue";
+import {
+  SupabaseReviewQueue,
+  SupabaseWorkQueue,
+} from "../lib/state/supabase-queue";
+import { companyRepository } from "../lib/state";
+import {
+  EvidenceReviewer,
+  assertIndependentReviewer,
+  reviewAuditEvent,
+} from "@followville/company-os-core";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -84,6 +93,62 @@ const executor: TaskExecutor =
 
 log(`worker ${workerId} starting with executor ${executor.name}`);
 
+const reviewQueue = SupabaseReviewQueue.fromEnvironment();
+const reviewer = new EvidenceReviewer();
+
+/**
+ * Reviews work the worker finished.
+ *
+ * Evidence and the worker's summary are read back from the audit trail rather
+ * than passed along in memory, so the reviewer judges what was actually
+ * recorded rather than what the worker said in passing.
+ */
+async function runReviewPass(): Promise<number> {
+  if (reviewQueue === null) {
+    return 0;
+  }
+  let count = 0;
+  for (;;) {
+    const task = await reviewQueue.leaseNextReview(
+      workerId,
+      SEED_AGENTS.reviewer.id,
+      300,
+    );
+    if (task === null) {
+      return count;
+    }
+    assertIndependentReviewer(task);
+
+    const state = await companyRepository().load();
+    const events = state.auditEvents.filter(
+      (event) => event.taskId === task.id && event.action.startsWith("worker."),
+    );
+    const completion = events.find((event) => event.action === "worker.completed");
+
+    const result = await reviewer.review({
+      task,
+      workerEvidence: completion === undefined ? [] : [completion.reason],
+      workerSummary: completion?.reason ?? "",
+      filesChanged: [],
+    });
+
+    const recorded = await reviewQueue.recordReview({
+      taskId: task.id,
+      workerId,
+      verdict: result.verdict,
+      auditEvents: [
+        reviewAuditEvent(task, result, SEED_AGENTS.reviewer.id, randomUUID),
+      ],
+    });
+    log(
+      recorded
+        ? `review ${task.id.slice(0, 8)} -> ${result.verdict}: ${result.summary}`
+        : `review ${task.id.slice(0, 8)} -> lease lost, verdict discarded`,
+    );
+    count += 1;
+  }
+}
+
 let stopping = false;
 process.on("SIGINT", () => {
   stopping = true;
@@ -111,6 +176,11 @@ do {
 
   for (const outcome of outcomes) {
     log(`task ${outcome.taskId.slice(0, 8)} -> ${outcome.status}: ${outcome.summary}`);
+  }
+
+  const reviewed = await runReviewPass();
+  if (reviewed > 0) {
+    log(`reviewed ${reviewed} task(s)`);
   }
   if (outcomes.length === 0 && watch && !stopping) {
     await new Promise((resolve) => setTimeout(resolve, pollMs));

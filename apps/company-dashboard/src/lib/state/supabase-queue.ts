@@ -156,3 +156,63 @@ export class SupabaseWorkQueue implements WorkQueue {
     return Array.isArray(data) ? data.length : 0;
   }
 }
+
+export interface ReviewLease {
+  task: Task;
+  workerEvidence: readonly string[];
+  workerSummary: string;
+  filesChanged: readonly string[];
+}
+
+/**
+ * Review-side queue operations.
+ *
+ * Kept on the same class so a single worker process can do both roles against
+ * one connection. Independence is preserved by the database, which only hands
+ * out review work whose assigned agent differs from the reviewer.
+ */
+export class SupabaseReviewQueue {
+  constructor(
+    private readonly client: ReturnType<typeof createControlPlaneClient>,
+  ) {}
+
+  static fromEnvironment(): SupabaseReviewQueue | null {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SECRET_KEY;
+    if (!url || !key) {
+      return null;
+    }
+    return new SupabaseReviewQueue(createControlPlaneClient(url, key));
+  }
+
+  async leaseNextReview(
+    workerId: string,
+    reviewerAgentId: string,
+    leaseSeconds: number,
+  ): Promise<Task | null> {
+    const { data, error } = await this.client.rpc("company_os_lease_next_review", {
+      p_worker_id: workerId,
+      p_reviewer_agent_id: reviewerAgentId,
+      p_lease_seconds: leaseSeconds,
+    });
+    if (error !== null) {
+      throw new Error(`review lease failed: ${error.message}`);
+    }
+    return data === null ? null : taskFromRow(data as Row);
+  }
+
+  async recordReview(payload: {
+    taskId: string;
+    workerId: string;
+    verdict: "approved_for_owner" | "changes_requested";
+    auditEvents: readonly unknown[];
+  }): Promise<boolean> {
+    const { data, error } = await this.client.rpc("company_os_record_review", {
+      payload,
+    });
+    if (error !== null) {
+      throw new Error(`record review failed: ${error.message}`);
+    }
+    return data === true;
+  }
+}
