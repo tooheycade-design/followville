@@ -5,7 +5,11 @@ import random
 
 import bpy
 
-from downtown_visual_plan import TERRAIN_BOUNDS, terrain_height
+from downtown_visual_plan import (
+    TERRAIN_BOUNDS,
+    mounted_surface_center,
+    terrain_height,
+)
 
 
 DISTRICT_NAME = "Downtown Core"
@@ -402,18 +406,23 @@ def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
             masses[facade].append((cx,cy,setback_z,upper_width-.48,upper_depth-.48,height-setback_z))
             # Transparent podium glazing and dark transoms make the bottom of
             # each tower read as occupied lobby/retail instead of a blank box.
-            # Offset glazing and transoms 12 mm outside the podium shell.
-            # Their former outer faces shared the shell plane exactly.
-            facade_gap=.012
+            podium_front=cy-(depth+1.8)/2
+            podium_back=cy+(depth+1.8)/2
+            glass_depth=.09
+            frame_depth=.12
+            glass_front_y=mounted_surface_center(podium_front,-1,glass_depth)
+            glass_back_y=mounted_surface_center(podium_back,1,glass_depth)
+            frame_front_y=mounted_surface_center(podium_front,-1,frame_depth)
+            frame_back_y=mounted_surface_center(podium_back,1,frame_depth)
+            # These panes and transoms formerly ended exactly on the podium
+            # wall plane. At walking distance the depth buffer alternated
+            # between both faces, producing the same shimmer as a coplanar
+            # parking lot. Keep 1 cm embedded and project the visible faces.
             for lane in (-.29,0,.29):
-                masses[podium_glass].extend(
-                    ((cx+lane*width,cy-(depth+1.8)/2+.045-facade_gap,
-                      .68,width*.20,.09,2.55),
-                     (cx+lane*width,cy+(depth+1.8)/2-.045+facade_gap,
-                      .68,width*.20,.09,2.55)))
-            masses[frame].extend(
-                ((cx,cy-(depth+1.8)/2+.06-facade_gap,3.25,width+1.25,.12,.18),
-                 (cx,cy+(depth+1.8)/2-.06+facade_gap,3.25,width+1.25,.12,.18)))
+                masses[podium_glass].extend(((cx+lane*width,glass_front_y,.68,width*.20,glass_depth,2.55),
+                                             (cx+lane*width,glass_back_y,.68,width*.20,glass_depth,2.55)))
+            masses[frame].extend(((cx,frame_front_y,3.25,width+1.25,frame_depth,.18),
+                                  (cx,frame_back_y,3.25,width+1.25,frame_depth,.18)))
             # Strong masonry piers give the glass tower believable structure.
             pier=.42
             for sx in (-1,1):

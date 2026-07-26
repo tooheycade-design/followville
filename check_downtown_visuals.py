@@ -3,7 +3,13 @@
 import json
 import math
 
-from downtown_visual_plan import audit_terrain, sample_road_points, terrain_height
+from downtown_visual_plan import (
+    FACADE_ATTACHMENT_EMBED,
+    audit_terrain,
+    mounted_surface_center,
+    sample_road_points,
+    terrain_height,
+)
 from neighborhood_plan import PLAN, validate_plan
 from world_layout import DISTRICT_CONNECTORS, transform_building_point, transform_point
 
@@ -35,6 +41,20 @@ def main():
                       for t in range(5))
     heights = [terrain_height(*point) for _label, point in points]
     errors = validate_plan()+audit_terrain(PLAN)
+    # Ground-floor tower glazing and transoms must project beyond their podium
+    # wall while retaining only a narrow structural embed. Exact shared planes
+    # cause distance-dependent facade shimmer in the browser.
+    for label, depth in (("podium glazing", .09), ("podium frame", .12)):
+        for outward in (-1, 1):
+            center=mounted_surface_center(0.0,outward,depth)
+            visible_clearance=(center+outward*depth/2)*outward
+            inner_embed=-(center-outward*depth/2)*outward
+            if visible_clearance < .05:
+                errors.append("%s projects only %.3f m from wall" %
+                              (label,visible_clearance))
+            if abs(inner_embed-FACADE_ATTACHMENT_EMBED) > 1e-9:
+                errors.append("%s embed %.3f differs from %.3f" %
+                              (label,inner_embed,FACADE_ATTACHMENT_EMBED))
     # The full rectangular downtown datum must stay clear of meadow terrain.
     # This includes outer grid corners and the elementary-school campus; the
     # old circular mask clipped these diagonals and buried paved surfaces.

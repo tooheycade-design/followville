@@ -4,6 +4,17 @@ import math
 
 
 TERRAIN_BOUNDS = (-520.0, 520.0, -330.0, 520.0)
+FACADE_ATTACHMENT_EMBED = 0.01
+
+
+def mounted_surface_center(face, outward, depth,
+                           embed=FACADE_ATTACHMENT_EMBED):
+    """Center a facade layer with a small anchor inside its supporting wall."""
+    if outward not in (-1, 1):
+        raise ValueError("outward must be -1 or 1")
+    if depth <= embed or embed <= 0:
+        raise ValueError("facade depth must exceed its positive embed")
+    return face + outward * (depth / 2 - embed)
 
 
 def _smoothstep(edge0, edge1, value):
