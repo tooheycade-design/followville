@@ -86,6 +86,21 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- Day 25, population 439, 497 building records (grown 2026-07-26 via Zach's
+  Mac Codex: +39 ordinary claimable homes plus the non-population Followville
+  Fishing Pond). Seeds 458-496 consumed planned addresses 257-295, completing
+  Meadow Run's Sunset Court, continuing Pine Hollow Road, and opening Juniper
+  Court; seed 497 added the off-grid pond near Fire Station 1 around website
+  x116/z70. The pond has an organic shoreline, connected terrain-following
+  sidewalk, walkable fishing dock, reeds, lilies, rocks, ducks, rods, and a
+  simple session-only fishing game: forgiving timing cast, delayed bite,
+  rapid-click reel, and common/uncommon/rare/legendary/mythical catch reveal.
+  There is intentionally no money or persistent inventory yet. Civic Square is
+  preserved with a rebuilt visible-water fountain; the temporary Day 24
+  election/400/fireworks layer is retired. Exact full/streamed GLB validation,
+  browser fishing regression, and visual QA passed. The approved delivery is
+  one continuous 18-second daytime portrait drone film moving from the city to
+  all 39 home rises and then the pond.
 - 2026-07-26 final townhouse side-edge correction (Zach via Mac Codex): the
   remaining faint vertical shimmer shown around website `(-9,48)` came from
   urban-townhouse storefront corner piers and structural side walls ending on

@@ -50,6 +50,7 @@ def _chunk_id_for_building(building):
         "civicsquare": "civic-center",
         "elementaryschool": "elementary-school",
         "firestation": "fire-station",
+        "fishingpond": "fishing-pond",
         "followmart": "follow-mart",
     }
     if building_type in civic_chunks:
@@ -343,6 +344,7 @@ def export_web_glb():
                  "Civic Center" if chunk_id == "civic-center" else
                  "Follow Mart" if chunk_id == "follow-mart" else
                  "Fire Station" if chunk_id == "fire-station" else
+                 "Fishing Pond" if chunk_id == "fishing-pond" else
                  "Elementary School" if chunk_id == "elementary-school" else
                  "Downtown block" if chunk_id.startswith("downtown-block-") else
                  (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))

@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 19
+# Codex handoff -- current through Day 25
 
-Updated 2026-07-20 for Cade and Zach's next Claude/Codex session.
+Updated 2026-07-26 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,16 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 25 is population 439 with 497 total building records. The guarded +39
+  growth consumed addresses 257-295 and added one permanent non-claimable
+  Followville Fishing Pond near Fire Station 1. Its terrain-following sidewalk
+  and dock are walkable, and the website offers a deliberately session-only
+  timing/bite/rapid-reel fishing loop with five rarity tiers; money, selling,
+  and inventory remain future work. Civic Square stays, its fountain now has
+  clear authored water, and the temporary Day 24 election/400/fireworks layer
+  is retired. The Day 25 delivery is one reviewed 18-second daytime portrait
+  drone film moving from the city through all 39 home rises to the pond.
 
 - Day 19 is population 331 with 334 total buildings. Zach's guarded Mac +10
   growth consumed plan IDs 178-187: seeds 325-331 completed Lantern Court and

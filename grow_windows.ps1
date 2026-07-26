@@ -209,7 +209,7 @@ function Sync-Houses {
             'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
             'streetlight', 'car', 'elementaryschool', 'followmart',
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
-            'civicsquare', 'tree', 'bush', 'rock', 'duck'
+            'civicsquare', 'fishingpond', 'tree', 'bush', 'rock', 'duck'
         )
         $NewRows = @()
         foreach ($b in $State.buildings) {

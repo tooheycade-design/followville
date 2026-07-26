@@ -109,4 +109,22 @@ def walk_surface_manifest(state):
         x, y = transform_point(*bulb["center"], district=bulb.get("district"))
         bulbs.append([stable_height(x), stable_height(-y),
                       stable_height(terrain_height(x, y)), 8.35])
-    return {"activePlanId": active, "segments": segments, "bulbs": bulbs}
+    pads = []
+    for building in state.get("buildings", []):
+        if building.get("type") != "fishingpond":
+            continue
+        x, y = transform_building_point(building)
+        water_height = max(
+            terrain_height(
+                x + 18.0 * math.cos(math.tau * index / 48),
+                y + 11.3 * math.sin(math.tau * index / 48),
+            )
+            for index in range(48)
+        ) + .14
+        # Center/half-extents mirror build_fishing_pond's T-shaped west dock.
+        pads.append([
+            stable_height(x - 10.8), stable_height(-y + 2.7),
+            stable_height(water_height + .28), 5.6, 3.5, "fishing-dock",
+        ])
+    return {"activePlanId": active, "segments": segments,
+            "bulbs": bulbs, "pads": pads}

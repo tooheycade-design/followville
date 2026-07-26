@@ -140,6 +140,47 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
+test("the fishing pond offers an easy timing cast and rapid-click catch", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors=watchPageErrors(page);
+  await page.goto("/town.html?local=1&view=fishing#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
+  await expect(page.locator("#fishPrompt")).toBeVisible();
+  await page.locator("#fishPrompt").click();
+  await expect(page.locator("#fishingGame")).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","aim");
+
+  await page.locator("#fishAction").evaluate(async button=>{
+    button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:1}));
+    await new Promise((resolve,reject)=>{
+      const started=performance.now();
+      const releaseWhenReady=()=>{
+        if(document.body.dataset.fishingAim==="ready")return resolve();
+        if(performance.now()-started>8_000)return reject(new Error("casting target was never reached"));
+        requestAnimationFrame(releaseWhenReady);
+      };
+      releaseWhenReady();
+    });
+    button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
+  });
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","bite",{timeout:5_000});
+  // Dispatch the rapid burst in-page so a software WebGL runner cannot stretch
+  // twelve driver round-trips beyond the game's intentionally short reel timer.
+  await page.locator("#fishAction").evaluate(button=>{
+    for(let click=0;click<12;click++)button.click();
+  });
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");
+  await expect(page.locator("#caughtBadge")).toContainText(
+    /You caught a (Common|Uncommon|Rare|Legendary|Mythical) fish!/);
+  await page.getByRole("button",{name:"back to the pond"}).click();
+  await expect(page.locator("#fishingGame")).toBeHidden();
+  await expect(page.locator("#fishPrompt")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("Avatar Studio only offers the animated character library and persists it", async ({ page }) => {
   test.setTimeout(180_000);
   const errors = watchPageErrors(page);
