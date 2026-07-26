@@ -86,6 +86,18 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- 2026-07-26 final townhouse side-edge correction (Zach via Mac Codex): the
+  remaining faint vertical shimmer shown around website `(-9,48)` came from
+  urban-townhouse storefront corner piers and structural side walls ending on
+  the same X planes. Every left/right corner pier now owns its exposed edge
+  with 6cm physical clearance. `mounted_face_center`,
+  `visible_face_clearance`, a mandatory 5cm minimum, and the project-wide
+  visible-surface depth rule now cover front/back, side, corner, transparent,
+  and hardscape faces. The full town and all 23 chunks were regenerated;
+  exact GLB/state validation, geometry validation, and head-on/left/right
+  close browser review passed. Both Blend copies carry the corrected source
+  geometry. Day 24, population 400, 457 records, claims, ownership, state, and
+  Supabase are unchanged.
 - 2026-07-26 final downtown facade rebuild (Zach via Mac Codex): the complete
   Day 24 town and all 23 streamed chunks were replayed after Cade's curb,
   apron, storefront, wall-shader, camera, hitbox, and block-streaming fixes.
