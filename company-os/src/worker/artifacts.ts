@@ -8,6 +8,7 @@ import {
   type EvidenceArtifact,
   type Task,
 } from "../domain/schemas.js";
+import type { ReportedArtifact } from "./report.js";
 import { ORGANIZATION_ID, PROJECT_ID } from "../config/seed-agents.js";
 
 /**
@@ -148,4 +149,58 @@ export function retrievalHint(artifact: EvidenceArtifact): string {
   return artifact.location.kind === "git"
     ? `git show ${artifact.location.commitSha}:${artifact.location.repositoryPath}`
     : "held inline with the record";
+}
+
+/** Flattens an artifact for the audit trail. */
+export function reportedArtifact(artifact: EvidenceArtifact): ReportedArtifact {
+  return {
+    id: artifact.id,
+    kind: artifact.kind,
+    label: artifact.label,
+    mediaType: artifact.mediaType,
+    sizeBytes: artifact.sizeBytes,
+    sha256: artifact.sha256,
+    commitSha:
+      artifact.location.kind === "git" ? artifact.location.commitSha : null,
+    repositoryPath:
+      artifact.location.kind === "git" ? artifact.location.repositoryPath : null,
+  };
+}
+
+/**
+ * Rebuilds an artifact row from what the audit trail kept.
+ *
+ * The approval packet is assembled in the review pass, after the executor's
+ * objects are gone, so this is how evidence recorded during a run reaches the
+ * owner who decides on it.
+ */
+export function artifactFromReport(
+  reported: ReportedArtifact,
+  task: Task,
+  createdByAgentId: string,
+  createdAt: string,
+): EvidenceArtifact {
+  return EvidenceArtifactSchema.parse({
+    id: reported.id,
+    organizationId: ORGANIZATION_ID,
+    projectId: PROJECT_ID,
+    taskId: task.id,
+    runId: null,
+    kind: reported.kind,
+    label: reported.label,
+    mediaType: reported.mediaType,
+    sizeBytes: reported.sizeBytes,
+    sha256: reported.sha256,
+    location:
+      reported.commitSha !== null && reported.repositoryPath !== null
+        ? {
+            kind: "git",
+            commitSha: reported.commitSha,
+            repositoryPath: reported.repositoryPath,
+          }
+        : { kind: "inline", text: "" },
+    createdByAgentId,
+    createdAt,
+    expiresAt: null,
+  });
 }

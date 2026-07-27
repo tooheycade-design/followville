@@ -23,6 +23,7 @@ test("writing then reading round-trips and validates", () => {
     "approvalDecisions",
     "approvalRequests",
     "auditEvents",
+    "evidenceArtifacts",
     "goals",
     "runs",
     "tasks",

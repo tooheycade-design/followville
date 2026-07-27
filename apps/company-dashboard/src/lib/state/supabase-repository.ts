@@ -5,6 +5,7 @@ import {
   ApprovalRequestSchema,
   AuditEventSchema,
   GoalSchema,
+  EvidenceArtifactSchema,
   RunSchema,
   TaskSchema,
   type ApprovalRequest,
@@ -18,6 +19,7 @@ import {
   type ApprovalDecisionRecord,
   type CompanyRepository,
   type CompanyState,
+  type CompletedWorkRecord,
   type GoalSimulationRecord,
   type HeldTaskDecision,
 } from "./types";
@@ -165,6 +167,25 @@ function decisionFromRow(row: Row) {
   });
 }
 
+function artifactFromRow(row: Row) {
+  return EvidenceArtifactSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    taskId: row.task_id,
+    runId: row.run_id,
+    kind: row.kind,
+    label: row.label,
+    mediaType: row.media_type,
+    sizeBytes: toNumber(row.size_bytes),
+    sha256: row.sha256,
+    location: row.location,
+    createdByAgentId: row.created_by_agent_id,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+  });
+}
+
 function auditFromRow(row: Row) {
   return AuditEventSchema.parse({
     id: row.id,
@@ -247,6 +268,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),
     );
     state.approvalDecisions = rows("approval_decisions").map(decisionFromRow);
+    state.evidenceArtifacts = rows("evidence_artifacts").map(artifactFromRow);
     state.auditEvents = rows("audit_events").map(auditFromRow);
     return state;
   }
@@ -290,6 +312,20 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       events: [event],
     });
     failOn("company_os_append_audit_events", error);
+  }
+
+  async appendCompletedWork(record: CompletedWorkRecord): Promise<boolean> {
+    const { data, error } = await this.client.rpc(
+      "company_os_record_completed_work",
+      {
+        payload: {
+          approvalRequest: record.approvalRequest,
+          artifacts: record.artifacts,
+        },
+      },
+    );
+    failOn("company_os_record_completed_work", error);
+    return Boolean((data as { created?: boolean } | null)?.created);
   }
 
   async decideHeldTask(decision: HeldTaskDecision): Promise<string> {

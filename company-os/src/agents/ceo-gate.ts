@@ -53,7 +53,7 @@ export interface GateInput {
   /** True when `diff` is only the beginning of a larger one. */
   diffTruncated?: boolean;
   /** Things an owner could open: screenshots, renders, logs. */
-  artifacts?: readonly { kind: string; label: string; retrieval: string }[];
+  artifacts?: readonly { kind: string; label: string }[];
 }
 
 /**

@@ -39,14 +39,24 @@ export const MAX_DIFF_CHARS = 12_000;
 /** Bounds an unusually wide change so one task cannot write an enormous row. */
 export const MAX_LISTED_FILES = 200;
 
-/** An artifact as it survives the audit trail: enough to find and open it. */
+/**
+ * An artifact as it survives the audit trail.
+ *
+ * Carried as JSON rather than a delimited line because it has to round-trip
+ * exactly: this is what an approval packet is later rebuilt from, and a label
+ * containing a tab or a path containing a comma must not quietly corrupt the
+ * record an owner decides on.
+ */
 export interface ReportedArtifact {
+  id: string;
   kind: string;
   label: string;
   mediaType: string;
   sizeBytes: number;
-  /** `git show <commit>:<path>`, or "inline". */
-  retrieval: string;
+  sha256: string;
+  /** Where the bytes are, when they were checkpointed. */
+  commitSha: string | null;
+  repositoryPath: string | null;
 }
 
 export interface WorkerReport {
@@ -71,30 +81,45 @@ export interface WorkerReportInput {
   artifacts?: readonly ReportedArtifact[];
 }
 
-/** One artifact line. Tab-separated so a label may contain spaces. */
+const ARTIFACT_PREFIX = "artifact: ";
+
+/** JSON on one line, so newlines in the record cannot break the format. */
 function encodeArtifact(artifact: ReportedArtifact): string {
-  return [
-    "artifact:",
-    artifact.kind,
-    artifact.mediaType,
-    String(artifact.sizeBytes),
-    artifact.retrieval,
-    artifact.label,
-  ].join("\t");
+  return ARTIFACT_PREFIX + JSON.stringify(artifact);
 }
 
 function decodeArtifact(line: string): ReportedArtifact | null {
-  const [, kind, mediaType, size, retrieval, ...label] = line.split("\t");
-  if (kind === undefined || mediaType === undefined || retrieval === undefined) {
+  try {
+    const parsed = JSON.parse(line.slice(ARTIFACT_PREFIX.length)) as
+      | Partial<ReportedArtifact>
+      | null;
+    if (
+      parsed === null ||
+      typeof parsed.id !== "string" ||
+      typeof parsed.kind !== "string" ||
+      typeof parsed.sha256 !== "string"
+    ) {
+      return null;
+    }
+    return {
+      id: parsed.id,
+      kind: parsed.kind,
+      label: typeof parsed.label === "string" ? parsed.label : parsed.kind,
+      mediaType:
+        typeof parsed.mediaType === "string"
+          ? parsed.mediaType
+          : "application/octet-stream",
+      sizeBytes: typeof parsed.sizeBytes === "number" ? parsed.sizeBytes : 0,
+      sha256: parsed.sha256,
+      commitSha: typeof parsed.commitSha === "string" ? parsed.commitSha : null,
+      repositoryPath:
+        typeof parsed.repositoryPath === "string" ? parsed.repositoryPath : null,
+    };
+  } catch {
+    // A malformed line is skipped rather than failing the whole report; the
+    // summary and diff still have to reach a judge.
     return null;
   }
-  return {
-    kind,
-    mediaType,
-    sizeBytes: Number.parseInt(size ?? "0", 10) || 0,
-    retrieval,
-    label: label.join("\t"),
-  };
 }
 
 /** Prevents untrusted text from forging the sentinel. */
@@ -206,7 +231,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
 
   for (let index = 0; index < trailer.length; index += 1) {
     const line = trailer[index]!;
-    if (line.startsWith("artifact:\t")) {
+    if (line.startsWith(ARTIFACT_PREFIX)) {
       const artifact = decodeArtifact(line);
       if (artifact !== null) {
         artifacts.push(artifact);

@@ -7,7 +7,11 @@ import { test } from "node:test";
 
 import { TaskSchema, type Task } from "../domain/schemas.js";
 import { ORGANIZATION_ID, PROJECT_ID, SEED_AGENTS } from "../config/seed-agents.js";
-import { collectArtifacts, retrievalHint } from "./artifacts.js";
+import {
+  artifactFromReport,
+  collectArtifacts,
+  retrievalHint,
+} from "./artifacts.js";
 import { decodeWorkerReport, encodeWorkerReport } from "./report.js";
 
 const NOW = "2026-07-27T12:00:00.000Z";
@@ -172,11 +176,16 @@ test("artifacts survive the audit trail so an owner can find them", () => {
       filesChanged: ["company-os/docs/images/claim panel.png"],
       artifacts: [
         {
+          id: "94000000-0000-4000-8000-000000000001",
           kind: "screenshot",
-          label: "claim panel.png",
+          // A label with a tab and a comma: the encoding must not corrupt what
+          // an owner later decides on.
+          label: "claim panel\t(wide), v2.png",
           mediaType: "image/png",
           sizeBytes: 45_210,
-          retrieval: "git show abc123:company-os/docs/images/claim panel.png",
+          sha256: "a".repeat(64),
+          commitSha: "abc123",
+          repositoryPath: "company-os/docs/images/claim panel.png",
         },
       ],
     }),
@@ -184,10 +193,46 @@ test("artifacts survive the audit trail so an owner can find them", () => {
 
   assert.equal(decoded.artifacts.length, 1);
   assert.deepEqual(decoded.artifacts[0], {
+    id: "94000000-0000-4000-8000-000000000001",
     kind: "screenshot",
-    label: "claim panel.png",
+    label: "claim panel\t(wide), v2.png",
     mediaType: "image/png",
     sizeBytes: 45_210,
-    retrieval: "git show abc123:company-os/docs/images/claim panel.png",
+    sha256: "a".repeat(64),
+    commitSha: "abc123",
+    repositoryPath: "company-os/docs/images/claim panel.png",
   });
+});
+
+test("an artifact rebuilt from the trail still points at the same bytes", () => {
+  const original = {
+    id: "94000000-0000-4000-8000-000000000002",
+    kind: "screenshot",
+    label: "claim.png",
+    mediaType: "image/png",
+    sizeBytes: 100,
+    sha256: "b".repeat(64),
+    commitSha: "abc123def456",
+    repositoryPath: "company-os/docs/claim.png",
+  };
+  const decoded = decodeWorkerReport(
+    encodeWorkerReport({
+      summary: "Captured it.",
+      evidence: ["provider=codex"],
+      filesChanged: ["company-os/docs/claim.png"],
+      artifacts: [original],
+    }),
+  );
+
+  const rebuilt = artifactFromReport(
+    decoded.artifacts[0]!,
+    makeTask(),
+    SEED_AGENTS.engineer.id,
+    NOW,
+  );
+  assert.equal(rebuilt.sha256, original.sha256);
+  assert.equal(
+    retrievalHint(rebuilt),
+    "git show abc123def456:company-os/docs/claim.png",
+  );
 });

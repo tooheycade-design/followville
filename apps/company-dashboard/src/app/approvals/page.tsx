@@ -14,6 +14,9 @@ export default async function ApprovalsPage() {
     (request) => request.status !== "pending",
   );
   const tasksById = new Map(state.tasks.map((task) => [task.id, task] as const));
+  const artifactsById = new Map(
+    state.evidenceArtifacts.map((artifact) => [artifact.id, artifact] as const),
+  );
 
   return (
     <>
@@ -81,6 +84,38 @@ export default async function ApprovalsPage() {
                 <span className="mono">{shortId(request.scopeDigest)}…</span>
               </div>
             </div>
+            {(() => {
+              // Evidence the request actually cites, resolved to real rows.
+              // `evidenceArtifactIds` was empty on every request until there
+              // was somewhere for an artifact to live.
+              const cited = request.evidenceArtifactIds
+                .map((id) => artifactsById.get(id))
+                .filter((artifact) => artifact !== undefined);
+              if (cited.length === 0) {
+                return null;
+              }
+              return (
+                <>
+                  <h4>Evidence</h4>
+                  <ul className="criteria">
+                    {cited.map((artifact) => (
+                      <li key={artifact.id}>
+                        <b>{label(artifact.kind)}</b> — {artifact.label}{" "}
+                        <span className="muted">
+                          ({artifact.mediaType}, {artifact.sizeBytes} bytes)
+                        </span>
+                        <br />
+                        <code className="mono">
+                          {artifact.location.kind === "git"
+                            ? `git show ${artifact.location.commitSha}:${artifact.location.repositoryPath}`
+                            : "held inline with the record"}
+                        </code>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              );
+            })()}
             <DecisionForm
               approvalRequestId={request.id}
               scopeDigest={request.scopeDigest}

@@ -5,11 +5,13 @@ import {
   ApprovalRequestSchema,
   AuditEventSchema,
   GoalSchema,
+  EvidenceArtifactSchema,
   RunSchema,
   TaskSchema,
   type ApprovalDecision,
   type ApprovalRequest,
   type AuditEvent,
+  type EvidenceArtifact,
   type Goal,
   type Run,
   type Task,
@@ -22,6 +24,9 @@ export const CompanyStateSchema = z
     runs: z.array(RunSchema),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
+    // Defaulted, not required: a store written before artifacts existed must
+    // still load rather than failing a dashboard that was working yesterday.
+    evidenceArtifacts: z.array(EvidenceArtifactSchema).default([]),
     auditEvents: z.array(AuditEventSchema),
   })
   .strict();
@@ -32,6 +37,7 @@ export interface CompanyState {
   runs: Run[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
+  evidenceArtifacts: EvidenceArtifact[];
   auditEvents: AuditEvent[];
 }
 
@@ -42,6 +48,7 @@ export function emptyState(): CompanyState {
     runs: [],
     approvalRequests: [],
     approvalDecisions: [],
+    evidenceArtifacts: [],
     auditEvents: [],
   };
 }
@@ -76,6 +83,12 @@ export interface ApprovalDecisionRecord {
  * what the owner was looking at, so a task edited since they read it cannot be
  * released on the strength of a decision about something else.
  */
+/** Finished work and the request asking an owner to accept it. */
+export interface CompletedWorkRecord {
+  approvalRequest: ApprovalRequest;
+  artifacts: readonly EvidenceArtifact[];
+}
+
 export interface HeldTaskDecision {
   taskId: string;
   decision: "release" | "reject";
@@ -91,6 +104,11 @@ export interface CompanyRepository {
   load(): Promise<CompanyState>;
   /** Releases or rejects held work. Returns the task's resulting status. */
   decideHeldTask(decision: HeldTaskDecision): Promise<string>;
+  /**
+   * Records finished work and the approval request citing it, together.
+   * Idempotent per task and review cycle. Returns true when it created one.
+   */
+  appendCompletedWork(record: CompletedWorkRecord): Promise<boolean>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;
   appendApprovalDecision(record: ApprovalDecisionRecord): Promise<void>;
   /** Records a planned initiative: one goal and its tasks, written together. */

@@ -36,6 +36,8 @@ import {
   DEFAULT_SCHEDULE,
   EvidenceReviewer,
   assertIndependentReviewer,
+  artifactFromReport,
+  completedWorkApproval,
   decodeWorkerReport,
   gateAuditEvent,
   priorRejectionsFrom,
@@ -231,6 +233,51 @@ async function runReviewPass(): Promise<number> {
         log(
           `ceo ${task.id.slice(0, 8)} -> sent back: ${gateResult.reasons.join(", ")}`,
         );
+      } else {
+        // Put it in front of an owner. Work used to stop at
+        // awaiting_human_approval with nothing to act on: the approvals page
+        // lists approval requests and this flow never made one, so finished
+        // work was invisible and the task trigger would refuse `approved`
+        // without a decision anyway.
+        const commit = report.evidence
+          .find((item) => item.startsWith("commit="))
+          ?.slice("commit=".length);
+        const artifacts = report.artifacts.map((reported) =>
+          artifactFromReport(
+            reported,
+            task,
+            SEED_AGENTS.engineer.id,
+            completion?.createdAt ?? new Date().toISOString(),
+          ),
+        );
+        const request = completedWorkApproval({
+          task,
+          summary: report.summary,
+          evidence: report.evidence,
+          filesChanged: report.filesChanged,
+          artifacts,
+          commitSha:
+            commit === undefined || commit.startsWith("none") ? null : commit,
+          gateNotes: gateResult.notes,
+          idFactory: randomUUID,
+        });
+        try {
+          const created = await companyRepository().appendCompletedWork({
+            approvalRequest: request,
+            artifacts,
+          });
+          log(
+            created
+              ? `owner ${task.id.slice(0, 8)} -> awaiting your decision`
+              : `owner ${task.id.slice(0, 8)} -> already queued for you`,
+          );
+        } catch (error) {
+          // The verdict still stands; only the packet failed to write. Say so
+          // rather than reporting an approval an owner will never see.
+          log(
+            `owner ${task.id.slice(0, 8)} -> packet not recorded: ${(error as Error).message}`,
+          );
+        }
       }
     }
 

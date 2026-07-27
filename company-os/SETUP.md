@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0012 applied | **Pending — paste them in, see below** |
+| Migrations 0011-0013 applied | **Pending — paste them in, see below** |
 
 ## Models
 
@@ -139,6 +139,22 @@ Scheduling is interval-based rather than cron on purpose. These machines sleep,
 and a wall-clock cron would silently skip everything due while a laptop was
 closed. A machine coming back online notices it is overdue and catches up once.
 
+## Deciding on finished work
+
+Work that passes review and the Chief Executive's gate arrives on the
+**Approvals** page as a request citing its evidence: what the worker said, the
+files it changed, and any artifacts it produced — screenshots, renders, logs,
+and the diff. Each artifact names how to retrieve it, usually
+`git show <commit>:<path>` against the task's own review branch.
+
+Nothing has been pushed, merged, or deployed at that point. Rejecting means
+deleting a branch nobody depends on.
+
+Artifacts are recorded by reference into that checkpoint commit rather than
+copied into separate storage, so the bytes travel with the branch. The
+`location` field is a union, so object storage can be added later without
+changing what already exists.
+
 ## What the machine will and will not do
 
 It will: interpret your intent, plan bounded tasks, lease work without
@@ -170,6 +186,7 @@ numbered migration.
 | 0010 | Record a CEO initiative atomically |
 | 0011 | `git_checkpoint`, separating a local commit from a publication step |
 | 0012 | Owner release of held work, with an append-only authorization record |
+| 0013 | Evidence artifacts, and finished work reaching the approval queue |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:

@@ -3,7 +3,7 @@ import { digest } from "../domain/fingerprints.js";
 import { ORGANIZATION_ID, PROJECT_ID } from "../config/seed-agents.js";
 import { SEED_AGENTS } from "../config/seed-agents.js";
 import { preflightCapabilities } from "./path-guard.js";
-import { retrievalHint } from "./artifacts.js";
+import { reportedArtifact } from "./artifacts.js";
 import { encodeWorkerReport } from "./report.js";
 import type {
   LeasedTask,
@@ -234,13 +234,7 @@ export async function runLeasedTask(
     evidence: result.evidence,
     filesChanged: result.filesChanged,
     diff: result.diff,
-    artifacts: result.artifacts.map((artifact) => ({
-      kind: artifact.kind,
-      label: artifact.label,
-      mediaType: artifact.mediaType,
-      sizeBytes: artifact.sizeBytes,
-      retrieval: retrievalHint(artifact),
-    })),
+    artifacts: result.artifacts.map(reportedArtifact),
   });
 
   await record(
