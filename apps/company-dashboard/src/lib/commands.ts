@@ -5,7 +5,9 @@ import path from "node:path";
 import {
   ApprovalDecisionSchema,
   AuditEventSchema,
+  CodexProvider,
   HeuristicPlanner,
+  ModelPlanner,
   ORGANIZATION_ID,
   PROJECT_ID,
   TaskSchema,
@@ -31,6 +33,20 @@ export interface SubmitGoalResult {
   message: string;
   goalId?: string;
 }
+
+/**
+ * What the CEO needs to know to plan about Followville rather than in the
+ * abstract. Kept short deliberately: a planner given the whole project history
+ * spends its attention reading instead of deciding.
+ */
+const FOLLOWVILLE_CONTEXT = [
+  "Followville is a persistent low-poly town. Every Instagram follower gets a house.",
+  "The canonical world lives in world_state.json and neighborhood.blend, both of",
+  "which are owner-controlled and must never be modified by an agent.",
+  "The website (index.html, town.html) is a Three.js walkable town backed by",
+  "exported GLB geometry. Supabase holds accounts, house claims, and multiplayer.",
+  "You may only plan work inside the company-os directory for now.",
+].join("\n");
 
 function repositoryRoot(): string {
   let directory = process.cwd();
@@ -125,9 +141,25 @@ export async function directCeo(
     };
   }
 
+  // The CEO reasons with a real model when one is signed in, and falls back to
+  // the heuristic planner otherwise. An owner who states a goal always gets a
+  // plan; the model changes its quality, never its permissions.
+  const heuristic = new HeuristicPlanner();
+  const provider = CodexProvider.defaultExecutablePath();
+  const planner =
+    provider === null
+      ? heuristic
+      : new ModelPlanner({
+          provider: new CodexProvider(provider, "read-only"),
+          workingDirectory: repositoryRoot(),
+          timeoutMs: 5 * 60_000,
+          context: FOLLOWVILLE_CONTEXT,
+          fallback: heuristic,
+        });
+
   const initiative = await planInitiative({
     intent: { title, detail, createdByUserId: input.createdByUserId },
-    planner: new HeuristicPlanner(),
+    planner,
     idFactory: randomUUID,
   });
 
