@@ -17,27 +17,34 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Independent review verified live | Done |
 | Chief Executive verified live | Done |
 | Scheduled wake-ups verified live | Done |
-| **Real model execution** | **Blocked on one owner step, below** |
+| Real model execution (Codex) | Done, running |
+| Real model execution (Claude) | Optional, one owner step below |
 
-## The one step still needed: sign the CLI in
+## Models
 
-The worker can run a real Claude model on Cade's existing subscription, but the
-CLI has its own sign-in, and authentication is not something an agent should
-perform. Run this once, in a terminal:
+The worker probes every installed CLI, reports each, and uses the first
+available one. Both run on an existing subscription rather than paid API
+credits.
+
+| Provider | State | Signed in as |
+| --- | --- | --- |
+| `codex` | Ready | ChatGPT plan |
+| `claude-code` | Not signed in | — |
+
+To add Claude alongside Codex, run once in a terminal:
 
 ```
 "C:\Users\cadet\AppData\Roaming\Claude\claude-code\2.1.219\claude.exe" auth login
 ```
 
-Confirm it worked:
+Authentication is deliberately not something an agent performs. Confirm with:
 
 ```
 pnpm --dir apps/company-dashboard worker -- --check
 ```
 
-It currently reports `not_authenticated`; after signing in it reports `ready`.
-Until then the worker uses the deterministic executor, which is real but calls
-no model and spends nothing.
+If no provider is signed in, the worker falls back to a deterministic executor
+that calls no model and spends nothing, rather than failing.
 
 ## Directing the company
 
