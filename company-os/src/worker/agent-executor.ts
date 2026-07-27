@@ -157,6 +157,20 @@ export class AgentTaskExecutor implements TaskExecutor {
         .diff(worktree, filesChanged)
         .catch(() => null);
 
+      // Commit the result to its review branch before the worktree goes away,
+      // so an approval packet refers to something that still exists. Best
+      // effort for the same reason as the diff: losing the record is bad, but
+      // failing a finished task because git refused to record it is worse.
+      const commit = await this.options.worktrees
+        .preserve(
+          worktree,
+          filesChanged,
+          `Agent work for task ${task.id.slice(0, 8)}\n\n` +
+            `Unreviewed output of ${this.options.provider.name}, kept for review. ` +
+            `This branch is never merged and never pushed.`,
+        )
+        .catch(() => null);
+
       if (!response.ok) {
         return {
           outcome: "failed",
@@ -209,6 +223,13 @@ export class AgentTaskExecutor implements TaskExecutor {
       if (response.sessionId !== null) {
         evidence.push(`session=${response.sessionId}`);
       }
+      // Where the work actually is. Without this an owner could read a summary
+      // and a diff but had nothing to check out.
+      evidence.push(
+        commit === null
+          ? "commit=none (nothing was preserved)"
+          : `commit=${commit.slice(0, 12)}`,
+      );
       // The file list is no longer folded into this line. It is a section of
       // the report in its own right, so it is neither capped at twenty nor
       // recovered by splitting a sentence apart.

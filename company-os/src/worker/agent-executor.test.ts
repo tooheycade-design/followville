@@ -143,6 +143,65 @@ test("an in-scope edit completes and reports evidence", async () => {
   assert.ok(result.evidence.some((line) => line.includes("tokens_in=120")));
 });
 
+test("finished work survives on its branch after the worktree is gone", async () => {
+  // The failure this guards: `git worktree remove --force` discarded
+  // everything the agent produced, so an owner was asked to approve a file
+  // that existed nowhere. Two tasks reached awaiting_human_approval that way.
+  const repo = makeRepository();
+  const task = makeTask();
+  const result = await executorFor(new ScriptedProvider(["notes.md"]), repo).execute(
+    task,
+    new AbortController().signal,
+  );
+  assert.equal(result.outcome, "completed");
+
+  const branch = `agent/task-${task.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`;
+  const tracked = execFileSync(
+    "git",
+    ["ls-tree", "-r", "--name-only", branch, "--", "company-os/notes.md"],
+    { cwd: repo.root, encoding: "utf8" },
+  );
+  assert.equal(tracked.trim(), "company-os/notes.md", "the work must be recoverable");
+
+  const content = execFileSync("git", ["show", `${branch}:company-os/notes.md`], {
+    cwd: repo.root,
+    encoding: "utf8",
+  });
+  assert.match(content, /changed by agent/);
+});
+
+test("the preserved commit is named in the evidence", async () => {
+  const repo = makeRepository();
+  const result = await executorFor(
+    new ScriptedProvider(["notes.md"]),
+    repo,
+  ).execute(makeTask(), new AbortController().signal);
+
+  const commit = result.evidence.find((line) => line.startsWith("commit="));
+  assert.ok(commit, "an owner needs to know where the work is");
+  assert.match(commit, /^commit=[0-9a-f]{12}$/);
+});
+
+test("preserving refuses any branch that is not an isolated agent branch", async () => {
+  // The guarantee that keeps this from being a way around git_commit: the
+  // runtime may record a result on a throwaway branch and nothing else.
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const worktree = await manager.create(nextId());
+
+  await assert.rejects(
+    manager.preserve({ ...worktree, branch: "main" }, ["company-os/README.md"], "no"),
+    /only an isolated agent branch/,
+  );
+});
+
+test("an agent that changed nothing preserves nothing", async () => {
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const worktree = await manager.create(nextId());
+  assert.equal(await manager.preserve(worktree, [], "nothing"), null);
+});
+
 test("an agent that edits the canonical world file fails instead of reaching review", async () => {
   const repo = makeRepository();
   const result = await executorFor(
