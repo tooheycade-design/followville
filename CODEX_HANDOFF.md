@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 25
+# Codex handoff -- current through Day 26
 
-Updated 2026-07-26 for Cade and Zach's next Claude/Codex session.
+Updated 2026-07-27 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,22 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 26 is population 464 with 523 total building records. One guarded +25
+  growth consumed addresses 296-320 (Juniper Court, Hemlock Court, then the
+  first two Ridgeview Drive lots). Seed 523 added permanent East Woods at
+  Blender `(170,180)`, using the regional elevation for its forest floor,
+  mixed trees, understory, trail, rocks, fallen log, and overlook. Existing
+  seed 172 was safely redeveloped from the non-claimable school into the
+  non-claimable construction vote site without changing its identity; the DB
+  row was guarded and updated to `constructionzone`. Central civic junctions
+  now have sparse signals and outer approaches have stop signs/bars. The exact
+  claim snapshot remained 34 claims / 33 accounts with identical SHA-256
+  `ec58555325ae4e0228a013be895cc5a0e212b92dc896430aaf761d67e006c294`.
+  The full fallback and 27 streamed chunks validate exactly. Fourteen local
+  browser stories and two live smoke tests passed. The reviewed delivery is
+  one 18.000-second 1080x1920 golden-hour portrait MP4 moving from the full
+  city through all 25 home rises to the construction-site rise.
 
 - Day 25 is population 439 with 497 total building records. The guarded +39
   growth consumed addresses 257-295 and added one permanent non-claimable

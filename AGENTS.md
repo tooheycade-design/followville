@@ -86,6 +86,25 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- Day 26, population 464, 523 building records (grown 2026-07-27 via Zach's
+  Mac Codex: +25 ordinary claimable homes plus East Woods, with the canonical
+  school parcel redeveloped as a non-claimable construction vote site). Seeds
+  498-522 consumed planned addresses 296-320: Juniper Court finished, Hemlock
+  Court filled, and North Ridge opened on Ridgeview Drive. Seed 523 owns the
+  permanent terrain-conforming East Woods biome near Blender `(170,180)` /
+  website `(170,-180)`, with 74 mixed low-poly trees, understory, boulders,
+  trail, fallen log, overlook bench, and a naturally rising forest floor.
+  Existing non-claimable seed 172 retained its identity and Day 12 history but
+  changed from `elementaryschool` to `constructionzone`, with a fenced full-
+  block excavation, foundations/rebar, crane, excavator, cones, and `YOU
+  DECIDE / WHAT RISES NEXT?` board. Central civic crossroads now use sparse
+  MUTCD-informed traffic signals; peripheral approaches use octagonal stop
+  signs and stop bars. Claims remained byte-for-byte identical at 34 across
+  33 accounts. Full plus 27 streamed chunks passed exact validation; all 14
+  browser stories passed after the new collider contract, and live homepage /
+  Today smoke tests passed. The approved delivery is one reviewed 18.000-
+  second 1080x1920 golden-hour portrait drone film: full city, all 25 home
+  rises, then the construction-site rise and settled vote-site hold.
 - Day 25, population 439, 497 building records (grown 2026-07-26 via Zach's
   Mac Codex: +39 ordinary claimable homes plus the non-population Followville
   Fishing Pond). Seeds 458-496 consumed planned addresses 257-295, completing
