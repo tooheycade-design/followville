@@ -6,6 +6,8 @@ import {
   type LeasedTask,
   type Task,
   type WorkQueue,
+  type WorkerRunFinish,
+  type WorkerRunStart,
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "./types";
 
@@ -184,6 +186,26 @@ export class SupabaseWorkQueue implements WorkQueue {
         throw new Error(`audit append failed: ${error.message}`);
       }
     });
+  }
+
+  async startRun(run: WorkerRunStart): Promise<boolean> {
+    const { data, error } = await this.client.rpc("company_os_start_worker_run", {
+      payload: run,
+    });
+    if (error !== null) {
+      throw new Error(`run start failed: ${error.message}`);
+    }
+    return data === true;
+  }
+
+  async finishRun(run: WorkerRunFinish): Promise<boolean> {
+    const { data, error } = await this.client.rpc("company_os_finish_worker_run", {
+      payload: run,
+    });
+    if (error !== null) {
+      throw new Error(`run finish failed: ${error.message}`);
+    }
+    return data === true;
   }
 
   /** Requeues tasks whose worker stopped reporting. */

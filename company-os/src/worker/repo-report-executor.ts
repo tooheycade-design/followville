@@ -28,10 +28,12 @@ export class RepositoryReportExecutor implements TaskExecutor {
         filesChanged: [],
         diff: null,
         artifacts: [],
+        testsCompleted: [],
         modelProvider: null,
         modelId: null,
         inputTokens: 0,
         outputTokens: 0,
+        cachedInputTokens: 0,
         costUsdMicros: 0,
       };
     }
@@ -73,10 +75,17 @@ export class RepositoryReportExecutor implements TaskExecutor {
       // no diff to show rather than one that failed to be captured.
       diff: null,
       artifacts: [],
+      testsCompleted: [
+        "git rev-parse --abbrev-ref HEAD",
+        "git rev-parse --short HEAD",
+        "git status --porcelain",
+        "git rev-list --count HEAD",
+      ],
       modelProvider: null,
       modelId: null,
       inputTokens: 0,
       outputTokens: 0,
+      cachedInputTokens: 0,
       costUsdMicros: 0,
     };
   }

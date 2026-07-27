@@ -23,7 +23,9 @@ export interface AgentExecutorOptions {
    * Why this task was previously sent back, if it was. A retry told nothing
    * about its last failure usually reproduces it and burns another run.
    */
-  reworkBriefing?: string;
+  reworkBriefing?:
+    | string
+    | ((task: Task) => string | Promise<string>);
   provider: ModelProvider;
   worktrees: WorktreeManager;
   repository: string;
@@ -125,10 +127,12 @@ export class AgentTaskExecutor implements TaskExecutor {
         filesChanged: [],
         diff: null,
         artifacts: [],
+        testsCompleted: [],
         modelProvider: this.options.provider.name,
         modelId: null,
         inputTokens: 0,
         outputTokens: 0,
+        cachedInputTokens: 0,
         costUsdMicros: 0,
       };
     }
@@ -141,11 +145,13 @@ export class AgentTaskExecutor implements TaskExecutor {
         scopeDirectory === null
           ? worktree.path
           : `${worktree.path}/${scopeDirectory}`;
+      const reworkBriefing =
+        typeof this.options.reworkBriefing === "function"
+          ? await this.options.reworkBriefing(task)
+          : (this.options.reworkBriefing ?? "");
       const response = await this.options.provider.invoke({
         workingDirectory,
-        prompt:
-          buildPrompt(task, workingDirectory) +
-          (this.options.reworkBriefing ?? ""),
+        prompt: buildPrompt(task, workingDirectory) + reworkBriefing,
         timeoutMs: this.options.invocationTimeoutMs,
         signal,
       });
@@ -203,10 +209,12 @@ export class AgentTaskExecutor implements TaskExecutor {
           filesChanged,
           diff,
           artifacts: [],
+          testsCompleted: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
           outputTokens: response.usage.outputTokens,
+          cachedInputTokens: response.usage.cachedInputTokens,
           costUsdMicros: response.usage.costUsdMicros,
         };
       }
@@ -231,10 +239,12 @@ export class AgentTaskExecutor implements TaskExecutor {
           filesChanged,
           diff,
           artifacts: [],
+          testsCompleted: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
           outputTokens: response.usage.outputTokens,
+          cachedInputTokens: response.usage.cachedInputTokens,
           costUsdMicros: response.usage.costUsdMicros,
         };
       }
@@ -294,10 +304,14 @@ export class AgentTaskExecutor implements TaskExecutor {
         filesChanged,
         diff,
         artifacts,
+        // Provider prose may describe tests, but only a runtime-owned verifier
+        // can attest that a command ran. That verifier is intentionally separate.
+        testsCompleted: [],
         modelProvider: this.options.provider.name,
         modelId: response.model,
         inputTokens: response.usage.inputTokens,
         outputTokens: response.usage.outputTokens,
+        cachedInputTokens: response.usage.cachedInputTokens,
         costUsdMicros: response.usage.costUsdMicros,
       };
     } finally {

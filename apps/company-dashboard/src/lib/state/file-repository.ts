@@ -91,7 +91,17 @@ export class FileCompanyRepository implements CompanyRepository {
           (task) => task.id === record.updatedTask?.id,
         );
         if (taskIndex >= 0) {
-          state.tasks[taskIndex] = record.updatedTask;
+          state.tasks[taskIndex] =
+            record.decision.decision === "request_changes" &&
+            record.updatedTask.status === "changes_requested"
+              ? {
+                  ...record.updatedTask,
+                  status: "queued",
+                  reviewCycleCount: record.updatedTask.reviewCycleCount + 1,
+                  version: record.updatedTask.version + 1,
+                  updatedAt: record.decision.decidedAt,
+                }
+              : record.updatedTask;
         }
       }
       state.auditEvents.push(record.auditEvent);

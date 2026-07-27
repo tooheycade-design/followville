@@ -185,13 +185,14 @@ export function artifactFromReport(
   task: Task,
   createdByAgentId: string,
   createdAt: string,
+  runId: string | null = null,
 ): EvidenceArtifact {
   return EvidenceArtifactSchema.parse({
     id: reported.id,
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
-    runId: null,
+    runId,
     kind: reported.kind,
     label: reported.label,
     mediaType: reported.mediaType,

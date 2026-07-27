@@ -5,7 +5,14 @@ import { TaskSchema, type AuditEvent, type Task } from "../domain/schemas.js";
 import { ORGANIZATION_ID, PROJECT_ID, SEED_AGENTS } from "../config/seed-agents.js";
 import { decodeWorkerReport } from "./report.js";
 import { runLeasedTask, runWorker } from "./runtime.js";
-import type { LeasedTask, TaskExecutor, WorkQueue, WorkResult } from "./types.js";
+import type {
+  LeasedTask,
+  TaskExecutor,
+  WorkQueue,
+  WorkResult,
+  WorkerRunFinish,
+  WorkerRunStart,
+} from "./types.js";
 
 const NOW = "2026-07-26T18:00:00.000Z";
 let counter = 0;
@@ -64,6 +71,8 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 class FakeQueue implements WorkQueue {
   transitions: { status: string; released: boolean }[] = [];
   audits: AuditEvent[] = [];
+  starts: WorkerRunStart[] = [];
+  finishes: WorkerRunFinish[] = [];
   heartbeatHolds = true;
   private pending: LeasedTask[] = [];
 
@@ -99,6 +108,22 @@ class FakeQueue implements WorkQueue {
   async appendAuditEvent(event: AuditEvent): Promise<void> {
     this.audits.push(event);
   }
+
+  async startRun(run: WorkerRunStart): Promise<boolean> {
+    this.starts.push(run);
+    return this.heartbeatHolds;
+  }
+
+  async finishRun(run: WorkerRunFinish): Promise<boolean> {
+    this.finishes.push(run);
+    if (run.taskStatus !== null && this.heartbeatHolds) {
+      this.transitions.push({
+        status: run.taskStatus,
+        released: run.releaseLease,
+      });
+    }
+    return run.taskStatus === null || this.heartbeatHolds;
+  }
 }
 
 function executor(result: Partial<WorkResult>, name = "fake"): TaskExecutor {
@@ -112,10 +137,12 @@ function executor(result: Partial<WorkResult>, name = "fake"): TaskExecutor {
         filesChanged: [],
         diff: null,
         artifacts: [],
+        testsCompleted: [],
         modelProvider: null,
         modelId: null,
         inputTokens: 0,
         outputTokens: 0,
+        cachedInputTokens: 0,
         costUsdMicros: 0,
         ...result,
       };
@@ -133,6 +160,11 @@ test("a completed task moves to review and releases its lease", async () => {
     nextId,
   );
   assert.equal(outcome.status, "completed");
+  assert.equal(queue.starts.length, 1);
+  assert.equal(queue.finishes.length, 1);
+  assert.equal(queue.audits.find((event) => event.action === "worker.started")?.runId,
+    queue.starts[0]?.id);
+  assert.equal(queue.finishes[0]?.runStatus, "awaiting_review");
   assert.deepEqual(queue.transitions, [
     { status: "in_progress", released: false },
     { status: "awaiting_review", released: true },

@@ -22,6 +22,9 @@ export interface ReviewInput {
   workerEvidence: readonly string[];
   workerSummary: string;
   filesChanged: readonly string[];
+  /** Present in production; optional only for callers reading historical rows. */
+  runId?: string | null;
+  testsCompleted?: readonly string[];
 }
 
 export interface Reviewer {
@@ -55,6 +58,28 @@ export class EvidenceReviewer implements Reviewer {
           ? `${input.workerEvidence.length} evidence line(s).`
           : "The worker recorded no evidence.",
     });
+
+    if (input.runId !== undefined) {
+      findings.push({
+        criterion: "The worker attempt has a durable run record",
+        met: input.runId !== null,
+        note:
+          input.runId === null
+            ? "The completion is not linked to a run ledger entry."
+            : `Run ${input.runId} recorded.`,
+      });
+    }
+
+    if (input.testsCompleted !== undefined && input.task.testRequirements.length > 0) {
+      findings.push({
+        criterion: "Required checks were executed by the runtime",
+        met: input.testsCompleted.length > 0,
+        note:
+          input.testsCompleted.length > 0
+            ? `${input.testsCompleted.length} runtime-verified check(s) recorded.`
+            : "The task requires checks, but the runtime recorded none.",
+      });
+    }
 
     const summary = input.workerSummary.trim();
     findings.push({
@@ -110,13 +135,14 @@ export function reviewAuditEvent(
   reviewerAgentId: string,
   idFactory: () => string,
   now: string = new Date().toISOString(),
+  runId: string | null = null,
 ): AuditEvent {
   return AuditEventSchema.parse({
     id: idFactory(),
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
-    runId: null,
+    runId,
     actorType: "agent",
     actorId: reviewerAgentId,
     action: `review.${result.verdict}`,

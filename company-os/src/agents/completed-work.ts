@@ -53,9 +53,11 @@ export function principalCapability(task: Task): Capability {
 
 export interface CompletedWorkInput {
   task: Task;
+  runId: string;
   /** The worker's full report, as recorded. */
   summary: string;
   evidence: readonly string[];
+  testsCompleted: readonly string[];
   filesChanged: readonly string[];
   artifacts: readonly EvidenceArtifact[];
   /** The checkpoint the work is recoverable from, when one was made. */
@@ -85,6 +87,7 @@ export function completedWorkApproval(
     summary: input.summary,
     files: [...input.filesChanged].sort(),
     artifacts: [...input.artifacts].map((artifact) => artifact.sha256).sort(),
+    testsCompleted: [...input.testsCompleted].sort(),
     commitSha: input.commitSha,
   });
 
@@ -98,7 +101,7 @@ export function completedWorkApproval(
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
-    runId: null,
+    runId: input.runId,
     requestedByType: "agent",
     requestedById: SEED_AGENTS.ceo.id,
     action: principalCapability(task),
@@ -116,7 +119,7 @@ export function completedWorkApproval(
     // Pins the exact checkpoint being accepted. This authorizes no merge.
     commitSha: input.commitSha,
     evidenceArtifactIds: input.artifacts.map((artifact) => artifact.id),
-    testsCompleted: [],
+    testsCompleted: [...input.testsCompleted],
     riskLevel: task.riskLevel,
     // Nothing has been merged, pushed, or deployed. Undoing this is deleting
     // a branch nobody depends on.

@@ -486,7 +486,10 @@ export async function decideApproval(
         version: task.version + 1,
         updatedAt: decision.decidedAt,
       });
-      message += ` Task is now ${outcome.taskStatusTarget.replaceAll("_", " ")}.`;
+      message +=
+        input.decision === "request_changes"
+          ? " The prior checkpoint and feedback were preserved; a new revision cycle is queued."
+          : ` Task is now ${outcome.taskStatusTarget.replaceAll("_", " ")}.`;
     }
   } else {
     message += ` Waiting for a second distinct owner (${outcome.distinctApprovers}/${outcome.request.requiredApprovals}).`;

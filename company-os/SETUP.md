@@ -19,7 +19,11 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0016 applied | Done in development; 0016 auth grants verified |
+| Migrations 0011-0019 applied | Done in development; 0017-0019 live-verified with rollback-only transactions |
+| Owner revision loop | Done; feedback queues a new revision and reaches the worker |
+| Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
+| Runtime-owned test evidence | Schema and approval guard done; general command runner remains |
+| Factory dashboard deployment | Local only; shared private deployment remains |
 
 ## Models
 
@@ -30,9 +34,9 @@ credits.
 | Provider | State | Signed in as |
 | --- | --- | --- |
 | `codex` | Ready | ChatGPT plan |
-| `claude-code` | Ready | claude.ai |
+| `claude-code` | Re-authentication may be required | claude.ai |
 
-Both are signed in, so Codex implements and Claude judges. If only one is
+When both are signed in, Codex implements and Claude judges. If only one is
 available both roles still run, and the log says so plainly rather than
 implying an independence that does not exist.
 
@@ -205,6 +209,9 @@ numbered migration.
 | 0014 | Separate accepting reviewed work from merge/deploy authorization |
 | 0015 | Pin append-only trigger helper search paths |
 | 0016 | Resolve the signed-in caller's active Company OS membership |
+| 0017 | Preserve owner feedback and atomically queue a new revision |
+| 0018 | Link real worker attempts, usage, audit, and completion to durable runs |
+| 0019 | Reject contradictory run states and retain unknown-model usage |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -236,8 +243,11 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-After an owner applies and verifies 0011-0014, run one complete development
-chain before adding features: goal, held decision, execution, checkpoint,
-independent review, evidence packet, and owner approval. Then replace the
-dashboard's development owner cookie with Supabase Auth. Draft pull requests
-through a GitHub App come after that.
+Build the runtime-owned verification command registry. Agent prose is never
+accepted as proof that a test ran; tasks with test requirements currently return
+for revision until a trusted verifier records a passing command. Then repair or
+archive the historical approval rows that predate durable packets, restore
+Claude authentication for genuinely independent review, deploy the private
+dashboard, and integrate draft pull requests through a GitHub App.
+
+See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.

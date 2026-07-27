@@ -83,6 +83,7 @@ function makeTask(): Task {
 class ScriptedProvider implements ModelProvider {
   readonly name = "scripted";
   readonly billingMode = "subscription" as const;
+  lastPrompt = "";
 
   constructor(
     private readonly writes: readonly string[],
@@ -98,6 +99,7 @@ class ScriptedProvider implements ModelProvider {
   }
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
+    this.lastPrompt = request.prompt;
     for (const relative of this.writes) {
       const target = path.join(request.workingDirectory, relative);
       mkdirSync(path.dirname(target), { recursive: true });
@@ -180,6 +182,26 @@ test("the preserved commit is named in the evidence", async () => {
   const commit = result.evidence.find((line) => line.startsWith("commit="));
   assert.ok(commit, "an owner needs to know where the work is");
   assert.match(commit, /^commit=[0-9a-f]{40}$/);
+});
+
+test("a revision attempt receives the owner's feedback", async () => {
+  const repo = makeRepository();
+  const provider = new ScriptedProvider(["notes.md"]);
+  const executor = new AgentTaskExecutor({
+    agent: SEED_AGENTS.engineer,
+    provider,
+    worktrees: new WorktreeManager(repo.root, repo.worktreeRoot),
+    repository: "followville_repo",
+    invocationTimeoutMs: 30_000,
+    maxSubscriptionRunsPerTask: 1,
+    reworkBriefing: async () =>
+      "\n\nOwner revision feedback:\n- The mobile layout still overlaps.",
+  });
+
+  await executor.execute(makeTask(), new AbortController().signal);
+
+  assert.match(provider.lastPrompt, /Owner revision feedback/);
+  assert.match(provider.lastPrompt, /mobile layout still overlaps/);
 });
 
 test("a checkpoint preserves every approved path beyond the old 200-file limit", async () => {

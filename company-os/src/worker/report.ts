@@ -65,6 +65,7 @@ export interface WorkerReport {
   /** Everything the worker said, not just its opening line. */
   summary: string;
   evidence: readonly string[];
+  testsCompleted: readonly string[];
   filesChanged: readonly string[];
   artifacts: readonly ReportedArtifact[];
   /** The change itself, or null when none was captured. */
@@ -78,6 +79,7 @@ export interface WorkerReport {
 export interface WorkerReportInput {
   summary: string;
   evidence: readonly string[];
+  testsCompleted?: readonly string[];
   filesChanged: readonly string[];
   diff?: string | null;
   artifacts?: readonly ReportedArtifact[];
@@ -141,6 +143,9 @@ export function encodeWorkerReport(input: WorkerReportInput): string {
   if (input.evidence.length > 0) {
     lines.push(`evidence: ${input.evidence.join(" | ")}`);
   }
+  for (const completed of input.testsCompleted ?? []) {
+    lines.push(`test: ${JSON.stringify(completed)}`);
+  }
   lines.push(`files: ${input.filesChanged.length}`);
   if (files.length > 0) {
     lines.push(`changed: ${files.join(", ")}`);
@@ -180,6 +185,7 @@ function decodeLegacy(reason: string): WorkerReport {
     return {
       summary: reason,
       evidence: [],
+      testsCompleted: [],
       filesChanged: [],
       artifacts: [],
       diff: null,
@@ -204,6 +210,7 @@ function decodeLegacy(reason: string): WorkerReport {
   return {
     summary: lines.slice(0, trailerIndex).join("\n").trimEnd(),
     evidence,
+    testsCompleted: [],
     filesChanged,
     // Rows written before artifacts existed have none, which is different from
     // having produced none — but nothing was recorded either way.
@@ -226,6 +233,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
   const trailer = lines.slice(sentinel + 1);
 
   let evidence: readonly string[] = [];
+  const testsCompleted: string[] = [];
   let filesChanged: readonly string[] = [];
   let totalFilesChanged = 0;
   let diff: string | null = null;
@@ -246,6 +254,17 @@ export function decodeWorkerReport(reason: string): WorkerReport {
         .slice("evidence: ".length)
         .split(" | ")
         .filter((item) => item.length > 0);
+      continue;
+    }
+    if (line.startsWith("test: ")) {
+      try {
+        const completed = JSON.parse(line.slice("test: ".length)) as unknown;
+        if (typeof completed === "string" && completed.length > 0) {
+          testsCompleted.push(completed);
+        }
+      } catch {
+        // Ignore malformed historical evidence while preserving the report.
+      }
       continue;
     }
     if (line.startsWith("files: ")) {
@@ -271,6 +290,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
   return {
     summary,
     evidence,
+    testsCompleted,
     filesChanged,
     artifacts,
     diff,

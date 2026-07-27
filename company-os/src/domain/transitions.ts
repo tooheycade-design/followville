@@ -9,7 +9,7 @@ const TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>> = {
   in_progress: ["blocked", "awaiting_review", "canceled", "failed"],
   blocked: ["in_progress", "canceled", "failed"],
   awaiting_review: ["changes_requested", "awaiting_human_approval", "failed"],
-  changes_requested: ["in_progress", "canceled", "failed"],
+  changes_requested: ["queued", "in_progress", "canceled", "failed"],
   awaiting_human_approval: ["approved", "rejected", "changes_requested", "canceled"],
   approved: ["merged", "canceled"],
   rejected: [],

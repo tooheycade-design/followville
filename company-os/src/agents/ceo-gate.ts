@@ -213,13 +213,14 @@ export function gateAuditEvent(
   verdict: GateVerdict,
   idFactory: () => string,
   now: string = new Date().toISOString(),
+  runId: string | null = null,
 ): AuditEvent {
   return AuditEventSchema.parse({
     id: idFactory(),
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: task.id,
-    runId: null,
+    runId,
     actorType: "agent",
     actorId: SEED_AGENTS.ceo.id,
     action: verdict.accepted ? "ceo.accepted" : "ceo.sent_back",

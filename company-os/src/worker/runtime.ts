@@ -30,6 +30,7 @@ function auditEvent(input: {
   reason: string;
   request: unknown;
   result?: unknown;
+  runId?: string | null;
   now: string;
 }): AuditEvent {
   return AuditEventSchema.parse({
@@ -37,7 +38,7 @@ function auditEvent(input: {
     organizationId: ORGANIZATION_ID,
     projectId: PROJECT_ID,
     taskId: input.taskId,
-    runId: null,
+    runId: input.runId ?? null,
     actorType: "agent",
     actorId: input.actorId,
     action: input.action,
@@ -78,6 +79,7 @@ export async function runLeasedTask(
   const correlationId = idFactory();
   const controller = new AbortController();
   let leaseLost = false;
+  let runId: string | null = null;
 
   const record = async (
     action: string,
@@ -97,6 +99,7 @@ export async function runLeasedTask(
         reason,
         request,
         result,
+        runId,
         now: now(),
       }),
     );
@@ -155,6 +158,59 @@ export async function runLeasedTask(
       costUsdMicros: 0,
     };
   }
+
+  runId = idFactory();
+  const runStarted = await queue.startRun({
+    id: runId,
+    taskId: task.id,
+    agentId: agent.id,
+    reviewerAgentId: task.reviewerAgentId,
+    workerId: options.workerId,
+    leaseEpoch: leased.leaseEpoch,
+    promptVersion: `worker-v1:${executor.name}`,
+    contextManifestDigest: digest({
+      taskId: task.id,
+      version: task.version,
+      objective: task.objective,
+      criteria: task.acceptanceCriteria,
+      scopes: task.repositoryScopes,
+    }),
+    retryCount: task.retryCount,
+    startedAt: now(),
+  });
+  if (!runStarted) {
+    await queue.transition(task.id, options.workerId, "failed", true);
+    return {
+      taskId: task.id,
+      status: "lost_lease",
+      summary: "The run ledger could not be opened before work began.",
+      costUsdMicros: 0,
+    };
+  }
+
+  const finishRun = async (
+    runStatus: "awaiting_review" | "failed" | "canceled",
+    taskStatus: Task["status"] | null,
+    releaseLease: boolean,
+    result?: WorkResult,
+  ): Promise<boolean> =>
+    queue.finishRun({
+      runId: runId!,
+      taskId: task.id,
+      workerId: options.workerId,
+      leaseEpoch: leased.leaseEpoch,
+      runStatus,
+      taskStatus,
+      releaseLease,
+      modelProvider: result?.modelProvider ?? null,
+      modelId: result?.modelId ?? null,
+      inputTokens: result?.inputTokens ?? 0,
+      outputTokens: result?.outputTokens ?? 0,
+      cachedInputTokens: result?.cachedInputTokens ?? 0,
+      costUsdMicros: result?.costUsdMicros ?? 0,
+      completedAt: now(),
+    });
+
   await record("worker.started", "succeeded", `Executor ${executor.name} began work.`, {
     executor: executor.name,
   });
@@ -187,6 +243,7 @@ export async function runLeasedTask(
       : `Execution failed: ${(error as Error).message}`;
     if (leaseLost) {
       await record("worker.lease_lost", "failed", reason, { taskId: task.id });
+      await finishRun("canceled", null, false);
       return {
         taskId: task.id,
         status: "lost_lease",
@@ -195,7 +252,15 @@ export async function runLeasedTask(
       };
     }
     await record("worker.failed", "failed", reason, { taskId: task.id });
-    await queue.transition(task.id, options.workerId, "failed", true);
+    const finished = await finishRun("failed", "failed", true);
+    if (!finished) {
+      return {
+        taskId: task.id,
+        status: "lost_lease",
+        summary: "The lease expired before the failure could be recorded.",
+        costUsdMicros: 0,
+      };
+    }
     return { taskId: task.id, status: "failed", summary: reason, costUsdMicros: 0 };
   }
   clearInterval(heartbeat);
@@ -204,13 +269,22 @@ export async function runLeasedTask(
   if (leaseLost) {
     const reason = "The lease was lost during execution; the result was discarded.";
     await record("worker.lease_lost", "failed", reason, { taskId: task.id });
+    await finishRun("canceled", null, false, result);
     return { taskId: task.id, status: "lost_lease", summary: reason, costUsdMicros: 0 };
   }
 
   if (result.outcome === "completed" && result.evidence.length === 0) {
     const reason = "The executor reported success without evidence.";
     await record("worker.rejected", "denied", reason, { summary: result.summary });
-    await queue.transition(task.id, options.workerId, "failed", true);
+    const finished = await finishRun("failed", "failed", true, result);
+    if (!finished) {
+      return {
+        taskId: task.id,
+        status: "lost_lease",
+        summary: "The lease expired before the rejected result could be recorded.",
+        costUsdMicros: result.costUsdMicros,
+      };
+    }
     return { taskId: task.id, status: "failed", summary: reason, costUsdMicros: result.costUsdMicros };
   }
 
@@ -232,6 +306,7 @@ export async function runLeasedTask(
   const recordedReason = encodeWorkerReport({
     summary: result.summary,
     evidence: result.evidence,
+    testsCompleted: result.testsCompleted,
     filesChanged: result.filesChanged,
     diff: result.diff,
     artifacts: result.artifacts.map(reportedArtifact),
@@ -246,14 +321,15 @@ export async function runLeasedTask(
       evidence: result.evidence,
       filesChanged: result.filesChanged,
       costUsdMicros: result.costUsdMicros,
+      testsCompleted: result.testsCompleted,
     },
   );
 
-  const moved = await queue.transition(
-    task.id,
-    options.workerId,
+  const moved = await finishRun(
+    result.outcome === "completed" ? "awaiting_review" : "failed",
     nextStatus,
     true,
+    result,
   );
   if (!moved) {
     return {

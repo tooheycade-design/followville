@@ -68,3 +68,47 @@ test("web identity comes from auth uid and cannot name another user", () => {
     /grant execute on function public\.company_os_my_membership\(\) to authenticated;/,
   );
 });
+
+test("an owner request for changes starts a new queued revision atomically", () => {
+  const sql = migration("0017_owner_revision_cycle.sql");
+  const decisionFunction = sql.slice(
+    sql.indexOf("create or replace function public.company_os_record_approval_decision"),
+  );
+
+  assert.match(decisionFunction, /d->>'decision' = 'request_changes'/);
+  assert.match(decisionFunction, /set status = 'queued'/);
+  assert.match(
+    decisionFunction,
+    /review_cycle_count = review_cycle_count \+ 1/,
+  );
+  assert.ok(
+    decisionFunction.indexOf("insert into company_ops.approval_decisions") <
+      decisionFunction.indexOf("set status = 'queued'"),
+    "the immutable owner decision must exist before rework is queued",
+  );
+});
+
+test("worker run completion and task movement share one database transaction", () => {
+  const sql = migration("0018_truthful_worker_runs.sql");
+  const finish = sql.slice(
+    sql.indexOf("create or replace function public.company_os_finish_worker_run"),
+  );
+
+  assert.match(finish, /lease_epoch = v_run\.lease_epoch/);
+  assert.match(finish, /lease_expires_at > now\(\)/);
+  assert.match(finish, /set status = v_task_status::company_ops\.task_status/);
+  assert.match(finish, /update company_ops\.runs\s+set status = payload->>'runStatus'/);
+  assert.ok(
+    finish.indexOf("update company_ops.tasks") <
+      finish.indexOf("update company_ops.runs"),
+    "the task transition must succeed before the run can claim its final status",
+  );
+});
+
+test("worker run completion rejects contradictory states and retains unknown models", () => {
+  const sql = migration("0019_harden_worker_run_completion.sql");
+
+  assert.match(sql, /worker run status % contradicts task status %/);
+  assert.match(sql, /coalesce\(nullif\(payload->>'modelId', ''\), 'unknown'\)/);
+  assert.match(sql, /if v_provider is not null then/);
+});

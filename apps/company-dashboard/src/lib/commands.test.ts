@@ -179,6 +179,43 @@ test("a rejection moves the task to rejected", async () => {
   assert.equal(state.tasks[0]?.status, "rejected");
 });
 
+test("requesting changes preserves feedback and automatically queues a revision", async () => {
+  const repository = newRepository();
+  await submitGoal(
+    {
+      title: "Revise me",
+      objective: "Test the owner revision path.",
+      createdByUserId: OWNER_USER_ID,
+    },
+    repository,
+  );
+  const before = await repository.load();
+  const request = before.approvalRequests[0];
+  const task = before.tasks[0];
+  assert.ok(request);
+  assert.ok(task);
+
+  const result = await decideApproval(
+    {
+      approvalRequestId: request.id,
+      decision: "request_changes",
+      comment: "The mobile layout still overlaps.",
+      deciderUserId: OWNER_USER_ID,
+      viewedScopeDigest: request.scopeDigest,
+    },
+    repository,
+  );
+
+  assert.equal(result.ok, true, result.message);
+  assert.match(result.message, /new revision cycle is queued/);
+  const after = await repository.load();
+  assert.equal(after.approvalRequests[0]?.status, "changes_requested");
+  assert.equal(after.tasks[0]?.status, "queued");
+  assert.equal(after.tasks[0]?.reviewCycleCount, task.reviewCycleCount + 1);
+  assert.equal(after.tasks[0]?.version, task.version + 2);
+  assert.equal(after.approvalDecisions[0]?.comment, "The mobile layout still overlaps.");
+});
+
 test("a decision on an already-resolved request is refused", async () => {
   const repository = newRepository();
   await submitGoal({ title: "Double decide", objective: "Test.", createdByUserId: OWNER_USER_ID }, repository);

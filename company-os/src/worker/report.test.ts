@@ -32,6 +32,19 @@ test("a multi-line summary survives the round trip", () => {
   ]);
 });
 
+test("only runtime-recorded checks survive as completed tests", () => {
+  const decoded = decodeWorkerReport(
+    encodeWorkerReport({
+      summary: "Verified the implementation.",
+      evidence: ["provider=codex"],
+      testsCompleted: ["pnpm test", "pnpm tsc --noEmit"],
+      filesChanged: ["company-os/src/example.ts"],
+    }),
+  );
+
+  assert.deepEqual(decoded.testsCompleted, ["pnpm test", "pnpm tsc --noEmit"]);
+});
+
 test("the diff the worker produced reaches the reader", () => {
   const diff = [
     "diff --git a/company-os/NOTE.md b/company-os/NOTE.md",

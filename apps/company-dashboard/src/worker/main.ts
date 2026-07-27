@@ -41,6 +41,7 @@ import {
   decodeWorkerReport,
   gateAuditEvent,
   priorRejectionsFrom,
+  reworkBriefing,
   dueJobs,
   recordRun,
   reviewAuditEvent,
@@ -144,6 +145,39 @@ const executor: TaskExecutor =
         repository: "followville_repo",
         invocationTimeoutMs: 15 * 60_000,
         maxSubscriptionRunsPerTask: 1,
+        reworkBriefing: async (task) => {
+          const state = await companyRepository().load();
+          const taskRequestIds = new Set(
+            state.approvalRequests
+              .filter((request) => request.taskId === task.id)
+              .map((request) => request.id),
+          );
+          const ownerFeedback = state.approvalDecisions
+            .filter(
+              (decision) =>
+                taskRequestIds.has(decision.approvalRequestId) &&
+                decision.decision === "request_changes",
+            )
+            .slice(-3)
+            .map((decision) => decision.comment.trim().slice(0, 1_000))
+            .filter((comment) => comment.length > 0);
+          const gateFeedback = reworkBriefing(
+            priorRejectionsFrom(
+              state.auditEvents.filter((event) => event.taskId === task.id),
+            ),
+          );
+          if (ownerFeedback.length === 0) {
+            return gateFeedback;
+          }
+          return [
+            gateFeedback,
+            "",
+            "This task was sent back by an authenticated owner.",
+            "Owner revision feedback:",
+            ...ownerFeedback.map((comment) => `- ${comment}`),
+            "Preserve the prior checkpoint. Address this feedback in a new revision.",
+          ].join("\n");
+        },
       });
 
 log(`worker ${workerId} starting with executor ${executor.name}`);
@@ -199,12 +233,15 @@ async function runReviewPass(): Promise<number> {
     // this back by hand is what lost everything but the first line, and left
     // the Chief Executive rejecting sound work for missing_evidence.
     const report = decodeWorkerReport(completion?.reason ?? "");
+    const completedRunId = completion?.runId ?? null;
 
     const result = await reviewer.review({
       task,
       workerEvidence: report.evidence,
       workerSummary: report.summary,
       filesChanged: report.filesChanged,
+      runId: completedRunId,
+      testsCompleted: report.testsCompleted,
     });
 
     // The reviewer checks that evidence exists; the CEO decides whether the
@@ -213,7 +250,14 @@ async function runReviewPass(): Promise<number> {
     let verdict = result.verdict;
     let completedWork: CompletedWorkRecord | undefined;
     const auditEvents: unknown[] = [
-      reviewAuditEvent(task, result, SEED_AGENTS.reviewer.id, randomUUID),
+      reviewAuditEvent(
+        task,
+        result,
+        SEED_AGENTS.reviewer.id,
+        randomUUID,
+        new Date().toISOString(),
+        completedRunId,
+      ),
     ];
 
     if (verdict === "approved_for_owner") {
@@ -229,7 +273,15 @@ async function runReviewPass(): Promise<number> {
           state.auditEvents.filter((event) => event.taskId === task.id),
         ),
       });
-      auditEvents.push(gateAuditEvent(task, gateResult, randomUUID));
+      auditEvents.push(
+        gateAuditEvent(
+          task,
+          gateResult,
+          randomUUID,
+          new Date().toISOString(),
+          completedRunId,
+        ),
+      );
       if (!gateResult.accepted) {
         verdict = "changes_requested";
         log(
@@ -250,12 +302,15 @@ async function runReviewPass(): Promise<number> {
             task,
             SEED_AGENTS.engineer.id,
             completion?.createdAt ?? new Date().toISOString(),
+            completedRunId,
           ),
         );
         const request = completedWorkApproval({
           task,
+          runId: completedRunId!,
           summary: report.summary,
           evidence: report.evidence,
+          testsCompleted: report.testsCompleted,
           filesChanged: report.filesChanged,
           artifacts,
           commitSha:

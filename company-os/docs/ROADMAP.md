@@ -8,6 +8,20 @@ seats. Cade and Zach stop relaying messages between chat windows.
 
 This document tracks what is done, what is next, and what is honestly hard.
 
+## Current correction
+
+Phases 1 and 2 have advanced beyond the original text below. Shared Supabase
+state, owner authentication, the factory dashboard, leases, isolated
+worktrees, model execution, review, scheduling, durable checkpoints, owner
+feedback, and truthful run records are implemented in development.
+
+The immediate dependency is a trusted verification-command registry. Model
+prose is not test evidence, so code tasks with test requirements now stop
+before owner approval until the runtime itself records a passing check. After
+that: repair historical packet-less tasks, restore two-model review, deploy the
+private dashboard, integrate draft pull requests, and add durable multi-machine
+artifact storage. See `../VERIFIED_CURRENT_STATE.md`.
+
 ## Phase 0 — Architecture and deterministic foundation (done)
 
 Constitution, PRD, architecture, data model, security plan, decision records;
@@ -23,33 +37,35 @@ Done:
 
 - Private Next.js dashboard: goals, approvals, agents, audit, build status.
 - Owner decision kernel: digest-pinned, role-checked, expiry-checked.
-- Development Supabase project created and migration 0001 applied and verified
-  (`company-os/db/README.md`).
+- Development Supabase project and migrations 0001-0019 applied and verified.
+- Supabase-backed shared state, owner authentication, owner membership, held
+  work decisions, finished-work approvals, and owner-requested revisions.
+- A factory view showing work moving through the lifecycle.
 
 Remaining:
 
-- Supabase adapter replacing the local JSON store, so state is shared.
-- Supabase Auth with owner membership, replacing the local owner picker.
 - Private deployment so Cade and Zach reach the same dashboard from anywhere.
+- Repair or explicitly archive historical approval-state tasks created before
+  durable approval packets existed.
 
 Exit: both owners see identical company state, and every action is
 reconstructable from the audit trail.
 
 ## Phase 2 — The worker runtime (the real unlock)
 
-Nothing before this makes an agent do work. This phase builds the loop that
-turns a queued task into a reviewed draft pull request:
+This phase is in progress. The queue, leases, heartbeats, isolated worktrees,
+Codex and Claude adapters, durable checkpoint branches, evidence review, CEO
+gate, revision loop, local scheduler, and run/usage ledger exist.
 
-1. Lease a task from the queue, with a heartbeat so two machines never take the
-   same one.
-2. Create an isolated git worktree for that task alone.
-3. Assemble a context package: constitution, agent profile, task, retrieved
+Remaining work turns a reviewed checkpoint into a complete draft pull request:
+
+1. Assemble a context package: constitution, agent profile, task, retrieved
    memory, relevant files. Not the whole company history.
-4. Invoke the assigned model through a provider adapter.
-5. Record tokens, cost, tool calls, and files touched.
-6. Run tests, capture evidence, commit, open a draft pull request.
-7. Hand the task to a *different* agent for independent review.
-8. Post the result to the human attention queue.
+2. Run trusted project-owned verification commands and capture structured
+   results.
+3. Open a draft pull request through a GitHub App.
+4. Store evidence bytes where both owners' machines can retrieve them.
+5. Register worker health and capacity across machines.
 
 Exit: an owner approves or rejects a complete draft PR package that no human
 assembled.

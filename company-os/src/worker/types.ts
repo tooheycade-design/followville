@@ -25,11 +25,44 @@ export interface WorkResult {
    * Empty is a legitimate answer; most tasks produce only a diff.
    */
   artifacts: readonly EvidenceArtifact[];
+  /** Checks the runtime actually executed, never claims copied from model prose. */
+  testsCompleted: readonly string[];
   modelProvider: string | null;
   modelId: string | null;
   inputTokens: number;
   outputTokens: number;
+  cachedInputTokens: number;
   costUsdMicros: number;
+}
+
+export interface WorkerRunStart {
+  id: string;
+  taskId: string;
+  agentId: string;
+  reviewerAgentId: string | null;
+  workerId: string;
+  leaseEpoch: number;
+  promptVersion: string;
+  contextManifestDigest: string;
+  retryCount: number;
+  startedAt: string;
+}
+
+export interface WorkerRunFinish {
+  runId: string;
+  taskId: string;
+  workerId: string;
+  leaseEpoch: number;
+  runStatus: "awaiting_review" | "failed" | "canceled";
+  taskStatus: Task["status"] | null;
+  releaseLease: boolean;
+  modelProvider: string | null;
+  modelId: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number;
+  costUsdMicros: number;
+  completedAt: string;
 }
 
 /**
@@ -52,6 +85,8 @@ export interface WorkQueue {
     nextStatus: Task["status"],
     releaseLease: boolean,
   ): Promise<boolean>;
+  startRun(run: WorkerRunStart): Promise<boolean>;
+  finishRun(run: WorkerRunFinish): Promise<boolean>;
   appendAuditEvent(event: AuditEvent): Promise<void>;
 }
 
