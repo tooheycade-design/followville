@@ -179,7 +179,34 @@ test("the preserved commit is named in the evidence", async () => {
 
   const commit = result.evidence.find((line) => line.startsWith("commit="));
   assert.ok(commit, "an owner needs to know where the work is");
-  assert.match(commit, /^commit=[0-9a-f]{12}$/);
+  assert.match(commit, /^commit=[0-9a-f]{40}$/);
+});
+
+test("a checkpoint preserves every approved path beyond the old 200-file limit", async () => {
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const worktree = await manager.create(nextId());
+  const files = Array.from(
+    { length: 205 },
+    (_, index) => `company-os/bulk/file-${index.toString().padStart(3, "0")}.md`,
+  );
+  for (const file of files) {
+    const target = path.join(worktree.path, file);
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, `${file}\n`);
+  }
+
+  const diff = await manager.diff(worktree, files);
+  const commit = await manager.preserve(worktree, files, "checkpoint all files");
+
+  assert.ok(diff.includes("file-204.md"), "the review diff must include the last file");
+  assert.ok(commit);
+  const tracked = execFileSync(
+    "git",
+    ["ls-tree", "-r", "--name-only", commit!, "--", "company-os/bulk"],
+    { cwd: repo.root, encoding: "utf8" },
+  );
+  assert.equal(tracked.trim().split("\n").length, 205);
 });
 
 test("a checkpoint refuses any branch that is not an isolated agent branch", async () => {

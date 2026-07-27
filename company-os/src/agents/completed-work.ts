@@ -113,8 +113,8 @@ export function completedWorkApproval(
       `Chief Executive: ${input.gateNotes}`,
     ].join("\n"),
     scopeDigest,
-    // Only meaningful for work that names a commit; nothing here merges.
-    commitSha: null,
+    // Pins the exact checkpoint being accepted. This authorizes no merge.
+    commitSha: input.commitSha,
     evidenceArtifactIds: input.artifacts.map((artifact) => artifact.id),
     testsCompleted: [],
     riskLevel: task.riskLevel,

@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0013 applied | **Pending — paste them in, see below** |
+| Migrations 0011-0014 applied | **Pending - owner applies them in order** |
 
 ## Models
 
@@ -187,6 +187,7 @@ numbered migration.
 | 0011 | `git_checkpoint`, separating a local commit from a publication step |
 | 0012 | Owner release of held work, with an append-only authorization record |
 | 0013 | Evidence artifacts, and finished work reaching the approval queue |
+| 0014 | Separate accepting reviewed work from merge/deploy authorization |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -213,8 +214,14 @@ on conflict (organization_id, user_id)
 Until a person has an owner row, the database refuses their approval decisions.
 That refusal is the system working.
 
+Run `db/verify/0011_0014.sql` before and after the four migrations. Every row
+must report `pass` after application. Do not run any of these files against the
+live town project.
+
 ## Next
 
-A GitHub App so completed work arrives as a draft pull request, a model-backed
-planner behind the same CEO clamping, and the Followville specialists described
-in `docs/ROADMAP.md`.
+After an owner applies and verifies 0011-0014, run one complete development
+chain before adding features: goal, held decision, execution, checkpoint,
+independent review, evidence packet, and owner approval. Then replace the
+dashboard's development owner cookie with Supabase Auth. Draft pull requests
+through a GitHub App come after that.

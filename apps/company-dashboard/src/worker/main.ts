@@ -46,6 +46,7 @@ import {
   reviewAuditEvent,
   type ScheduleState,
 } from "@followville/company-os-core";
+import type { CompletedWorkRecord } from "../lib/state/types";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -210,6 +211,7 @@ async function runReviewPass(): Promise<number> {
     // work is good. Both must pass before an owner is asked to look, which is
     // what makes the approval queue finished work rather than a triage pile.
     let verdict = result.verdict;
+    let completedWork: CompletedWorkRecord | undefined;
     const auditEvents: unknown[] = [
       reviewAuditEvent(task, result, SEED_AGENTS.reviewer.id, randomUUID),
     ];
@@ -261,23 +263,7 @@ async function runReviewPass(): Promise<number> {
           gateNotes: gateResult.notes,
           idFactory: randomUUID,
         });
-        try {
-          const created = await companyRepository().appendCompletedWork({
-            approvalRequest: request,
-            artifacts,
-          });
-          log(
-            created
-              ? `owner ${task.id.slice(0, 8)} -> awaiting your decision`
-              : `owner ${task.id.slice(0, 8)} -> already queued for you`,
-          );
-        } catch (error) {
-          // The verdict still stands; only the packet failed to write. Say so
-          // rather than reporting an approval an owner will never see.
-          log(
-            `owner ${task.id.slice(0, 8)} -> packet not recorded: ${(error as Error).message}`,
-          );
-        }
+        completedWork = { approvalRequest: request, artifacts };
       }
     }
 
@@ -286,12 +272,16 @@ async function runReviewPass(): Promise<number> {
       workerId,
       verdict,
       auditEvents,
+      ...(completedWork === undefined ? {} : { completedWork }),
     });
     log(
       recorded
         ? `review ${task.id.slice(0, 8)} -> ${verdict}: ${result.summary}`
         : `review ${task.id.slice(0, 8)} -> lease lost, verdict discarded`,
     );
+    if (recorded && completedWork !== undefined) {
+      log(`owner ${task.id.slice(0, 8)} -> awaiting your decision`);
+    }
     count += 1;
   }
 }

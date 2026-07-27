@@ -57,6 +57,8 @@ export interface ReportedArtifact {
   /** Where the bytes are, when they were checkpointed. */
   commitSha: string | null;
   repositoryPath: string | null;
+  /** Inline bytes, when the artifact is not stored in git. */
+  inlineText?: string | null;
 }
 
 export interface WorkerReport {
@@ -114,6 +116,7 @@ function decodeArtifact(line: string): ReportedArtifact | null {
       commitSha: typeof parsed.commitSha === "string" ? parsed.commitSha : null,
       repositoryPath:
         typeof parsed.repositoryPath === "string" ? parsed.repositoryPath : null,
+      inlineText: typeof parsed.inlineText === "string" ? parsed.inlineText : null,
     };
   } catch {
     // A malformed line is skipped rather than failing the whole report; the

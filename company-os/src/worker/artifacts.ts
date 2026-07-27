@@ -8,7 +8,7 @@ import {
   type EvidenceArtifact,
   type Task,
 } from "../domain/schemas.js";
-import type { ReportedArtifact } from "./report.js";
+import { MAX_DIFF_CHARS, type ReportedArtifact } from "./report.js";
 import { ORGANIZATION_ID, PROJECT_ID } from "../config/seed-agents.js";
 
 /**
@@ -87,16 +87,20 @@ export async function collectArtifacts(
   // The change itself, always. It is the one artifact that exists for every
   // run that touched anything.
   if (input.diff !== null && input.diff.length > 0) {
+    const patch = input.diff.slice(0, MAX_DIFF_CHARS);
     artifacts.push(
       EvidenceArtifactSchema.parse({
         ...base,
         id: input.idFactory(),
         kind: "patch",
-        label: `Diff of ${input.filesChanged.length} file(s)`,
+        label:
+          patch.length < input.diff.length
+            ? `Diff preview of ${input.filesChanged.length} file(s)`
+            : `Diff of ${input.filesChanged.length} file(s)`,
         mediaType: "text/x-diff",
-        sizeBytes: Buffer.byteLength(input.diff, "utf8"),
-        sha256: createHash("sha256").update(input.diff).digest("hex"),
-        location: { kind: "inline", text: input.diff },
+        sizeBytes: Buffer.byteLength(patch, "utf8"),
+        sha256: createHash("sha256").update(patch).digest("hex"),
+        location: { kind: "inline", text: patch },
       }),
     );
   }
@@ -164,6 +168,8 @@ export function reportedArtifact(artifact: EvidenceArtifact): ReportedArtifact {
       artifact.location.kind === "git" ? artifact.location.commitSha : null,
     repositoryPath:
       artifact.location.kind === "git" ? artifact.location.repositoryPath : null,
+    inlineText:
+      artifact.location.kind === "inline" ? artifact.location.text : null,
   };
 }
 
@@ -198,7 +204,7 @@ export function artifactFromReport(
             commitSha: reported.commitSha,
             repositoryPath: reported.repositoryPath,
           }
-        : { kind: "inline", text: "" },
+        : { kind: "inline", text: reported.inlineText ?? "" },
     createdByAgentId,
     createdAt,
     expiresAt: null,

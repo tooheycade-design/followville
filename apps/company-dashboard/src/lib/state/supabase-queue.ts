@@ -7,6 +7,7 @@ import {
   type Task,
   type WorkQueue,
 } from "@followville/company-os-core";
+import type { CompletedWorkRecord } from "./types";
 
 type Row = Record<string, unknown>;
 
@@ -246,6 +247,7 @@ export class SupabaseReviewQueue {
     workerId: string;
     verdict: "approved_for_owner" | "changes_requested";
     auditEvents: readonly unknown[];
+    completedWork?: CompletedWorkRecord;
   }): Promise<boolean> {
     const { data, error } = await this.client.rpc("company_os_record_review", {
       payload,

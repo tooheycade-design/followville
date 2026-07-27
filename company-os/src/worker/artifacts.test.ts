@@ -201,6 +201,7 @@ test("artifacts survive the audit trail so an owner can find them", () => {
     sha256: "a".repeat(64),
     commitSha: "abc123",
     repositoryPath: "company-os/docs/images/claim panel.png",
+    inlineText: null,
   });
 });
 
@@ -235,4 +236,26 @@ test("an artifact rebuilt from the trail still points at the same bytes", () => 
     retrievalHint(rebuilt),
     "git show abc123def456:company-os/docs/claim.png",
   );
+});
+
+test("an inline patch rebuilt from the trail keeps the bytes it hashes", () => {
+  const text = "diff --git a/a.md b/a.md\n+kept\n";
+  const rebuilt = artifactFromReport(
+    {
+      id: "94000000-0000-4000-8000-000000000003",
+      kind: "patch",
+      label: "Diff of 1 file(s)",
+      mediaType: "text/x-diff",
+      sizeBytes: Buffer.byteLength(text),
+      sha256: "c".repeat(64),
+      commitSha: null,
+      repositoryPath: null,
+      inlineText: text,
+    },
+    makeTask(),
+    SEED_AGENTS.engineer.id,
+    NOW,
+  );
+
+  assert.deepEqual(rebuilt.location, { kind: "inline", text });
 });

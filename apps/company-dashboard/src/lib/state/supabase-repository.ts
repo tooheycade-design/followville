@@ -19,7 +19,6 @@ import {
   type ApprovalDecisionRecord,
   type CompanyRepository,
   type CompanyState,
-  type CompletedWorkRecord,
   type GoalSimulationRecord,
   type HeldTaskDecision,
 } from "./types";
@@ -312,20 +311,6 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       events: [event],
     });
     failOn("company_os_append_audit_events", error);
-  }
-
-  async appendCompletedWork(record: CompletedWorkRecord): Promise<boolean> {
-    const { data, error } = await this.client.rpc(
-      "company_os_record_completed_work",
-      {
-        payload: {
-          approvalRequest: record.approvalRequest,
-          artifacts: record.artifacts,
-        },
-      },
-    );
-    failOn("company_os_record_completed_work", error);
-    return Boolean((data as { created?: boolean } | null)?.created);
   }
 
   async decideHeldTask(decision: HeldTaskDecision): Promise<string> {

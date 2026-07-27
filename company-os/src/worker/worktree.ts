@@ -4,6 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
+const GIT_PATH_BATCH_SIZE = 100;
 
 export interface Worktree {
   path: string;
@@ -56,6 +57,19 @@ export class WorktreeManager {
     return stdout;
   }
 
+  async #gitForPathBatches(
+    args: readonly string[],
+    files: readonly string[],
+    cwd: string,
+  ): Promise<void> {
+    for (let offset = 0; offset < files.length; offset += GIT_PATH_BATCH_SIZE) {
+      await this.#git(
+        [...args, "--", ...files.slice(offset, offset + GIT_PATH_BATCH_SIZE)],
+        cwd,
+      );
+    }
+  }
+
   /** Creates an isolated worktree for a task, branched from `baseRef`. */
   async create(taskId: string, baseRef = "HEAD"): Promise<Worktree> {
     const short = taskId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
@@ -106,10 +120,10 @@ export class WorktreeManager {
    * is about to be thrown away.
    */
   async diff(worktree: Worktree, files: readonly string[] = []): Promise<string> {
-    const named = files.slice(0, 200);
-    if (named.length > 0) {
-      await this.#git(
-        ["add", "--intent-to-add", "--", ...named],
+    if (files.length > 0) {
+      await this.#gitForPathBatches(
+        ["add", "--intent-to-add"],
+        files,
         worktree.path,
       ).catch(() => undefined);
     }
@@ -158,7 +172,7 @@ export class WorktreeManager {
       );
     }
 
-    await this.#git(["add", "--", ...files.slice(0, 200)], worktree.path);
+    await this.#gitForPathBatches(["add"], files, worktree.path);
     const staged = await this.#git(
       ["diff", "--cached", "--name-only"],
       worktree.path,
@@ -171,6 +185,10 @@ export class WorktreeManager {
     // staged path that was never checked means the working tree is not what
     // the caller believes, which is the moment to stop.
     const permitted = new Set(files);
+    const stagedFiles = staged
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
     const unexpected = staged
       .split("\n")
       .map((line) => line.trim())
@@ -178,6 +196,12 @@ export class WorktreeManager {
     if (unexpected.length > 0) {
       throw new Error(
         `Refusing to checkpoint unchecked path(s): ${unexpected.slice(0, 5).join(", ")}.`,
+      );
+    }
+    const missing = files.filter((file) => !stagedFiles.includes(file));
+    if (missing.length > 0) {
+      throw new Error(
+        `Refusing incomplete checkpoint; approved path(s) were not staged: ${missing.slice(0, 5).join(", ")}.`,
       );
     }
 

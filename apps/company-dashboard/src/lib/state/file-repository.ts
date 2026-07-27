@@ -9,7 +9,6 @@ import {
   type ApprovalDecisionRecord,
   type CompanyRepository,
   type CompanyState,
-  type CompletedWorkRecord,
   type GoalSimulationRecord,
   type HeldTaskDecision,
 } from "./types";
@@ -109,24 +108,6 @@ export class FileCompanyRepository implements CompanyRepository {
   appendAuditEvent(event: CompanyState["auditEvents"][number]): Promise<void> {
     return this.#mutate((state) => {
       state.auditEvents.push(event);
-    });
-  }
-
-  appendCompletedWork(record: CompletedWorkRecord): Promise<boolean> {
-    return this.#mutate((state) => {
-      // Idempotent for the same reason as the RPC: a worker that recorded the
-      // packet and then lost its lease must not produce a second request.
-      if (
-        state.approvalRequests.some(
-          (request) =>
-            request.idempotencyKey === record.approvalRequest.idempotencyKey,
-        )
-      ) {
-        return false;
-      }
-      state.evidenceArtifacts.push(...record.artifacts);
-      state.approvalRequests.push(record.approvalRequest);
-      return true;
     });
   }
 

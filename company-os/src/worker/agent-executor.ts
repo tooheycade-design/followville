@@ -255,7 +255,7 @@ export class AgentTaskExecutor implements TaskExecutor {
       // look the same to whoever reads this next.
       evidence.push(
         commit !== null
-          ? `commit=${commit.slice(0, 12)}`
+          ? `commit=${commit}`
           : `commit=none (${checkpointRefusal ?? "nothing to record"})`,
       );
       // The file list is no longer folded into this line. It is a section of

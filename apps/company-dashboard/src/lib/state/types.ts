@@ -104,11 +104,6 @@ export interface CompanyRepository {
   load(): Promise<CompanyState>;
   /** Releases or rejects held work. Returns the task's resulting status. */
   decideHeldTask(decision: HeldTaskDecision): Promise<string>;
-  /**
-   * Records finished work and the approval request citing it, together.
-   * Idempotent per task and review cycle. Returns true when it created one.
-   */
-  appendCompletedWork(record: CompletedWorkRecord): Promise<boolean>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;
   appendApprovalDecision(record: ApprovalDecisionRecord): Promise<void>;
   /** Records a planned initiative: one goal and its tasks, written together. */
