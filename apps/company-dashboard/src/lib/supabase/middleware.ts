@@ -49,7 +49,9 @@ export async function refreshAndAuthorize(request: NextRequest) {
   const subject = claimsData?.claims?.sub;
   const publicRoute =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/auth");
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/reset-password");
 
   if (typeof subject !== "string") {
     if (publicRoute) {
@@ -74,7 +76,8 @@ export async function refreshAndAuthorize(request: NextRequest) {
     denied.search = "";
     return redirectWithSession(denied, response);
   }
-  if (activeOwner && publicRoute) {
+  const recoveryRoute = request.nextUrl.pathname.startsWith("/reset-password");
+  if (activeOwner && publicRoute && !recoveryRoute) {
     const dashboard = request.nextUrl.clone();
     dashboard.pathname = "/";
     dashboard.search = "";

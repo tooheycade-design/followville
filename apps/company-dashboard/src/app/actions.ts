@@ -13,7 +13,10 @@ import { requireOwner } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/auth-policy";
 import { ownerRegistryFor } from "@/lib/config";
 import { companyRepository } from "@/lib/state";
-import { createAuthClient } from "@/lib/supabase/server";
+import {
+  companyOsSiteUrl,
+  createAuthClient,
+} from "@/lib/supabase/server";
 
 export interface ActionState {
   ok: boolean;
@@ -131,6 +134,20 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirect(`/login?${params.toString()}`);
   }
   redirect(destination);
+}
+
+export async function requestPasswordResetAction(
+  formData: FormData,
+): Promise<void> {
+  const client = await createAuthClient();
+  const redirectTo = new URL("/reset-password", companyOsSiteUrl()).toString();
+  await client.auth.resetPasswordForEmail(
+    String(formData.get("email") ?? "").trim(),
+    { redirectTo },
+  );
+
+  // The same response is used for known and unknown addresses.
+  redirect("/forgot-password?sent=1");
 }
 
 export async function logoutAction(): Promise<void> {

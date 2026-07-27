@@ -272,6 +272,18 @@ button.danger {
   gap: 14px;
 }
 
+.auth-link {
+  justify-self: start;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.auth-help {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: -8px 0 16px;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--ink-soft);

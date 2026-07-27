@@ -1,4 +1,5 @@
 import { loginAction } from "../actions";
+import Link from "next/link";
 
 export default async function LoginPage({
   searchParams,
@@ -31,6 +32,9 @@ export default async function LoginPage({
           </label>
           <input name="next" type="hidden" value={next} />
           <button type="submit">Sign in</button>
+          <Link className="auth-link" href="/forgot-password">
+            Forgot password?
+          </Link>
         </form>
       </section>
     </div>
