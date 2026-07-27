@@ -323,6 +323,57 @@ button.danger {
   font: 700 15.5px/1.35 Georgia, serif;
 }
 
+.approval-impact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  margin: 14px 0;
+  border: 1px solid var(--rule);
+  background: var(--rule);
+}
+
+.approval-impact div {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  background: var(--panel);
+  font-size: 13.5px;
+}
+
+.approval-impact b,
+.approval-blocker b {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.failed-check {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.approval-blocker {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 7%, var(--panel));
+  font-size: 13.5px;
+}
+
+.understanding-check {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+
+.understanding-check input {
+  margin-top: 2px;
+}
+
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

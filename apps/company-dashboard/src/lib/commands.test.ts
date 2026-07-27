@@ -8,6 +8,7 @@ import { OWNER_USER_ID } from "@followville/company-os-core";
 
 import { decideApproval, decideHeldTask, submitGoal } from "./commands";
 import { FileCompanyRepository } from "./state";
+import { writeState } from "./state/file-repository";
 
 const ZACH_ID = "30000000-0000-4000-8000-000000000002";
 
@@ -78,6 +79,50 @@ test("an owner approval resolves the request and advances the task", async () =>
   assert.equal(state.approvalDecisions.length, 1);
   assert.ok(
     state.auditEvents.some((event) => event.action === "approval.approve"),
+  );
+});
+
+test("approval is blocked when a task requires tests but none are recorded", async () => {
+  const statePath = path.join(
+    mkdtempSync(path.join(tmpdir(), "fv-cmd-")),
+    "state.json",
+  );
+  const repository = new FileCompanyRepository(statePath);
+  await submitGoal(
+    {
+      title: "Unchecked work",
+      objective: "Do not approve this without tests.",
+      createdByUserId: OWNER_USER_ID,
+    },
+    repository,
+  );
+  const state = await repository.load();
+  const request = state.approvalRequests[0];
+  assert.ok(request);
+  state.approvalRequests[0] = { ...request, testsCompleted: [] };
+  writeState(state, statePath);
+
+  const result = await decideApproval(
+    {
+      approvalRequestId: request.id,
+      decision: "approve",
+      comment: "I did not notice the missing tests.",
+      deciderUserId: OWNER_USER_ID,
+      viewedScopeDigest: request.scopeDigest,
+    },
+    repository,
+  );
+
+  assert.equal(result.ok, false);
+  assert.match(result.message, /Required checks have not run/);
+  const after = await repository.load();
+  assert.equal(after.approvalRequests[0]?.status, "pending");
+  assert.equal(after.approvalDecisions.length, 0);
+  assert.ok(
+    after.auditEvents.some(
+      (event) =>
+        event.action === "approval.approve" && event.outcome === "denied",
+    ),
   );
 });
 

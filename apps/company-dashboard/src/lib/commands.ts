@@ -16,8 +16,10 @@ import {
   assertTaskTransition,
   digest,
   simulateGoal,
+  type ApprovalRequest,
   type AuditEvent,
   type OwnerRegistry,
+  type Task,
 } from "@followville/company-os-core";
 
 import { OWNER_REGISTRY, ownerName } from "./config";
@@ -354,6 +356,23 @@ export interface DecideApprovalResult {
   message: string;
 }
 
+export function approvalReadiness(
+  request: ApprovalRequest,
+  task: Task | undefined,
+): { canApprove: boolean; blockers: string[] } {
+  const blockers: string[] = [];
+  if (
+    task !== undefined &&
+    task.testRequirements.length > 0 &&
+    request.testsCompleted.length === 0
+  ) {
+    blockers.push(
+      `Required checks have not run: ${task.testRequirements.join(", ")}.`,
+    );
+  }
+  return { canApprove: blockers.length === 0, blockers };
+}
+
 function decisionAudit(
   input: DecideApprovalInput,
   outcome: "succeeded" | "denied" | "failed",
@@ -404,6 +423,21 @@ export async function decideApproval(
   );
   if (request === undefined) {
     return { ok: false, message: "That approval request does not exist." };
+  }
+  const task = state.tasks.find((candidate) => candidate.id === request.taskId);
+  const readiness = approvalReadiness(request, task);
+  if (input.decision === "approve" && !readiness.canApprove) {
+    const reason = `Approval blocked. ${readiness.blockers.join(" ")}`;
+    await repository.appendAuditEvent(
+      decisionAudit(
+        input,
+        "denied",
+        reason,
+        request.taskId,
+        state.approvalDecisions.length,
+      ),
+    );
+    return { ok: false, message: reason };
   }
 
   const decision = ApprovalDecisionSchema.parse({

@@ -50,6 +50,15 @@ export async function decideApprovalAction(
   ) {
     return { ok: false, message: "Unknown decision type." };
   }
+  if (
+    decision === "approve" &&
+    formData.get("confirmedUnderstanding") !== "yes"
+  ) {
+    return {
+      ok: false,
+      message: "Confirm that you understand what this approval authorizes.",
+    };
+  }
 
   const decider = await requireOwner();
 

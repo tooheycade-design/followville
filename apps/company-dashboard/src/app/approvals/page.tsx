@@ -1,6 +1,7 @@
 import { companyRepository } from "@/lib/state";
 import { ownerName } from "@/lib/config";
 import { formatUsdMicros, formatWhen, label, shortId } from "@/lib/format";
+import { approvalReadiness } from "@/lib/commands";
 import { DecisionForm } from "./decision-form";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,7 @@ export default async function ApprovalsPage() {
 
       {pending.map((request) => {
         const task = tasksById.get(request.taskId);
+        const readiness = approvalReadiness(request, task);
         return (
           <article className="approval" key={request.id}>
             <header>
@@ -38,6 +40,23 @@ export default async function ApprovalsPage() {
               <span className="status status--pending">pending</span>
             </header>
             <p className="muted">{request.reason}</p>
+            <section className="approval-impact">
+              <div>
+                <b>What approval authorizes</b>
+                <span>
+                  {request.summary} The system may perform only the listed{" "}
+                  <strong>{label(request.action)}</strong> action against this
+                  exact reviewed scope.
+                </span>
+              </div>
+              <div>
+                <b>What approval does not authorize</b>
+                <span>
+                  It does not grant a different capability, approve a changed
+                  scope, or bypass another required production approval.
+                </span>
+              </div>
+            </section>
             <div className="facts">
               <div>
                 <b>Action</b>
@@ -59,7 +78,9 @@ export default async function ApprovalsPage() {
               </div>
               <div>
                 <b>Tests completed</b>
-                <span>{request.testsCompleted.join(", ") || "none"}</span>
+                <span className={request.testsCompleted.length === 0 ? "failed-check" : ""}>
+                  {request.testsCompleted.join(", ") || "None recorded"}
+                </span>
               </div>
               <div>
                 <b>Recommendation</b>
@@ -119,6 +140,8 @@ export default async function ApprovalsPage() {
             <DecisionForm
               approvalRequestId={request.id}
               scopeDigest={request.scopeDigest}
+              canApprove={readiness.canApprove}
+              blockers={readiness.blockers}
             />
           </article>
         );
