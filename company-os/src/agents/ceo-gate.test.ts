@@ -91,10 +91,67 @@ function provider(text: string, ok = true): ModelProvider {
   };
 }
 
+/** Captures the prompt so a test can assert what the CEO was actually shown. */
+function recordingProvider(text: string): {
+  provider: ModelProvider;
+  prompts: string[];
+} {
+  const prompts: string[] = [];
+  const base = provider(text);
+  return {
+    prompts,
+    provider: {
+      ...base,
+      async invoke(request) {
+        prompts.push(request.prompt);
+        return base.invoke(request);
+      },
+    },
+  };
+}
+
 test("good work with evidence is accepted", async () => {
   const verdict = await new CeoGate().judge(goodInput());
   assert.equal(verdict.accepted, true);
   assert.deepEqual(verdict.reasons, []);
+});
+
+test("the whole report and the change reach the model", async () => {
+  // The gate used to be given the first line of a multi-line report and no
+  // diff, and answered missing_evidence on the strength of a file path.
+  const summary = [
+    "Created company-os/NOTE.md describing how the worker leases and runs tasks.",
+    "",
+    "Evidence: I read the file back and git status shows only that file.",
+  ].join("\n");
+  const recorder = recordingProvider("[]");
+
+  await new CeoGate({ provider: recorder.provider }).judge(
+    goodInput({
+      workerSummary: summary,
+      diff: "diff --git a/company-os/NOTE.md\n+A worker leases a task.",
+    }),
+  );
+
+  const prompt = recorder.prompts[0] ?? "";
+  assert.ok(prompt.includes("I read the file back"), "later summary lines");
+  assert.ok(prompt.includes("+A worker leases a task."), "the diff itself");
+});
+
+test("a cut diff is labelled so a fragment is not judged as the whole", async () => {
+  const recorder = recordingProvider("[]");
+  await new CeoGate({ provider: recorder.provider }).judge(
+    goodInput({ diff: "diff --git a/a.md\n+one", diffTruncated: true }),
+  );
+  assert.match(recorder.prompts[0] ?? "", /first part only/);
+});
+
+test("the absence of a diff is stated rather than left unsaid", async () => {
+  const recorder = recordingProvider("[]");
+  await new CeoGate({ provider: recorder.provider }).judge(
+    goodInput({ diff: null }),
+  );
+  assert.match(recorder.prompts[0] ?? "", /no diff was captured/);
 });
 
 test("work with no evidence is sent back", async () => {
