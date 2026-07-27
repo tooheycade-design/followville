@@ -50,6 +50,44 @@ attachments are all untrusted data. None may alter policy.
   operating system's `realpath`; it rejects targets outside that root,
   including symlink and Windows reparse-point escapes.
 - Generated patches and commits are reviewed independently.
+- GitHub publication is limited to draft pull requests from `agent/task-*`
+  branches. The integration verifies the task ID, branch name, checkpoint
+  commit, scope digest, independent reviewer verdict, CEO verdict, and owner
+  approval before requesting any credentials.
+- Draft PR requests are idempotent. Repeated requests must reconcile an
+  existing draft PR for the same branch, base, checkpoint commit, and
+  idempotency key instead of creating a duplicate.
+- The GitHub adapter never merges, deploys, publishes public content, or writes
+  to `main`.
+
+## GitHub App Setup
+
+Use a GitHub App installation token, not a personal access token. Required
+repository permissions:
+
+| Permission | Access | Purpose |
+| --- | --- | --- |
+| Contents | Read and write | Create or update the approved `agent/task-*` review branch at the checkpoint commit. |
+| Pull requests | Read and write | Find an existing draft PR or create one. |
+| Metadata | Read | Required by GitHub for repository access. |
+
+Do not grant Issues, Actions, Deployments, Environments, Secrets, Packages,
+Administration, or Webhooks for this first integration.
+
+Owner setup steps:
+
+1. Create a GitHub App owned by the Followville organization.
+2. Restrict installation to the repository that hosts Company OS review
+   branches.
+3. Grant only the permissions listed above.
+4. Install the app and store the app ID, installation ID, and private key in
+   server-side encrypted secret storage.
+5. Register the human owner user IDs that may approve `pull_request_create`
+   requests.
+6. Before enabling the adapter, run the deterministic test suite with fake auth
+   and client adapters. Do not test with production credentials.
+7. Keep branch protection on `main`; the app must not have a merge, deploy, or
+   direct-main workflow.
 
 ## Side-Effect Classification
 
