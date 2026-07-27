@@ -1,0 +1,30 @@
+{
+  "name": "@followville/company-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private owner dashboard for Followville Company OS. Simulation-only in Phase 1.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 4100",
+    "build": "next build",
+    "start": "next start --port 4100",
+    "typecheck": "tsc --noEmit",
+    "worker": "tsx --env-file=.env.local src/worker/main.ts",
+    "test": "tsx --test src/lib/state/file-repository.test.ts src/lib/state/file-repository.readonly.test.ts src/lib/state/retry.test.ts src/lib/commands.test.ts"
+  },
+  "dependencies": {
+    "@followville/company-os-core": "workspace:*",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.58.0",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

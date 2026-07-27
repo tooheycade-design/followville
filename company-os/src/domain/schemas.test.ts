@@ -5,7 +5,35 @@ import { SEED_AGENTS } from "../config/seed-agents.js";
 import { TaskSchema } from "./schemas.js";
 
 test("seed agent profiles satisfy the strict schema", () => {
-  assert.equal(Object.keys(SEED_AGENTS).length, 5);
+  // ceo, manager, engineer, reviewer, costAuditor, reporter
+  assert.equal(Object.keys(SEED_AGENTS).length, 6);
+});
+
+test("no seed agent holds a production capability", () => {
+  const production = [
+    "production_merge",
+    "production_deploy",
+    "production_database_write",
+    "canonical_world_growth",
+    "public_communication",
+    "social_publish",
+    "payment_charge",
+    "price_change",
+    "destructive_delete",
+  ];
+  for (const agent of Object.values(SEED_AGENTS)) {
+    for (const capability of production) {
+      assert.ok(
+        !agent.capabilities.includes(capability as never),
+        `${agent.slug} must not hold ${capability}`,
+      );
+    }
+  }
+});
+
+test("the CEO cannot write to the repository", () => {
+  assert.ok(!SEED_AGENTS.ceo.capabilities.includes("repository_write"));
+  assert.ok(SEED_AGENTS.ceo.prohibitedCapabilities.includes("repository_write"));
 });
 
 test("a worker cannot review its own task", () => {

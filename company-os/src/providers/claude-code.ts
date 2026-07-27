@@ -1,0 +1,180 @@
+import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
+import { promisify } from "node:util";
+
+import type {
+  ModelProvider,
+  ProviderAvailability,
+  ProviderRequest,
+  ProviderResponse,
+} from "./types.js";
+
+const run = promisify(execFile);
+
+interface ClaudeJsonResult {
+  is_error?: boolean;
+  result?: string;
+  total_cost_usd?: number;
+  session_id?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+  modelUsage?: Record<string, unknown>;
+}
+
+function emptyUsage() {
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedInputTokens: 0,
+    costUsdMicros: 0,
+  };
+}
+
+/**
+ * Drives the Claude Code CLI headlessly.
+ *
+ * Runs on the operator's existing subscription rather than an API key, which
+ * is why `billingMode` is `subscription`: the run reports zero dollars, and
+ * bounding it is the runtime's job through durations and run counts, not a
+ * dollar budget that will always read zero.
+ *
+ * The CLI is invoked with an explicit working directory and a bounded timeout.
+ * It is never given credentials by this class; authentication is the
+ * operator's, established once with `claude auth login`.
+ */
+export class ClaudeCodeProvider implements ModelProvider {
+  readonly name = "claude-code";
+  readonly billingMode = "subscription" as const;
+
+  constructor(
+    private readonly executablePath: string,
+    private readonly model?: string,
+  ) {}
+
+  static defaultExecutablePath(): string | null {
+    const candidates = [
+      process.env["CLAUDE_CODE_PATH"],
+      "C:/Users/cadet/AppData/Roaming/Claude/claude-code/2.1.219/claude.exe",
+    ].filter((candidate): candidate is string => typeof candidate === "string");
+    return candidates.find((candidate) => existsSync(candidate)) ?? null;
+  }
+
+  async checkAvailability(): Promise<ProviderAvailability> {
+    if (!existsSync(this.executablePath)) {
+      return {
+        available: false,
+        reason: "not_installed",
+        detail: `No Claude Code executable at ${this.executablePath}.`,
+      };
+    }
+    // `claude auth status` prints JSON such as {"loggedIn":false,...}. It may
+    // also exit non-zero while still producing that JSON, so the payload is
+    // read from either path before falling back to prose matching.
+    let output: string;
+    try {
+      const { stdout } = await run(this.executablePath, ["auth", "status"], {
+        timeout: 30_000,
+        maxBuffer: 1_000_000,
+      });
+      output = stdout;
+    } catch (error) {
+      const withOutput = error as Error & { stdout?: string };
+      output = withOutput.stdout ?? withOutput.message;
+    }
+
+    const notAuthenticated = {
+      available: false as const,
+      reason: "not_authenticated" as const,
+      detail:
+        "The Claude Code CLI is installed but not signed in. " +
+        "Run once in a terminal: claude auth login",
+    };
+
+    try {
+      const status = JSON.parse(output.trim()) as {
+        loggedIn?: boolean;
+        authMethod?: string;
+      };
+      if (status.loggedIn === true) {
+        return {
+          available: true,
+          detail: `signed in via ${status.authMethod ?? "unknown method"}`,
+        };
+      }
+      return notAuthenticated;
+    } catch {
+      if (/not logged in|please run|loggedIn"?\s*:\s*false/i.test(output)) {
+        return notAuthenticated;
+      }
+      return { available: false, reason: "unknown", detail: output.trim().slice(0, 200) };
+    }
+  }
+
+  async invoke(request: ProviderRequest): Promise<ProviderResponse> {
+    const args = ["-p", request.prompt, "--output-format", "json"];
+    if (this.model !== undefined) {
+      args.push("--model", this.model);
+    }
+
+    let stdout: string;
+    try {
+      const result = await run(this.executablePath, args, {
+        cwd: request.workingDirectory,
+        timeout: request.timeoutMs,
+        signal: request.signal,
+        maxBuffer: 16_000_000,
+      });
+      stdout = result.stdout;
+    } catch (error) {
+      // The CLI exits non-zero for refusals and errors but still emits JSON.
+      const withOutput = error as Error & { stdout?: string };
+      if (typeof withOutput.stdout === "string" && withOutput.stdout.length > 0) {
+        stdout = withOutput.stdout;
+      } else {
+        return {
+          ok: false,
+          text: "",
+          usage: emptyUsage(),
+          model: this.model ?? null,
+          sessionId: null,
+          failureReason: withOutput.message,
+        };
+      }
+    }
+
+    let parsed: ClaudeJsonResult;
+    try {
+      parsed = JSON.parse(stdout) as ClaudeJsonResult;
+    } catch {
+      return {
+        ok: false,
+        text: "",
+        usage: emptyUsage(),
+        model: this.model ?? null,
+        sessionId: null,
+        failureReason: "The CLI returned output that was not valid JSON.",
+      };
+    }
+
+    const usage = {
+      inputTokens: parsed.usage?.input_tokens ?? 0,
+      outputTokens: parsed.usage?.output_tokens ?? 0,
+      cachedInputTokens: parsed.usage?.cache_read_input_tokens ?? 0,
+      costUsdMicros: Math.round((parsed.total_cost_usd ?? 0) * 1_000_000),
+    };
+
+    const failed = parsed.is_error === true;
+    return {
+      ok: !failed,
+      text: parsed.result ?? "",
+      usage,
+      model: this.model ?? null,
+      sessionId: parsed.session_id ?? null,
+      failureReason: failed ? (parsed.result ?? "The provider reported an error.") : null,
+    };
+  }
+}

@@ -468,6 +468,7 @@ export type Capability = z.infer<typeof CapabilitySchema>;
 export type Goal = z.infer<typeof GoalSchema>;
 export type MemoryRecord = z.infer<typeof MemoryRecordSchema>;
 export type RepositoryScope = z.infer<typeof RepositoryScopeSchema>;
+export type RiskLevel = z.infer<typeof RiskLevelSchema>;
 export type Run = z.infer<typeof RunSchema>;
 export type StructuredMessage = z.infer<typeof StructuredMessageSchema>;
 export type Task = z.infer<typeof TaskSchema>;

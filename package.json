@@ -8,6 +8,10 @@
     "company-os:typecheck": "pnpm --dir company-os typecheck",
     "company-os:test": "pnpm --dir company-os test",
     "company-os:simulate": "pnpm --dir company-os simulate",
+    "dashboard:dev": "pnpm --dir apps/company-dashboard dev",
+    "dashboard:build": "pnpm --dir apps/company-dashboard build",
+    "dashboard:typecheck": "pnpm --dir apps/company-dashboard typecheck",
+    "dashboard:test": "pnpm --dir apps/company-dashboard test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
   },
