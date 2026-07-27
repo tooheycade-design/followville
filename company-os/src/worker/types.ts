@@ -12,6 +12,14 @@ export interface WorkResult {
   summary: string;
   evidence: readonly string[];
   filesChanged: readonly string[];
+  /**
+   * The change itself, or null when the executor cannot produce one.
+   *
+   * Required rather than optional on purpose: an executor that has no diff has
+   * to say so. The failure this whole path exists to prevent is evidence going
+   * missing quietly, and an optional field is precisely how that happens again.
+   */
+  diff: string | null;
   modelProvider: string | null;
   modelId: string | null;
   inputTokens: number;

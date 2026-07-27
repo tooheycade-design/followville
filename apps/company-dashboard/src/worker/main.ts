@@ -36,6 +36,7 @@ import {
   DEFAULT_SCHEDULE,
   EvidenceReviewer,
   assertIndependentReviewer,
+  decodeWorkerReport,
   gateAuditEvent,
   priorRejectionsFrom,
   dueJobs,
@@ -183,31 +184,24 @@ async function runReviewPass(): Promise<number> {
     const events = state.auditEvents.filter(
       (event) => event.taskId === task.id && event.action.startsWith("worker."),
     );
-    const completion = events.find((event) => event.action === "worker.completed");
+    // The most recent completion, not the first. A task sent back and retried
+    // has several, and judging the newest attempt against the oldest attempt's
+    // evidence is how a fixed task gets rejected for the fault it just fixed.
+    const completion = events
+      .filter((event) => event.action === "worker.completed")
+      .at(-1);
 
-    // Split the recorded reason back into the worker's summary and its
-    // evidence. Passing an empty file list here silently told the reviewer
-    // nothing had changed, so it rejected work that was in fact correct.
-    const recordedReason = completion?.reason ?? "";
-    const evidenceLine = recordedReason
-      .split("\n")
-      .find((line) => line.startsWith("evidence: "));
-    const evidence =
-      evidenceLine === undefined
-        ? []
-        : evidenceLine.slice("evidence: ".length).split(" | ");
-    const changedEntry = evidence.find((item) => item.startsWith("changed: "));
-    const filesChanged =
-      changedEntry === undefined
-        ? []
-        : changedEntry.slice("changed: ".length).split(", ").filter(Boolean);
+    // Recovered with the same encoder the worker wrote it with, so the summary,
+    // the evidence, the full file list and the diff all arrive intact. Reading
+    // this back by hand is what lost everything but the first line, and left
+    // the Chief Executive rejecting sound work for missing_evidence.
+    const report = decodeWorkerReport(completion?.reason ?? "");
 
-    const workerSummary = recordedReason.split("\n")[0] ?? "";
     const result = await reviewer.review({
       task,
-      workerEvidence: evidence,
-      workerSummary,
-      filesChanged,
+      workerEvidence: report.evidence,
+      workerSummary: report.summary,
+      filesChanged: report.filesChanged,
     });
 
     // The reviewer checks that evidence exists; the CEO decides whether the
@@ -221,9 +215,11 @@ async function runReviewPass(): Promise<number> {
     if (verdict === "approved_for_owner") {
       const gateResult = await gate.judge({
         task,
-        workerSummary,
-        workerEvidence: evidence,
-        filesChanged,
+        workerSummary: report.summary,
+        workerEvidence: report.evidence,
+        filesChanged: report.filesChanged,
+        diff: report.diff,
+        diffTruncated: report.diffTruncated,
         priorRejections: priorRejectionsFrom(
           state.auditEvents.filter((event) => event.taskId === task.id),
         ),

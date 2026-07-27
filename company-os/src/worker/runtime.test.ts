@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import { TaskSchema, type AuditEvent, type Task } from "../domain/schemas.js";
 import { ORGANIZATION_ID, PROJECT_ID, SEED_AGENTS } from "../config/seed-agents.js";
+import { decodeWorkerReport } from "./report.js";
 import { runLeasedTask, runWorker } from "./runtime.js";
 import type { LeasedTask, TaskExecutor, WorkQueue, WorkResult } from "./types.js";
 
@@ -109,6 +110,7 @@ function executor(result: Partial<WorkResult>, name = "fake"): TaskExecutor {
         summary: "done",
         evidence: ["some evidence"],
         filesChanged: [],
+        diff: null,
         modelProvider: null,
         modelId: null,
         inputTokens: 0,
@@ -230,7 +232,10 @@ test("evidence is recorded in readable form so a reviewer can use it", async () 
   const queue = new FakeQueue();
   await runLeasedTask(
     { task: makeTask(), leaseEpoch: 1, leaseExpiresAt: NOW },
-    executor({ evidence: ["branch=agent/task-1", "changed: company-os/a.md"] }),
+    executor({
+      evidence: ["branch=agent/task-1"],
+      filesChanged: ["company-os/a.md"],
+    }),
     queue,
     OPTIONS,
     nextId,
@@ -240,4 +245,43 @@ test("evidence is recorded in readable form so a reviewer can use it", async () 
   assert.match(completed.reason, /evidence: /);
   assert.match(completed.reason, /changed: company-os\/a\.md/);
   assert.equal(completed.reason.split("\n")[0], "done", "summary stays first");
+});
+
+test("a worker's whole report reaches whoever reads it back", async () => {
+  // The failure this guards: a real Codex run wrote a 35-line report and the
+  // reader kept line one, so the Chief Executive judged a file path with no
+  // account of what was in it and sent sound work back for missing_evidence.
+  const summary = [
+    "Created docs/HOUSE_CLAIM_FLOW.md.",
+    "",
+    "It documents the visitor path from opening the site through claiming.",
+    "",
+    "Evidence: I read the new file back and git status shows only that file.",
+  ].join("\n");
+  const diff = [
+    "diff --git a/company-os/docs/HOUSE_CLAIM_FLOW.md b/company-os/docs/HOUSE_CLAIM_FLOW.md",
+    "new file mode 100644",
+    "+# House Claim Flow",
+  ].join("\n");
+
+  const queue = new FakeQueue();
+  await runLeasedTask(
+    { task: makeTask(), leaseEpoch: 1, leaseExpiresAt: NOW },
+    executor({
+      summary,
+      evidence: ["provider=codex", "files_changed=1"],
+      filesChanged: ["company-os/docs/HOUSE_CLAIM_FLOW.md"],
+      diff,
+    }),
+    queue,
+    OPTIONS,
+    nextId,
+  );
+
+  const completed = queue.audits.find((e) => e.action === "worker.completed");
+  assert.ok(completed);
+  const report = decodeWorkerReport(completed.reason);
+  assert.equal(report.summary, summary);
+  assert.equal(report.diff, diff);
+  assert.deepEqual(report.filesChanged, ["company-os/docs/HOUSE_CLAIM_FLOW.md"]);
 });

@@ -48,6 +48,10 @@ export interface GateInput {
   filesChanged: readonly string[];
   /** Reasons this task was previously sent back, oldest first. */
   priorRejections: readonly RejectionReason[];
+  /** The change itself. Null when none was captured. */
+  diff?: string | null;
+  /** True when `diff` is only the beginning of a larger one. */
+  diffTruncated?: boolean;
 }
 
 /**
@@ -90,6 +94,20 @@ function buildJudgementPrompt(input: GateInput): string {
       ? `This task was previously sent back for: ${input.priorRejections.join(", ")}. Check those were addressed.`
       : "This is the first attempt.";
 
+  // The diff is shown when there is one. Judging `missing_evidence` on a file
+  // list alone is close to unavoidable: a path proves a file was touched and
+  // nothing about whether the contents meet the criteria.
+  const change =
+    input.diff !== undefined && input.diff !== null && input.diff.length > 0
+      ? [
+          "",
+          input.diffTruncated === true
+            ? "Change (first part only; the full diff is larger):"
+            : "Change:",
+          input.diff,
+        ]
+      : ["", "Change: no diff was captured."];
+
   return [
     "You are the Chief Executive of the company that maintains Followville.",
     "You are judging whether finished work is good enough to put in front of",
@@ -104,9 +122,16 @@ function buildJudgementPrompt(input: GateInput): string {
     "",
     history,
     "",
-    `Worker summary: ${input.workerSummary}`,
+    "Worker report:",
+    input.workerSummary,
+    "",
     `Evidence: ${input.workerEvidence.join(" | ") || "none"}`,
     `Files changed: ${input.filesChanged.join(", ") || "none"}`,
+    ...change,
+    "",
+    "Judge the work on the report and the change above. Use missing_evidence",
+    "only when the work itself is genuinely unsupported, not when you would",
+    "simply have liked more detail.",
     "",
     "Reply with ONLY a JSON array of rejection reasons, no prose. Use an empty",
     "array if the work is good enough for an owner to review.",

@@ -26,6 +26,7 @@ export class RepositoryReportExecutor implements TaskExecutor {
         summary: "The task does not permit reading the repository.",
         evidence: [],
         filesChanged: [],
+        diff: null,
         modelProvider: null,
         modelId: null,
         inputTokens: 0,
@@ -67,6 +68,9 @@ export class RepositoryReportExecutor implements TaskExecutor {
         `git status --porcelain -> ${dirtyFiles.length} entries`,
       ],
       filesChanged: [],
+      // This executor inspects the repository and changes nothing, so there is
+      // no diff to show rather than one that failed to be captured.
+      diff: null,
       modelProvider: null,
       modelId: null,
       inputTokens: 0,

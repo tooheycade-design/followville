@@ -3,6 +3,7 @@ import { digest } from "../domain/fingerprints.js";
 import { ORGANIZATION_ID, PROJECT_ID } from "../config/seed-agents.js";
 import { SEED_AGENTS } from "../config/seed-agents.js";
 import { preflightCapabilities } from "./path-guard.js";
+import { encodeWorkerReport } from "./report.js";
 import type {
   LeasedTask,
   TaskExecutor,
@@ -223,10 +224,16 @@ export async function runLeasedTask(
   // result digest. A reviewer reads what was recorded rather than what the
   // worker said in passing, so anything it must judge on has to survive in
   // readable form; a digest proves nothing was altered but cannot be read.
-  const recordedReason = [
-    result.summary,
-    ...(result.evidence.length > 0 ? [`evidence: ${result.evidence.join(" | ")}`] : []),
-  ].join("\n");
+  //
+  // The encoding is shared with the reader rather than reproduced there. When
+  // the two were written separately they drifted, and the reader kept only the
+  // first line of a report the writer had emitted in full.
+  const recordedReason = encodeWorkerReport({
+    summary: result.summary,
+    evidence: result.evidence,
+    filesChanged: result.filesChanged,
+    diff: result.diff,
+  });
 
   await record(
     `worker.${result.outcome}`,

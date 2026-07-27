@@ -4,6 +4,16 @@ import { createPathGuard } from "./path-guard.js";
 import type { TaskExecutor, WorkResult } from "./types.js";
 import { WorktreeManager, type Worktree } from "./worktree.js";
 
+/**
+ * How much of the agent's own narrative is kept.
+ *
+ * The previous ceiling of 2,000 cut real reports mid-sentence — one ended
+ * "The system of record is Supabas" — and what it cut was the part explaining
+ * how the work met its criteria. The diff is captured separately now, so this
+ * only has to hold prose, but it has to hold all of it.
+ */
+const MAX_SUMMARY_CHARS = 6_000;
+
 export interface AgentExecutorOptions {
   agent: AgentProfile;
   /**
@@ -110,6 +120,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         summary: `Provider unavailable (${availability.reason}): ${availability.detail}`,
         evidence: [],
         filesChanged: [],
+        diff: null,
         modelProvider: this.options.provider.name,
         modelId: null,
         inputTokens: 0,
@@ -138,12 +149,21 @@ export class AgentTaskExecutor implements TaskExecutor {
       const changes = await this.options.worktrees.changes(worktree);
       const filesChanged = changes.map((change) => change.file);
 
+      // Capture the change itself, not just the agent's account of it. Codex
+      // happens to paste a diff into its prose and Claude does not; evidence a
+      // judge needs cannot depend on which model did the work. Best effort —
+      // failing to read a diff must not fail a task that otherwise succeeded.
+      const diff = await this.options.worktrees
+        .diff(worktree, filesChanged)
+        .catch(() => null);
+
       if (!response.ok) {
         return {
           outcome: "failed",
           summary: response.failureReason ?? "The provider failed.",
           evidence: [],
           filesChanged,
+          diff,
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -170,6 +190,7 @@ export class AgentTaskExecutor implements TaskExecutor {
             violations.slice(0, 5).join(", "),
           evidence: [],
           filesChanged,
+          diff,
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -188,15 +209,20 @@ export class AgentTaskExecutor implements TaskExecutor {
       if (response.sessionId !== null) {
         evidence.push(`session=${response.sessionId}`);
       }
-      if (filesChanged.length > 0) {
-        evidence.push(`changed: ${filesChanged.slice(0, 20).join(", ")}`);
-      }
+      // The file list is no longer folded into this line. It is a section of
+      // the report in its own right, so it is neither capped at twenty nor
+      // recovered by splitting a sentence apart.
 
+      const text = response.text.trim();
       return {
         outcome: "completed",
-        summary: response.text.trim().slice(0, 2000) || "The agent reported no summary.",
+        summary:
+          (text.length > MAX_SUMMARY_CHARS
+            ? `${text.slice(0, MAX_SUMMARY_CHARS)}\n[summary truncated at ${MAX_SUMMARY_CHARS} characters]`
+            : text) || "The agent reported no summary.",
         evidence,
         filesChanged,
+        diff,
         modelProvider: this.options.provider.name,
         modelId: response.model,
         inputTokens: response.usage.inputTokens,

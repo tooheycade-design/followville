@@ -96,8 +96,24 @@ export class WorktreeManager {
       .filter((change) => change.file.length > 0);
   }
 
-  async diff(worktree: Worktree): Promise<string> {
-    return this.#git(["diff", worktree.baseCommit], worktree.path);
+  /**
+   * The change the agent made, as a diff against the commit it started from.
+   *
+   * New files are the normal case here — most tasks write a file that did not
+   * exist before — and `git diff` ignores untracked paths, so a plain diff of
+   * an agent's work is usually empty. Recording an intent to add first makes
+   * them appear as additions. That touches only the index of a worktree which
+   * is about to be thrown away.
+   */
+  async diff(worktree: Worktree, files: readonly string[] = []): Promise<string> {
+    const named = files.slice(0, 200);
+    if (named.length > 0) {
+      await this.#git(
+        ["add", "--intent-to-add", "--", ...named],
+        worktree.path,
+      ).catch(() => undefined);
+    }
+    return this.#git(["diff", worktree.baseCommit, "--"], worktree.path);
   }
 
   /**
