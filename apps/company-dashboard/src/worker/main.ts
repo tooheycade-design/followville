@@ -73,7 +73,7 @@ if (queue === null) {
  * reported even after one is chosen, so an unavailable provider is visible
  * rather than silently skipped.
  */
-async function selectProvider(): Promise<ModelProvider | null> {
+async function availableProviders(): Promise<ModelProvider[]> {
   const candidates: ModelProvider[] = [];
   const codexPath = CodexProvider.defaultExecutablePath();
   if (codexPath !== null) {
@@ -85,10 +85,10 @@ async function selectProvider(): Promise<ModelProvider | null> {
   }
   if (candidates.length === 0) {
     log("no model CLI found; set CODEX_CLI_PATH or CLAUDE_CODE_PATH");
-    return null;
+    return [];
   }
 
-  let chosen: ModelProvider | null = null;
+  const ready: ModelProvider[] = [];
   for (const candidate of candidates) {
     const availability = await candidate.checkAvailability();
     log(
@@ -96,14 +96,30 @@ async function selectProvider(): Promise<ModelProvider | null> {
         ? `provider ${candidate.name}: ready (${availability.detail})`
         : `provider ${candidate.name}: unavailable (${availability.reason}) - ${availability.detail}`,
     );
-    if (availability.available && chosen === null) {
-      chosen = candidate;
+    if (availability.available) {
+      ready.push(candidate);
     }
   }
-  return chosen;
+  return ready;
 }
 
-const provider = await selectProvider();
+const ready = await availableProviders();
+
+/**
+ * Work and judgement go to different models when two are signed in.
+ *
+ * A model reviewing its own output shares its blind spots, so the point of an
+ * independent reviewer is largely lost. With one model available both roles
+ * still run — a single-model check is worth more than none — but the log says
+ * so plainly rather than implying independence that does not exist.
+ */
+const provider = ready[0] ?? null;
+const judgeProvider = ready[1] ?? ready[0] ?? null;
+if (ready.length >= 2) {
+  log(`roles: ${provider?.name} implements, ${judgeProvider?.name} judges`);
+} else if (ready.length === 1) {
+  log(`roles: ${provider?.name} both implements and judges (only one model signed in)`);
+}
 
 if (checkOnly) {
   const reclaimed = await queue.reclaimExpiredLeases();
@@ -135,7 +151,7 @@ const reviewer = new EvidenceReviewer();
 // still applies its mechanical bar, so an unavailable model makes the gate
 // stricter rather than opening it.
 const gate = new CeoGate({
-  ...(provider === null ? {} : { provider }),
+  ...(judgeProvider === null ? {} : { provider: judgeProvider }),
   workingDirectory: repositoryRoot,
   timeoutMs: 3 * 60_000,
 });
