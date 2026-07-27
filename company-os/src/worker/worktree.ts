@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -60,6 +61,16 @@ export class WorktreeManager {
     const short = taskId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
     const branch = `agent/task-${short}`;
     const target = path.join(this.worktreeRoot, `task-${short}`);
+
+    // A previous attempt that was killed or lost its lease leaves its worktree
+    // behind, and `git worktree add` refuses an existing path. Since tasks are
+    // requeued after failure, a retry would otherwise fail forever on debris
+    // from the very failure it is retrying.
+    await this.#git(["worktree", "prune"]).catch(() => undefined);
+    await this.#git(["worktree", "remove", "--force", target]).catch(
+      () => undefined,
+    );
+    await rm(target, { recursive: true, force: true }).catch(() => undefined);
 
     await this.#git(["worktree", "add", "--detach", target, baseRef]);
     await this.#git(["checkout", "-B", branch], target);

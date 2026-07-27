@@ -236,3 +236,19 @@ test("an unbounded scope keeps the repository root", () => {
   } as Task;
   assert.equal(narrowestScopeDirectory(unbounded), null);
 });
+
+test("a retry succeeds when a previous attempt left its worktree behind", async () => {
+  const repo = makeRepository();
+  const task = makeTask();
+  const executor = executorFor(new ScriptedProvider(["notes.md"]), repo);
+
+  const first = await executor.execute(task, new AbortController().signal);
+  assert.equal(first.outcome, "completed");
+
+  // Simulate debris from a killed run: recreate the worktree and leave it.
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  await manager.create(task.id);
+
+  const retry = await executor.execute(task, new AbortController().signal);
+  assert.equal(retry.outcome, "completed", "the retry must not fail on debris");
+});
