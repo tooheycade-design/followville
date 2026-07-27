@@ -15,6 +15,9 @@ import {
   type DraftPullRequestPublicationRequest,
   type DraftPullRequestPublicationResult,
   type GitHubAppAuth,
+  type GitHubAppAuthResult,
+  type CreatePullRequestInput,
+  type EnsureBranchInput,
   type GitHubDraftPullRequest,
   type GitHubPullRequestClient,
 } from "./draft-pr.js";
@@ -160,7 +163,7 @@ function fakeAuth(ok = true): GitHubAppAuth & { readonly calls: number } {
     get calls() {
       return calls;
     },
-    async getInstallationToken() {
+    async getInstallationToken(): Promise<GitHubAppAuthResult> {
       calls += 1;
       return ok
         ? {
@@ -194,7 +197,7 @@ function fakeClient(existing: GitHubDraftPullRequest | null = null): GitHubPullR
     get lastBody() {
       return lastBody;
     },
-    async ensureBranch(input) {
+    async ensureBranch(input: EnsureBranchInput) {
       ensured += 1;
       assert.equal(input.branchName, "agent/task-1b5dacc3edfa");
       assert.equal(input.commitSha, CHECKPOINT);
@@ -202,7 +205,7 @@ function fakeClient(existing: GitHubDraftPullRequest | null = null): GitHubPullR
     async findDraftPullRequest() {
       return existing;
     },
-    async createDraftPullRequest(input) {
+    async createDraftPullRequest(input: CreatePullRequestInput) {
       created += 1;
       lastBody = input.body;
       return {
