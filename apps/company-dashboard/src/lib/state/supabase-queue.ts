@@ -55,6 +55,44 @@ function createControlPlaneClient(url: string, secretKey: string) {
 }
 
 /**
+ * Retries a control-plane call through transient network failures.
+ *
+ * A brief connectivity blip while appending an audit event previously threw
+ * out of the worker mid-task, abandoning a leased task and a finished model
+ * run. The control plane is remote, so treating every call as reliable is the
+ * wrong default; a few seconds of retry costs nothing and saves the work.
+ *
+ * Only network-shaped failures are retried. A rejected write is a decision,
+ * not a blip, and repeating it would hide the reason rather than fix it.
+ */
+export async function withRetry<T>(
+  label: string,
+  attempt: () => Promise<T>,
+  attempts = 4,
+): Promise<T> {
+  let lastError: unknown;
+  for (let tries = 0; tries < attempts; tries += 1) {
+    try {
+      return await attempt();
+    } catch (error) {
+      lastError = error;
+      const message = (error as Error).message;
+      if (
+        !/fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|network|EAI_AGAIN/i.test(
+          message,
+        )
+      ) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** tries));
+    }
+  }
+  throw new Error(
+    `${label} failed after ${attempts} attempts: ${(lastError as Error).message}`,
+  );
+}
+
+/**
  * Database-backed work queue.
  *
  * Claiming uses `SELECT ... FOR UPDATE SKIP LOCKED` inside the leasing
@@ -137,12 +175,14 @@ export class SupabaseWorkQueue implements WorkQueue {
   }
 
   async appendAuditEvent(event: AuditEvent): Promise<void> {
-    const { error } = await this.client.rpc("company_os_append_audit_events", {
-      events: [event],
+    await withRetry("audit append", async () => {
+      const { error } = await this.client.rpc("company_os_append_audit_events", {
+        events: [event],
+      });
+      if (error !== null) {
+        throw new Error(`audit append failed: ${error.message}`);
+      }
     });
-    if (error !== null) {
-      throw new Error(`audit append failed: ${error.message}`);
-    }
   }
 
   /** Requeues tasks whose worker stopped reporting. */
