@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
+
 import type { AgentProfile, Task } from "../domain/schemas.js";
 import type { ModelProvider } from "../providers/types.js";
+import { collectArtifacts } from "./artifacts.js";
 import { createPathGuard } from "./path-guard.js";
 import type { TaskExecutor, WorkResult } from "./types.js";
 import { WorktreeManager, type Worktree } from "./worktree.js";
@@ -121,6 +124,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         evidence: [],
         filesChanged: [],
         diff: null,
+        artifacts: [],
         modelProvider: this.options.provider.name,
         modelId: null,
         inputTokens: 0,
@@ -198,6 +202,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           evidence: [],
           filesChanged,
           diff,
+          artifacts: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -225,6 +230,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           evidence: [],
           filesChanged,
           diff,
+          artifacts: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -256,6 +262,27 @@ export class AgentTaskExecutor implements TaskExecutor {
       // the report in its own right, so it is neither capped at twenty nor
       // recovered by splitting a sentence apart.
 
+      // Collected while the worktree still exists; afterwards these files are
+      // only reachable through the checkpoint commit.
+      const artifacts = await collectArtifacts({
+        task,
+        worktreePath: worktree.path,
+        filesChanged,
+        commitSha: commit,
+        diff,
+        createdByAgentId: this.options.agent.id,
+        idFactory: randomUUID,
+      }).catch(() => []);
+      const visual = artifacts.filter(
+        (artifact) => artifact.kind !== "patch" && artifact.kind !== "log",
+      );
+      if (artifacts.length > 0) {
+        evidence.push(
+          `artifacts=${artifacts.length}` +
+            (visual.length > 0 ? ` (${visual.length} visual)` : ""),
+        );
+      }
+
       const text = response.text.trim();
       return {
         outcome: "completed",
@@ -266,6 +293,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         evidence,
         filesChanged,
         diff,
+        artifacts,
         modelProvider: this.options.provider.name,
         modelId: response.model,
         inputTokens: response.usage.inputTokens,

@@ -1,4 +1,4 @@
-import type { AuditEvent, Task } from "../domain/schemas.js";
+import type { AuditEvent, EvidenceArtifact, Task } from "../domain/schemas.js";
 
 export interface LeasedTask {
   task: Task;
@@ -20,6 +20,11 @@ export interface WorkResult {
    * missing quietly, and an optional field is precisely how that happens again.
    */
   diff: string | null;
+  /**
+   * Things a human may want to open: screenshots, renders, logs, the patch.
+   * Empty is a legitimate answer; most tasks produce only a diff.
+   */
+  artifacts: readonly EvidenceArtifact[];
   modelProvider: string | null;
   modelId: string | null;
   inputTokens: number;

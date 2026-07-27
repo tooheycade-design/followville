@@ -27,6 +27,7 @@ export class RepositoryReportExecutor implements TaskExecutor {
         evidence: [],
         filesChanged: [],
         diff: null,
+        artifacts: [],
         modelProvider: null,
         modelId: null,
         inputTokens: 0,
@@ -71,6 +72,7 @@ export class RepositoryReportExecutor implements TaskExecutor {
       // This executor inspects the repository and changes nothing, so there is
       // no diff to show rather than one that failed to be captured.
       diff: null,
+      artifacts: [],
       modelProvider: null,
       modelId: null,
       inputTokens: 0,

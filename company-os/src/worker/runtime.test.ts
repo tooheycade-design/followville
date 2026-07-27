@@ -111,6 +111,7 @@ function executor(result: Partial<WorkResult>, name = "fake"): TaskExecutor {
         evidence: ["some evidence"],
         filesChanged: [],
         diff: null,
+        artifacts: [],
         modelProvider: null,
         modelId: null,
         inputTokens: 0,

@@ -27,6 +27,9 @@ function reasonSummary(reason: string): string {
   if (report.diff !== null) {
     parts.push(report.diffTruncated ? "diff (partial)" : "diff");
   }
+  if (report.artifacts.length > 0) {
+    parts.push(`${report.artifacts.length} artifact(s)`);
+  }
   return parts.length > 0 ? `${first}  [${parts.join(", ")}]` : first;
 }
 

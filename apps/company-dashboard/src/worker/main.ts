@@ -220,6 +220,7 @@ async function runReviewPass(): Promise<number> {
         filesChanged: report.filesChanged,
         diff: report.diff,
         diffTruncated: report.diffTruncated,
+        artifacts: report.artifacts,
         priorRejections: priorRejectionsFrom(
           state.auditEvents.filter((event) => event.taskId === task.id),
         ),

@@ -255,6 +255,75 @@ export const StructuredMessageSchema = z
   })
   .strict();
 
+/**
+ * Something an agent produced that a human may want to look at.
+ *
+ * `evidenceArtifactIds` existed on runs, approvals, and audit events from the
+ * start and was always empty, because there was nowhere to put an artifact.
+ * An approval packet could say a screenshot had been taken and point at
+ * nothing.
+ *
+ * Artifacts live in the task's own checkpoint commit rather than in a separate
+ * object store. The runtime already records finished work on an `agent/task-*`
+ * branch, so a screenshot committed alongside the change is durable, shared
+ * through the same remote as everything else, and retrievable with
+ * `git show <commit>:<path>`. `location` is a union so a future object store
+ * can be added without rewriting what already exists.
+ */
+export const ArtifactKindSchema = z.enum([
+  "screenshot",
+  "render",
+  "recording",
+  "log",
+  "patch",
+  "report",
+]);
+
+export const ArtifactLocationSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("git"),
+      commitSha: z.string().regex(/^[0-9a-f]{7,64}$/),
+      repositoryPath: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("inline"),
+      /** Small text held directly, such as a diff. */
+      text: z.string(),
+    })
+    .strict(),
+]);
+
+export const EvidenceArtifactSchema = z
+  .object({
+    id: IdentifierSchema,
+    organizationId: IdentifierSchema,
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+    runId: IdentifierSchema.nullable(),
+    kind: ArtifactKindSchema,
+    /** What a human should call this when deciding. */
+    label: z.string().min(1).max(200),
+    mediaType: z.string().min(1).max(120),
+    sizeBytes: z.number().int().nonnegative(),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    location: ArtifactLocationSchema,
+    createdByAgentId: IdentifierSchema,
+    createdAt: IsoDateTimeSchema,
+    /**
+     * When this may be discarded. Null means keep it as long as its task
+     * exists — an approval's evidence should not expire before the decision
+     * it supports can be audited.
+     */
+    expiresAt: IsoDateTimeSchema.nullable(),
+  })
+  .strict();
+
+export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;
+export type EvidenceArtifact = z.infer<typeof EvidenceArtifactSchema>;
+
 export const RunSchema = z
   .object({
     id: IdentifierSchema,

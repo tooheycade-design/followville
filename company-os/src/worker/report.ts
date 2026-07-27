@@ -39,11 +39,22 @@ export const MAX_DIFF_CHARS = 12_000;
 /** Bounds an unusually wide change so one task cannot write an enormous row. */
 export const MAX_LISTED_FILES = 200;
 
+/** An artifact as it survives the audit trail: enough to find and open it. */
+export interface ReportedArtifact {
+  kind: string;
+  label: string;
+  mediaType: string;
+  sizeBytes: number;
+  /** `git show <commit>:<path>`, or "inline". */
+  retrieval: string;
+}
+
 export interface WorkerReport {
   /** Everything the worker said, not just its opening line. */
   summary: string;
   evidence: readonly string[];
   filesChanged: readonly string[];
+  artifacts: readonly ReportedArtifact[];
   /** The change itself, or null when none was captured. */
   diff: string | null;
   /** True when `diff` is a prefix of a larger one. */
@@ -57,6 +68,33 @@ export interface WorkerReportInput {
   evidence: readonly string[];
   filesChanged: readonly string[];
   diff?: string | null;
+  artifacts?: readonly ReportedArtifact[];
+}
+
+/** One artifact line. Tab-separated so a label may contain spaces. */
+function encodeArtifact(artifact: ReportedArtifact): string {
+  return [
+    "artifact:",
+    artifact.kind,
+    artifact.mediaType,
+    String(artifact.sizeBytes),
+    artifact.retrieval,
+    artifact.label,
+  ].join("\t");
+}
+
+function decodeArtifact(line: string): ReportedArtifact | null {
+  const [, kind, mediaType, size, retrieval, ...label] = line.split("\t");
+  if (kind === undefined || mediaType === undefined || retrieval === undefined) {
+    return null;
+  }
+  return {
+    kind,
+    mediaType,
+    sizeBytes: Number.parseInt(size ?? "0", 10) || 0,
+    retrieval,
+    label: label.join("\t"),
+  };
 }
 
 /** Prevents untrusted text from forging the sentinel. */
@@ -78,6 +116,9 @@ export function encodeWorkerReport(input: WorkerReportInput): string {
   lines.push(`files: ${input.filesChanged.length}`);
   if (files.length > 0) {
     lines.push(`changed: ${files.join(", ")}`);
+  }
+  for (const artifact of input.artifacts ?? []) {
+    lines.push(encodeArtifact(artifact));
   }
 
   const diff = input.diff ?? "";
@@ -112,6 +153,7 @@ function decodeLegacy(reason: string): WorkerReport {
       summary: reason,
       evidence: [],
       filesChanged: [],
+      artifacts: [],
       diff: null,
       diffTruncated: false,
       totalFilesChanged: 0,
@@ -135,6 +177,9 @@ function decodeLegacy(reason: string): WorkerReport {
     summary: lines.slice(0, trailerIndex).join("\n").trimEnd(),
     evidence,
     filesChanged,
+    // Rows written before artifacts existed have none, which is different from
+    // having produced none — but nothing was recorded either way.
+    artifacts: [],
     diff: null,
     diffTruncated: false,
     totalFilesChanged: filesChanged.length,
@@ -157,9 +202,17 @@ export function decodeWorkerReport(reason: string): WorkerReport {
   let totalFilesChanged = 0;
   let diff: string | null = null;
   let diffTruncated = false;
+  const artifacts: ReportedArtifact[] = [];
 
   for (let index = 0; index < trailer.length; index += 1) {
     const line = trailer[index]!;
+    if (line.startsWith("artifact:\t")) {
+      const artifact = decodeArtifact(line);
+      if (artifact !== null) {
+        artifacts.push(artifact);
+      }
+      continue;
+    }
     if (line.startsWith("evidence: ")) {
       evidence = line
         .slice("evidence: ".length)
@@ -191,6 +244,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
     summary,
     evidence,
     filesChanged,
+    artifacts,
     diff,
     diffTruncated,
     totalFilesChanged: Math.max(totalFilesChanged, filesChanged.length),

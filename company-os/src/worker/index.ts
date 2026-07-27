@@ -6,3 +6,4 @@ export * from "./types.js";
 export * from "./worktree.js";
 export * from "./review.js";
 export * from "./report.js";
+export * from "./artifacts.js";

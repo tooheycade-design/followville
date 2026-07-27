@@ -52,6 +52,8 @@ export interface GateInput {
   diff?: string | null;
   /** True when `diff` is only the beginning of a larger one. */
   diffTruncated?: boolean;
+  /** Things an owner could open: screenshots, renders, logs. */
+  artifacts?: readonly { kind: string; label: string; retrieval: string }[];
 }
 
 /**
@@ -127,6 +129,11 @@ function buildJudgementPrompt(input: GateInput): string {
     "",
     `Evidence: ${input.workerEvidence.join(" | ") || "none"}`,
     `Files changed: ${input.filesChanged.join(", ") || "none"}`,
+    `Artifacts: ${
+      (input.artifacts ?? [])
+        .map((artifact) => `${artifact.kind} "${artifact.label}"`)
+        .join(", ") || "none"
+    }`,
     ...change,
     "",
     "Judge the work on the report and the change above. Use missing_evidence",
