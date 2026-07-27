@@ -27,6 +27,7 @@ export interface WorkResult {
   artifacts: readonly EvidenceArtifact[];
   /** Checks the runtime actually executed, never claims copied from model prose. */
   testsCompleted: readonly string[];
+  testsFailed: readonly string[];
   modelProvider: string | null;
   modelId: string | null;
   inputTokens: number;

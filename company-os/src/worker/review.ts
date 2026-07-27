@@ -1,6 +1,7 @@
 import { AuditEventSchema, type AuditEvent, type Task } from "../domain/schemas.js";
 import { digest } from "../domain/fingerprints.js";
 import { ORGANIZATION_ID, PROJECT_ID, SEED_AGENTS } from "../config/seed-agents.js";
+import { decodeWorkerReport } from "./report.js";
 
 export type ReviewVerdict = "approved_for_owner" | "changes_requested";
 
@@ -25,11 +26,45 @@ export interface ReviewInput {
   /** Present in production; optional only for callers reading historical rows. */
   runId?: string | null;
   testsCompleted?: readonly string[];
+  testsFailed?: readonly string[];
 }
 
 export interface Reviewer {
   readonly name: string;
   review(input: ReviewInput): Promise<ReviewResult>;
+}
+
+/** Gives a revision the recorded reviewer reason and failed runtime checks. */
+export function reviewReworkBriefing(
+  events: readonly { action: string; reason: string }[],
+): string {
+  const review = [...events]
+    .reverse()
+    .find((event) => event.action === "review.changes_requested");
+  const completion = [...events]
+    .reverse()
+    .find((event) => event.action === "worker.completed");
+  const report =
+    completion === undefined ? null : decodeWorkerReport(completion.reason);
+  const diagnostics =
+    report?.evidence.filter(
+      (line) =>
+        /^check=.* failed /.test(line) ||
+        line.startsWith("check_output=") ||
+        line.startsWith("unverified="),
+    ) ?? [];
+  if (review === undefined && diagnostics.length === 0) {
+    return "";
+  }
+  return [
+    "",
+    "This task was previously sent back by the independent reviewer.",
+    ...(review === undefined ? [] : [`Reviewer: ${review.reason.slice(0, 1_500)}`]),
+    ...(diagnostics.length === 0
+      ? []
+      : ["Runtime verification diagnostics:", ...diagnostics.map((line) => `- ${line}`)]),
+    "Fix the recorded failure before presenting the revision again.",
+  ].join("\n");
 }
 
 /**
@@ -78,6 +113,17 @@ export class EvidenceReviewer implements Reviewer {
           input.testsCompleted.length > 0
             ? `${input.testsCompleted.length} runtime-verified check(s) recorded.`
             : "The task requires checks, but the runtime recorded none.",
+      });
+    }
+
+    if (input.testsFailed !== undefined) {
+      findings.push({
+        criterion: "Every runtime-owned check passed",
+        met: input.testsFailed.length === 0,
+        note:
+          input.testsFailed.length === 0
+            ? "No failed runtime checks."
+            : `Failed checks: ${input.testsFailed.join(", ")}.`,
       });
     }
 

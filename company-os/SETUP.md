@@ -19,10 +19,11 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0019 applied | Done in development; 0017-0019 live-verified with rollback-only transactions |
+| Migrations 0011-0021 applied | Done in development; 0017-0021 live-verified with rollback-only transactions |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
-| Runtime-owned test evidence | Schema and approval guard done; general command runner remains |
+| Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
+| Reviewer revision loop | Done; failed checks and review feedback automatically requeue |
 | Factory dashboard deployment | Local only; shared private deployment remains |
 
 ## Models
@@ -212,6 +213,8 @@ numbered migration.
 | 0017 | Preserve owner feedback and atomically queue a new revision |
 | 0018 | Link real worker attempts, usage, audit, and completion to durable runs |
 | 0019 | Reject contradictory run states and retain unknown-model usage |
+| 0020 | Atomically requeue reviewer-requested revisions |
+| 0021 | Stop automatic revision loops after three review cycles |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -243,11 +246,14 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-Build the runtime-owned verification command registry. Agent prose is never
-accepted as proof that a test ran; tasks with test requirements currently return
-for revision until a trusted verifier records a passing command. Then repair or
-archive the historical approval rows that predate durable packets, restore
-Claude authentication for genuinely independent review, deploy the private
-dashboard, and integrate draft pull requests through a GitHub App.
+Repair or archive the historical approval rows that predate durable packets,
+restore Claude authentication for genuinely independent review, deploy the
+private dashboard, and integrate draft pull requests through a GitHub App.
+
+The trusted verification registry now runs fixed commands selected from changed
+paths. Company OS code gets strict TypeScript and the core suite; dashboard code
+gets strict TypeScript, tests, and a production build; public-town web changes
+get the Playwright suite; every change gets `git diff --check`. Unknown code
+areas fail closed until a maintainer adds a repository-owned verifier.
 
 See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.

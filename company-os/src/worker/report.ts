@@ -66,6 +66,7 @@ export interface WorkerReport {
   summary: string;
   evidence: readonly string[];
   testsCompleted: readonly string[];
+  testsFailed: readonly string[];
   filesChanged: readonly string[];
   artifacts: readonly ReportedArtifact[];
   /** The change itself, or null when none was captured. */
@@ -80,6 +81,7 @@ export interface WorkerReportInput {
   summary: string;
   evidence: readonly string[];
   testsCompleted?: readonly string[];
+  testsFailed?: readonly string[];
   filesChanged: readonly string[];
   diff?: string | null;
   artifacts?: readonly ReportedArtifact[];
@@ -146,6 +148,9 @@ export function encodeWorkerReport(input: WorkerReportInput): string {
   for (const completed of input.testsCompleted ?? []) {
     lines.push(`test: ${JSON.stringify(completed)}`);
   }
+  for (const failed of input.testsFailed ?? []) {
+    lines.push(`test-failed: ${JSON.stringify(failed)}`);
+  }
   lines.push(`files: ${input.filesChanged.length}`);
   if (files.length > 0) {
     lines.push(`changed: ${files.join(", ")}`);
@@ -186,6 +191,7 @@ function decodeLegacy(reason: string): WorkerReport {
       summary: reason,
       evidence: [],
       testsCompleted: [],
+      testsFailed: [],
       filesChanged: [],
       artifacts: [],
       diff: null,
@@ -211,6 +217,7 @@ function decodeLegacy(reason: string): WorkerReport {
     summary: lines.slice(0, trailerIndex).join("\n").trimEnd(),
     evidence,
     testsCompleted: [],
+    testsFailed: [],
     filesChanged,
     // Rows written before artifacts existed have none, which is different from
     // having produced none — but nothing was recorded either way.
@@ -234,6 +241,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
 
   let evidence: readonly string[] = [];
   const testsCompleted: string[] = [];
+  const testsFailed: string[] = [];
   let filesChanged: readonly string[] = [];
   let totalFilesChanged = 0;
   let diff: string | null = null;
@@ -267,6 +275,17 @@ export function decodeWorkerReport(reason: string): WorkerReport {
       }
       continue;
     }
+    if (line.startsWith("test-failed: ")) {
+      try {
+        const failed = JSON.parse(line.slice("test-failed: ".length)) as unknown;
+        if (typeof failed === "string" && failed.length > 0) {
+          testsFailed.push(failed);
+        }
+      } catch {
+        // Preserve the rest of a report even if one historical line is bad.
+      }
+      continue;
+    }
     if (line.startsWith("files: ")) {
       totalFilesChanged = Number.parseInt(line.slice("files: ".length), 10) || 0;
       continue;
@@ -291,6 +310,7 @@ export function decodeWorkerReport(reason: string): WorkerReport {
     summary,
     evidence,
     testsCompleted,
+    testsFailed,
     filesChanged,
     artifacts,
     diff,

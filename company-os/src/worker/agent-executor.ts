@@ -5,6 +5,7 @@ import type { ModelProvider } from "../providers/types.js";
 import { collectArtifacts } from "./artifacts.js";
 import { createPathGuard } from "./path-guard.js";
 import type { TaskExecutor, WorkResult } from "./types.js";
+import type { WorkVerifier } from "./verification.js";
 import { WorktreeManager, type Worktree } from "./worktree.js";
 
 /**
@@ -36,6 +37,8 @@ export interface AgentExecutorOptions {
    * bound them. This caps how long one task may occupy the subscription.
    */
   maxSubscriptionRunsPerTask: number;
+  /** Trusted repository-owned checks, selected independently of model output. */
+  verifier?: WorkVerifier;
 }
 
 /**
@@ -128,6 +131,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         diff: null,
         artifacts: [],
         testsCompleted: [],
+        testsFailed: [],
         modelProvider: this.options.provider.name,
         modelId: null,
         inputTokens: 0,
@@ -210,6 +214,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           diff,
           artifacts: [],
           testsCompleted: [],
+          testsFailed: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -240,6 +245,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           diff,
           artifacts: [],
           testsCompleted: [],
+          testsFailed: [],
           modelProvider: this.options.provider.name,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
@@ -272,6 +278,48 @@ export class AgentTaskExecutor implements TaskExecutor {
       // the report in its own right, so it is neither capped at twenty nor
       // recovered by splitting a sentence apart.
 
+      const verification =
+        this.options.verifier === undefined
+          ? { passed: true, checks: [], unverifiedPaths: [] }
+          : await this.options.verifier.verify({
+              task,
+              worktree,
+              filesChanged,
+              signal,
+            });
+      for (const check of verification.checks) {
+        evidence.push(
+          `check=${check.id} ${check.passed ? "passed" : "failed"} ${check.durationMs}ms`,
+        );
+        if (!check.passed && check.output.length > 0) {
+          evidence.push(
+            `check_output=${check.output.replace(/\s+/g, " ").slice(0, 800)}`,
+          );
+        }
+      }
+      for (const unverified of verification.unverifiedPaths) {
+        evidence.push(`unverified=${unverified}`);
+      }
+      const testsCompleted = verification.checks
+        .filter((check) => check.passed)
+        .map((check) => check.label);
+      const testsFailed = [
+        ...verification.checks
+          .filter((check) => !check.passed)
+          .map((check) => check.label),
+        ...verification.unverifiedPaths,
+      ];
+      const text = response.text.trim();
+      const modelSummary =
+        (text.length > MAX_SUMMARY_CHARS
+          ? `${text.slice(0, MAX_SUMMARY_CHARS)}\n[summary truncated at ${MAX_SUMMARY_CHARS} characters]`
+          : text) || "The agent reported no summary.";
+      const summary = verification.passed
+        ? modelSummary
+        : `${modelSummary}\n\nRuntime verification failed: ${
+            testsFailed.join(", ") || "unknown check"
+          }`;
+
       // Collected while the worktree still exists; afterwards these files are
       // only reachable through the checkpoint commit.
       const artifacts = await collectArtifacts({
@@ -293,20 +341,15 @@ export class AgentTaskExecutor implements TaskExecutor {
         );
       }
 
-      const text = response.text.trim();
       return {
         outcome: "completed",
-        summary:
-          (text.length > MAX_SUMMARY_CHARS
-            ? `${text.slice(0, MAX_SUMMARY_CHARS)}\n[summary truncated at ${MAX_SUMMARY_CHARS} characters]`
-            : text) || "The agent reported no summary.",
+        summary,
         evidence,
         filesChanged,
         diff,
         artifacts,
-        // Provider prose may describe tests, but only a runtime-owned verifier
-        // can attest that a command ran. That verifier is intentionally separate.
-        testsCompleted: [],
+        testsCompleted,
+        testsFailed,
         modelProvider: this.options.provider.name,
         modelId: response.model,
         inputTokens: response.usage.inputTokens,

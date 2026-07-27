@@ -112,3 +112,29 @@ test("worker run completion rejects contradictory states and retains unknown mod
   assert.match(sql, /coalesce\(nullif\(payload->>'modelId', ''\), 'unknown'\)/);
   assert.match(sql, /if v_provider is not null then/);
 });
+
+test("reviewer-requested revisions become leaseable again atomically", () => {
+  const sql = migration("0020_requeue_reviewer_revisions.sql");
+  const review = sql.slice(
+    sql.indexOf("create or replace function public.company_os_record_review"),
+  );
+
+  assert.match(review, /set status = v_next_status/);
+  assert.match(review, /set status = 'queued'/);
+  assert.match(review, /stored\.action = 'review\.changes_requested'/);
+  assert.ok(
+    review.indexOf("set status = v_next_status") <
+      review.indexOf("set status = 'queued'"),
+    "the reviewed rejection must be recorded as changes_requested before requeue",
+  );
+});
+
+test("automatic revision loops stop after three review cycles", () => {
+  const sql = migration("0021_cap_automatic_revision_loops.sql");
+
+  assert.match(sql, /old\.status = 'changes_requested'/);
+  assert.match(sql, /new\.status = 'queued'/);
+  assert.match(sql, /old\.review_cycle_count >= 3/);
+  assert.match(sql, /new\.status := 'failed'/);
+  assert.match(sql, /before update on company_ops\.tasks/);
+});

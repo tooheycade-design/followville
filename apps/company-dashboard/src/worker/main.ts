@@ -19,6 +19,7 @@ import {
   ClaudeCodeProvider,
   CodexProvider,
   RepositoryReportExecutor,
+  RepositoryVerificationRunner,
   SEED_AGENTS,
   WorktreeManager,
   runWorker,
@@ -45,6 +46,7 @@ import {
   dueJobs,
   recordRun,
   reviewAuditEvent,
+  reviewReworkBriefing,
   type ScheduleState,
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "../lib/state/types";
@@ -145,6 +147,7 @@ const executor: TaskExecutor =
         repository: "followville_repo",
         invocationTimeoutMs: 15 * 60_000,
         maxSubscriptionRunsPerTask: 1,
+        verifier: new RepositoryVerificationRunner(repositoryRoot),
         reworkBriefing: async (task) => {
           const state = await companyRepository().load();
           const taskRequestIds = new Set(
@@ -166,17 +169,22 @@ const executor: TaskExecutor =
               state.auditEvents.filter((event) => event.taskId === task.id),
             ),
           );
-          if (ownerFeedback.length === 0) {
-            return gateFeedback;
-          }
-          return [
-            gateFeedback,
-            "",
-            "This task was sent back by an authenticated owner.",
-            "Owner revision feedback:",
-            ...ownerFeedback.map((comment) => `- ${comment}`),
-            "Preserve the prior checkpoint. Address this feedback in a new revision.",
-          ].join("\n");
+          const reviewerFeedback = reviewReworkBriefing(
+            state.auditEvents.filter((event) => event.taskId === task.id),
+          );
+          const ownerBriefing =
+            ownerFeedback.length === 0
+              ? ""
+              : [
+                  "",
+                  "This task was sent back by an authenticated owner.",
+                  "Owner revision feedback:",
+                  ...ownerFeedback.map((comment) => `- ${comment}`),
+                  "Preserve the prior checkpoint. Address this feedback in a new revision.",
+                ].join("\n");
+          return [gateFeedback, reviewerFeedback, ownerBriefing]
+            .filter((section) => section.length > 0)
+            .join("\n");
         },
       });
 
@@ -242,6 +250,7 @@ async function runReviewPass(): Promise<number> {
       filesChanged: report.filesChanged,
       runId: completedRunId,
       testsCompleted: report.testsCompleted,
+      testsFailed: report.testsFailed,
     });
 
     // The reviewer checks that evidence exists; the CEO decides whether the

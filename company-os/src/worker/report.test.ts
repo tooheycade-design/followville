@@ -38,11 +38,13 @@ test("only runtime-recorded checks survive as completed tests", () => {
       summary: "Verified the implementation.",
       evidence: ["provider=codex"],
       testsCompleted: ["pnpm test", "pnpm tsc --noEmit"],
+      testsFailed: ["pnpm build"],
       filesChanged: ["company-os/src/example.ts"],
     }),
   );
 
   assert.deepEqual(decoded.testsCompleted, ["pnpm test", "pnpm tsc --noEmit"]);
+  assert.deepEqual(decoded.testsFailed, ["pnpm build"]);
 });
 
 test("the diff the worker produced reaches the reader", () => {

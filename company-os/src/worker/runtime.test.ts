@@ -138,6 +138,7 @@ function executor(result: Partial<WorkResult>, name = "fake"): TaskExecutor {
         diff: null,
         artifacts: [],
         testsCompleted: [],
+        testsFailed: [],
         modelProvider: null,
         modelId: null,
         inputTokens: 0,

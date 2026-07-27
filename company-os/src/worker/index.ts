@@ -7,3 +7,4 @@ export * from "./worktree.js";
 export * from "./review.js";
 export * from "./report.js";
 export * from "./artifacts.js";
+export * from "./verification.js";

@@ -307,6 +307,7 @@ export async function runLeasedTask(
     summary: result.summary,
     evidence: result.evidence,
     testsCompleted: result.testsCompleted,
+    testsFailed: result.testsFailed,
     filesChanged: result.filesChanged,
     diff: result.diff,
     artifacts: result.artifacts.map(reportedArtifact),
@@ -322,6 +323,7 @@ export async function runLeasedTask(
       filesChanged: result.filesChanged,
       costUsdMicros: result.costUsdMicros,
       testsCompleted: result.testsCompleted,
+      testsFailed: result.testsFailed,
     },
   );
 

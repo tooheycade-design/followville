@@ -15,12 +15,13 @@ state, owner authentication, the factory dashboard, leases, isolated
 worktrees, model execution, review, scheduling, durable checkpoints, owner
 feedback, and truthful run records are implemented in development.
 
-The immediate dependency is a trusted verification-command registry. Model
-prose is not test evidence, so code tasks with test requirements now stop
-before owner approval until the runtime itself records a passing check. After
-that: repair historical packet-less tasks, restore two-model review, deploy the
-private dashboard, integrate draft pull requests, and add durable multi-machine
-artifact storage. See `../VERIFIED_CURRENT_STATE.md`.
+The trusted verification-command registry is now implemented for Company OS,
+dashboard, and public-town browser changes. Model prose is not test evidence;
+fixed repository-owned commands produce the pass/fail record, and reviewer
+rejections automatically queue another attempt. Next: repair historical
+packet-less tasks, restore two-model review, deploy the private dashboard,
+integrate draft pull requests, and add durable multi-machine artifact storage.
+See `../VERIFIED_CURRENT_STATE.md`.
 
 ## Phase 0 — Architecture and deterministic foundation (done)
 
@@ -61,8 +62,7 @@ Remaining work turns a reviewed checkpoint into a complete draft pull request:
 
 1. Assemble a context package: constitution, agent profile, task, retrieved
    memory, relevant files. Not the whole company history.
-2. Run trusted project-owned verification commands and capture structured
-   results.
+2. Extend trusted verification to Blender and generator changes.
 3. Open a draft pull request through a GitHub App.
 4. Store evidence bytes where both owners' machines can retrieve them.
 5. Register worker health and capacity across machines.

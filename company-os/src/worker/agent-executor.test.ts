@@ -15,6 +15,7 @@ import type {
 } from "../providers/types.js";
 import { AgentTaskExecutor, narrowestScopeDirectory } from "./agent-executor.js";
 import { WorktreeManager } from "./worktree.js";
+import type { WorkVerifier } from "./verification.js";
 
 const NOW = "2026-07-26T19:00:00.000Z";
 let counter = 0;
@@ -121,7 +122,11 @@ class ScriptedProvider implements ModelProvider {
   }
 }
 
-function executorFor(provider: ModelProvider, repo: ReturnType<typeof makeRepository>) {
+function executorFor(
+  provider: ModelProvider,
+  repo: ReturnType<typeof makeRepository>,
+  verifier?: WorkVerifier,
+) {
   return new AgentTaskExecutor({
     agent: SEED_AGENTS.engineer,
     provider,
@@ -129,6 +134,7 @@ function executorFor(provider: ModelProvider, repo: ReturnType<typeof makeReposi
     repository: "followville_repo",
     invocationTimeoutMs: 30_000,
     maxSubscriptionRunsPerTask: 1,
+    ...(verifier === undefined ? {} : { verifier }),
   });
 }
 
@@ -182,6 +188,70 @@ test("the preserved commit is named in the evidence", async () => {
   const commit = result.evidence.find((line) => line.startsWith("commit="));
   assert.ok(commit, "an owner needs to know where the work is");
   assert.match(commit, /^commit=[0-9a-f]{40}$/);
+});
+
+test("runtime-owned passing checks reach the completed-work evidence", async () => {
+  const repo = makeRepository();
+  const verifier: WorkVerifier = {
+    async verify() {
+      return {
+        passed: true,
+        unverifiedPaths: [],
+        checks: [
+          {
+            id: "core-tests",
+            label: "Company OS test suite",
+            passed: true,
+            durationMs: 42,
+            output: "all pass",
+          },
+        ],
+      };
+    },
+  };
+  const result = await executorFor(
+    new ScriptedProvider(["notes.md"]),
+    repo,
+    verifier,
+  ).execute(makeTask(), new AbortController().signal);
+
+  assert.equal(result.outcome, "completed");
+  assert.deepEqual(result.testsCompleted, ["Company OS test suite"]);
+  assert.ok(result.evidence.includes("check=core-tests passed 42ms"));
+});
+
+test("a failed trusted check reaches review with diagnostics for revision", async () => {
+  const repo = makeRepository();
+  const verifier: WorkVerifier = {
+    async verify() {
+      return {
+        passed: false,
+        unverifiedPaths: [],
+        checks: [
+          {
+            id: "core-typecheck",
+            label: "Company OS strict TypeScript",
+            passed: false,
+            durationMs: 18,
+            output: "src/example.ts(1,1): error TS1005",
+          },
+        ],
+      };
+    },
+  };
+  const result = await executorFor(
+    new ScriptedProvider(["notes.md"]),
+    repo,
+    verifier,
+  ).execute(makeTask(), new AbortController().signal);
+
+  assert.equal(result.outcome, "completed");
+  assert.match(result.summary, /Runtime verification failed/);
+  assert.ok(result.evidence.includes("check=core-typecheck failed 18ms"));
+  assert.ok(result.evidence.some((line) => line.includes("error TS1005")));
+  assert.deepEqual(result.testsCompleted, []);
+  assert.deepEqual(result.testsFailed, ["Company OS strict TypeScript"]);
+  assert.ok(result.evidence.some((line) => line.startsWith("commit=")));
 });
 
 test("a revision attempt receives the owner's feedback", async () => {

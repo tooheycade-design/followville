@@ -3,7 +3,12 @@ import { test } from "node:test";
 
 import { TaskSchema, type Task } from "../domain/schemas.js";
 import { ORGANIZATION_ID, PROJECT_ID, SEED_AGENTS } from "../config/seed-agents.js";
-import { EvidenceReviewer, assertIndependentReviewer } from "./review.js";
+import {
+  EvidenceReviewer,
+  assertIndependentReviewer,
+  reviewReworkBriefing,
+} from "./review.js";
+import { encodeWorkerReport } from "./report.js";
 
 let counter = 0;
 const nextId = (): string =>
@@ -103,6 +108,45 @@ test("an empty summary is sent back", async () => {
     filesChanged: [],
   });
   assert.equal(result.verdict, "changes_requested");
+});
+
+test("a failed runtime-owned check is always sent back", async () => {
+  const result = await reviewer.review({
+    task: makeTask(),
+    workerEvidence: ["check=core-tests failed 50ms"],
+    workerSummary: "Updated the implementation and recorded the failed check.",
+    filesChanged: ["company-os/src/example.ts"],
+    testsCompleted: ["Company OS strict TypeScript"],
+    testsFailed: ["Company OS test suite"],
+  });
+
+  assert.equal(result.verdict, "changes_requested");
+  assert.match(result.summary, /Failed checks: Company OS test suite/);
+});
+
+test("the next attempt receives reviewer and failed-check diagnostics", () => {
+  const briefing = reviewReworkBriefing([
+    {
+      action: "worker.completed",
+      reason: encodeWorkerReport({
+        summary: "Changed the implementation.",
+        evidence: [
+          "check=core-tests failed 50ms",
+          "check_output=one assertion failed",
+        ],
+        filesChanged: ["company-os/src/example.ts"],
+        testsFailed: ["Company OS test suite"],
+      }),
+    },
+    {
+      action: "review.changes_requested",
+      reason: "Failed checks: Company OS test suite.",
+    },
+  ]);
+
+  assert.match(briefing, /independent reviewer/);
+  assert.match(briefing, /Failed checks: Company OS test suite/);
+  assert.match(briefing, /one assertion failed/);
 });
 
 test("a task whose worker and reviewer differ passes the independence check", () => {
