@@ -32,7 +32,7 @@ export function GoalForm() {
         />
       </label>
       <button type="submit" disabled={pending}>
-        {pending ? "Simulating…" : "Run simulation"}
+        {pending ? "Running test…" : "Run lifecycle test"}
       </button>
       {result !== null && (
         <p className={`notice${result.ok ? "" : " notice--error"}`}>

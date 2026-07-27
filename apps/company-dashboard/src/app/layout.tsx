@@ -9,7 +9,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Followville Company OS",
   description:
-    "Private owner dashboard for the Followville AI company. Simulation-only.",
+    "Private owner dashboard for Followville's owner-gated AI workers.",
   robots: { index: false, follow: false },
 };
 
@@ -39,8 +39,8 @@ export default async function RootLayout({
               className="sim-flag"
               title="Model work runs on existing Codex and Claude subscriptions. Subscription usage is not metered by this ledger, so it is not included here."
             >
-              Simulation only · $0 metered API spend (subscription usage not
-              measured) ·{" "}
+              Automated workers active · owner-gated production · $0 metered
+              API spend (subscription usage not measured) ·{" "}
               {companyRepository().backend === "supabase"
                 ? "shared database"
                 : "local store"}

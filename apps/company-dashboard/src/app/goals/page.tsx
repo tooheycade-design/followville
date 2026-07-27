@@ -12,12 +12,11 @@ export default async function GoalsPage() {
 
   return (
     <>
-      <h2>Submit a goal</h2>
+      <h2>Lifecycle test lab</h2>
       <p className="deck">
-        The manager pipeline turns a goal into a bounded task, runs the policy
-        and budget checks, walks the task lifecycle, and stops at a pending
-        human approval. In Phase 1 this is the deterministic simulator — no
-        model is called and nothing outside this dashboard changes.
+        Exercise the deterministic lifecycle without calling a model or
+        changing the repository. To send real work to the automated workers,
+        use the CEO page.
       </p>
       <GoalForm />
 
