@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { parseCodexOutput } from "./codex.js";
+import { describeFailure, parseCodexOutput } from "./codex.js";
 
 const TRANSCRIPT = [
   "sandbox: read-only",
@@ -66,4 +66,27 @@ test("only the last assistant turn is taken when several appear", () => {
     "100",
   ].join("\n");
   assert.equal(parseCodexOutput(multi, false).text, "final answer");
+});
+
+test("a timeout is named rather than reported as a generic error", () => {
+  const error = Object.assign(new Error("killed"), { killed: true });
+  assert.match(describeFailure(error, 900_000), /15-minute limit/);
+});
+
+test("an output overflow is named", () => {
+  assert.match(
+    describeFailure(new Error("stdout maxBuffer length exceeded"), 900_000),
+    /more output than the runtime accepts/,
+  );
+});
+
+test("a lost lease abort is named", () => {
+  const error = Object.assign(new Error("aborted"), { code: "ABORT_ERR" });
+  assert.match(describeFailure(error, 900_000), /lease was lost/);
+});
+
+test("an unknown failure keeps the first line of the real message", () => {
+  const detail = describeFailure(new Error("spawn ENOENT\nstack trace"), 900_000);
+  assert.match(detail, /spawn ENOENT/);
+  assert.ok(!detail.includes("stack trace"));
 });

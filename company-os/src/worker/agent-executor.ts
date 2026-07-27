@@ -18,6 +18,31 @@ export interface AgentExecutorOptions {
   maxSubscriptionRunsPerTask: number;
 }
 
+/**
+ * The narrowest directory that contains everything the task may touch.
+ *
+ * Pointing the provider at the repository root makes it scan tens of
+ * megabytes of Blender scenes and exported geometry it is not allowed to touch
+ * anyway, which wastes most of a run before any work starts. When every
+ * allowed prefix shares one top-level directory, the agent is started there
+ * instead. This narrows attention, not permission: the policy check after the
+ * run still evaluates every changed path against the full scope.
+ */
+export function narrowestScopeDirectory(task: Task): string | null {
+  const prefixes = task.repositoryScopes.flatMap((scope) =>
+    scope.allowedPathPrefixes.map((prefix) => prefix.replace(/^\/+|\/+$/g, "")),
+  );
+  if (prefixes.length === 0 || prefixes.some((prefix) => prefix.length === 0)) {
+    return null;
+  }
+  const tops = new Set(prefixes.map((prefix) => prefix.split("/")[0]));
+  if (tops.size !== 1) {
+    return null;
+  }
+  const [only] = [...tops];
+  return only ?? null;
+}
+
 function buildPrompt(task: Task, worktreePath: string): string {
   const criteria = task.acceptanceCriteria
     .map((criterion, index) => `${index + 1}. ${criterion.description}`)
@@ -91,9 +116,14 @@ export class AgentTaskExecutor implements TaskExecutor {
     let worktree: Worktree | null = null;
     try {
       worktree = await this.options.worktrees.create(task.id);
+      const scopeDirectory = narrowestScopeDirectory(task);
+      const workingDirectory =
+        scopeDirectory === null
+          ? worktree.path
+          : `${worktree.path}/${scopeDirectory}`;
       const response = await this.options.provider.invoke({
-        workingDirectory: worktree.path,
-        prompt: buildPrompt(task, worktree.path),
+        workingDirectory,
+        prompt: buildPrompt(task, workingDirectory),
         timeoutMs: this.options.invocationTimeoutMs,
         signal,
       });

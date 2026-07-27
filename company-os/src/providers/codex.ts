@@ -84,6 +84,7 @@ export class CodexProvider implements ModelProvider {
 
     let stdout: string;
     let failed = false;
+    let failureDetail: string | null = null;
     try {
       const result = await run(this.executablePath, args, {
         cwd: request.workingDirectory,
@@ -94,9 +95,16 @@ export class CodexProvider implements ModelProvider {
       // The transcript is emitted on stderr; the final answer on stdout.
       stdout = `${result.stderr}\n${result.stdout}`;
     } catch (error) {
-      const withOutput = error as Error & { stdout?: string; stderr?: string };
+      const withOutput = error as Error & {
+        stdout?: string;
+        stderr?: string;
+        killed?: boolean;
+        signal?: string;
+        code?: number | string;
+      };
       stdout = `${withOutput.stderr ?? ""}\n${withOutput.stdout ?? ""}`.trim();
       failed = true;
+      failureDetail = describeFailure(withOutput, request.timeoutMs);
       if (stdout.length === 0) {
         return {
           ok: false,
@@ -109,13 +117,39 @@ export class CodexProvider implements ModelProvider {
           },
           model: null,
           sessionId: null,
-          failureReason: withOutput.message,
+          failureReason: failureDetail,
         };
       }
     }
 
-    return parseCodexOutput(stdout, failed);
+    const parsed = parseCodexOutput(stdout, failed);
+    return failed && failureDetail !== null
+      ? { ...parsed, failureReason: failureDetail }
+      : parsed;
   }
+}
+
+/**
+ * Turns a spawn failure into something an owner can act on.
+ *
+ * "The CLI exited with an error" is true of a timeout, an output overflow, and
+ * a genuine crash alike, and hides which one happened. Naming the cause is the
+ * difference between tuning a limit and hunting a phantom bug.
+ */
+export function describeFailure(
+  error: Error & { killed?: boolean; signal?: string; code?: number | string },
+  timeoutMs: number,
+): string {
+  if (error.killed === true || error.signal === "SIGTERM") {
+    return `The model exceeded its ${Math.round(timeoutMs / 60_000)}-minute limit and was stopped. Narrow the task or raise the limit.`;
+  }
+  if (/maxBuffer/i.test(error.message)) {
+    return "The model produced more output than the runtime accepts. Narrow the task.";
+  }
+  if (error.code === "ABORT_ERR" || /abort/i.test(error.message)) {
+    return "The run was aborted, usually because the task lease was lost.";
+  }
+  return `The Codex CLI failed: ${error.message.split("\n")[0] ?? error.message}`;
 }
 
 /**

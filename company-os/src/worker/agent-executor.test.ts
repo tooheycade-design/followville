@@ -13,7 +13,7 @@ import type {
   ProviderRequest,
   ProviderResponse,
 } from "../providers/types.js";
-import { AgentTaskExecutor } from "./agent-executor.js";
+import { AgentTaskExecutor, narrowestScopeDirectory } from "./agent-executor.js";
 import { WorktreeManager } from "./worktree.js";
 
 const NOW = "2026-07-26T19:00:00.000Z";
@@ -133,7 +133,7 @@ function executorFor(provider: ModelProvider, repo: ReturnType<typeof makeReposi
 test("an in-scope edit completes and reports evidence", async () => {
   const repo = makeRepository();
   const result = await executorFor(
-    new ScriptedProvider(["company-os/notes.md"]),
+    new ScriptedProvider(["notes.md"]),
     repo,
   ).execute(makeTask(), new AbortController().signal);
 
@@ -146,7 +146,7 @@ test("an in-scope edit completes and reports evidence", async () => {
 test("an agent that edits the canonical world file fails instead of reaching review", async () => {
   const repo = makeRepository();
   const result = await executorFor(
-    new ScriptedProvider(["world_state.json"]),
+    new ScriptedProvider(["../world_state.json"]),
     repo,
   ).execute(makeTask(), new AbortController().signal);
 
@@ -158,7 +158,7 @@ test("an agent that edits the canonical world file fails instead of reaching rev
 test("an agent that edits an unrelated path fails", async () => {
   const repo = makeRepository();
   const result = await executorFor(
-    new ScriptedProvider(["secrets.env"]),
+    new ScriptedProvider(["../secrets.env"]),
     repo,
   ).execute(makeTask(), new AbortController().signal);
   assert.equal(result.outcome, "failed");
@@ -195,7 +195,7 @@ test("a provider failure is reported as failed with usage retained", async () =>
 
 test("the operator's checkout is never touched", async () => {
   const repo = makeRepository();
-  await executorFor(new ScriptedProvider(["company-os/notes.md"]), repo).execute(
+  await executorFor(new ScriptedProvider(["notes.md"]), repo).execute(
     makeTask(),
     new AbortController().signal,
   );
@@ -204,4 +204,35 @@ test("the operator's checkout is never touched", async () => {
     encoding: "utf8",
   });
   assert.equal(status.trim(), "");
+});
+
+test("the agent is started in the narrowest directory containing its scope", () => {
+  // The engineer's scope is confined to company-os, so the provider should be
+  // pointed there rather than at 43 MB of Blender scenes it cannot touch.
+  assert.equal(narrowestScopeDirectory(makeTask()), "company-os");
+});
+
+test("a scope spanning several top-level directories keeps the repository root", () => {
+  const task = makeTask();
+  const widened = {
+    ...task,
+    repositoryScopes: [
+      {
+        ...task.repositoryScopes[0]!,
+        allowedPathPrefixes: ["company-os/", "apps/"],
+      },
+    ],
+  } as Task;
+  assert.equal(narrowestScopeDirectory(widened), null);
+});
+
+test("an unbounded scope keeps the repository root", () => {
+  const task = makeTask();
+  const unbounded = {
+    ...task,
+    repositoryScopes: [
+      { ...task.repositoryScopes[0]!, allowedPathPrefixes: [""] },
+    ],
+  } as Task;
+  assert.equal(narrowestScopeDirectory(unbounded), null);
 });
