@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 
-import { OWNER_COOKIE, OWNERS, ownerById } from "@/lib/config";
+import { currentOwner } from "@/lib/auth";
 import { companyRepository } from "@/lib/state";
-import { switchOwnerAction } from "./actions";
+import { logoutAction } from "./actions";
 import { Nav } from "./nav";
 import "./globals.css";
 
@@ -19,8 +18,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const currentOwner = ownerById(cookieStore.get(OWNER_COOKIE)?.value);
+  const owner = await currentOwner();
 
   return (
     <html lang="en">
@@ -50,26 +48,22 @@ export default async function RootLayout({
           </header>
           <div className="nav">
             <Nav />
-            <form action={switchOwnerAction} className="identity">
-              <span>Acting as</span>
-              <select name="owner" defaultValue={currentOwner.id}>
-                {OWNERS.map((owner) => (
-                  <option key={owner.id} value={owner.id}>
-                    {owner.name}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="quiet">
-                Switch
-              </button>
-            </form>
+            {owner === null ? (
+              <span className="identity">Not signed in</span>
+            ) : (
+              <form action={logoutAction} className="identity">
+                <span>{owner.email}</span>
+                <button type="submit" className="quiet">
+                  Sign out
+                </button>
+              </form>
+            )}
           </div>
           <main>{children}</main>
           <footer className="dev-note">
-            Local development identity picker — real owner sign-in arrives with
-            the separate development Supabase project (requires human setup).
-            Nothing on this dashboard can merge, deploy, publish, spend, or
-            touch the live town.
+            Identity is validated by Supabase Auth and active Company OS owner
+            membership. Nothing on this dashboard can merge, deploy, publish,
+            spend, or touch the live town.
           </footer>
         </div>
       </body>

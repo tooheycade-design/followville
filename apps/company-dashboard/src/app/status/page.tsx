@@ -8,7 +8,7 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Worktree isolation", "implemented", "Each task runs in a disposable git worktree; out-of-scope edits fail before review"],
   ["Independent review", "implemented", "A different agent checks evidence before work reaches an owner"],
   ["Real model execution", "implemented", "Codex runs on the ChatGPT plan; Claude Code is optional and needs its own sign-in"],
-  ["Owner sign-in", "planned", "Supabase Auth session, replacing the owner picker; the database already rejects non-owners"],
+  ["Owner sign-in", "implemented", "Validated Supabase Auth claims plus active database owner membership; no identity picker"],
   ["Chief Executive", "implemented", "Plans owner intent into bounded work; cannot widen agent permissions"],
   ["Scheduled wake-ups", "implemented", "Interval-based scheduler with failure backoff; survives machines that sleep"],
   ["Model-backed CEO planning", "planned", "Same clamping, a real model instead of the heuristic planner"],

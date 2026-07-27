@@ -207,6 +207,8 @@ label.field {
 }
 
 input[type="text"],
+input[type="email"],
+input[type="password"],
 textarea,
 select {
   font: inherit;
@@ -217,6 +219,8 @@ select {
 }
 
 input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
@@ -244,6 +248,35 @@ button.danger {
   background: transparent;
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.auth-page {
+  min-height: 55vh;
+  display: grid;
+  place-items: center;
+}
+
+.auth-panel {
+  width: min(100%, 380px);
+  border: 1px solid var(--rule);
+  padding: 24px;
+}
+
+.auth-panel h1 {
+  margin: 4px 0 20px;
+  font: 700 24px/1.2 Georgia, serif;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .notice {
@@ -298,7 +331,7 @@ button.danger {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: flex-end;
   border-top: 1px solid var(--rule);
   padding-top: 14px;
   margin-top: 8px;

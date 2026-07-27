@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0015 applied | Done in development on 2026-07-27 |
+| Migrations 0011-0016 applied | Done in development; 0016 auth grants verified |
 
 ## Models
 
@@ -99,10 +99,25 @@ capabilities granted, the capabilities proposed, and who decided. A release
 walks the task through `proposed → planned → approved_for_work → queued` so
 the transition trigger checks each step.
 
-Note the escalation triggers match on subject, not on intent: writing "do not
-deploy this" in your instruction holds the work exactly as asking to deploy it
-would. Phrase constraints as scope ("write only inside `company-os/docs/`")
-rather than as prohibitions naming the thing you want avoided.
+Escalation triggers account for directive polarity. A constraint such as "do
+not deploy this" does not claim deployment authority, while an affirmative
+request to deploy still gets held for an owner. Mixed instructions remain
+conservative: a positive production action elsewhere in the same request is
+still escalated.
+
+## Owner authentication
+
+Copy `apps/company-dashboard/.env.example` to an ignored `.env.local` and fill
+in the development project's keys. `SUPABASE_PUBLISHABLE_KEY` is used only for
+the caller's cookie-backed Auth session. `SUPABASE_SECRET_KEY` remains
+server-only and powers the private Company OS repository; never expose it
+through a `NEXT_PUBLIC_` variable.
+
+The dashboard has no identity picker. Sign in with an existing Supabase Auth
+account whose `organization_members` row is active with role `owner`.
+Unauthenticated callers are redirected to `/login`, and signed-in non-owners
+are sent to `/unauthorized`. The database derives membership from `auth.uid()`;
+the browser cannot provide a user ID to impersonate another owner.
 
 ## Running the company
 
@@ -189,6 +204,7 @@ numbered migration.
 | 0013 | Evidence artifacts, and finished work reaching the approval queue |
 | 0014 | Separate accepting reviewed work from merge/deploy authorization |
 | 0015 | Pin append-only trigger helper search paths |
+| 0016 | Resolve the signed-in caller's active Company OS membership |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:

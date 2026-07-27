@@ -17,6 +17,7 @@ import {
   digest,
   simulateGoal,
   type AuditEvent,
+  type OwnerRegistry,
 } from "@followville/company-os-core";
 
 import { OWNER_REGISTRY, ownerName } from "./config";
@@ -213,12 +214,13 @@ export interface DecideHeldTaskResult {
 export async function decideHeldTask(
   input: DecideHeldTaskInput,
   repository: CompanyRepository = companyRepository(),
+  owners: OwnerRegistry = OWNER_REGISTRY,
 ): Promise<DecideHeldTaskResult> {
   const comment = input.comment.trim();
   if (comment.length === 0) {
     return { ok: false, message: "A decision needs a written comment." };
   }
-  if (!OWNER_REGISTRY.ownerUserIds.includes(input.deciderUserId)) {
+  if (!owners.ownerUserIds.includes(input.deciderUserId)) {
     return { ok: false, message: "Only a registered owner can release held work." };
   }
 
@@ -389,6 +391,7 @@ function decisionAudit(
 export async function decideApproval(
   input: DecideApprovalInput,
   repository: CompanyRepository = companyRepository(),
+  owners: OwnerRegistry = OWNER_REGISTRY,
 ): Promise<DecideApprovalResult> {
   const comment = input.comment.trim();
   if (comment.length === 0) {
@@ -416,7 +419,7 @@ export async function decideApproval(
   const outcome = applyApprovalDecision({
     request,
     decision,
-    owners: OWNER_REGISTRY,
+    owners,
     priorDecisions: state.approvalDecisions,
     now: decision.decidedAt,
   });

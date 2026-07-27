@@ -53,3 +53,18 @@ test("result acceptance and release retain distinct database gates", () => {
   assert.doesNotMatch(approved, /production_merge/);
   assert.match(merged, /request\.action = 'production_merge'/);
 });
+
+test("web identity comes from auth uid and cannot name another user", () => {
+  const sql = migration("0016_authenticated_member_identity.sql");
+
+  assert.match(sql, /member\.user_id = \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(sql, /company_os_my_membership\s*\([^)]*uuid/);
+  assert.match(
+    sql,
+    /revoke all on function public\.company_os_my_membership\(\)\s+from public, anon, service_role;/,
+  );
+  assert.match(
+    sql,
+    /grant execute on function public\.company_os_my_membership\(\) to authenticated;/,
+  );
+});

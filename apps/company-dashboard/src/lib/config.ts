@@ -14,10 +14,9 @@ export interface OwnerIdentity {
  * Without it, the fixed development placeholders keep the local JSON store
  * usable with no credentials.
  *
- * This is still a picker, not authentication: it establishes which owner the
- * dashboard acts as, and the database independently rejects any decision from
- * an account that is not an active owner. Supabase Auth sign-in replaces the
- * picker in the next phase.
+ * This registry remains the deterministic kernel's local policy input. Web
+ * identity comes from a validated Supabase Auth session and database
+ * membership; it never comes from this list or from a selectable cookie.
  */
 function parseOwners(): readonly OwnerIdentity[] {
   const configured = process.env.COMPANY_OS_OWNERS;
@@ -58,14 +57,11 @@ export const OWNER_REGISTRY: OwnerRegistry = {
   operatorUserIds: [],
 };
 
-export const OWNER_COOKIE = "fv_dev_owner";
-
-export function ownerById(id: string | undefined): OwnerIdentity {
-  const fallback = OWNERS[0];
-  if (fallback === undefined) {
-    throw new Error("At least one owner identity must be configured.");
-  }
-  return OWNERS.find((owner) => owner.id === id) ?? fallback;
+export function ownerRegistryFor(userId: string): OwnerRegistry {
+  return {
+    ...OWNER_REGISTRY,
+    ownerUserIds: [...new Set([...OWNER_REGISTRY.ownerUserIds, userId])],
+  };
 }
 
 export function ownerName(id: string): string {

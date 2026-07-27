@@ -126,6 +126,68 @@ test("publishing intent is escalated", async () => {
   assert.ok(initiative.escalations.some((e) => /public/i.test(e)));
 });
 
+test("prohibiting a sensitive action does not request that action", async () => {
+  const prohibitions = [
+    ["Do not deploy", "Make the local code change only."],
+    ["Safety first", "Never publish this to Instagram."],
+    ["Keep the database", "Do not accidentally delete or reset anything."],
+    ["No pricing changes", "Improve the existing free workflow."],
+    ["Protect the town", "Do not touch world_state or grow the town."],
+    ["Safety policy", "Production deployment must not happen."],
+  ] as const;
+
+  for (const [title, detail] of prohibitions) {
+    const initiative = await planInitiative({
+      intent: { title, detail },
+      planner: new HeuristicPlanner(),
+      idFactory: nextId,
+      now: NOW,
+    });
+    assert.deepEqual(
+      initiative.escalations,
+      [],
+      `${title}: ${detail} is a prohibition, not an action request`,
+    );
+    assert.ok(initiative.tasks.every((task) => task.status === "queued"));
+  }
+});
+
+test("a positive sensitive action still escalates beside a prohibition", async () => {
+  const initiative = await planInitiative({
+    intent: {
+      title: "Prepare local materials",
+      detail: "Do not deploy the code, but publish the approved announcement.",
+    },
+    planner: new HeuristicPlanner(),
+    idFactory: nextId,
+    now: NOW,
+  });
+
+  assert.equal(
+    initiative.escalations.some((reason) => /production/i.test(reason)),
+    false,
+  );
+  assert.equal(
+    initiative.escalations.some((reason) => /public/i.test(reason)),
+    true,
+  );
+});
+
+test("contrastive not does not hide a real production request", async () => {
+  const initiative = await planInitiative({
+    intent: {
+      title: "Release everywhere",
+      detail: "Not only deploy the build, but publish the announcement.",
+    },
+    planner: new HeuristicPlanner(),
+    idFactory: nextId,
+    now: NOW,
+  });
+
+  assert.ok(initiative.escalations.some((reason) => /production/i.test(reason)));
+  assert.ok(initiative.escalations.some((reason) => /public/i.test(reason)));
+});
+
 test("a planner proposing nothing is an error, not an empty initiative", async () => {
   await assert.rejects(
     () =>
