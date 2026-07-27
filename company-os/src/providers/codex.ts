@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { promisify } from "node:util";
 
@@ -82,44 +82,31 @@ export class CodexProvider implements ModelProvider {
       request.prompt,
     ];
 
-    let stdout: string;
-    let failed = false;
-    let failureDetail: string | null = null;
-    try {
-      const result = await run(this.executablePath, args, {
-        cwd: request.workingDirectory,
-        timeout: request.timeoutMs,
-        signal: request.signal,
-        maxBuffer: 32_000_000,
-      });
-      // The transcript is emitted on stderr; the final answer on stdout.
-      stdout = `${result.stderr}\n${result.stdout}`;
-    } catch (error) {
-      const withOutput = error as Error & {
-        stdout?: string;
-        stderr?: string;
-        killed?: boolean;
-        signal?: string;
-        code?: number | string;
+    const result = await spawnCollecting(this.executablePath, args, {
+      cwd: request.workingDirectory,
+      timeoutMs: request.timeoutMs,
+      signal: request.signal,
+    });
+
+    // The transcript is emitted on stderr; the final answer on stdout.
+    const stdout = `${result.stderr}\n${result.stdout}`.trim();
+    const failed = result.failure !== null;
+    const failureDetail = result.failure;
+
+    if (failed && stdout.length === 0) {
+      return {
+        ok: false,
+        text: "",
+        usage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          cachedInputTokens: 0,
+          costUsdMicros: 0,
+        },
+        model: null,
+        sessionId: null,
+        failureReason: failureDetail,
       };
-      stdout = `${withOutput.stderr ?? ""}\n${withOutput.stdout ?? ""}`.trim();
-      failed = true;
-      failureDetail = describeFailure(withOutput, request.timeoutMs);
-      if (stdout.length === 0) {
-        return {
-          ok: false,
-          text: "",
-          usage: {
-            inputTokens: 0,
-            outputTokens: 0,
-            cachedInputTokens: 0,
-            costUsdMicros: 0,
-          },
-          model: null,
-          sessionId: null,
-          failureReason: failureDetail,
-        };
-      }
     }
 
     const parsed = parseCodexOutput(stdout, failed);
@@ -127,6 +114,73 @@ export class CodexProvider implements ModelProvider {
       ? { ...parsed, failureReason: failureDetail }
       : parsed;
   }
+}
+
+export interface CollectedRun {
+  stdout: string;
+  stderr: string;
+  /** Null when the process exited cleanly. */
+  failure: string | null;
+}
+
+/**
+ * Runs a CLI to completion with stdin closed.
+ *
+ * `execFile` cannot close the child's stdin, and an agent CLI that finds an
+ * open stdin waits for input a headless run will never send. The process then
+ * sits at near-zero CPU until its timeout, which looks identical to a slow
+ * model and wasted two full runs before it was diagnosed. `spawn` with stdin
+ * set to "ignore" is the only way to guarantee the child sees a closed stream.
+ */
+export function spawnCollecting(
+  executable: string,
+  args: readonly string[],
+  options: { cwd: string; timeoutMs: number; signal?: AbortSignal },
+): Promise<CollectedRun> {
+  return new Promise((resolve) => {
+    const child = spawn(executable, [...args], {
+      cwd: options.cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const finish = (failure: string | null): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort", onAbort);
+      resolve({ stdout, stderr, failure });
+    };
+
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(
+        `The model exceeded its ${Math.round(options.timeoutMs / 60_000)}-minute limit and was stopped.`,
+      );
+    }, options.timeoutMs);
+
+    const onAbort = (): void => {
+      child.kill();
+      finish("The run was aborted, usually because the task lease was lost.");
+    };
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (error) => finish(`Could not start the CLI: ${error.message}`));
+    child.on("close", (code) =>
+      finish(code === 0 ? null : `The CLI exited with code ${code ?? "unknown"}.`),
+    );
+  });
 }
 
 /**
