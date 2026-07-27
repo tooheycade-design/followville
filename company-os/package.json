@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/domain/*.test.ts src/policy/*.test.ts src/orchestration/*.test.ts src/worker/*.test.ts src/agents/*.test.ts src/scheduler/*.test.ts",
+    "test": "tsx --test src/domain/*.test.ts src/policy/*.test.ts src/orchestration/*.test.ts src/worker/*.test.ts src/agents/*.test.ts src/scheduler/*.test.ts src/providers/*.test.ts",
     "simulate": "tsx src/cli/simulate.ts"
   },
   "dependencies": {

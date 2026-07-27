@@ -17,10 +17,12 @@ import path from "node:path";
 import {
   AgentTaskExecutor,
   ClaudeCodeProvider,
+  CodexProvider,
   RepositoryReportExecutor,
   SEED_AGENTS,
   WorktreeManager,
   runWorker,
+  type ModelProvider,
   type TaskExecutor,
 } from "@followville/company-os-core";
 
@@ -60,20 +62,45 @@ if (queue === null) {
   process.exit(1);
 }
 
-const executablePath = ClaudeCodeProvider.defaultExecutablePath();
-const provider =
-  executablePath === null ? null : new ClaudeCodeProvider(executablePath);
+/**
+ * Providers are tried in order and the first available one is used.
+ *
+ * Both run on an existing subscription, so the choice is about which account
+ * is signed in on this machine rather than cost. Every candidate is probed and
+ * reported even after one is chosen, so an unavailable provider is visible
+ * rather than silently skipped.
+ */
+async function selectProvider(): Promise<ModelProvider | null> {
+  const candidates: ModelProvider[] = [];
+  const codexPath = CodexProvider.defaultExecutablePath();
+  if (codexPath !== null) {
+    candidates.push(new CodexProvider(codexPath));
+  }
+  const claudePath = ClaudeCodeProvider.defaultExecutablePath();
+  if (claudePath !== null) {
+    candidates.push(new ClaudeCodeProvider(claudePath));
+  }
+  if (candidates.length === 0) {
+    log("no model CLI found; set CODEX_CLI_PATH or CLAUDE_CODE_PATH");
+    return null;
+  }
 
-if (provider !== null) {
-  const availability = await provider.checkAvailability();
-  log(
-    availability.available
-      ? `provider claude-code: ready (${availability.detail})`
-      : `provider claude-code: unavailable (${availability.reason}) - ${availability.detail}`,
-  );
-} else {
-  log("provider claude-code: no executable found; set CLAUDE_CODE_PATH");
+  let chosen: ModelProvider | null = null;
+  for (const candidate of candidates) {
+    const availability = await candidate.checkAvailability();
+    log(
+      availability.available
+        ? `provider ${candidate.name}: ready (${availability.detail})`
+        : `provider ${candidate.name}: unavailable (${availability.reason}) - ${availability.detail}`,
+    );
+    if (availability.available && chosen === null) {
+      chosen = candidate;
+    }
+  }
+  return chosen;
 }
+
+const provider = await selectProvider();
 
 if (checkOnly) {
   const reclaimed = await queue.reclaimExpiredLeases();
