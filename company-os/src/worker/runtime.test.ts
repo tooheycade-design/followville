@@ -225,3 +225,19 @@ test("maxTasks bounds a single run", async () => {
   );
   assert.equal(outcomes.length, 1);
 });
+
+test("evidence is recorded in readable form so a reviewer can use it", async () => {
+  const queue = new FakeQueue();
+  await runLeasedTask(
+    { task: makeTask(), leaseEpoch: 1, leaseExpiresAt: NOW },
+    executor({ evidence: ["branch=agent/task-1", "changed: company-os/a.md"] }),
+    queue,
+    OPTIONS,
+    nextId,
+  );
+  const completed = queue.audits.find((e) => e.action === "worker.completed");
+  assert.ok(completed);
+  assert.match(completed.reason, /evidence: /);
+  assert.match(completed.reason, /changed: company-os\/a\.md/);
+  assert.equal(completed.reason.split("\n")[0], "done", "summary stays first");
+});

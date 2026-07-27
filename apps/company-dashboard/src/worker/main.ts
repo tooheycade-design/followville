@@ -157,11 +157,28 @@ async function runReviewPass(): Promise<number> {
     );
     const completion = events.find((event) => event.action === "worker.completed");
 
+    // Split the recorded reason back into the worker's summary and its
+    // evidence. Passing an empty file list here silently told the reviewer
+    // nothing had changed, so it rejected work that was in fact correct.
+    const recordedReason = completion?.reason ?? "";
+    const evidenceLine = recordedReason
+      .split("\n")
+      .find((line) => line.startsWith("evidence: "));
+    const evidence =
+      evidenceLine === undefined
+        ? []
+        : evidenceLine.slice("evidence: ".length).split(" | ");
+    const changedEntry = evidence.find((item) => item.startsWith("changed: "));
+    const filesChanged =
+      changedEntry === undefined
+        ? []
+        : changedEntry.slice("changed: ".length).split(", ").filter(Boolean);
+
     const result = await reviewer.review({
       task,
-      workerEvidence: completion === undefined ? [] : [completion.reason],
-      workerSummary: completion?.reason ?? "",
-      filesChanged: [],
+      workerEvidence: evidence,
+      workerSummary: recordedReason.split("\n")[0] ?? "",
+      filesChanged,
     });
 
     const recorded = await reviewQueue.recordReview({

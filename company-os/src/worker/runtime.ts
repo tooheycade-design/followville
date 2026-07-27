@@ -219,10 +219,19 @@ export async function runLeasedTask(
         ? "blocked"
         : "failed";
 
+  // The evidence is written into the audit reason, not just hashed into the
+  // result digest. A reviewer reads what was recorded rather than what the
+  // worker said in passing, so anything it must judge on has to survive in
+  // readable form; a digest proves nothing was altered but cannot be read.
+  const recordedReason = [
+    result.summary,
+    ...(result.evidence.length > 0 ? [`evidence: ${result.evidence.join(" | ")}`] : []),
+  ].join("\n");
+
   await record(
     `worker.${result.outcome}`,
     result.outcome === "completed" ? "succeeded" : "failed",
-    result.summary,
+    recordedReason,
     { executor: executor.name },
     {
       evidence: result.evidence,
