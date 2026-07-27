@@ -161,22 +161,27 @@ test("the worker and reviewer are never the same agent", async () => {
   }
 });
 
-test("the CEO cannot grant a capability the assigned worker lacks", async () => {
-  // browser_preview is in the CEO's grantable set but no seed agent holds it.
-  // Granting it produced tasks that were planned, queued, leased, and only
-  // then blocked at execution — wasted work the planner should have prevented.
+test("the CEO cannot grant a capability no agent holds", async () => {
+  // This is what browser_preview used to be: in the CEO's grantable set but
+  // held by no agent, so tasks were planned, queued, leased, and only then
+  // blocked at execution. The planner must catch that at plan time.
   const initiative = await planInitiative({
-    intent: { title: "Check the UI", detail: "Look at the claim flow." },
+    intent: { title: "Prepare a migration", detail: "Draft the schema change." },
     planner: plannerReturning([
-      proposal({ requestedCapabilities: ["repository_read", "browser_preview"] }),
+      proposal({
+        requestedCapabilities: ["repository_read", "database_migration_prepare"],
+      }),
     ]),
     idFactory: nextId,
     now: NOW,
+    ownerGrantedCapabilities: ["database_migration_prepare"],
   });
   const task = initiative.tasks[0];
   assert.ok(task);
   assert.deepEqual(task.allowedCapabilities, ["repository_read"]);
-  assert.deepEqual(initiative.clampedCapabilities[0]?.removed, ["browser_preview"]);
+  assert.deepEqual(initiative.clampedCapabilities[0]?.removed, [
+    "database_migration_prepare",
+  ]);
 });
 
 test("every capability the CEO grants is one the worker can actually use", async () => {
@@ -193,5 +198,44 @@ test("every capability the CEO grants is one the worker can actually use", async
         `engineer must hold ${capability}`,
       );
     }
+  }
+});
+
+test("the CEO can now grant preview capabilities the engineer holds", async () => {
+  const initiative = await planInitiative({
+    intent: { title: "Check the UI", detail: "Look at the claim flow." },
+    planner: plannerReturning([
+      proposal({
+        requestedCapabilities: ["repository_read", "browser_preview", "blender_preview"],
+      }),
+    ]),
+    idFactory: nextId,
+    now: NOW,
+  });
+  assert.deepEqual(initiative.tasks[0]?.allowedCapabilities, [
+    "repository_read",
+    "browser_preview",
+    "blender_preview",
+  ]);
+  assert.equal(initiative.clampedCapabilities.length, 0);
+});
+
+test("preview capabilities did not smuggle in production authority", () => {
+  const production = [
+    "production_merge",
+    "production_deploy",
+    "production_database_write",
+    "canonical_world_growth",
+    "public_communication",
+    "social_publish",
+    "payment_charge",
+    "price_change",
+    "destructive_delete",
+  ];
+  for (const capability of production) {
+    assert.ok(
+      !SEED_AGENTS.engineer.capabilities.includes(capability as never),
+      `engineer must still not hold ${capability}`,
+    );
   }
 });

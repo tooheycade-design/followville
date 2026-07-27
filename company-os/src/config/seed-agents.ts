@@ -121,6 +121,8 @@ export const SEED_AGENTS = {
       "git_branch_create",
       "git_commit",
       "test_execute",
+      "browser_preview",
+      "blender_preview",
       "memory_write",
       "message_send",
     ],
