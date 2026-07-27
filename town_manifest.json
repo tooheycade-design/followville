@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1471072,
+    "bytes": 1518336,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "91c2380a37cb629cd88bfe24ceebe5c46112d37f0e207f2aad0a3766cecda30a"
+    "sha256": "744692c1f80a3093c2c77629dd74112e5a6046ab5e24f379267d65ddd9a5bd44"
   },
   "chunks": [
     {
@@ -11,7 +11,7 @@
         "bytes": 249196,
         "compression": "draco",
         "file": "town_chunks/civic-center.glb",
-        "sha256": "53a728c1906d4cb38a2c45f3184be539b5dd29a8c6092e59c91ca528a90953f9"
+        "sha256": "89e113540adbc378473682286d786030f967535e202c9e07aae9c865bc7f7829"
       },
       "bounds": {
         "center": [
@@ -27,29 +27,29 @@
       ],
       "house_ids": [],
       "id": "civic-center",
-      "initial": false,
+      "initial": true,
       "label": "Civic Center"
     },
     {
       "asset": {
-        "bytes": 80744,
+        "bytes": 80852,
         "compression": "draco",
         "file": "town_chunks/construction-zone.glb",
-        "sha256": "ebb6e7c893c79fb514d8856615e0bfbe4cfbfa04efbdc4c9cc86f61cfad3c820"
+        "sha256": "65b3476d68d46fdd3e23baa3ca2a0bf772a143e02a4db73f078265e96e260af8"
       },
       "bounds": {
         "center": [
           -70.5,
-          70.5
+          -64.5
         ],
         "radius": 18.0
       },
       "building_ids": [
-        172
+        524
       ],
       "house_ids": [],
       "id": "construction-zone",
-      "initial": false,
+      "initial": true,
       "label": "Construction Vote Site"
     },
     {
@@ -184,10 +184,10 @@
     },
     {
       "asset": {
-        "bytes": 129704,
+        "bytes": 130016,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-m1.glb",
-        "sha256": "402570fa2db61f927576aaebe461553d4e82e83e8b8ec04fb7c1f0f7558b0766"
+        "sha256": "6c33f6e632adc1620e14a87900e150c098856265ad208c490b7c53c1f9b0ac89"
       },
       "bounds": {
         "center": [
@@ -217,15 +217,15 @@
         79
       ],
       "id": "downtown-block-m1-m1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 124308,
+        "bytes": 124704,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-m2.glb",
-        "sha256": "81cb8b9cf6a7fabcc9ab9aad2a3c785183f9521a8c6cee760a7882587482c340"
+        "sha256": "df61d5b16ae448c6915559737226314f75fd5d266464facb73b1602fcef61cde"
       },
       "bounds": {
         "center": [
@@ -255,15 +255,15 @@
         109
       ],
       "id": "downtown-block-m1-m2",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 132240,
+        "bytes": 132560,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-p0.glb",
-        "sha256": "2ff0303ed2b80e2561e41285dcb93f39be5e2e5b1a24e57ac2f3832fa58176cb"
+        "sha256": "0e1b9e5704e2f271e86027e1c5b71848f376adc990d8baba0040e2f113882c86"
       },
       "bounds": {
         "center": [
@@ -293,15 +293,15 @@
         84
       ],
       "id": "downtown-block-m1-p0",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 107720,
+        "bytes": 108116,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-p1.glb",
-        "sha256": "4b031b9125b979bd71ae5de2871686ab1e015bceaf8326941b9d7c238860daf6"
+        "sha256": "8dc5cb78dcefb156b5cd25cbc61590f3478f1a339a49c44fee32689c7fa2e8a2"
       },
       "bounds": {
         "center": [
@@ -331,15 +331,15 @@
         115
       ],
       "id": "downtown-block-m1-p1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 107132,
+        "bytes": 107452,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m2-m1.glb",
-        "sha256": "c003c0cd880687ce109c8ac68f9e71cd80b586803904772291f1e85e19cf8767"
+        "sha256": "ce536513deeb4e0dd8fbf42bc11badbe61bcd1f10de37f9851894a1877e8ad02"
       },
       "bounds": {
         "center": [
@@ -369,15 +369,15 @@
         97
       ],
       "id": "downtown-block-m2-m1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 93672,
+        "bytes": 93988,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m2-p0.glb",
-        "sha256": "efa5be6c9c6d9b7e567c982b2768684db77e509fa1f206d8f062ba0ee6db604d"
+        "sha256": "61213bdae7e7bf96911390583d44279109f6384d021cef47b2fa963b80b36d0f"
       },
       "bounds": {
         "center": [
@@ -407,15 +407,15 @@
         103
       ],
       "id": "downtown-block-m2-p0",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 137680,
+        "bytes": 137988,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-m1.glb",
-        "sha256": "61faca99059e9606ba8b142015b6f5a61b6975b912009ae23676065011a8ec84"
+        "sha256": "0256bda6fe887952411a86f40276f39b30ca10296360a4f117baa46f04ebaf17"
       },
       "bounds": {
         "center": [
@@ -445,15 +445,15 @@
         91
       ],
       "id": "downtown-block-p0-m1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 109432,
+        "bytes": 109824,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-m2.glb",
-        "sha256": "cab90d183f8a0418f3980d98010dc41fccb280c6bd958d0af39dfda66cd93fb7"
+        "sha256": "d59255aa414acf95501407ef8dc7eb1bb277c1ef719d62cde747f77ebcdbf769"
       },
       "bounds": {
         "center": [
@@ -483,15 +483,15 @@
         122
       ],
       "id": "downtown-block-p0-m2",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 210168,
+        "bytes": 210320,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "066299b48942354aad4bcd89b128afe64d51df40aabd8bf80906f783ba0905f0"
+        "sha256": "f6575e48363a33b0e779799f624dba74e3f31c74280b1922839da332cf56c301"
       },
       "bounds": {
         "center": [
@@ -522,15 +522,15 @@
         30
       ],
       "id": "downtown-block-p0-p0",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 122368,
+        "bytes": 122680,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p1.glb",
-        "sha256": "46ed91b49a64ec1d5d2049afbc7c8e3ae3dfb9e389aa1026e24c512eae495af2"
+        "sha256": "096415419c775980812907f43637b21755f08c85e0968b325edc2565cdac52f0"
       },
       "bounds": {
         "center": [
@@ -560,15 +560,15 @@
         128
       ],
       "id": "downtown-block-p0-p1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 94036,
+        "bytes": 94352,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p1-m1.glb",
-        "sha256": "79f47a5a36cac351e1e2cb3a53e94fd7c2da7b210a8f41e876757d3ad0f332fe"
+        "sha256": "4fcedfe3ce13b5873057e70e2d581ba4e19de33c5f9face16d6d315196ad18b1"
       },
       "bounds": {
         "center": [
@@ -598,15 +598,15 @@
         134
       ],
       "id": "downtown-block-p1-m1",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 163876,
+        "bytes": 164100,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p1-p0.glb",
-        "sha256": "db413a689c8804daefc609c96c625ce8ecae24923ce9a5bf4231251d1ee1329b"
+        "sha256": "5f4183bf513575e680ab5db9286e6ad1b33afb0218c5a7aca89872521b97e946"
       },
       "bounds": {
         "center": [
@@ -631,15 +631,15 @@
         136
       ],
       "id": "downtown-block-p1-p0",
-      "initial": false,
+      "initial": true,
       "label": "Downtown block"
     },
     {
       "asset": {
-        "bytes": 50296,
+        "bytes": 80392,
         "compression": "draco",
         "file": "town_chunks/east-woods.glb",
-        "sha256": "1e533ccd6ac4e1454fdf76a0cbcbda4437b0336df518f4f324f353a42b755be1"
+        "sha256": "b5ad8eea6b1cb0a71fc0d05ecf5e5f90ca8142cedad502054bf6d4d4b356bf77"
       },
       "bounds": {
         "center": [
@@ -653,15 +653,37 @@
       ],
       "house_ids": [],
       "id": "east-woods",
-      "initial": false,
+      "initial": true,
       "label": "East Woods"
+    },
+    {
+      "asset": {
+        "bytes": 176472,
+        "compression": "draco",
+        "file": "town_chunks/elementary-school.glb",
+        "sha256": "597a68c2151e855bec192b094dc46e7d22fa83266fc5c65eb72f4406def20206"
+      },
+      "bounds": {
+        "center": [
+          -70.5,
+          70.5
+        ],
+        "radius": 18.0
+      },
+      "building_ids": [
+        172
+      ],
+      "house_ids": [],
+      "id": "elementary-school",
+      "initial": true,
+      "label": "Elementary School"
     },
     {
       "asset": {
         "bytes": 224548,
         "compression": "draco",
         "file": "town_chunks/fire-station.glb",
-        "sha256": "709755021a12f1511763733bbd86ba2e64949de1340c26dc6c2a716a41179a4d"
+        "sha256": "21e7f5b04f71564cb5be0e16cba1b5764c1b6cf5365c3c983277a64ff75ed545"
       },
       "bounds": {
         "center": [
@@ -675,7 +697,7 @@
       ],
       "house_ids": [],
       "id": "fire-station",
-      "initial": false,
+      "initial": true,
       "label": "Fire Station"
     },
     {
@@ -697,7 +719,7 @@
       ],
       "house_ids": [],
       "id": "fishing-pond",
-      "initial": false,
+      "initial": true,
       "label": "Fishing Pond"
     },
     {
@@ -705,7 +727,7 @@
         "bytes": 235888,
         "compression": "draco",
         "file": "town_chunks/follow-mart.glb",
-        "sha256": "e8e5df39bf4e5db5efb82ed569db4dd565cfb2130d016148dc023c9ecdf3da56"
+        "sha256": "15bf9cf03c85efed5827d5773002848bed16c0b85d4ec91c0a0c113cc4a54597"
       },
       "bounds": {
         "center": [
@@ -719,7 +741,7 @@
       ],
       "house_ids": [],
       "id": "follow-mart",
-      "initial": false,
+      "initial": true,
       "label": "Follow Mart"
     },
     {
@@ -727,7 +749,7 @@
         "bytes": 718356,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "60c35b372b514a15189b70e50badb98a447b38a7c3f40a08aeccb90a1defae06"
+        "sha256": "22bc1e68238e58beb356a7f96f41f02026e6c1b9186e14eafd2658f0cbe9401d"
       },
       "bounds": {
         "center": [
@@ -824,15 +846,15 @@
         72
       ],
       "id": "founder-park",
-      "initial": false,
+      "initial": true,
       "label": "Founder Park"
     },
     {
       "asset": {
-        "bytes": 236164,
+        "bytes": 238548,
         "compression": "draco",
         "file": "town_chunks/kaleidoscope-crest.glb",
-        "sha256": "4a649da95626f58895a682956f250b770c03e6d8587bd1163d58e526dff131c3"
+        "sha256": "20994efe2a46188750557930571efad9a50666db8b0c4d623bae506c09515727"
       },
       "bounds": {
         "center": [
@@ -1040,7 +1062,7 @@
         461
       ],
       "id": "meadow-run",
-      "initial": false,
+      "initial": true,
       "label": "Meadow Run"
     },
     {
@@ -1066,7 +1088,7 @@
         522
       ],
       "id": "north-ridge",
-      "initial": false,
+      "initial": true,
       "label": "North Ridge"
     },
     {
@@ -1074,7 +1096,7 @@
         "bytes": 40532,
         "compression": "draco",
         "file": "town_chunks/north-woods.glb",
-        "sha256": "a136d81b30cc655dc8bf1d55e620227b3bfa2f735d220018a9db9d6ab980ab17"
+        "sha256": "4eefc57c04b601d2e3f4942dac99853c1573f507d2db9976194d8d7f94a7cd6b"
       },
       "bounds": {
         "center": [
@@ -1135,7 +1157,7 @@
       ],
       "house_ids": [],
       "id": "north-woods",
-      "initial": false,
+      "initial": true,
       "label": "North Woods"
     },
     {
@@ -1273,7 +1295,7 @@
         520
       ],
       "id": "pine-hollow",
-      "initial": false,
+      "initial": true,
       "label": "Pine Hollow"
     },
     {
@@ -1431,7 +1453,7 @@
         331
       ],
       "id": "twin-oaks",
-      "initial": false,
+      "initial": true,
       "label": "Twin Oaks"
     },
     {
@@ -1577,25 +1599,26 @@
         263
       ],
       "id": "willow-hills",
-      "initial": false,
+      "initial": true,
       "label": "Willow Hills"
     }
   ],
   "fallback": {
-    "bytes": 20887216,
+    "bytes": 22018948,
     "file": "town.glb",
-    "sha256": "f96b503ca1b920c749f3d25437bdd56ae66315836551d9cbf2efa7bb19f3c013"
+    "sha256": "5327198e2a8fd4ebdb273371d638316ccc9199995160b5260472b6888a59ac46"
   },
   "state": {
-    "building_count": 523,
+    "building_count": 524,
     "day": 26,
     "population": 464,
-    "seed_counter": 524
+    "seed_counter": 525
   },
   "streaming": {
     "detail_load_distance": 52,
     "detail_unload_distance": 84,
-    "lod": "simple-houses"
+    "lod": "simple-houses",
+    "preload_all": true
   },
   "version": 1,
   "walk_surfaces": {

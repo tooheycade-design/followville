@@ -107,8 +107,10 @@ def main():
         return 1
 
     state_by_seed = {int(building["seed"]): building for building in buildings}
-    redeveloped = state_by_seed.get(172)
-    if redeveloped and redeveloped.get("type") == "constructionzone":
+    restored_school = state_by_seed.get(172)
+    corrected_zone = state_by_seed.get(524)
+    if (restored_school and restored_school.get("type") == "elementaryschool"
+            and corrected_zone and corrected_zone.get("type") == "constructionzone"):
         try:
             rows_172 = rest(
                 url, key, "GET",
@@ -117,24 +119,24 @@ def main():
             if len(rows_172) != 1:
                 raise RuntimeError("expected exactly one houses row for seed 172")
             current = rows_172[0]
-            if current.get("building_type") == "elementaryschool" and current.get("claimable") is False:
+            if current.get("building_type") == "constructionzone" and current.get("claimable") is False:
                 rest(
                     url, key, "PATCH", "/rest/v1/houses?id=eq.172",
-                    {"building_type": "constructionzone", "claimable": False},
+                    {"building_type": "elementaryschool", "claimable": False},
                     prefer="return=minimal",
                 )
-                print("HOUSES_REDEVELOPMENT_OK seed 172 elementaryschool -> constructionzone")
-            elif not (current.get("building_type") == "constructionzone"
+                print("HOUSES_CORRECTION_OK seed 172 constructionzone -> elementaryschool")
+            elif not (current.get("building_type") == "elementaryschool"
                       and current.get("claimable") is False):
                 raise RuntimeError(
-                    "seed 172 is not the expected non-claimable school/zone row"
+                    "seed 172 is not the expected non-claimable school/correctable-zone row"
                 )
         except urllib.error.HTTPError as e:
-            print("HOUSES_SYNC_FAILED redevelopment: HTTP %s %s"
+            print("HOUSES_SYNC_FAILED civic correction: HTTP %s %s"
                   % (e.code, e.read().decode()[:300]))
             return 1
         except Exception as e:  # noqa: BLE001
-            print("HOUSES_SYNC_FAILED redevelopment: %s" % e)
+            print("HOUSES_SYNC_FAILED civic correction: %s" % e)
             return 1
     rows = []
     for b in buildings:

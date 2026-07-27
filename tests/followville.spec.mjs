@@ -100,11 +100,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
   const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(loadedChunks).toContain("creekside-bend");
+  expect(new Set(loadedChunks)).toEqual(new Set(townManifest.chunks.map(chunk => chunk.id)));
+  expect(townManifest.streaming.preload_all).toBe(true);
+  expect(townManifest.chunks.every(chunk => chunk.initial)).toBe(true);
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
   expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
     .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
-  expect(initialBytes).toBeLessThan(fullTownBytes * 0.4);
+  expect(initialBytes).toBeLessThan(fullTownBytes);
   await expect(page.locator("#chatPanel")).toBeHidden();
   await expect(page.locator("#chatPanel")).not.toHaveClass(/feed-visible/);
   await expect(page.locator("body")).toHaveAttribute("data-chat-feed", "idle");
@@ -341,19 +343,20 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(errors).toEqual([]);
 });
 
-test("visiting a house loads its district before teleporting", async ({ page }) => {
+test("visiting a house keeps every detailed district resident", async ({ page }) => {
   const errors = watchPageErrors(page);
   const willowHome = allHomes.find(building => building.district === "Willow Hills");
   expect(willowHome).toBeTruthy();
   await page.goto(`/house/${willowHome.seed}`);
   await waitForTown(page);
   await expect(page.locator("#townMapPanel")).toBeVisible();
-  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
   await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
   await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/, { timeout:10_000 });
-  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads"))).toBeGreaterThan(0);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
+  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0")).toBe(0);
   expect(errors).toEqual([]);
 });
 

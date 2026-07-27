@@ -1,7 +1,7 @@
 {
  "day": 26,
  "pop": 464,
- "seed_counter": 524,
+ "seed_counter": 525,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -1539,13 +1539,11 @@
    "day": 11
   },
   {
-   "type": "constructionzone",
+   "type": "elementaryschool",
    "gx": -6,
    "gy": -6,
    "seed": 172,
-   "day": 12,
-   "replaced_type": "elementaryschool",
-   "redeveloped_day": 26
+   "day": 12
   },
   {
    "type": "house",
@@ -6003,10 +6001,17 @@
    "py": 180.0,
    "pz": 5.716162490456012,
    "rot": 0.0,
-   "radius": 39.0,
+   "radius": 58.0,
    "feature_id": "east_woods_day26",
    "district": "East Woods",
    "seed": 523,
+   "day": 26
+  },
+  {
+   "type": "constructionzone",
+   "gx": -6,
+   "gy": 3,
+   "seed": 524,
    "day": 26
   }
  ],

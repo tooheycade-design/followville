@@ -204,22 +204,25 @@ function Sync-Houses {
         $Existing = Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?select=id&limit=100000') -Headers $Headers -Method Get
         $ExistingIds = @{}
         foreach ($row in @($Existing)) { $ExistingIds[[int64]$row.id] = $true }
-        $Redeveloped = @($State.buildings | Where-Object {
-            [int64]$_.seed -eq 172 -and $_.type -eq 'constructionzone'
+        $RestoredSchool = @($State.buildings | Where-Object {
+            [int64]$_.seed -eq 172 -and $_.type -eq 'elementaryschool'
         })
-        if ($Redeveloped.Count -eq 1) {
+        $CorrectedZone = @($State.buildings | Where-Object {
+            [int64]$_.seed -eq 524 -and $_.type -eq 'constructionzone'
+        })
+        if ($RestoredSchool.Count -eq 1 -and $CorrectedZone.Count -eq 1) {
             $Row172 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.172&select=id,building_type,claimable') -Headers $Headers -Method Get)
             if ($Row172.Count -ne 1) {
                 throw 'Expected exactly one houses row for canonical seed 172'
             }
-            if ($Row172[0].building_type -eq 'elementaryschool' -and -not [bool]$Row172[0].claimable) {
-                $PatchBody = @{ building_type = 'constructionzone'; claimable = $false } | ConvertTo-Json -Compress
+            if ($Row172[0].building_type -eq 'constructionzone' -and -not [bool]$Row172[0].claimable) {
+                $PatchBody = @{ building_type = 'elementaryschool'; claimable = $false } | ConvertTo-Json -Compress
                 $PatchHeaders = $Headers.Clone()
                 $PatchHeaders['Content-Type'] = 'application/json'
                 Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.172') -Headers $PatchHeaders -Method Patch -Body $PatchBody | Out-Null
-                Write-Host 'HOUSES_REDEVELOPMENT_OK seed 172 elementaryschool -> constructionzone'
-            } elseif ($Row172[0].building_type -ne 'constructionzone' -or [bool]$Row172[0].claimable) {
-                throw 'Seed 172 is not the expected non-claimable school/zone row'
+                Write-Host 'HOUSES_CORRECTION_OK seed 172 constructionzone -> elementaryschool'
+            } elseif ($Row172[0].building_type -ne 'elementaryschool' -or [bool]$Row172[0].claimable) {
+                throw 'Seed 172 is not the expected non-claimable school/correctable-zone row'
             }
         }
         # keep in sync with NON_CLAIMABLE_TYPES in sync_houses.py

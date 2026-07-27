@@ -328,9 +328,9 @@ def export_web_glb():
         grouped.setdefault(_chunk_id_for_building(building), []).append(building)
 
     chunk_records = []
-    # Creekside borders the player spawn and Kaleidoscope carries runtime
-    # geometry audits. Downtown and civic chunks now stream only when nearby.
-    initial_ids = {"creekside-bend", "kaleidoscope-crest"}
+    # Followville is small enough to keep every detailed district resident.
+    # This preserves the chunked deployment/validation boundary without
+    # replacing distant landmarks with silhouettes as the player walks.
     for chunk_id in sorted(grouped):
         chunk_buildings = grouped[chunk_id]
         chunk_objects = []
@@ -358,7 +358,7 @@ def export_web_glb():
         chunk_records.append({
             "id": chunk_id,
             "label": label,
-            "initial": chunk_id in initial_ids,
+            "initial": True,
             "bounds": _chunk_bounds(chunk_buildings),
             "building_ids": building_ids,
             "house_ids": house_ids,
@@ -386,6 +386,7 @@ def export_web_glb():
         "base": _asset_record(base, base_path, compression="draco"),
         "chunks": chunk_records,
         "streaming": {
+            "preload_all": True,
             "detail_load_distance": 52,
             "detail_unload_distance": 84,
             "lod": "simple-houses",

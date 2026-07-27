@@ -235,9 +235,12 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     shelter_glass=_material("FV_shelter_glass",(.08,.22,.29),.12,.10,.72,.34,.72,1.48)
     transit_mat=_material("FV_transit_marker",(.08,.28,.46),.56,.12)
     signal_dark=_material("FV_traffic_signal_housing",(.055,.065,.06),.55,.28)
+    signal_mast=_material("FV_traffic_signal_mast",(.11,.13,.13),.48,.52)
+    signal_trim=_material("FV_traffic_signal_trim",(.20,.22,.19),.48,.42)
     signal_red=_emissive_material("FV_traffic_signal_red",(.92,.055,.035),5.0)
     signal_amber=_material("FV_traffic_signal_amber",(.88,.47,.04),.55,.08)
     signal_green=_emissive_material("FV_traffic_signal_green",(.055,.72,.22),4.2)
+    pedestrian_glow=_emissive_material("FV_pedestrian_signal_glow",(.82,.91,.74),2.4)
     stop_red=_material("FV_stop_sign_red",(.72,.025,.025),.68,.08)
     stop_white=_material("FV_stop_marking",(.80,.79,.74),.92)
 
@@ -247,7 +250,8 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     paving_joints=[];courtyard_planters=[];courtyard_soil=[];courtyard_hedges=[]
     crosswalks=[];bollards=[];bike_racks=[];street_signs=[];street_sign_poles=[]
     shelter_frames=[];shelter_glazing=[];shelter_roofs=[];shelter_seats=[];transit_markers=[]
-    signal_poles=[];signal_arms=[];signal_heads=[];signal_red_lenses=[]
+    signal_bases=[];signal_poles=[];signal_arms=[];signal_head_trim=[];signal_heads=[]
+    signal_visors=[];pedestrian_heads=[];pedestrian_lenses=[];signal_red_lenses=[]
     signal_amber_lenses=[];signal_green_lenses=[]
     stop_poles=[];stop_signs=[];stop_bars=[]
     bus_stop_blocks={(-1,0),(0,-1)}
@@ -377,21 +381,32 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         for sx, sy, dx, dy in ((-4.4, -4.4, 1, 0), (4.4, 4.4, -1, 0),
                                (-4.4, 4.4, 0, -1), (4.4, -4.4, 0, 1)):
             px, py = ix + sx, iy + sy
-            signal_poles.append((px, py, .18, .18, .18, 5.6))
-            signal_arms.append((px+dx*2.15, py+dy*2.15, 5.25,
-                                4.4 if dx else .18, 4.4 if dy else .18, .18))
-            hx, hy = px+dx*4.15, py+dy*4.15
-            signal_heads.append((hx, hy, 3.85, .52 if dx else .34,
-                                 .34 if dx else .52, 1.85))
-            # Lenses face the approaching lane; emissive red/green remains
-            # readable in both the bright website and golden-hour video.
-            lens_depth = .08
-            for target, z in ((signal_red_lenses, 5.16),
-                              (signal_amber_lenses, 4.62),
-                              (signal_green_lenses, 4.08)):
-                target.append((hx-dx*.19, hy-dy*.19, z,
-                               lens_depth if dx else .28,
-                               .28 if dx else lens_depth, .28))
+            signal_bases.extend(((px, py, .18, .58, .58, .22),
+                                 (px, py, .40, .42, .42, .18)))
+            signal_poles.append((px, py, .58, .24, .24, 5.05))
+            signal_arms.append((px+dx*2.24, py+dy*2.24, 5.43,
+                                4.70 if dx else .24, 4.70 if dy else .24, .24))
+            hx, hy = px+dx*4.34, py+dy*4.34
+            # A warm metal backplate, deep dark housing and projecting hoods
+            # give the signal a deliberate civic silhouette from eye level.
+            signal_head_trim.append((hx, hy, 3.78, .82 if dx else .48,
+                                     .48 if dx else .82, 1.94))
+            signal_heads.append((hx-dx*.035, hy-dy*.035, 3.84,
+                                 .68 if dx else .40, .40 if dx else .68, 1.82))
+            pedestrian_heads.append((px-dx*.15, py-dy*.15, 2.46,
+                                     .16 if dx else .58, .58 if dx else .16, .72))
+            pedestrian_lenses.append((px-dx*.245, py-dy*.245, 2.82, .19, .055,
+                                      "x" if dx else "y"))
+            for target, z in ((signal_red_lenses, 5.30),
+                              (signal_amber_lenses, 4.79),
+                              (signal_green_lenses, 4.28)):
+                target.append((hx-dx*.255, hy-dy*.255, z, .205, .065,
+                               "x" if dx else "y"))
+                # The low-poly town is explored from every direction, so the
+                # paired face prevents a dead blank slab when a walker comes
+                # through the intersection from the opposite sidewalk.
+                target.append((hx+dx*.255, hy+dy*.255, z, .205, .065,
+                               "x" if dx else "y"))
 
     edge_approaches = (
         (min_bx*pitch, 0.0, "x", 1, 0),
@@ -446,12 +461,13 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         ("city_shelter_roofs",shelter_roofs,metal_mat,"transit-shelter"),
         ("city_shelter_seats",shelter_seats,wood_mat,"transit-shelter"),
         ("city_transit_markers",transit_markers,transit_mat,"transit-marker"),
-        ("city_signal_poles",signal_poles,signal_dark,"traffic-signal"),
-        ("city_signal_arms",signal_arms,signal_dark,"traffic-signal"),
+        ("city_signal_bases",signal_bases,signal_mast,"traffic-signal"),
+        ("city_signal_poles",signal_poles,signal_mast,"traffic-signal"),
+        ("city_signal_arms",signal_arms,signal_mast,"traffic-signal"),
+        ("city_signal_head_trim",signal_head_trim,signal_trim,"traffic-signal"),
         ("city_signal_heads",signal_heads,signal_dark,"traffic-signal"),
-        ("city_signal_red",signal_red_lenses,signal_red,"traffic-signal"),
-        ("city_signal_amber",signal_amber_lenses,signal_amber,"traffic-signal"),
-        ("city_signal_green",signal_green_lenses,signal_green,"traffic-signal"),
+        ("city_signal_visors",signal_visors,signal_dark,"traffic-signal"),
+        ("city_pedestrian_signal_heads",pedestrian_heads,signal_dark,"traffic-signal"),
         ("city_stop_poles",stop_poles,metal_mat,"stop-control"),
         ("city_stop_bars",stop_bars,stop_white,"stop-control"),
         ("civic_square",plazas,plaza_mat,"plaza"),("city_planters",planters,planter_mat,"planter"),
@@ -459,10 +475,20 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         ("city_hydrants",hydrants,hydrant_mat,"hydrant"),("city_lamp_posts",poles,metal_mat,"streetlight"),
         ("city_lamp_arms",arms,metal_mat,"streetlight"),("city_lamp_glow",lamp_heads,lamp_mat,"streetlight")):
         obj=_batch_boxes(collection,name,boxes,mat,role)
+        if role == "traffic-signal":
+            _bevel(obj,.045,2)
         if role in {"curb","planter","bench","litter-bin","hydrant"}:
             _bevel(obj,.055,1)
     _batch_octagonal_signs(collection, "city_stop_signs", stop_signs,
                            stop_red, "stop-control")
+    _batch_octagonal_signs(collection, "city_signal_red", signal_red_lenses,
+                           signal_red, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_signal_amber", signal_amber_lenses,
+                           signal_amber, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_signal_green", signal_green_lenses,
+                           signal_green, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_pedestrian_signal_glow",
+                           pedestrian_lenses, pedestrian_glow, "traffic-signal")
 
 
 def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):

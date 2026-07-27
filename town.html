@@ -6729,6 +6729,7 @@ function ensureTownChunkForBuilding(building){
 
 function updateTownDistrictStreaming(force=false){
   if(!townManifest)return;
+  if(townManifest.streaming?.preload_all)return;
   const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
   townStreamLastCheck=now;
   let unloaded=false;
@@ -6771,7 +6772,7 @@ async function loadStreamedTown(buildings){
   document.body.dataset.streamInitialBytes=String(
     Number(manifest.base.bytes||0)+initial.reduce((sum,chunk)=>sum+Number(chunk.asset.bytes||0),0));
   updateTownDistrictStreaming(true);
-  console.info(`[Followville] district streaming active: ${initial.length} detailed + ${manifest.chunks.length-initial.length} low-detail districts at boot.`);
+  console.info(`[Followville] ${initial.length} detailed district chunks loaded and kept resident.`);
   return true;
 }
 
@@ -6996,6 +6997,30 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.fov=61;
           camera.position.set(-77,4.15,99);
           camera.lookAt(-77,2.0,76);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "construction"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=61;
+          camera.position.set(-82.3,2.05,-55.6);
+          camera.lookAt(-70.5,4.8,-64.5);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "traffic"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=62;
+          camera.position.set(-18.0,1.82,4.4);
+          camera.lookAt(-.3,4.75,4.4);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "east-woods"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=64;
+          camera.position.set(125,7.5,-134);
+          camera.lookAt(170,6.5,-180);
           camera.updateProjectionMatrix();
         }
         if(localAuditView === "facade-side"){

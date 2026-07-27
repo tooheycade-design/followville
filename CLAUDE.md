@@ -81,16 +81,17 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
-- Day 26, population 464, 523 records (grown 2026-07-27 via Zach's Mac
+- Day 26, population 464, 524 records (grown/corrected 2026-07-27 via Zach's Mac
   Codex). Seeds 498-522 are 25 claimable homes at addresses 296-320, finishing
   Juniper Court, filling Hemlock Court, and opening North Ridge/Ridgeview
   Drive. Seed 523 is the permanent East Woods terrain-conforming forest biome
-  at Blender `(170,180)`. Canonical non-claimable seed 172 retains its record
-  identity but is now the school-parcel `constructionzone`: fenced excavation,
-  foundations/rebar, crane, excavator, cones, and a public vote board. Sparse
+  at Blender `(170,180)`, expanded to a 58m radius and 142 trees. Canonical
+  seed 172 remains the Day 12 elementary school. New non-claimable seed 524 is
+  the downtown `constructionzone` at grid `(-6,3)`: fenced excavation,
+  foundations/rebar, crane, excavator, cones, and a public vote board. Finished
   signals serve central civic crossroads; stop signs/bars serve edge
   approaches. The exact 34-claim / 33-account snapshot did not change. Full
-  and 27 streamed assets, all 14 local browser stories, two live smoke tests,
+  and 28 preload-all chunk assets, all 14 local browser stories, live smoke tests,
   and the reviewed 18-second golden-hour portrait reveal passed. Both Blend
   copies are saved at the finished Day 26 frame.
 - 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the

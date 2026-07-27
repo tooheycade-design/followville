@@ -86,23 +86,24 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
-- Day 26, population 464, 523 building records (grown 2026-07-27 via Zach's
-  Mac Codex: +25 ordinary claimable homes plus East Woods, with the canonical
-  school parcel redeveloped as a non-claimable construction vote site). Seeds
+- Day 26, population 464, 524 building records (grown and corrected 2026-07-27
+  via Zach's Mac Codex: +25 ordinary claimable homes, East Woods, and a
+  non-claimable downtown construction vote site). Seeds
   498-522 consumed planned addresses 296-320: Juniper Court finished, Hemlock
   Court filled, and North Ridge opened on Ridgeview Drive. Seed 523 owns the
   permanent terrain-conforming East Woods biome near Blender `(170,180)` /
-  website `(170,-180)`, with 74 mixed low-poly trees, understory, boulders,
+  website `(170,-180)`, with 142 mixed low-poly trees, understory, boulders,
   trail, fallen log, overlook bench, and a naturally rising forest floor.
-  Existing non-claimable seed 172 retained its identity and Day 12 history but
-  changed from `elementaryschool` to `constructionzone`, with a fenced full-
-  block excavation, foundations/rebar, crane, excavator, cones, and `YOU
-  DECIDE / WHAT RISES NEXT?` board. Central civic crossroads now use sparse
-  MUTCD-informed traffic signals; peripheral approaches use octagonal stop
-  signs and stop bars. Claims remained byte-for-byte identical at 34 across
-  33 accounts. Full plus 27 streamed chunks passed exact validation; all 14
-  browser stories passed after the new collider contract, and live homepage /
-  Today smoke tests passed. The approved delivery is one reviewed 18.000-
+  Seed 172 remains the original Day 12 `elementaryschool`. New seed 524 owns
+  the fenced full-block construction site at grid `(-6,3)`, replacing the
+  anonymous downtown tower near website `(-83,-56)` with foundations/rebar,
+  crane, excavator, cones, and `YOU DECIDE / WHAT RISES NEXT?` board. Central
+  civic crossroads use finished mast/backplate/lens/pedestrian signals;
+  peripheral approaches use octagonal stop signs and stop bars. Claims
+  remained byte-for-byte identical at 34 across 33 accounts. The full fallback
+  and all 28 detailed chunks passed exact validation; every chunk preloads and
+  remains resident so distant City Hall stays visible. All 14 browser stories
+  passed with the resident-chunk contract. The delivery is one reviewed 18.000-
   second 1080x1920 golden-hour portrait drone film: full city, all 25 home
   rises, then the construction-site rise and settled vote-site hold.
 - Day 25, population 439, 497 building records (grown 2026-07-26 via Zach's

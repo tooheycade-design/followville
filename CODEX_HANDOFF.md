@@ -18,18 +18,19 @@ workflow.
 
 ## Current canon
 
-- Day 26 is population 464 with 523 total building records. One guarded +25
+- Day 26 is population 464 with 524 total building records. One guarded +25
   growth consumed addresses 296-320 (Juniper Court, Hemlock Court, then the
   first two Ridgeview Drive lots). Seed 523 added permanent East Woods at
   Blender `(170,180)`, using the regional elevation for its forest floor,
-  mixed trees, understory, trail, rocks, fallen log, and overlook. Existing
-  seed 172 was safely redeveloped from the non-claimable school into the
-  non-claimable construction vote site without changing its identity; the DB
-  row was guarded and updated to `constructionzone`. Central civic junctions
-  now have sparse signals and outer approaches have stop signs/bars. The exact
+  142 mixed trees, understory, terrain ribbon trail, rocks, fallen log, and
+  overlook. Seed 172 remains the non-claimable elementary school. New
+  non-claimable seed 524 is the construction vote site at grid `(-6,3)`, where
+  it suppresses the anonymous tower around website `(-83,-56)`. Central civic
+  junctions have finished mast/lens/pedestrian signals and outer approaches
+  have stop signs/bars. The exact
   claim snapshot remained 34 claims / 33 accounts with identical SHA-256
   `ec58555325ae4e0228a013be895cc5a0e212b92dc896430aaf761d67e006c294`.
-  The full fallback and 27 streamed chunks validate exactly. Fourteen local
+  The full fallback and 28 preload-all chunks validate exactly. Fourteen local
   browser stories and two live smoke tests passed. The reviewed delivery is
   one 18.000-second 1080x1920 golden-hour portrait MP4 moving from the full
   city through all 25 home rises to the construction-site rise.
