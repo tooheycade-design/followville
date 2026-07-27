@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0014 applied | **Pending - owner applies them in order** |
+| Migrations 0011-0015 applied | Done in development on 2026-07-27 |
 
 ## Models
 
@@ -188,6 +188,7 @@ numbered migration.
 | 0012 | Owner release of held work, with an append-only authorization record |
 | 0013 | Evidence artifacts, and finished work reaching the approval queue |
 | 0014 | Separate accepting reviewed work from merge/deploy authorization |
+| 0015 | Pin append-only trigger helper search paths |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -214,9 +215,8 @@ on conflict (organization_id, user_id)
 Until a person has an owner row, the database refuses their approval decisions.
 That refusal is the system working.
 
-Run `db/verify/0011_0014.sql` before and after the four migrations. Every row
-must report `pass` after application. Do not run any of these files against the
-live town project.
+Run `db/verify/0011_0014.sql` after applying the migration set. Every row must
+report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
