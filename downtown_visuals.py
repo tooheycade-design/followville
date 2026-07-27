@@ -85,6 +85,37 @@ def _batch_boxes(collection, name, boxes, material, role):
     return _tag(obj, role)
 
 
+def _batch_octagonal_signs(collection, name, signs, material, role):
+    """Batch vertical octagons; axis is 'x' for an X-facing sign, else Y."""
+    if not signs:
+        return None
+    vertices, faces = [], []
+    for x, y, z, radius, thickness, axis in signs:
+        start = len(vertices)
+        for depth in (-thickness*.5, thickness*.5):
+            for index in range(8):
+                angle = math.tau * index / 8 + math.pi / 8
+                horizontal = math.cos(angle) * radius
+                vertical = math.sin(angle) * radius
+                if axis == "x":
+                    vertices.append((x + depth, y + horizontal, z + vertical))
+                else:
+                    vertices.append((x + horizontal, y + depth, z + vertical))
+        faces.append(tuple(start + i for i in range(7, -1, -1)))
+        faces.append(tuple(start + 8 + i for i in range(8)))
+        for index in range(8):
+            nxt = (index + 1) % 8
+            faces.append((start + index, start + nxt,
+                          start + 8 + nxt, start + 8 + index))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    return _tag(obj, role)
+
+
 def _bevel(obj, width=.08, segments=1):
     """Small real edge catches: the fastest way to stop boxes reading as beta primitives."""
     if not obj:
@@ -203,6 +234,12 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     sign_mat=_material("FV_street_sign",(.055,.25,.17),.62,.18)
     shelter_glass=_material("FV_shelter_glass",(.08,.22,.29),.12,.10,.72,.34,.72,1.48)
     transit_mat=_material("FV_transit_marker",(.08,.28,.46),.56,.12)
+    signal_dark=_material("FV_traffic_signal_housing",(.055,.065,.06),.55,.28)
+    signal_red=_emissive_material("FV_traffic_signal_red",(.92,.055,.035),5.0)
+    signal_amber=_material("FV_traffic_signal_amber",(.88,.47,.04),.55,.08)
+    signal_green=_emissive_material("FV_traffic_signal_green",(.055,.72,.22),4.2)
+    stop_red=_material("FV_stop_sign_red",(.72,.025,.025),.68,.08)
+    stop_white=_material("FV_stop_marking",(.80,.79,.74),.92)
 
     sidewalks=[];furnishing=[];aprons=[];curbs=[];ramps=[];tactile=[]
     tree_wells=[];plazas=[];planters=[];benches=[];poles=[];arms=[];lamp_heads=[]
@@ -210,6 +247,9 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     paving_joints=[];courtyard_planters=[];courtyard_soil=[];courtyard_hedges=[]
     crosswalks=[];bollards=[];bike_racks=[];street_signs=[];street_sign_poles=[]
     shelter_frames=[];shelter_glazing=[];shelter_roofs=[];shelter_seats=[];transit_markers=[]
+    signal_poles=[];signal_arms=[];signal_heads=[];signal_red_lenses=[]
+    signal_amber_lenses=[];signal_green_lenses=[]
+    stop_poles=[];stop_signs=[];stop_bars=[]
     bus_stop_blocks={(-1,0),(0,-1)}
     walk=3.40; furniture_width=1.12; apron_width=.62; curb_width=.28
     apron_gap=.30
@@ -324,6 +364,53 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
                 transit_markers.extend(((stop_x+2.00,stop_y,.30,.10,.10,2.80),
                                         (stop_x+2.00,stop_y,2.42,.42,.12,.52)))
 
+    # MUTCD-informed hierarchy: signals are limited to the central civic
+    # crossroads; edge approaches use stop control and a clear stop bar.
+    # This prevents the toy-like result of signalizing every quiet junction.
+    signal_intersections = {
+        (0.0, 0.0), (-pitch, 0.0), (0.0, -pitch), (-pitch, -pitch)
+    }
+    for ix, iy in signal_intersections:
+        if not (min_bx*pitch <= ix <= (max_bx+1)*pitch
+                and min_by*pitch <= iy <= (max_by+1)*pitch):
+            continue
+        for sx, sy, dx, dy in ((-4.4, -4.4, 1, 0), (4.4, 4.4, -1, 0),
+                               (-4.4, 4.4, 0, -1), (4.4, -4.4, 0, 1)):
+            px, py = ix + sx, iy + sy
+            signal_poles.append((px, py, .18, .18, .18, 5.6))
+            signal_arms.append((px+dx*2.15, py+dy*2.15, 5.25,
+                                4.4 if dx else .18, 4.4 if dy else .18, .18))
+            hx, hy = px+dx*4.15, py+dy*4.15
+            signal_heads.append((hx, hy, 3.85, .52 if dx else .34,
+                                 .34 if dx else .52, 1.85))
+            # Lenses face the approaching lane; emissive red/green remains
+            # readable in both the bright website and golden-hour video.
+            lens_depth = .08
+            for target, z in ((signal_red_lenses, 5.16),
+                              (signal_amber_lenses, 4.62),
+                              (signal_green_lenses, 4.08)):
+                target.append((hx-dx*.19, hy-dy*.19, z,
+                               lens_depth if dx else .28,
+                               .28 if dx else lens_depth, .28))
+
+    edge_approaches = (
+        (min_bx*pitch, 0.0, "x", 1, 0),
+        ((max_bx+1)*pitch, 0.0, "x", -1, 0),
+        (min_bx*pitch, -pitch, "x", 1, 0),
+        ((max_bx+1)*pitch, -pitch, "x", -1, 0),
+        (0.0, min_by*pitch, "y", 0, 1),
+        (0.0, (max_by+1)*pitch, "y", 0, -1),
+        (-pitch, min_by*pitch, "y", 0, 1),
+        (-pitch, (max_by+1)*pitch, "y", 0, -1),
+    )
+    for ix, iy, axis, dx, dy in edge_approaches:
+        px, py = ix-dy*4.45-dx*4.45, iy-dx*4.45-dy*4.45
+        stop_poles.append((px, py, .18, .12, .12, 2.7))
+        stop_signs.append((px, py, 2.55, .62, .11, axis))
+        # A 3.6m bar spans the controlled approach just before the crosswalk.
+        stop_bars.append((ix-dx*4.9, iy-dy*4.9, .176,
+                          .22 if dx else 3.6, 3.6 if dx else .22, .025))
+
     px,py=-pitch+block_size/2,-pitch+block_size/2
     plazas.append((px,py,.18,11.5,11.5,.18))
     for ox,oy in ((-4.5,-4.5),(4.5,-4.5),(-4.5,4.5),(4.5,4.5)):
@@ -359,6 +446,14 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         ("city_shelter_roofs",shelter_roofs,metal_mat,"transit-shelter"),
         ("city_shelter_seats",shelter_seats,wood_mat,"transit-shelter"),
         ("city_transit_markers",transit_markers,transit_mat,"transit-marker"),
+        ("city_signal_poles",signal_poles,signal_dark,"traffic-signal"),
+        ("city_signal_arms",signal_arms,signal_dark,"traffic-signal"),
+        ("city_signal_heads",signal_heads,signal_dark,"traffic-signal"),
+        ("city_signal_red",signal_red_lenses,signal_red,"traffic-signal"),
+        ("city_signal_amber",signal_amber_lenses,signal_amber,"traffic-signal"),
+        ("city_signal_green",signal_green_lenses,signal_green,"traffic-signal"),
+        ("city_stop_poles",stop_poles,metal_mat,"stop-control"),
+        ("city_stop_bars",stop_bars,stop_white,"stop-control"),
         ("civic_square",plazas,plaza_mat,"plaza"),("city_planters",planters,planter_mat,"planter"),
         ("city_benches",benches,wood_mat,"bench"),("city_litter_bins",bins,bin_mat,"litter-bin"),
         ("city_hydrants",hydrants,hydrant_mat,"hydrant"),("city_lamp_posts",poles,metal_mat,"streetlight"),
@@ -366,6 +461,8 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         obj=_batch_boxes(collection,name,boxes,mat,role)
         if role in {"curb","planter","bench","litter-bin","hydrant"}:
             _bevel(obj,.055,1)
+    _batch_octagonal_signs(collection, "city_stop_signs", stop_signs,
+                           stop_red, "stop-control")
 
 
 def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):

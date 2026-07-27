@@ -49,9 +49,11 @@ def _chunk_id_for_building(building):
         "cityhallroad": "civic-center",
         "civicsquare": "civic-center",
         "elementaryschool": "elementary-school",
+        "constructionzone": "construction-zone",
         "firestation": "fire-station",
         "fishingpond": "fishing-pond",
         "followmart": "follow-mart",
+        "forestreserve": "east-woods",
     }
     if building_type in civic_chunks:
         return civic_chunks[building_type]
@@ -74,7 +76,7 @@ def _building_xz(building):
         x = bx * PITCH + ix * LOT + LOT / 2
         y = by * PITCH + iy * LOT + LOT / 2
         size = 3 if building.get("type") in (
-            "elementaryschool", "followmart", "firestation"
+            "elementaryschool", "constructionzone", "followmart", "firestation"
         ) else 1
         x += (size - 1) * LOT / 2
         y += (size - 1) * LOT / 2
@@ -346,6 +348,8 @@ def export_web_glb():
                  "Fire Station" if chunk_id == "fire-station" else
                  "Fishing Pond" if chunk_id == "fishing-pond" else
                  "Elementary School" if chunk_id == "elementary-school" else
+                 "Construction Vote Site" if chunk_id == "construction-zone" else
+                 "East Woods" if chunk_id == "east-woods" else
                  "Downtown block" if chunk_id.startswith("downtown-block-") else
                  (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))
         building_ids = sorted(int(building["seed"]) for building in chunk_buildings)

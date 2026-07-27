@@ -2,7 +2,10 @@
 """Followville: sync world_state.json buildings -> Supabase `houses` table.
 
 Insert-only by design: rows already in the table are NEVER touched, so any
-manual edits Cade makes (e.g. flipping `claimable`) survive every sync.
+manual edits Cade makes (e.g. flipping `claimable`) survive every sync. The
+sole guarded exception is canonical seed 172's Day 26 school-to-construction
+redevelopment, which updates only `building_type` after verifying the old row
+is the expected non-claimable elementary school.
 
 Stdlib only (urllib) — no pip installs needed. Cross-platform (Mac/Linux/
 Windows). On Windows the grow pipeline actually uses the PowerShell-native
@@ -35,7 +38,7 @@ import urllib.error
 NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "streetlight", "car",
                        "elementaryschool", "followmart", "coffeetruck", "firestation",
                        "cityhallroad", "cityhall",
-                       "civicsquare", "fishingpond",
+                       "civicsquare", "fishingpond", "constructionzone", "forestreserve",
                        "tree", "bush", "rock", "duck"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -103,6 +106,36 @@ def main():
         print("HOUSES_SYNC_FAILED fetching existing ids: %s" % e)
         return 1
 
+    state_by_seed = {int(building["seed"]): building for building in buildings}
+    redeveloped = state_by_seed.get(172)
+    if redeveloped and redeveloped.get("type") == "constructionzone":
+        try:
+            rows_172 = rest(
+                url, key, "GET",
+                "/rest/v1/houses?id=eq.172&select=id,building_type,claimable",
+            )
+            if len(rows_172) != 1:
+                raise RuntimeError("expected exactly one houses row for seed 172")
+            current = rows_172[0]
+            if current.get("building_type") == "elementaryschool" and current.get("claimable") is False:
+                rest(
+                    url, key, "PATCH", "/rest/v1/houses?id=eq.172",
+                    {"building_type": "constructionzone", "claimable": False},
+                    prefer="return=minimal",
+                )
+                print("HOUSES_REDEVELOPMENT_OK seed 172 elementaryschool -> constructionzone")
+            elif not (current.get("building_type") == "constructionzone"
+                      and current.get("claimable") is False):
+                raise RuntimeError(
+                    "seed 172 is not the expected non-claimable school/zone row"
+                )
+        except urllib.error.HTTPError as e:
+            print("HOUSES_SYNC_FAILED redevelopment: HTTP %s %s"
+                  % (e.code, e.read().decode()[:300]))
+            return 1
+        except Exception as e:  # noqa: BLE001
+            print("HOUSES_SYNC_FAILED redevelopment: %s" % e)
+            return 1
     rows = []
     for b in buildings:
         if b["seed"] in existing_ids:

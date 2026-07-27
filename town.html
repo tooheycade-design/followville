@@ -1100,7 +1100,7 @@
         <div id="townMapQuick">
           <button class="map-quick active" type="button" data-map-quick="streets">streets</button>
           <button class="map-quick" type="button" data-map-quick="newest">newest homes</button>
-          <button class="map-quick" type="button" data-map-quick="school">school</button>
+          <button class="map-quick" type="button" data-map-quick="development">what's next</button>
           <button class="map-quick" type="button" data-map-quick="claimed">claimed homes</button>
           <button class="map-quick" id="townMapMyHome" type="button" data-map-quick="mine" style="display:none;">my home</button>
         </div>
@@ -3579,6 +3579,7 @@ function suburbanRoadSurfaceHeight(x,z){
 const CIVIC_WALK = Object.freeze({
   followmart: { half: 17.0, top: 0.19, size: 3 },
   elementaryschool: { half: 15.0, top: 0.28, size: 3 },
+  constructionzone: { half: 16.9, top: 0.27, size: 3 },
   firestation: { half: 18.0, top: 0.32, size: 3 },
 });
 /** Populated by rebuildCivicWalkPads() after world_state loads. */
@@ -3845,7 +3846,7 @@ function addLandmarkColliders(root){
   const mapped=new Set();
   const configured=new Set();
   for(const building of worldBuildings){
-    if(!["burjhouse","followmart","firestation","cityhall"].includes(building.type))continue;
+    if(!["burjhouse","followmart","firestation","cityhall","constructionzone"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -3862,6 +3863,9 @@ function addLandmarkColliders(root){
     }else if(building.type==="firestation"){
       colliders.push(rootLocalBoxCollider(visual,0,-3.4,14.5,8.7,"landmark-firestation-hall"));
       colliders.push(rootLocalBoxCollider(visual,11.9,5.95,2.3,.9,"landmark-firestation-entry"));
+    }else if(building.type==="constructionzone"){
+      colliders.push(rootLocalBoxCollider(visual,0,0,16.2,16.2,
+                                          "landmark-construction-zone"));
     }else{
       colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
       colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
@@ -3869,7 +3873,7 @@ function addLandmarkColliders(root){
     }
     mapped.add(building.type);
   }
-  const expected=["burjhouse","followmart","firestation","cityhall"];
+  const expected=["burjhouse","followmart","firestation","cityhall","constructionzone"];
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }
@@ -4564,6 +4568,7 @@ function frontDirsFor(b){
    the map without a second map file or any hand-maintained coordinates. */
 const MAP_LANDMARK_NAMES = {
   elementaryschool:"Followville Elementary", firestation:"Followville Fire & Rescue",
+  constructionzone:"What Should Rise Next?", forestreserve:"East Woods",
   cityhall:"Followville City Hall", civicsquare:"Civic Square",
   fishingpond:"Followville Fishing Pond",
   parkdistrict:"Founder Park",
@@ -4687,8 +4692,8 @@ function townMapFilteredItems(){
     items = mapState.items
       .filter(item => item.isHome && Number(item.building.day) === latestDay)
       .sort((a,b) => Number(b.building.plan_id||b.houseId)-Number(a.building.plan_id||a.houseId));
-  } else if (mapState.filter === "school"){
-    items = mapState.items.filter(item => item.building.type === "elementaryschool");
+  } else if (mapState.filter === "development"){
+    items = mapState.items.filter(item => item.building.type === "constructionzone");
   } else if (mapState.filter === "claimed"){
     items = mapState.items.filter(item => item.isHome && item.owner);
   } else if (mapState.filter === "mine"){
@@ -4728,7 +4733,7 @@ function townMapLocationMarkup(items,limit=48){
 function renderTownMapResults(){
   const items=townMapFilteredItems();
   const query=townMapSearch.value.trim();
-  const showLocations=!!query || mapState.filter==="school" || mapState.filter==="mine" ||
+  const showLocations=!!query || mapState.filter==="development" || mapState.filter==="mine" ||
     (todayRoute && mapState.filter==="newest");
   for(const button of document.querySelectorAll("[data-map-quick]")){
     button.classList.toggle("active",!query && button.dataset.mapQuick===mapState.filter);
@@ -5053,6 +5058,12 @@ function rebuildTownMap3D(){
       geometry=new THREE.BoxGeometry(16,.45,14);material=new THREE.MeshStandardMaterial({color:0xb9b5a9,roughness:.88});
     }else if(item.building.type==="cityhall"){
       geometry=new THREE.BoxGeometry(18,7,11);material=new THREE.MeshStandardMaterial({color:0xd8d1bd,roughness:.78});
+    }else if(item.building.type==="constructionzone"){
+      geometry=new THREE.BoxGeometry(18,1.2,18);
+      material=new THREE.MeshStandardMaterial({color:0xe9812c,roughness:.78});
+    }else if(item.building.type==="forestreserve"){
+      geometry=new THREE.CylinderGeometry(19,23,4.5,18);
+      material=new THREE.MeshStandardMaterial({color:0x3c6f39,roughness:.95});
     }else{
       geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
       material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});
@@ -5439,7 +5450,7 @@ document.getElementById("townMapQuick").addEventListener("click",e=>{
   renderTownMapResults();renderTownMapSelection();
   const items=townMapFilteredItems();
   if(mapState.filter==="streets")fitTownMap();
-  else if(mapState.filter==="school"||mapState.filter==="mine"){
+  else if(mapState.filter==="development"||mapState.filter==="mine"){
     if(items[0])selectTownMapItem(items[0]);
   }else focusTownMapItems(items);
 });
