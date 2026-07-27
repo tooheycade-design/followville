@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Capability } from "../domain/schemas.js";
+import { SEED_AGENTS } from "../config/seed-agents.js";
 import {
   HeuristicPlanner,
   planInitiative,
@@ -71,18 +72,18 @@ test("a planner cannot grant production capability", async () => {
 });
 
 test("an owner may grant a capability the CEO cannot grant itself", async () => {
+  // git_commit is held by the engineer but is deliberately outside the CEO's
+  // grantable set, so only an explicit owner grant can put it on a task.
   const initiative = await planInitiative({
-    intent: { title: "Prepare a migration", detail: "Draft the schema change." },
+    intent: { title: "Commit the work", detail: "Land the change on a branch." },
     planner: plannerReturning([
-      proposal({ requestedCapabilities: ["database_migration_prepare"] }),
+      proposal({ requestedCapabilities: ["git_commit"] }),
     ]),
     idFactory: nextId,
     now: NOW,
-    ownerGrantedCapabilities: ["database_migration_prepare"],
+    ownerGrantedCapabilities: ["git_commit"],
   });
-  assert.deepEqual(initiative.tasks[0]?.allowedCapabilities, [
-    "database_migration_prepare",
-  ]);
+  assert.deepEqual(initiative.tasks[0]?.allowedCapabilities, ["git_commit"]);
   assert.equal(initiative.clampedCapabilities.length, 0);
 });
 
@@ -157,5 +158,40 @@ test("the worker and reviewer are never the same agent", async () => {
   });
   for (const task of initiative.tasks) {
     assert.notEqual(task.assignedAgentId, task.reviewerAgentId);
+  }
+});
+
+test("the CEO cannot grant a capability the assigned worker lacks", async () => {
+  // browser_preview is in the CEO's grantable set but no seed agent holds it.
+  // Granting it produced tasks that were planned, queued, leased, and only
+  // then blocked at execution — wasted work the planner should have prevented.
+  const initiative = await planInitiative({
+    intent: { title: "Check the UI", detail: "Look at the claim flow." },
+    planner: plannerReturning([
+      proposal({ requestedCapabilities: ["repository_read", "browser_preview"] }),
+    ]),
+    idFactory: nextId,
+    now: NOW,
+  });
+  const task = initiative.tasks[0];
+  assert.ok(task);
+  assert.deepEqual(task.allowedCapabilities, ["repository_read"]);
+  assert.deepEqual(initiative.clampedCapabilities[0]?.removed, ["browser_preview"]);
+});
+
+test("every capability the CEO grants is one the worker can actually use", async () => {
+  const initiative = await planInitiative({
+    intent: { title: "Ordinary work", detail: "Make a small change." },
+    planner: new HeuristicPlanner(),
+    idFactory: nextId,
+    now: NOW,
+  });
+  for (const task of initiative.tasks) {
+    for (const capability of task.allowedCapabilities) {
+      assert.ok(
+        SEED_AGENTS.engineer.capabilities.includes(capability),
+        `engineer must hold ${capability}`,
+      );
+    }
   }
 });

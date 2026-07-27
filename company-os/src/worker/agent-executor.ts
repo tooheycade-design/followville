@@ -6,6 +6,11 @@ import { WorktreeManager, type Worktree } from "./worktree.js";
 
 export interface AgentExecutorOptions {
   agent: AgentProfile;
+  /**
+   * Why this task was previously sent back, if it was. A retry told nothing
+   * about its last failure usually reproduces it and burns another run.
+   */
+  reworkBriefing?: string;
   provider: ModelProvider;
   worktrees: WorktreeManager;
   repository: string;
@@ -123,7 +128,9 @@ export class AgentTaskExecutor implements TaskExecutor {
           : `${worktree.path}/${scopeDirectory}`;
       const response = await this.options.provider.invoke({
         workingDirectory,
-        prompt: buildPrompt(task, workingDirectory),
+        prompt:
+          buildPrompt(task, workingDirectory) +
+          (this.options.reworkBriefing ?? ""),
         timeoutMs: this.options.invocationTimeoutMs,
         signal,
       });

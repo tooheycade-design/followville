@@ -179,6 +179,15 @@ export async function planInitiative(options: PlanOptions): Promise<Initiative> 
     ...(options.ownerGrantedCapabilities ?? []),
   ]);
 
+  // A capability the assigned worker does not hold produces a task that is
+  // planned, queued, leased, and only then blocked at execution. The CEO must
+  // not be able to grant authority the executing agent lacks, so the two lists
+  // are intersected at plan time rather than discovered at run time.
+  const worker = SEED_AGENTS.engineer;
+  const grantable = new Set(
+    [...permitted].filter((capability) => worker.capabilities.includes(capability)),
+  );
+
   const escalations = detectEscalations(options.intent);
   const proposals = await options.planner.propose(options.intent);
   if (proposals.length === 0) {
@@ -209,10 +218,10 @@ export async function planInitiative(options: PlanOptions): Promise<Initiative> 
   const clampedCapabilities: { task: string; removed: Capability[] }[] = [];
   const tasks = proposals.map((proposal) => {
     const granted = proposal.requestedCapabilities.filter((capability) =>
-      permitted.has(capability),
+      grantable.has(capability),
     );
     const removed = proposal.requestedCapabilities.filter(
-      (capability) => !permitted.has(capability),
+      (capability) => !grantable.has(capability),
     );
     if (removed.length > 0) {
       clampedCapabilities.push({ task: proposal.title, removed });

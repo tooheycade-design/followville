@@ -32,9 +32,12 @@ import {
 } from "../lib/state/supabase-queue";
 import { companyRepository } from "../lib/state";
 import {
+  CeoGate,
   DEFAULT_SCHEDULE,
   EvidenceReviewer,
   assertIndependentReviewer,
+  gateAuditEvent,
+  priorRejectionsFrom,
   dueJobs,
   recordRun,
   reviewAuditEvent,
@@ -128,6 +131,15 @@ log(`worker ${workerId} starting with executor ${executor.name}`);
 const reviewQueue = SupabaseReviewQueue.fromEnvironment();
 const reviewer = new EvidenceReviewer();
 
+// The CEO judges with a model when one is available. Without a provider it
+// still applies its mechanical bar, so an unavailable model makes the gate
+// stricter rather than opening it.
+const gate = new CeoGate({
+  ...(provider === null ? {} : { provider }),
+  workingDirectory: repositoryRoot,
+  timeoutMs: 3 * 60_000,
+});
+
 /**
  * Reviews work the worker finished.
  *
@@ -174,24 +186,50 @@ async function runReviewPass(): Promise<number> {
         ? []
         : changedEntry.slice("changed: ".length).split(", ").filter(Boolean);
 
+    const workerSummary = recordedReason.split("\n")[0] ?? "";
     const result = await reviewer.review({
       task,
       workerEvidence: evidence,
-      workerSummary: recordedReason.split("\n")[0] ?? "",
+      workerSummary,
       filesChanged,
     });
+
+    // The reviewer checks that evidence exists; the CEO decides whether the
+    // work is good. Both must pass before an owner is asked to look, which is
+    // what makes the approval queue finished work rather than a triage pile.
+    let verdict = result.verdict;
+    const auditEvents: unknown[] = [
+      reviewAuditEvent(task, result, SEED_AGENTS.reviewer.id, randomUUID),
+    ];
+
+    if (verdict === "approved_for_owner") {
+      const gateResult = await gate.judge({
+        task,
+        workerSummary,
+        workerEvidence: evidence,
+        filesChanged,
+        priorRejections: priorRejectionsFrom(
+          state.auditEvents.filter((event) => event.taskId === task.id),
+        ),
+      });
+      auditEvents.push(gateAuditEvent(task, gateResult, randomUUID));
+      if (!gateResult.accepted) {
+        verdict = "changes_requested";
+        log(
+          `ceo ${task.id.slice(0, 8)} -> sent back: ${gateResult.reasons.join(", ")}`,
+        );
+      }
+    }
 
     const recorded = await reviewQueue.recordReview({
       taskId: task.id,
       workerId,
-      verdict: result.verdict,
-      auditEvents: [
-        reviewAuditEvent(task, result, SEED_AGENTS.reviewer.id, randomUUID),
-      ],
+      verdict,
+      auditEvents,
     });
     log(
       recorded
-        ? `review ${task.id.slice(0, 8)} -> ${result.verdict}: ${result.summary}`
+        ? `review ${task.id.slice(0, 8)} -> ${verdict}: ${result.summary}`
         : `review ${task.id.slice(0, 8)} -> lease lost, verdict discarded`,
     );
     count += 1;
