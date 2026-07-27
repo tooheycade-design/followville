@@ -86,7 +86,13 @@ pnpm --dir apps/company-dashboard dev
 ```
 
 Then open `http://localhost:4100`. The header shows which backend is live and
-that the budget is zero.
+what the ledger has metered.
+
+That figure is **metered API spend**, and it is currently zero because both
+providers run on existing subscriptions this ledger does not measure. It does
+not mean the work is free. Read it as "no incremental API charges", not "no
+cost" — a cost ledger that quietly counts subscription work as $0 gives a
+comfortable and wrong picture the moment either provider is used heavily.
 
 Run a worker. Do this on each owner's machine; leasing keeps them from
 colliding:

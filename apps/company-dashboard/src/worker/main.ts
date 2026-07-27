@@ -327,7 +327,13 @@ const JOBS: Record<string, () => Promise<void>> = {
   "cost-audit": async () => {
     const state = await companyRepository().load();
     const spent = state.runs.reduce((sum, run) => sum + run.actualCostUsdMicros, 0);
-    log(`cost audit: $${(spent / 1_000_000).toFixed(2)} recorded model spend`);
+    // Named precisely: this is metered API spend, and both providers currently
+    // run on subscriptions the ledger does not measure. Reporting it as total
+    // model spend would understate the real cost of the work indefinitely.
+    log(
+      `cost audit: $${(spent / 1_000_000).toFixed(2)} metered API spend; ` +
+        `subscription usage is not measured by this ledger`,
+    );
   },
 };
 

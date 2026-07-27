@@ -117,20 +117,20 @@ export class WorktreeManager {
   }
 
   /**
-   * Commits what the agent produced onto its own review branch.
+   * Records what the agent produced onto its own review branch.
    *
    * Removing a worktree discards everything uncommitted inside it, and the
-   * engineer never commits for itself — `git_commit` is one of the
-   * capabilities it may only exercise with human approval. So until this
-   * existed, finished work was destroyed the moment its task ended, and an
-   * owner was asked to approve a file that no longer existed anywhere. The
-   * branch was retained, but it still pointed at the base commit.
+   * engineer does not commit for itself. So until this existed, finished work
+   * was destroyed the moment its task ended, and an owner was asked to approve
+   * a file that no longer existed anywhere. The branch was retained, but it
+   * still pointed at the base commit.
    *
-   * This is the runtime preserving a result, not the agent exercising
-   * `git_commit`. The distinction is kept honest by construction rather than
-   * by intent: it writes only to the isolated `agent/task-*` branch the
-   * runtime created, refuses any other ref, and never pushes. Nothing here
-   * moves work toward production, which is what that approval gate protects.
+   * This is the `git_checkpoint` capability, not `git_commit`: a recoverable
+   * local commit that cannot leave the machine. The difference is enforced
+   * rather than asserted. It writes only to the isolated `agent/task-*` branch
+   * the runtime created, refuses any other ref, refuses a worktree whose
+   * history has moved since it was made, refuses to record anything beyond the
+   * files that were checked against policy, and never pushes.
    *
    * Returns the commit, or null when the agent changed nothing.
    */
@@ -148,6 +148,16 @@ export class WorktreeManager {
       return null;
     }
 
+    // The history must be exactly what the runtime created. If the agent
+    // committed, reset, or rebased, a checkpoint layered on top would record
+    // something nobody checked, so this refuses rather than guessing.
+    const head = await this.#git(["rev-parse", "HEAD"], worktree.path);
+    if (head !== worktree.baseCommit) {
+      throw new Error(
+        `Refusing to checkpoint: ${worktree.branch} moved from ${worktree.baseCommit.slice(0, 12)} to ${head.slice(0, 12)}.`,
+      );
+    }
+
     await this.#git(["add", "--", ...files.slice(0, 200)], worktree.path);
     const staged = await this.#git(
       ["diff", "--cached", "--name-only"],
@@ -155,6 +165,20 @@ export class WorktreeManager {
     );
     if (staged.length === 0) {
       return null;
+    }
+
+    // Only the paths the policy engine already cleared may be recorded. A
+    // staged path that was never checked means the working tree is not what
+    // the caller believes, which is the moment to stop.
+    const permitted = new Set(files);
+    const unexpected = staged
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !permitted.has(line));
+    if (unexpected.length > 0) {
+      throw new Error(
+        `Refusing to checkpoint unchecked path(s): ${unexpected.slice(0, 5).join(", ")}.`,
+      );
     }
 
     // An identity is supplied explicitly so preservation does not depend on

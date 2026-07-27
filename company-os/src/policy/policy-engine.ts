@@ -47,6 +47,7 @@ const REPOSITORY_CAPABILITIES = new Set<Capability>([
   "repository_read",
   "repository_write",
   "git_branch_create",
+  "git_checkpoint",
   "git_commit",
   "git_push_review_branch",
   "pull_request_create",
@@ -58,6 +59,7 @@ const REPOSITORY_CAPABILITIES = new Set<Capability>([
 const WORKER_ONLY_CAPABILITIES = new Set<Capability>([
   "repository_write",
   "git_branch_create",
+  "git_checkpoint",
   "git_commit",
   "git_push_review_branch",
   "pull_request_create",

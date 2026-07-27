@@ -31,6 +31,13 @@ export const CapabilitySchema = z.enum([
   "repository_read",
   "repository_write",
   "git_branch_create",
+  // A recoverable local commit the runtime makes on a task's own review
+  // branch, so finished work outlives the disposable worktree it was made in.
+  // Separate from `git_commit` because they carry different risk: this one
+  // cannot leave the machine, while an agent choosing to commit is a step on
+  // the path to publication. Naming both `git_commit` made the policy read as
+  // a contradiction — a safe retention action gated like a dangerous one.
+  "git_checkpoint",
   "git_commit",
   "git_push_review_branch",
   "pull_request_create",

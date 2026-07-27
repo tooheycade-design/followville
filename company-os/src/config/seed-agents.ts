@@ -119,6 +119,12 @@ export const SEED_AGENTS = {
       "repository_read",
       "repository_write",
       "git_branch_create",
+      // Held outright: the runtime records finished work on the task's own
+      // review branch so an owner has something to inspect. It cannot leave
+      // the machine.
+      "git_checkpoint",
+      // Still approval-gated below: the agent deciding to commit for itself
+      // is a different act, on the path toward publication.
       "git_commit",
       "test_execute",
       "browser_preview",

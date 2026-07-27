@@ -25,6 +25,10 @@ const CEO_GRANTABLE: readonly Capability[] = [
   "repository_read",
   "repository_write",
   "git_branch_create",
+  // Attached automatically alongside repository_write rather than chosen; see
+  // where tasks are built below. Listed here so an explicit request for it is
+  // not reported as a refusal.
+  "git_checkpoint",
   "test_execute",
   "browser_preview",
   "blender_preview",
@@ -225,6 +229,16 @@ export async function planInitiative(options: PlanOptions): Promise<Initiative> 
     );
     if (removed.length > 0) {
       clampedCapabilities.push({ task: proposal.title, removed });
+    }
+
+    // A task that may write files must be able to have those writes recorded,
+    // or its result is destroyed with the worktree and an owner is asked to
+    // approve something that no longer exists. This is bookkeeping rather than
+    // a planning decision, so it is attached rather than requested: leaving it
+    // to the planner means tasks silently lose their evidence whenever the
+    // model forgets to ask. It cannot push, merge, or reach production.
+    if (granted.includes("repository_write") && !granted.includes("git_checkpoint")) {
+      granted.push("git_checkpoint");
     }
 
     return TaskSchema.parse({

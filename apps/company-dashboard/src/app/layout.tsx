@@ -30,8 +30,19 @@ export default async function RootLayout({
             <h1>
               Followville <span>Company OS</span>
             </h1>
-            <span className="sim-flag">
-              Simulation only · $0 model budget ·{" "}
+            {/*
+              "$0 metered" rather than "$0 budget". The ledger records no
+              incremental API spend because the work runs on existing Codex and
+              Claude subscriptions, which it does not measure — not because the
+              work is free. Saying "$0 budget" would eventually make the
+              dashboard's cost picture a comfortable fiction.
+            */}
+            <span
+              className="sim-flag"
+              title="Model work runs on existing Codex and Claude subscriptions. Subscription usage is not metered by this ledger, so it is not included here."
+            >
+              Simulation only · $0 metered API spend (subscription usage not
+              measured) ·{" "}
               {companyRepository().backend === "supabase"
                 ? "shared database"
                 : "local store"}

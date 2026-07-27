@@ -62,7 +62,7 @@ function makeTask(): Task {
         required: true,
       },
     ],
-    allowedCapabilities: ["repository_read", "repository_write"],
+    allowedCapabilities: ["repository_read", "repository_write", "git_checkpoint"],
     repositoryScopes: SEED_AGENTS.engineer.repositoryScopes,
     budgetUsdMicros: 0,
     estimatedCostUsdMicros: 0,
@@ -182,8 +182,8 @@ test("the preserved commit is named in the evidence", async () => {
   assert.match(commit, /^commit=[0-9a-f]{12}$/);
 });
 
-test("preserving refuses any branch that is not an isolated agent branch", async () => {
-  // The guarantee that keeps this from being a way around git_commit: the
+test("a checkpoint refuses any branch that is not an isolated agent branch", async () => {
+  // What keeps git_checkpoint from becoming a way around git_commit: the
   // runtime may record a result on a throwaway branch and nothing else.
   const repo = makeRepository();
   const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
@@ -195,11 +195,70 @@ test("preserving refuses any branch that is not an isolated agent branch", async
   );
 });
 
+test("a checkpoint refuses a worktree whose history moved", async () => {
+  // If the agent committed or reset for itself, a checkpoint layered on top
+  // would record history nobody checked.
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const worktree = await manager.create(nextId());
+
+  writeFileSync(path.join(worktree.path, "company-os", "own.md"), "agent commit\n");
+  execFileSync("git", ["add", "-A"], { cwd: worktree.path, stdio: "pipe" });
+  execFileSync("git", ["commit", "-m", "the agent committed for itself"], {
+    cwd: worktree.path,
+    stdio: "pipe",
+  });
+
+  writeFileSync(path.join(worktree.path, "company-os", "later.md"), "more\n");
+  await assert.rejects(
+    manager.preserve(worktree, ["company-os/later.md"], "no"),
+    /moved from/,
+  );
+});
+
+test("a checkpoint refuses to record a path that was never checked", async () => {
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const worktree = await manager.create(nextId());
+
+  writeFileSync(path.join(worktree.path, "company-os", "checked.md"), "ok\n");
+  // Already in the index before the checkpoint runs — the working tree is not
+  // what the caller believes it is.
+  writeFileSync(path.join(worktree.path, "world_state.json"), '{"day":99}\n');
+  execFileSync("git", ["add", "--", "world_state.json"], {
+    cwd: worktree.path,
+    stdio: "pipe",
+  });
+
+  await assert.rejects(
+    manager.preserve(worktree, ["company-os/checked.md"], "no"),
+    /unchecked path/,
+    "a path outside the checked set must stop the checkpoint",
+  );
+});
+
 test("an agent that changed nothing preserves nothing", async () => {
   const repo = makeRepository();
   const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
   const worktree = await manager.create(nextId());
   assert.equal(await manager.preserve(worktree, [], "nothing"), null);
+});
+
+test("a task without git_checkpoint records no commit and says why", async () => {
+  const repo = makeRepository();
+  const task = makeTask();
+  const withoutCheckpoint = {
+    ...task,
+    allowedCapabilities: ["repository_read", "repository_write"],
+  } as Task;
+
+  const result = await executorFor(
+    new ScriptedProvider(["notes.md"]),
+    repo,
+  ).execute(withoutCheckpoint, new AbortController().signal);
+
+  const commit = result.evidence.find((line) => line.startsWith("commit="));
+  assert.match(commit ?? "", /does not permit git_checkpoint/);
 });
 
 test("an agent that edits the canonical world file fails instead of reaching review", async () => {

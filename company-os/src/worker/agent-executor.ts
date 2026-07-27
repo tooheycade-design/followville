@@ -157,19 +157,39 @@ export class AgentTaskExecutor implements TaskExecutor {
         .diff(worktree, filesChanged)
         .catch(() => null);
 
-      // Commit the result to its review branch before the worktree goes away,
-      // so an approval packet refers to something that still exists. Best
-      // effort for the same reason as the diff: losing the record is bad, but
-      // failing a finished task because git refused to record it is worse.
-      const commit = await this.options.worktrees
-        .preserve(
-          worktree,
-          filesChanged,
-          `Agent work for task ${task.id.slice(0, 8)}\n\n` +
-            `Unreviewed output of ${this.options.provider.name}, kept for review. ` +
-            `This branch is never merged and never pushed.`,
-        )
-        .catch(() => null);
+      // Record the result on its review branch before the worktree goes away,
+      // so an approval packet refers to something that still exists. The
+      // trailers tie the commit to the task and the base it was made from, so
+      // a branch found later can be matched to its evidence packet.
+      //
+      // Best effort for the same reason as the diff: losing the record is bad,
+      // but failing a finished task because git declined to record it is
+      // worse. A refusal from `preserve` is a real signal, so it is reported
+      // in the evidence rather than swallowed.
+      let commit: string | null = null;
+      let checkpointRefusal: string | null = null;
+      if (!task.allowedCapabilities.includes("git_checkpoint")) {
+        checkpointRefusal = "the task does not permit git_checkpoint";
+      } else {
+        try {
+          commit = await this.options.worktrees.preserve(
+            worktree,
+            filesChanged,
+            [
+              `Agent work for task ${task.id.slice(0, 8)}`,
+              "",
+              `Unreviewed output of ${this.options.provider.name}, kept so an owner`,
+              "can inspect it. This branch is never pushed and never merged.",
+              "",
+              `Task: ${task.id}`,
+              `Base: ${worktree.baseCommit}`,
+              `Provider: ${this.options.provider.name}`,
+            ].join("\n"),
+          );
+        } catch (error) {
+          checkpointRefusal = (error as Error).message;
+        }
+      }
 
       if (!response.ok) {
         return {
@@ -224,11 +244,13 @@ export class AgentTaskExecutor implements TaskExecutor {
         evidence.push(`session=${response.sessionId}`);
       }
       // Where the work actually is. Without this an owner could read a summary
-      // and a diff but had nothing to check out.
+      // and a diff but had nothing to check out. When no checkpoint was made,
+      // the reason is stated: "not recorded" and "recorded elsewhere" must not
+      // look the same to whoever reads this next.
       evidence.push(
-        commit === null
-          ? "commit=none (nothing was preserved)"
-          : `commit=${commit.slice(0, 12)}`,
+        commit !== null
+          ? `commit=${commit.slice(0, 12)}`
+          : `commit=none (${checkpointRefusal ?? "nothing to record"})`,
       );
       // The file list is no longer folded into this line. It is a section of
       // the report in its own right, so it is neither capped at twenty nor
