@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { OWNER_USER_ID } from "@followville/company-os-core";
 
-import { decideApproval, submitGoal } from "./commands";
+import { decideApproval, decideHeldTask, submitGoal } from "./commands";
 import { FileCompanyRepository } from "./state";
 
 const ZACH_ID = "30000000-0000-4000-8000-000000000002";
@@ -164,5 +164,172 @@ test("a decision on an already-resolved request is refused", async () => {
   assert.equal(
     (await repository.load()).approvalRequests[0]?.status,
     "approved",
+  );
+});
+
+/**
+ * Held work: a task the Chief Executive would not release on its own.
+ *
+ * These build one directly rather than going through the planner, because the
+ * planner only holds work when the owner's wording trips an escalation, and
+ * these are about what happens afterwards.
+ */
+async function heldTask(
+  repository: FileCompanyRepository,
+  capabilities: readonly string[] = ["repository_read", "repository_write"],
+): Promise<string> {
+  const { HeuristicPlanner, planInitiative } = await import(
+    "@followville/company-os-core"
+  );
+  const { randomUUID } = await import("node:crypto");
+  const initiative = await planInitiative({
+    // "publish" trips an escalation, so every task is held.
+    intent: {
+      title: "Publish a note",
+      detail: "Publish a short note about the town.",
+      createdByUserId: OWNER_USER_ID,
+    },
+    planner: new HeuristicPlanner(),
+    idFactory: randomUUID,
+  });
+  const tasks = initiative.tasks.map((task) => ({
+    ...task,
+    allowedCapabilities: capabilities as typeof task.allowedCapabilities,
+  }));
+  await repository.appendInitiative(initiative.goal, tasks);
+  return tasks[0]!.id;
+}
+
+test("releasing held work queues it with exactly the capabilities granted", async () => {
+  const repository = newRepository();
+  const taskId = await heldTask(repository);
+  const before = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+  assert.equal(before.status, "proposed", "the CEO must hold this");
+
+  const result = await decideHeldTask(
+    {
+      taskId,
+      decision: "release",
+      comment: "Checked the scope; documentation only.",
+      deciderUserId: OWNER_USER_ID,
+      grantedCapabilities: ["repository_read"],
+      expectedVersion: before.version,
+    },
+    repository,
+  );
+  assert.equal(result.ok, true, result.message);
+
+  const after = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+  assert.equal(after.status, "queued");
+  assert.deepEqual(
+    after.allowedCapabilities,
+    ["repository_read"],
+    "an owner may hand back less than was asked for",
+  );
+});
+
+test("a release cannot grant more than the task proposed", async () => {
+  const repository = newRepository();
+  const taskId = await heldTask(repository, ["repository_read"]);
+  const task = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+
+  const result = await decideHeldTask(
+    {
+      taskId,
+      decision: "release",
+      comment: "Trying to widen this.",
+      deciderUserId: OWNER_USER_ID,
+      grantedCapabilities: ["repository_read", "production_deploy"],
+      expectedVersion: task.version,
+    },
+    repository,
+  );
+
+  assert.equal(result.ok, true, result.message);
+  const after = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+  assert.deepEqual(
+    after.allowedCapabilities,
+    ["repository_read"],
+    "the unproposed capability must be dropped, not granted",
+  );
+  assert.ok(
+    !after.allowedCapabilities.includes("production_deploy" as never),
+    "an authorization must never widen a grant",
+  );
+});
+
+test("a decision against a stale version is refused", async () => {
+  const repository = newRepository();
+  const taskId = await heldTask(repository);
+  const task = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+
+  const result = await decideHeldTask(
+    {
+      taskId,
+      decision: "release",
+      comment: "Deciding on something I did not read.",
+      deciderUserId: OWNER_USER_ID,
+      grantedCapabilities: ["repository_read"],
+      expectedVersion: task.version + 5,
+    },
+    repository,
+  );
+
+  assert.equal(result.ok, false);
+  assert.match(result.message, /changed after it was reviewed/);
+  assert.equal(
+    (await repository.load()).tasks.find((t) => t.id === taskId)!.status,
+    "proposed",
+    "a refused decision must leave the task held",
+  );
+});
+
+test("only a registered owner can release held work", async () => {
+  const repository = newRepository();
+  const taskId = await heldTask(repository);
+  const task = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+
+  const result = await decideHeldTask(
+    {
+      taskId,
+      decision: "release",
+      comment: "I am not an owner.",
+      deciderUserId: "40000000-0000-4000-8000-000000000002",
+      grantedCapabilities: ["repository_read"],
+      expectedVersion: task.version,
+    },
+    repository,
+  );
+  assert.equal(result.ok, false);
+  assert.match(result.message, /registered owner/);
+});
+
+test("rejecting held work stops it and records why", async () => {
+  const repository = newRepository();
+  const taskId = await heldTask(repository);
+  const task = (await repository.load()).tasks.find((t) => t.id === taskId)!;
+
+  const result = await decideHeldTask(
+    {
+      taskId,
+      decision: "reject",
+      comment: "Not something we want built.",
+      deciderUserId: OWNER_USER_ID,
+      grantedCapabilities: [],
+      expectedVersion: task.version,
+    },
+    repository,
+  );
+  assert.equal(result.ok, true, result.message);
+
+  const state = await repository.load();
+  assert.equal(state.tasks.find((t) => t.id === taskId)!.status, "rejected");
+  assert.ok(
+    state.auditEvents.some(
+      (event) =>
+        event.action === "held_task.reject" &&
+        event.reason.includes("Not something we want built"),
+    ),
+    "the reason must survive in the audit trail",
   );
 });

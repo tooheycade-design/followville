@@ -10,6 +10,7 @@ import {
   type CompanyRepository,
   type CompanyState,
   type GoalSimulationRecord,
+  type HeldTaskDecision,
 } from "./types";
 
 export function defaultStatePath(): string {
@@ -107,6 +108,53 @@ export class FileCompanyRepository implements CompanyRepository {
   appendAuditEvent(event: CompanyState["auditEvents"][number]): Promise<void> {
     return this.#mutate((state) => {
       state.auditEvents.push(event);
+    });
+  }
+
+  /**
+   * The local mirror of the release RPC. It repeats the same refusals rather
+   * than trusting the caller, because a rule enforced in only one backend is a
+   * rule that quietly disappears whenever the other one is in use.
+   */
+  decideHeldTask(decision: HeldTaskDecision): Promise<string> {
+    return this.#mutate((state) => {
+      const index = state.tasks.findIndex((task) => task.id === decision.taskId);
+      const task = index >= 0 ? state.tasks[index] : undefined;
+      if (task === undefined) {
+        throw new Error(`Task ${decision.taskId} does not exist.`);
+      }
+      if (task.status !== "proposed") {
+        throw new Error(`Task ${task.id} is ${task.status}, not proposed.`);
+      }
+      if (task.version !== decision.expectedVersion) {
+        throw new Error(
+          "The task changed after it was reviewed; re-read it before deciding.",
+        );
+      }
+      const widened = decision.grantedCapabilities.filter(
+        (capability) => !task.allowedCapabilities.includes(capability as never),
+      );
+      if (decision.decision === "release" && widened.length > 0) {
+        throw new Error(
+          "A release cannot grant capabilities the task did not propose.",
+        );
+      }
+      if (decision.decision === "release" && decision.grantedCapabilities.length === 0) {
+        throw new Error("A release must grant at least one capability.");
+      }
+
+      const status = decision.decision === "reject" ? "rejected" : "queued";
+      state.tasks[index] = {
+        ...task,
+        status,
+        allowedCapabilities:
+          decision.decision === "release"
+            ? (decision.grantedCapabilities as typeof task.allowedCapabilities)
+            : task.allowedCapabilities,
+        version: task.version + 1,
+        updatedAt: new Date().toISOString(),
+      };
+      return status;
     });
   }
 

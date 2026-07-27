@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { decideApproval, directCeo, submitGoal } from "@/lib/commands";
+import {
+  decideApproval,
+  decideHeldTask,
+  directCeo,
+  submitGoal,
+} from "@/lib/commands";
 import { OWNER_COOKIE, OWNERS, ownerById } from "@/lib/config";
 
 export interface ActionState {
@@ -50,6 +55,32 @@ export async function decideApprovalAction(
     comment: String(formData.get("comment") ?? ""),
     deciderUserId: decider.id,
     viewedScopeDigest: String(formData.get("scopeDigest") ?? ""),
+  });
+  revalidatePath("/", "layout");
+  return { ok: result.ok, message: result.message };
+}
+
+export async function decideHeldTaskAction(
+  _previous: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const decision = String(formData.get("decision") ?? "");
+  if (decision !== "release" && decision !== "reject") {
+    return { ok: false, message: "Unknown decision type." };
+  }
+
+  const cookieStore = await cookies();
+  const decider = ownerById(cookieStore.get(OWNER_COOKIE)?.value);
+
+  const result = await decideHeldTask({
+    taskId: String(formData.get("taskId") ?? ""),
+    decision,
+    comment: String(formData.get("comment") ?? ""),
+    deciderUserId: decider.id,
+    // Only the boxes the owner actually ticked. Absent means not authorized,
+    // which is how an owner narrows a grant.
+    grantedCapabilities: formData.getAll("capability").map(String),
+    expectedVersion: Number(formData.get("expectedVersion") ?? 0),
   });
   revalidatePath("/", "layout");
   return { ok: result.ok, message: result.message };

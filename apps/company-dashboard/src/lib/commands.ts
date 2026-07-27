@@ -182,6 +182,162 @@ export async function directCeo(
   };
 }
 
+export interface DecideHeldTaskInput {
+  taskId: string;
+  decision: "release" | "reject";
+  comment: string;
+  deciderUserId: string;
+  /** Capabilities the owner is authorizing. May narrow, never widen. */
+  grantedCapabilities: readonly string[];
+  /** The task version the owner was shown. */
+  expectedVersion: number;
+}
+
+export interface DecideHeldTaskResult {
+  ok: boolean;
+  message: string;
+}
+
+/**
+ * Releases work the Chief Executive held for an owner, or rejects it.
+ *
+ * The CEO can recognize risky intent and park it, but until this existed
+ * nothing could act on the result, so the company could stop unsafe work and
+ * never resume it once a human agreed.
+ *
+ * The authorization is deliberately narrow. It names the task, the exact
+ * capabilities granted, and the version the owner was reading, and the
+ * database re-checks every one of those independently. An owner may hand back
+ * less than was asked for; nothing can hand back more.
+ */
+export async function decideHeldTask(
+  input: DecideHeldTaskInput,
+  repository: CompanyRepository = companyRepository(),
+): Promise<DecideHeldTaskResult> {
+  const comment = input.comment.trim();
+  if (comment.length === 0) {
+    return { ok: false, message: "A decision needs a written comment." };
+  }
+  if (!OWNER_REGISTRY.ownerUserIds.includes(input.deciderUserId)) {
+    return { ok: false, message: "Only a registered owner can release held work." };
+  }
+
+  const state = await repository.load();
+  const task = state.tasks.find((candidate) => candidate.id === input.taskId);
+  if (task === undefined) {
+    return { ok: false, message: "That task does not exist." };
+  }
+  if (task.status !== "proposed") {
+    return {
+      ok: false,
+      message: `That task is ${task.status.replaceAll("_", " ")}, not held.`,
+    };
+  }
+  // Compared against the version the owner was shown, not the one just read
+  // back. Using the fresh value would make this check always pass and quietly
+  // apply a decision to a task nobody reviewed.
+  if (task.version !== input.expectedVersion) {
+    return {
+      ok: false,
+      message:
+        "The task changed after it was reviewed; re-read it before deciding.",
+    };
+  }
+
+  const granted =
+    input.decision === "release"
+      ? input.grantedCapabilities.filter((capability) =>
+          task.allowedCapabilities.includes(capability as never),
+        )
+      : [];
+  if (input.decision === "release" && granted.length === 0) {
+    return { ok: false, message: "Choose at least one capability to authorize." };
+  }
+
+  // The durable record of exactly what was put in front of the owner.
+  const authorizationDigest = digest({
+    taskId: task.id,
+    objective: task.objective,
+    riskLevel: task.riskLevel,
+    proposed: [...task.allowedCapabilities].sort(),
+    granted: [...granted].sort(),
+    version: task.version,
+  });
+
+  let status: string;
+  try {
+    status = await repository.decideHeldTask({
+      taskId: task.id,
+      decision: input.decision,
+      decidedByUserId: input.deciderUserId,
+      comment,
+      grantedCapabilities: granted,
+      authorizationDigest,
+      expectedVersion: input.expectedVersion,
+    });
+  } catch (error) {
+    const reason = (error as Error).message;
+    await repository.appendAuditEvent(
+      heldTaskAudit(input, "denied", reason, task.id, authorizationDigest),
+    );
+    return { ok: false, message: reason };
+  }
+
+  await repository.appendAuditEvent(
+    heldTaskAudit(
+      input,
+      "succeeded",
+      input.decision === "release"
+        ? `Released with ${granted.join(", ")}. ${comment}`
+        : `Rejected. ${comment}`,
+      task.id,
+      authorizationDigest,
+    ),
+  );
+
+  return {
+    ok: true,
+    message:
+      input.decision === "release"
+        ? `Released for work with ${granted.length} capability(ies). Task is now ${status}.`
+        : "The task was rejected and will not be worked.",
+  };
+}
+
+function heldTaskAudit(
+  input: DecideHeldTaskInput,
+  outcome: "succeeded" | "denied",
+  reason: string,
+  taskId: string,
+  scopeDigest: string,
+): AuditEvent {
+  return AuditEventSchema.parse({
+    id: randomUUID(),
+    organizationId: ORGANIZATION_ID,
+    projectId: PROJECT_ID,
+    taskId,
+    runId: null,
+    actorType: "human",
+    actorId: input.deciderUserId,
+    action: `held_task.${input.decision}`,
+    targetType: "task",
+    targetId: taskId,
+    outcome,
+    reason,
+    correlationId: randomUUID(),
+    idempotencyKey: digest({
+      taskId,
+      decision: input.decision,
+      decider: input.deciderUserId,
+      scopeDigest,
+    }),
+    requestDigest: scopeDigest,
+    resultDigest: digest({ outcome, reason }),
+    evidenceArtifactIds: [],
+    createdAt: new Date().toISOString(),
+  });
+}
+
 export interface DecideApprovalInput {
   approvalRequestId: string;
   decision: "approve" | "reject" | "request_changes";

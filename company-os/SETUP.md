@@ -18,7 +18,8 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Chief Executive verified live | Done |
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
-| Real model execution (Claude) | Optional, one owner step below |
+| Real model execution (Claude) | Done, judging |
+| Migrations 0011-0012 applied | **Pending — paste them in, see below** |
 
 ## Models
 
@@ -29,9 +30,13 @@ credits.
 | Provider | State | Signed in as |
 | --- | --- | --- |
 | `codex` | Ready | ChatGPT plan |
-| `claude-code` | Not signed in | — |
+| `claude-code` | Ready | claude.ai |
 
-To add Claude alongside Codex, run once in a terminal:
+Both are signed in, so Codex implements and Claude judges. If only one is
+available both roles still run, and the log says so plainly rather than
+implying an independence that does not exist.
+
+To re-authenticate Claude if that lapses:
 
 ```
 "C:\Users\cadet\AppData\Roaming\Claude\claude-code\2.1.219\claude.exe" auth login
@@ -76,6 +81,28 @@ It holds anything that is your call rather than deciding it: monetization and
 pricing, releasing to production, anything public, brand and identity,
 destructive changes, and the canonical town. Those arrive as proposed work
 waiting for you, with the reason named.
+
+### Releasing work it held
+
+Held work appears on the **Held** page. Each task shows what you originally
+asked for, why it was held, the capabilities requested, the paths it may and
+may not touch, its risk level, its acceptance criteria, and its version.
+
+Releasing it authorizes exactly the capabilities you leave ticked. Unticking
+one narrows the grant; nothing can widen it, and the database re-checks that
+independently of the dashboard. The decision is recorded against the version
+you were shown, so a task edited after you read it is refused rather than
+released on the strength of a decision about something else.
+
+Every decision writes an append-only authorization row naming the task, the
+capabilities granted, the capabilities proposed, and who decided. A release
+walks the task through `proposed → planned → approved_for_work → queued` so
+the transition trigger checks each step.
+
+Note the escalation triggers match on subject, not on intent: writing "do not
+deploy this" in your instruction holds the work exactly as asking to deploy it
+would. Phrase constraints as scope ("write only inside `company-os/docs/`")
+rather than as prohibitions naming the thing you want avoided.
 
 ## Running the company
 
@@ -141,6 +168,8 @@ numbered migration.
 | 0008 | Permit review bookkeeping on a reviewed task |
 | 0009 | Register the Chief Executive agent |
 | 0010 | Record a CEO initiative atomically |
+| 0011 | `git_checkpoint`, separating a local commit from a publication step |
+| 0012 | Owner release of held work, with an append-only authorization record |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:

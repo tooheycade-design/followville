@@ -19,6 +19,7 @@ import {
   type CompanyRepository,
   type CompanyState,
   type GoalSimulationRecord,
+  type HeldTaskDecision,
 } from "./types";
 
 /**
@@ -289,5 +290,13 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       events: [event],
     });
     failOn("company_os_append_audit_events", error);
+  }
+
+  async decideHeldTask(decision: HeldTaskDecision): Promise<string> {
+    const { data, error } = await this.client.rpc("company_os_decide_held_task", {
+      payload: decision,
+    });
+    failOn("company_os_decide_held_task", error);
+    return String((data as { status?: string } | null)?.status ?? "unknown");
   }
 }

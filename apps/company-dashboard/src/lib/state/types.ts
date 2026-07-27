@@ -68,9 +68,29 @@ export interface ApprovalDecisionRecord {
   auditEvent: AuditEvent;
 }
 
+/**
+ * An owner's decision about work the Chief Executive held for them.
+ *
+ * `grantedCapabilities` may be narrower than the task proposed and can never
+ * be wider; the database re-checks that independently. `expectedVersion` is
+ * what the owner was looking at, so a task edited since they read it cannot be
+ * released on the strength of a decision about something else.
+ */
+export interface HeldTaskDecision {
+  taskId: string;
+  decision: "release" | "reject";
+  decidedByUserId: string;
+  comment: string;
+  grantedCapabilities: readonly string[];
+  authorizationDigest: string;
+  expectedVersion: number;
+}
+
 export interface CompanyRepository {
   readonly backend: "file" | "supabase";
   load(): Promise<CompanyState>;
+  /** Releases or rejects held work. Returns the task's resulting status. */
+  decideHeldTask(decision: HeldTaskDecision): Promise<string>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;
   appendApprovalDecision(record: ApprovalDecisionRecord): Promise<void>;
   /** Records a planned initiative: one goal and its tasks, written together. */
