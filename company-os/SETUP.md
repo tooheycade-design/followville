@@ -46,6 +46,21 @@ pnpm --dir apps/company-dashboard worker -- --check
 If no provider is signed in, the worker falls back to a deterministic executor
 that calls no model and spends nothing, rather than failing.
 
+### How a model run is bounded
+
+- It runs inside a disposable git worktree, never the operator's checkout.
+- It is started in the narrowest directory containing its allowed paths, so it
+  does not scan the Blender scenes and exported geometry it cannot touch. On
+  this repository that is the difference between 43 MB and a few hundred KB,
+  and between a run that times out and one that finishes.
+- Codex adds its own `workspace-write` sandbox inside that worktree. The
+  dangerous bypass flag is never used.
+- Every file the agent touched is re-checked against the policy engine
+  afterwards. Editing `world_state.json`, or writing `../` out of scope, fails
+  the task before it reaches review.
+- A failed attempt leaves its worktree behind; the next attempt clears it
+  rather than failing on the debris.
+
 ## Directing the company
 
 Open the **CEO** page in the dashboard and say what you want in plain language.
