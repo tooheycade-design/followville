@@ -99,12 +99,11 @@ function taskFromRow(row: Row) {
   });
 }
 
-function runFromRow(row: Row) {
+export function runFromRow(row: Row) {
   return RunSchema.parse({
     id: row.id,
     organizationId: row.organization_id,
     projectId: row.project_id,
-    goalId: row.goal_id,
     taskId: row.task_id,
     agentId: row.agent_id,
     reviewerAgentId: row.reviewer_agent_id,
@@ -167,11 +166,12 @@ function decisionFromRow(row: Row) {
   });
 }
 
-function artifactFromRow(row: Row) {
+export function artifactFromRow(row: Row) {
   return EvidenceArtifactSchema.parse({
     id: row.id,
     organizationId: row.organization_id,
     projectId: row.project_id,
+    goalId: row.goal_id,
     taskId: row.task_id,
     runId: row.run_id,
     kind: row.kind,

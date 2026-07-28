@@ -266,6 +266,7 @@ export class RepositoryVerificationRunner implements WorkVerifier {
             "--test",
             "src/lib/state/file-repository.test.ts",
             "src/lib/state/file-repository.readonly.test.ts",
+            "src/lib/state/supabase-repository.test.ts",
             "src/lib/state/retry.test.ts",
             "src/lib/commands.test.ts",
             "src/lib/auth-policy.test.ts",

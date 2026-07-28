@@ -1,5 +1,5 @@
 const ROWS: readonly (readonly [string, string, string])[] = [
-  ["Domain contracts and policy kernel", "implemented", "203 core tests; strict TypeScript"],
+  ["Domain contracts and policy kernel", "implemented", "203 core and 34 dashboard tests; strict TypeScript"],
   ["Deterministic goal simulation", "implemented", "Runs from the Goals page; zero side effects"],
   ["Owner approval decisions", "implemented", "Digest-pinned kernel; owner-role enforcement"],
   ["Development database", "implemented", "Migration applied to followville-company-os-dev and verified isolated"],

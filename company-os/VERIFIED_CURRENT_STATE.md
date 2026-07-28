@@ -67,7 +67,7 @@ Last verified: 2026-07-28, development project
 ## Verification
 
 - Company OS core: 203 tests pass.
-- Dashboard: 32 tests pass.
+- Dashboard: 34 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
 - `git diff --check` passes.
