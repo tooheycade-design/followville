@@ -8,6 +8,10 @@ import {
   PlaywrightBrowserPreviewRunner,
   type BrowserPreviewRunner,
 } from "./browser-preview.js";
+import {
+  HeadlessBlenderPreviewRunner,
+  type BlenderPreviewRunner,
+} from "./blender-preview.js";
 import type { Worktree } from "./worktree.js";
 
 const exec = promisify(execFile);
@@ -109,6 +113,8 @@ const DASHBOARD_CODE =
   /^apps\/company-dashboard\/(?:src\/|package|tsconfig|next\.config)/;
 const TOWN_WEB =
   /^(?:index\.html|town\.html|admin\.html|vercel\.json|playwright\.config\.mjs|tests\/|assets\/)/;
+const BLENDER_CANDIDATE =
+  /^company-os\/candidates\/.+\.(?:glb|gltf)$/i;
 const WORKSPACE_DEPENDENCIES = /^(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$/;
 const NON_CODE = /(?:^|\/)(?:docs?\/|README(?:\.[^/]*)?$)|\.(?:md|txt)$/i;
 
@@ -140,6 +146,8 @@ export function verificationKinds(filesChanged: readonly string[]): {
       kinds.add("dashboard-build");
     } else if (TOWN_WEB.test(file)) {
       kinds.add("town-browser-tests");
+    } else if (BLENDER_CANDIDATE.test(file)) {
+      // Candidate models are verified by the isolated Blender runtime below.
     } else if (!NON_CODE.test(file)) {
       unverifiedPaths.push(file);
     }
@@ -182,6 +190,8 @@ export class RepositoryVerificationRunner implements WorkVerifier {
       runVerificationCommand,
     private readonly browserPreview: BrowserPreviewRunner =
       new PlaywrightBrowserPreviewRunner(trustedRepositoryRoot),
+    private readonly blenderPreview: BlenderPreviewRunner =
+      new HeadlessBlenderPreviewRunner(trustedRepositoryRoot),
   ) {
     this.provisionDependencies = commandRunner === runVerificationCommand;
   }
@@ -386,7 +396,7 @@ export class RepositoryVerificationRunner implements WorkVerifier {
       }
     }
 
-    let artifactFiles: readonly string[] = [];
+    const artifactFiles: string[] = [];
     if (
       plan.kinds.includes("town-browser-tests") &&
       plan.unverifiedPaths.length === 0 &&
@@ -426,7 +436,65 @@ export class RepositoryVerificationRunner implements WorkVerifier {
         durationMs: Date.now() - started,
         output: cleanOutput(preview.output),
       });
-      artifactFiles = preview.artifactFiles;
+      artifactFiles.push(...preview.artifactFiles);
+    }
+
+    const blenderFiles = input.filesChanged.filter((file) =>
+      BLENDER_CANDIDATE.test(file),
+    );
+    if (
+      blenderFiles.length > 0 &&
+      plan.unverifiedPaths.length === 0 &&
+      checks.every((check) => check.passed)
+    ) {
+      if (!input.task.allowedCapabilities.includes("blender_preview")) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "Candidate model changes require the blender_preview capability.",
+          ],
+          artifactFiles,
+        };
+      }
+      if (input.runId === undefined) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "A durable run ID is required before Blender evidence can be captured.",
+          ],
+          artifactFiles,
+        };
+      }
+      if (blenderFiles.length > 3) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "A single task may preview at most three candidate model files.",
+          ],
+          artifactFiles,
+        };
+      }
+      for (const file of blenderFiles) {
+        const started = Date.now();
+        const preview = await this.blenderPreview.run({
+          worktree: input.worktree,
+          inputFile: file,
+          runId: input.runId,
+          signal: input.signal,
+        });
+        checks.push({
+          id: `blender-preview:${file}`,
+          label: `Blender evidence: ${file}`,
+          passed: preview.passed,
+          durationMs: Date.now() - started,
+          output: cleanOutput(preview.output),
+        });
+        artifactFiles.push(...preview.artifactFiles);
+        if (!preview.passed) break;
+      }
     }
 
     return {

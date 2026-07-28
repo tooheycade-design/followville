@@ -20,6 +20,7 @@ import {
   CodexProvider,
   GitHubAppInstallationAuth,
   GitHubRestPullRequestClient,
+  HeadlessBlenderPreviewRunner,
   RepositoryReportExecutor,
   RepositoryVerificationRunner,
   ORGANIZATION_ID,
@@ -126,6 +127,18 @@ log(
     ? "shared artifact storage unavailable; evidence remains checkpoint-linked"
     : "shared artifact storage ready in the private Company OS evidence bucket",
 );
+const blenderPreview = new HeadlessBlenderPreviewRunner(repositoryRoot);
+const blenderAvailability = deterministic
+  ? { available: false, detail: "deterministic worker" }
+  : await blenderPreview.checkAvailability({
+      worktreePath: repositoryRoot,
+      signal: new AbortController().signal,
+    });
+log(
+  blenderAvailability.available
+    ? `Blender preview: ready (${blenderAvailability.detail})`
+    : `Blender preview: unavailable (${blenderAvailability.detail})`,
+);
 
 /**
  * Work and judgement go to different models when two are signed in.
@@ -154,10 +167,15 @@ const workerCapabilities =
     ? (["repository_read"] as const)
     : SEED_AGENTS.engineer.capabilities.filter((capability) => {
         if (
-          capability === "blender_preview" ||
           capability === "git_commit" ||
           capability === "memory_write" ||
           capability === "message_send"
+        ) {
+          return false;
+        }
+        if (
+          capability === "blender_preview" &&
+          (!blenderAvailability.available || artifactStore === null)
         ) {
           return false;
         }
@@ -190,6 +208,10 @@ const workerRegistration = {
   metadata: {
     reviewerProvider: judgeProvider?.name ?? null,
     sharedArtifactStorage: artifactStore !== null,
+    blenderAvailable: blenderAvailability.available,
+    blenderExecutable: blenderAvailability.available
+      ? blenderAvailability.detail
+      : null,
   },
 } as const;
 const continuityKey =
@@ -249,7 +271,12 @@ const executor: TaskExecutor =
         maxSubscriptionRunsPerTask: 1,
         ...(continuityKey === null ? {} : { continuityKey }),
         resumeSessionId: resumableSessionFor,
-        verifier: new RepositoryVerificationRunner(repositoryRoot),
+        verifier: new RepositoryVerificationRunner(
+          repositoryRoot,
+          undefined,
+          undefined,
+          blenderPreview,
+        ),
         ...(artifactStore === null ? {} : { artifactStore }),
         reworkBriefing: async (task) => {
           const state = await companyRepository().load();

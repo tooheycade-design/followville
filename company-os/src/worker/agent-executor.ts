@@ -162,13 +162,14 @@ export class AgentTaskExecutor implements TaskExecutor {
       };
     }
     if (
-      task.allowedCapabilities.includes("browser_preview") &&
+      (task.allowedCapabilities.includes("browser_preview") ||
+        task.allowedCapabilities.includes("blender_preview")) &&
       this.options.artifactStore === undefined
     ) {
       return {
         outcome: "blocked",
         summary:
-          "Browser preview work requires private shared artifact storage on this worker.",
+          "Preview work requires private shared artifact storage on this worker.",
         evidence: [],
         filesChanged: [],
         diff: null,

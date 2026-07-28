@@ -14,6 +14,7 @@ import {
   type VerificationCommand,
 } from "./verification.js";
 import type { BrowserPreviewRunner } from "./browser-preview.js";
+import type { BlenderPreviewRunner } from "./blender-preview.js";
 
 const task = TaskSchema.parse({
   id: "81000000-0000-4000-8000-000000000001",
@@ -81,6 +82,16 @@ test("public town code selects the browser suite", () => {
     kinds: ["diff-check", "town-browser-tests"],
     unverifiedPaths: [],
   });
+});
+
+test("candidate models select patch integrity and the isolated preview", () => {
+  assert.deepEqual(
+    verificationKinds(["company-os/candidates/storefront.glb"]),
+    {
+      kinds: ["diff-check"],
+      unverifiedPaths: [],
+    },
+  );
 });
 
 test("documentation needs only patch integrity", () => {
@@ -297,4 +308,70 @@ test("a failed browser capture fails verification and keeps its evidence", async
   assert.equal(result.passed, false);
   assert.equal(result.checks.at(-1)?.passed, false);
   assert.deepEqual(result.artifactFiles, ["evidence/failed-trace.zip"]);
+});
+
+test("candidate models require capability and produce run-scoped Blender evidence", async () => {
+  const invoked: string[] = [];
+  const blender: BlenderPreviewRunner = {
+    async checkAvailability() {
+      return { available: true, detail: "fixture" };
+    },
+    async run(input) {
+      invoked.push(`${input.runId}:${input.inputFile}`);
+      return {
+        passed: true,
+        output: "neutral render and metrics captured",
+        artifactFiles: [
+          ".company-os/evidence/run/blender/hash/preview.png",
+          ".company-os/evidence/run/blender/hash/metrics.json",
+        ],
+      };
+    },
+  };
+  const runner = new RepositoryVerificationRunner(
+    "C:/trusted",
+    async () => ({ exitCode: 0, output: "passed" }),
+    {
+      async run() {
+        throw new Error("browser preview must not run");
+      },
+    },
+    blender,
+  );
+  const withoutCapability = await runner.verify({
+    task,
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-test",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: ["company-os/candidates/storefront.glb"],
+    runId: "81000000-0000-4000-8000-000000000020",
+    signal: new AbortController().signal,
+  });
+  assert.equal(withoutCapability.passed, false);
+  assert.match(withoutCapability.unverifiedPaths[0] ?? "", /blender_preview/);
+
+  const withCapability = await runner.verify({
+    task: {
+      ...task,
+      allowedCapabilities: [...task.allowedCapabilities, "blender_preview"],
+    },
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-test",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: ["company-os/candidates/storefront.glb"],
+    runId: "81000000-0000-4000-8000-000000000020",
+    signal: new AbortController().signal,
+  });
+
+  assert.equal(withCapability.passed, true);
+  assert.deepEqual(invoked, [
+    "81000000-0000-4000-8000-000000000020:company-os/candidates/storefront.glb",
+  ]);
+  assert.equal(withCapability.checks.at(-1)?.id,
+    "blender-preview:company-os/candidates/storefront.glb");
+  assert.equal(withCapability.artifactFiles.length, 2);
 });

@@ -251,6 +251,48 @@ test("runtime browser evidence fails closed without shared storage", async () =>
   );
 });
 
+test("runtime Blender preview and metrics are preserved in the private store", async () => {
+  const prefix = ".company-os/evidence/run/blender/model-hash";
+  const preview = `${prefix}/preview.png`;
+  const metrics = `${prefix}/metrics.json`;
+  const stored: string[] = [];
+  const artifactStore: ArtifactStore = {
+    async store(input) {
+      stored.push(input.fileName);
+      return {
+        kind: "object",
+        provider: "supabase_storage",
+        bucket: "company-os-evidence",
+        objectPath: `test/${input.artifactId}/${input.fileName}`,
+      };
+    },
+  };
+  const artifacts = await collectArtifacts({
+    task: makeTask(),
+    worktreePath: worktreeWith({
+      [preview]: pngBytes("blender proof"),
+      [metrics]: Buffer.from('{"triangles":12}\n'),
+    }),
+    filesChanged: [],
+    evidenceFiles: [preview, metrics],
+    commitSha: null,
+    diff: null,
+    runId: "94000000-0000-4000-8000-000000000096",
+    artifactStore,
+    createdByAgentId: SEED_AGENTS.engineer.id,
+    idFactory: randomUUID,
+  });
+
+  assert.deepEqual(stored, ["preview.png", "metrics.json"]);
+  assert.deepEqual(
+    artifacts.map((artifact) => [artifact.kind, artifact.mediaType]),
+    [
+      ["screenshot", "image/png"],
+      ["report", "application/json"],
+    ],
+  );
+});
+
 test("artifacts survive the audit trail so an owner can find them", () => {
   const decoded = decodeWorkerReport(
     encodeWorkerReport({

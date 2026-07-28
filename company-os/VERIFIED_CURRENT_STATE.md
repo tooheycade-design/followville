@@ -88,10 +88,21 @@ Last verified: 2026-07-28, development project
   stable worker identity, remaining work, and recommended next action. A later
   worker receives that record as context while current task scope and policy
   remain authoritative.
+- Candidate `.glb` and `.gltf` models under `company-os/candidates/` now have
+  a fixed headless Blender verifier. It uses factory startup with auto-execute
+  disabled, a scrubbed environment, bounded subprocess time, neutral lighting
+  and camera framing, private run-scoped PNG evidence, and JSON geometry
+  metrics. External glTF URIs must resolve to real files inside the isolated
+  worktree.
+- Workers advertise `blender_preview` only when Blender is actually executable
+  and the private artifact store is available. Cade's installed Blender 5.1.2
+  passed a real GLB import and render.
 
 ## Verification
 
-- Company OS core: 214 tests pass.
+- Company OS core: 225 tests pass; one Windows symlink-escape fixture is
+  skipped because this account cannot create symlinks. The same escape is
+  enforced by canonical-path checks and covered where symlinks are permitted.
 - Dashboard: 39 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
@@ -121,11 +132,16 @@ Last verified: 2026-07-28, development project
   the first turn's sentinel, and returned a different forked session ID.
 - The durable handoff survives the worker report encode/decode path and is
   included in the next revision briefing without granting it authority.
+- A real 27 KB Draco-compressed avatar GLB rendered to a nonblank 960x960 PNG.
+  Blender reported two renderable meshes, 2,620 polygons/triangles, four
+  materials, and no external textures.
 
 ## Honest limits
 
-- Blender/generator and other non-web code areas do not yet have registered
-  verification commands. Changes there fail closed rather than claiming safety.
+- Canonical Blender scenes, generator code, and other non-web code areas do not
+  yet have registered verification commands. Candidate interchange models are
+  deliberately limited to GLB/glTF; untrusted `.blend` files remain fail-closed
+  until an operating-system sandbox can constrain linked external data.
 - GitHub draft review is live on Cade's worker. Zach's launchd provisioner is
   ready, but his Mac still needs its local env file and provider sign-in before
   it can register.
@@ -133,5 +149,5 @@ Last verified: 2026-07-28, development project
 
 ## Next milestone
 
-Register trusted Blender/generator previews, then provision Zach's worker and
-expand the specialist workflow catalog.
+Register guarded generator workflows, then provision Zach's worker and expand
+the specialist workflow catalog.

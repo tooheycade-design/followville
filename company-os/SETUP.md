@@ -365,4 +365,12 @@ stable worker identity. A compatible later worker receives that bounded
 briefing, but the current task packet, repository scope, and policy engine
 remain the authority.
 
+Candidate 3D work must be exported as `.glb` or `.gltf` under
+`company-os/candidates/`. A compatible worker runs the repository-owned
+headless Blender verifier, captures a neutral PNG plus geometry metrics, and
+stores both in the private evidence vault. External glTF files are accepted
+only when every URI resolves inside the isolated task worktree. Candidate
+`.blend` files are intentionally unsupported because linked data cannot yet be
+confined by the current process boundary.
+
 See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.

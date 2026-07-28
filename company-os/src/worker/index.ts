@@ -10,3 +10,4 @@ export * from "./artifacts.js";
 export * from "./handoff.js";
 export * from "./verification.js";
 export * from "./browser-preview.js";
+export * from "./blender-preview.js";
