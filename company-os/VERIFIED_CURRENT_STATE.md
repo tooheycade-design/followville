@@ -78,10 +78,14 @@ Last verified: 2026-07-28, development project
 - Explicit worker states now win over heartbeat freshness in the dashboard, so
   a graceful stop is shown as offline immediately while stale heartbeats still
   detect crashed processes.
+- Revision worktrees now start from the task's prior checkpoint instead of
+  resetting the task branch to the operator checkout. Same-machine revisions
+  also resume and fork the prior provider conversation; provider and stable
+  machine identity must both match, so sessions are never assumed portable.
 
 ## Verification
 
-- Company OS core: 209 tests pass.
+- Company OS core: 214 tests pass.
 - Dashboard: 39 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
@@ -107,6 +111,8 @@ Last verified: 2026-07-28, development project
   reviewer metadata, and its executable capability set. Its heartbeat advanced
   across multiple reads, the shared state loader returned it, and the
   previously backed-off queue pass recovered to success with zero failures.
+- A real two-turn headless Claude run resumed its recorded session, recalled
+  the first turn's sentinel, and returned a different forked session ID.
 
 ## Honest limits
 

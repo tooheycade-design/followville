@@ -51,6 +51,20 @@ export function claudeExecutableCandidates(
   return [...new Set(candidates)];
 }
 
+export function claudeInvocationArgs(
+  request: Pick<ProviderRequest, "prompt" | "resumeSessionId">,
+  model?: string,
+): string[] {
+  const args = ["-p", request.prompt, "--output-format", "json"];
+  if (request.resumeSessionId !== undefined) {
+    args.push("--resume", request.resumeSessionId, "--fork-session");
+  }
+  if (model !== undefined) {
+    args.push("--model", model);
+  }
+  return args;
+}
+
 interface ClaudeJsonResult {
   is_error?: boolean;
   result?: string;
@@ -152,10 +166,7 @@ export class ClaudeCodeProvider implements ModelProvider {
   }
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
-    const args = ["-p", request.prompt, "--output-format", "json"];
-    if (this.model !== undefined) {
-      args.push("--model", this.model);
-    }
+    const args = claudeInvocationArgs(request, this.model);
 
     let stdout: string;
     try {

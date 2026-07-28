@@ -47,6 +47,7 @@ import {
   gateAuditEvent,
   priorRejectionsFrom,
   reworkBriefing,
+  resumableSessionFromReports,
   dueJobs,
   recordRun,
   reviewAuditEvent,
@@ -190,6 +191,34 @@ const workerRegistration = {
     sharedArtifactStorage: artifactStore !== null,
   },
 } as const;
+const continuityKey =
+  provider === null ? null : `${hostname()}:${provider.name}`;
+
+async function resumableSessionFor(task: {
+  id: string;
+  retryCount: number;
+  reviewCycleCount: number;
+}): Promise<string | null> {
+  if (
+    provider === null ||
+    continuityKey === null ||
+    (task.retryCount === 0 && task.reviewCycleCount === 0)
+  ) {
+    return null;
+  }
+  const state = await companyRepository().load();
+  const completions = state.auditEvents
+    .filter(
+      (event) =>
+        event.taskId === task.id && event.action === "worker.completed",
+    )
+    .reverse();
+  return resumableSessionFromReports(
+    completions.map((event) => event.reason),
+    provider.name,
+    continuityKey,
+  );
+}
 
 async function reportWorker(
   status: "online" | "draining" | "offline" | "error",
@@ -217,6 +246,8 @@ const executor: TaskExecutor =
         repository: "followville_repo",
         invocationTimeoutMs: 15 * 60_000,
         maxSubscriptionRunsPerTask: 1,
+        ...(continuityKey === null ? {} : { continuityKey }),
+        resumeSessionId: resumableSessionFor,
         verifier: new RepositoryVerificationRunner(repositoryRoot),
         ...(artifactStore === null ? {} : { artifactStore }),
         reworkBriefing: async (task) => {

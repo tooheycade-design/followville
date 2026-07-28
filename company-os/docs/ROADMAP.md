@@ -74,7 +74,9 @@ controlled browser previews are implemented and proven. Worker processes now
 register their machine, provider, executable capabilities, current assignment,
 and heartbeat; incompatible workers cannot lease a task. Cade's worker uses
 Codex to implement and Claude Code to judge. Zach's launchd installer is
-implemented but must still be run on his Mac.
+implemented but must still be run on his Mac. Task revisions now continue from
+their prior checkpoint and resume a provider conversation only on the same
+provider host, with a forked session retained as new evidence.
 
 Exit: an owner approves or rejects a complete draft PR package that no human
 assembled.

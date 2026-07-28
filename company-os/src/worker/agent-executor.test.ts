@@ -85,6 +85,7 @@ class ScriptedProvider implements ModelProvider {
   readonly name = "scripted";
   readonly billingMode = "subscription" as const;
   lastPrompt = "";
+  lastResumeSessionId: string | null = null;
 
   constructor(
     private readonly writes: readonly string[],
@@ -101,6 +102,7 @@ class ScriptedProvider implements ModelProvider {
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
     this.lastPrompt = request.prompt;
+    this.lastResumeSessionId = request.resumeSessionId ?? null;
     for (const relative of this.writes) {
       const target = path.join(request.workingDirectory, relative);
       mkdirSync(path.dirname(target), { recursive: true });
@@ -176,6 +178,59 @@ test("finished work survives on its branch after the worktree is gone", async ()
     encoding: "utf8",
   });
   assert.match(content, /changed by agent/);
+});
+
+test("a revision starts from and extends the prior task checkpoint", async () => {
+  const repo = makeRepository();
+  const manager = new WorktreeManager(repo.root, repo.worktreeRoot);
+  const taskId = nextId();
+  const first = await manager.create(taskId);
+  writeFileSync(path.join(first.path, "company-os", "first.md"), "first attempt\n");
+  const firstCommit = await manager.preserve(
+    first,
+    ["company-os/first.md"],
+    "first checkpoint",
+  );
+  assert.ok(firstCommit);
+  await manager.remove(first);
+
+  const revision = await manager.create(taskId);
+  assert.equal(
+    revision.baseCommit,
+    firstCommit,
+    "a revision must continue from the checkpoint it is correcting",
+  );
+  const inherited = execFileSync(
+    "git",
+    ["show", `${revision.baseCommit}:company-os/first.md`],
+    { cwd: repo.root, encoding: "utf8" },
+  );
+  assert.equal(inherited, "first attempt\n");
+
+  writeFileSync(path.join(revision.path, "company-os", "second.md"), "revision\n");
+  const revisionCommit = await manager.preserve(
+    revision,
+    ["company-os/second.md"],
+    "revision checkpoint",
+  );
+  assert.ok(revisionCommit);
+  const tracked = execFileSync(
+    "git",
+    [
+      "ls-tree",
+      "-r",
+      "--name-only",
+      revisionCommit!,
+      "--",
+      "company-os/first.md",
+      "company-os/second.md",
+    ],
+    { cwd: repo.root, encoding: "utf8" },
+  );
+  assert.deepEqual(tracked.trim().split("\n").sort(), [
+    "company-os/first.md",
+    "company-os/second.md",
+  ]);
 });
 
 test("the preserved commit is named in the evidence", async () => {
@@ -274,6 +329,26 @@ test("a revision attempt receives the owner's feedback", async () => {
 
   assert.match(provider.lastPrompt, /Owner revision feedback/);
   assert.match(provider.lastPrompt, /mobile layout still overlaps/);
+});
+
+test("a revision resumes only the session selected by the runtime", async () => {
+  const repo = makeRepository();
+  const provider = new ScriptedProvider(["notes.md"]);
+  const executor = new AgentTaskExecutor({
+    agent: SEED_AGENTS.engineer,
+    provider,
+    worktrees: new WorktreeManager(repo.root, repo.worktreeRoot),
+    repository: "followville_repo",
+    invocationTimeoutMs: 30_000,
+    maxSubscriptionRunsPerTask: 1,
+    continuityKey: "test-machine:scripted",
+    resumeSessionId: async () => "session-from-prior-attempt",
+  });
+
+  const result = await executor.execute(makeTask(), new AbortController().signal);
+
+  assert.equal(provider.lastResumeSessionId, "session-from-prior-attempt");
+  assert.ok(result.evidence.includes("continuity=test-machine:scripted"));
 });
 
 test("a checkpoint preserves every approved path beyond the old 200-file limit", async () => {

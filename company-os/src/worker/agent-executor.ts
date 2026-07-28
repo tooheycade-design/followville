@@ -31,6 +31,16 @@ export interface AgentExecutorOptions {
   reworkBriefing?:
     | string
     | ((task: Task) => string | Promise<string>);
+  /**
+   * Stable only within the provider's local session store, for example
+   * `machine-name:codex`. It prevents a worker on another machine from trying
+   * to resume a session ID whose files exist only on the original host.
+   */
+  continuityKey?: string;
+  resumeSessionId?:
+    | string
+    | null
+    | ((task: Task) => string | null | Promise<string | null>);
   provider: ModelProvider;
   worktrees: WorktreeManager;
   repository: string;
@@ -185,9 +195,14 @@ export class AgentTaskExecutor implements TaskExecutor {
         typeof this.options.reworkBriefing === "function"
           ? await this.options.reworkBriefing(task)
           : (this.options.reworkBriefing ?? "");
+      const resumeSessionId =
+        typeof this.options.resumeSessionId === "function"
+          ? await this.options.resumeSessionId(task)
+          : (this.options.resumeSessionId ?? null);
       const response = await this.options.provider.invoke({
         workingDirectory,
         prompt: buildPrompt(task, workingDirectory) + reworkBriefing,
+        ...(resumeSessionId === null ? {} : { resumeSessionId }),
         timeoutMs: this.options.invocationTimeoutMs,
         signal,
       });
@@ -289,6 +304,9 @@ export class AgentTaskExecutor implements TaskExecutor {
 
       const evidence = [
         `provider=${this.options.provider.name}`,
+        ...(this.options.continuityKey === undefined
+          ? []
+          : [`continuity=${this.options.continuityKey}`]),
         `branch=${worktree.branch}`,
         `base=${worktree.baseCommit.slice(0, 12)}`,
         `files_changed=${filesChanged.length}`,

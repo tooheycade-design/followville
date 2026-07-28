@@ -23,6 +23,12 @@ export interface ProviderRequest {
   /** Working directory the provider may operate in. */
   workingDirectory: string;
   prompt: string;
+  /**
+   * A prior local provider session for this same task and continuity key.
+   * Providers must start a fresh child/fork so the prior audit record remains
+   * immutable.
+   */
+  resumeSessionId?: string;
   /** Hard ceiling on wall-clock time. */
   timeoutMs: number;
   signal: AbortSignal;

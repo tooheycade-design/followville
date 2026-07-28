@@ -6,6 +6,7 @@ import {
   MAX_DIFF_CHARS,
   decodeWorkerReport,
   encodeWorkerReport,
+  resumableSessionFromReports,
 } from "./report.js";
 
 test("a multi-line summary survives the round trip", () => {
@@ -169,4 +170,38 @@ test("a reason with no trailer at all is treated as summary, not as evidence", (
   assert.equal(decoded.summary, "The Codex CLI exited with an error.");
   assert.deepEqual(decoded.evidence, []);
   assert.deepEqual(decoded.filesChanged, []);
+});
+
+test("session continuation stays on the same provider and machine", () => {
+  const matching = encodeWorkerReport({
+    summary: "First attempt.",
+    evidence: [
+      "provider=codex",
+      "continuity=Cades-Omen:codex",
+      "session=019faa11-1111-7111-8111-111111111111",
+    ],
+    filesChanged: ["company-os/first.md"],
+  });
+  const otherMachine = encodeWorkerReport({
+    summary: "Other host.",
+    evidence: [
+      "provider=codex",
+      "continuity=Zachs-Mac:codex",
+      "session=019faa22-2222-7222-8222-222222222222",
+    ],
+    filesChanged: [],
+  });
+
+  assert.equal(
+    resumableSessionFromReports(
+      [otherMachine, matching],
+      "codex",
+      "Cades-Omen:codex",
+    ),
+    "019faa11-1111-7111-8111-111111111111",
+  );
+  assert.equal(
+    resumableSessionFromReports([matching], "claude-code", "Cades-Omen:codex"),
+    null,
+  );
 });

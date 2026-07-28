@@ -367,3 +367,35 @@ export function decodeWorkerReport(reason: string): WorkerReport {
     totalFilesChanged: Math.max(totalFilesChanged, filesChanged.length),
   };
 }
+
+/**
+ * Finds the newest provider session that is actually local to this continuity
+ * key. Audit rows are durable across machines, but provider session files are
+ * not; matching both fields keeps Zach's worker from trying to resume a
+ * session that exists only on Cade's PC.
+ */
+export function resumableSessionFromReports(
+  reasonsNewestFirst: readonly string[],
+  provider: string,
+  continuityKey: string,
+): string | null {
+  for (const reason of reasonsNewestFirst) {
+    const report = decodeWorkerReport(reason);
+    if (
+      !report.evidence.includes(`provider=${provider}`) ||
+      !report.evidence.includes(`continuity=${continuityKey}`)
+    ) {
+      continue;
+    }
+    const session = report.evidence
+      .find((item) => item.startsWith("session="))
+      ?.slice("session=".length);
+    if (
+      session !== undefined &&
+      /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(session)
+    ) {
+      return session;
+    }
+  }
+  return null;
+}

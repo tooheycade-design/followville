@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { describeFailure, parseCodexOutput } from "./codex.js";
+import {
+  codexInvocationArgs,
+  describeFailure,
+  parseCodexOutput,
+} from "./codex.js";
 
 const TRANSCRIPT = [
   "sandbox: read-only",
@@ -34,6 +38,30 @@ test("the session id is captured for evidence", () => {
   assert.equal(
     parseCodexOutput(TRANSCRIPT, false).sessionId,
     "019fa1dd-925c-7893-aea7-d30c8c9af4ee",
+  );
+});
+
+test("Codex revisions resume the recorded session inside the new worktree", () => {
+  assert.deepEqual(
+    codexInvocationArgs(
+      {
+        workingDirectory: "/work/revision",
+        prompt: "Address the review.",
+        resumeSessionId: "019faa11-1111-7111-8111-111111111111",
+      },
+      "workspace-write",
+    ),
+    [
+      "exec",
+      "--sandbox",
+      "workspace-write",
+      "--skip-git-repo-check",
+      "-C",
+      "/work/revision",
+      "resume",
+      "019faa11-1111-7111-8111-111111111111",
+      "Address the review.",
+    ],
   );
 });
 

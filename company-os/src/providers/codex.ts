@@ -12,6 +12,26 @@ import { providerEnvironment } from "./environment.js";
 
 const run = promisify(execFile);
 
+export function codexInvocationArgs(
+  request: Pick<ProviderRequest, "workingDirectory" | "prompt" | "resumeSessionId">,
+  sandbox: "read-only" | "workspace-write",
+): string[] {
+  const args = [
+    "exec",
+    "--sandbox",
+    sandbox,
+    "--skip-git-repo-check",
+    "-C",
+    request.workingDirectory,
+  ];
+  if (request.resumeSessionId !== undefined) {
+    args.push("resume", request.resumeSessionId, request.prompt);
+  } else {
+    args.push(request.prompt);
+  }
+  return args;
+}
+
 /**
  * Drives the Codex CLI headlessly on the operator's ChatGPT subscription.
  *
@@ -74,15 +94,7 @@ export class CodexProvider implements ModelProvider {
   }
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
-    const args = [
-      "exec",
-      "--sandbox",
-      this.sandbox,
-      "--skip-git-repo-check",
-      "-C",
-      request.workingDirectory,
-      request.prompt,
-    ];
+    const args = codexInvocationArgs(request, this.sandbox);
 
     const result = await spawnCollecting(this.executablePath, args, {
       cwd: request.workingDirectory,

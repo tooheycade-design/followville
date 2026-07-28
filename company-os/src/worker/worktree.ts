@@ -70,7 +70,14 @@ export class WorktreeManager {
     }
   }
 
-  /** Creates an isolated worktree for a task, branched from `baseRef`. */
+  /**
+   * Creates an isolated worktree for a task.
+   *
+   * A task's first attempt starts at `baseRef`. Later attempts start at the
+   * checkpoint already preserved on that task's branch, so reviewer or owner
+   * revisions build on the work they are correcting instead of silently
+   * resetting it.
+   */
   async create(taskId: string, baseRef = "HEAD"): Promise<Worktree> {
     const short = taskId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
     const branch = `agent/task-${short}`;
@@ -86,7 +93,14 @@ export class WorktreeManager {
     );
     await rm(target, { recursive: true, force: true }).catch(() => undefined);
 
-    await this.#git(["worktree", "add", "--detach", target, baseRef]);
+    const branchExists = await this.#git(
+      ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`],
+    )
+      .then(() => true)
+      .catch(() => false);
+    const startingRef = branchExists ? branch : baseRef;
+
+    await this.#git(["worktree", "add", "--detach", target, startingRef]);
     await this.#git(["checkout", "-B", branch], target);
     const baseCommit = await this.#git(["rev-parse", "HEAD"], target);
 

@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
 
-import { claudeExecutableCandidates } from "./claude-code.js";
+import {
+  claudeExecutableCandidates,
+  claudeInvocationArgs,
+} from "./claude-code.js";
 
 test("Claude discovery prioritizes an explicit executable", () => {
   const candidates = claudeExecutableCandidates(
@@ -41,4 +44,22 @@ test("Claude discovery includes npm, native, Homebrew, and PATH installs", () =>
   assert.ok(candidates.includes(path.join("/home/worker", ".local", "bin", "claude")));
   assert.ok(candidates.includes("/opt/homebrew/bin/claude"));
   assert.ok(candidates.includes(path.join("/custom/bin", "claude")));
+});
+
+test("Claude revisions fork the recorded session", () => {
+  assert.deepEqual(
+    claudeInvocationArgs({
+      prompt: "Address the review.",
+      resumeSessionId: "019faa11-1111-7111-8111-111111111111",
+    }),
+    [
+      "-p",
+      "Address the review.",
+      "--output-format",
+      "json",
+      "--resume",
+      "019faa11-1111-7111-8111-111111111111",
+      "--fork-session",
+    ],
+  );
 });
