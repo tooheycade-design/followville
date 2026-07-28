@@ -31,7 +31,7 @@ export interface PublicationDependencies {
   repository: {
     owner: string;
     name: string;
-    baseBranch: "main";
+    baseBranch: string;
   };
   idFactory: () => string;
   now: () => string;

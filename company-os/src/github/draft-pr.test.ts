@@ -320,6 +320,26 @@ test("unsafe source branch is denied", async () => {
   assert.equal(auth.calls, 0);
 });
 
+test("unsafe review base branch is denied before credentials are requested", async () => {
+  const auth = fakeAuth();
+  const client = fakeClient();
+
+  const result = await publishDraftPullRequest(
+    request({
+      repository: {
+        owner: "followville",
+        name: "followville",
+        baseBranch: "agent/task-other",
+      },
+    }),
+    { auth, client },
+  );
+
+  assertDenied(result);
+  assert.match(result.reason, /base branch is unsafe/i);
+  assert.equal(auth.calls, 0);
+});
+
 test("a task without publication capabilities is denied", async () => {
   const auth = fakeAuth();
   const client = fakeClient();

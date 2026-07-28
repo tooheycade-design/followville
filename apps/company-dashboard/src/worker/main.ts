@@ -197,16 +197,17 @@ const reviewer = new EvidenceReviewer();
 const githubRepository = {
   owner: process.env.COMPANY_OS_GITHUB_OWNER?.trim() || "tooheycade-design",
   name: process.env.COMPANY_OS_GITHUB_REPOSITORY?.trim() || "followville",
-  baseBranch: "main" as const,
+  baseBranch: process.env.COMPANY_OS_GITHUB_BASE_BRANCH?.trim() || "",
 };
 const githubConfigured = [
+  process.env.COMPANY_OS_GITHUB_BASE_BRANCH,
   process.env.COMPANY_OS_GITHUB_APP_ID,
   process.env.COMPANY_OS_GITHUB_INSTALLATION_ID,
   process.env.COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64,
 ].every((value) => value !== undefined && value.trim().length > 0);
 log(
   githubConfigured
-    ? `github draft publication ready for ${githubRepository.owner}/${githubRepository.name}`
+    ? `github draft publication ready for ${githubRepository.owner}/${githubRepository.name} -> ${githubRepository.baseBranch}`
     : "github draft publication disabled until the GitHub App credentials are configured",
 );
 

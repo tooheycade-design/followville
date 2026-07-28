@@ -36,10 +36,17 @@ Last verified: 2026-07-28, development project
   `agent/task-*` branches and private draft PRs. The adapter uses GitHub App
   tokens, keeps credentials out of command arguments, pushes with
   force-with-lease, reconciles retries, and records the resulting URL.
+- GitHub App `Followville Company OS` is installed only on the private
+  `tooheycade-design/followville` repository with Metadata read, Contents
+  write, and Pull requests write. Draft PR #3 proved the full path. Its base
+  was corrected to `codex/company-os-lifecycle-hardening`, leaving exactly
+  `company-os/docs/AUTOMATION_SMOKE_TEST.md` in the review diff.
+- Publication now requires an explicit review base and verifies that the
+  approved checkpoint descends from it before any branch push.
 
 ## Verification
 
-- Company OS core: 192 tests pass.
+- Company OS core: 194 tests pass.
 - Dashboard: 29 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 14 routes.
@@ -58,13 +65,11 @@ Last verified: 2026-07-28, development project
   verification commands. Changes there fail closed rather than claiming safety.
 - Claude may need re-authentication. With only Codex available, implementation
   and judgement are not genuinely independent even though the role checks run.
-- GitHub draft-PR code is integrated, but the narrowly scoped GitHub App has
-  not yet been created and installed by an owner. Until its credentials are on
-  a worker machine, checkpoints remain local.
+- GitHub draft review is live on Cade's worker. Zach's machine does not yet
+  have its own worker credentials.
 - The scheduler is a Windows logon task on Cade's PC, not a cloud worker.
 
 ## Next milestone
 
-Create and install the GitHub App, then prove a fresh write task from owner
-intent through draft PR publication. After that, add durable preview artifacts
-for browser and Blender work.
+Add durable preview artifacts for browser and Blender work, then restore Claude
+authentication for genuinely independent review and provision Zach's worker.

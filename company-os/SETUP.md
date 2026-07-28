@@ -202,6 +202,7 @@ Put these values in the worker machine's ignored
 ```text
 COMPANY_OS_GITHUB_OWNER=tooheycade-design
 COMPANY_OS_GITHUB_REPOSITORY=followville
+COMPANY_OS_GITHUB_BASE_BRANCH=codex/company-os-lifecycle-hardening
 COMPANY_OS_GITHUB_APP_ID=...
 COMPANY_OS_GITHUB_INSTALLATION_ID=...
 COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64=...
@@ -221,6 +222,12 @@ scope digest, checkpoint, reviewer verdict, CEO verdict, local branch, and
 remote branch lease before requesting credentials. A successful or reconciled
 draft PR is written to the immutable audit ledger and linked from the Factory
 page. A retry finds the existing marker instead of opening a duplicate.
+
+`COMPANY_OS_GITHUB_BASE_BRANCH` is required and must name the branch from which
+the worker's task worktrees are created. Publication verifies locally that the
+approved checkpoint descends from that base before pushing anything. This keeps
+the draft PR limited to the task diff while Company OS itself is still under
+review on a non-`main` branch.
 
 ## What the machine will and will not do
 

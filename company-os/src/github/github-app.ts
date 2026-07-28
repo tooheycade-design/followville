@@ -12,6 +12,7 @@ import type {
   GitHubPullRequestClient,
   GitHubRepository,
 } from "./draft-pr.js";
+import { isSafeReviewBaseBranch } from "./draft-pr.js";
 
 type Fetch = typeof fetch;
 
@@ -287,7 +288,11 @@ export class GitHubRestPullRequestClient implements GitHubPullRequestClient {
   }
 
   async ensureBranch(input: EnsureBranchInput): Promise<void> {
-    if (!BRANCH.test(input.branchName) || !SHA.test(input.commitSha)) {
+    if (
+      !BRANCH.test(input.branchName) ||
+      !SHA.test(input.commitSha) ||
+      !isSafeReviewBaseBranch(input.repository.baseBranch)
+    ) {
       throw new Error("Refusing to publish an invalid review branch or checkpoint.");
     }
     const local = await this.processRunner(
@@ -300,6 +305,39 @@ export class GitHubRestPullRequestClient implements GitHubPullRequestClient {
     );
     if (local.exitCode !== 0 || local.stdout.trim() !== input.commitSha) {
       throw new Error("The local review branch does not point at the approved checkpoint.");
+    }
+
+    let baseCommit = "";
+    for (const baseRef of [
+      `refs/heads/${input.repository.baseBranch}`,
+      `refs/remotes/origin/${input.repository.baseBranch}`,
+    ]) {
+      const resolved = await this.processRunner(
+        this.gitExecutable,
+        ["rev-parse", "--verify", baseRef],
+        {
+          cwd: this.repositoryRoot,
+          env: gitEnvironment({ GIT_TERMINAL_PROMPT: "0" }),
+        },
+      );
+      if (resolved.exitCode === 0 && SHA.test(resolved.stdout.trim())) {
+        baseCommit = resolved.stdout.trim();
+        break;
+      }
+    }
+    if (baseCommit === "") {
+      throw new Error("The configured review base branch is not available locally.");
+    }
+    const ancestry = await this.processRunner(
+      this.gitExecutable,
+      ["merge-base", "--is-ancestor", baseCommit, input.commitSha],
+      {
+        cwd: this.repositoryRoot,
+        env: gitEnvironment({ GIT_TERMINAL_PROMPT: "0" }),
+      },
+    );
+    if (ancestry.exitCode !== 0) {
+      throw new Error("The approved checkpoint does not descend from the review base.");
     }
 
     const refPath = `/git/ref/heads/${input.branchName

@@ -8,7 +8,7 @@ import { verifyApproval } from "../policy/approval-verifier.js";
 export interface GitHubRepository {
   owner: string;
   name: string;
-  baseBranch: "main";
+  baseBranch: string;
 }
 
 export interface GitHubInstallationToken {
@@ -106,6 +106,21 @@ export type DraftPullRequestPublicationResult =
 const AGENT_TASK_BRANCH = /^agent\/task-[a-z0-9][a-z0-9-]*$/;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 
+export function isSafeReviewBaseBranch(branch: string): boolean {
+  return (
+    branch.length > 0 &&
+    branch.length <= 200 &&
+    /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(branch) &&
+    !branch.startsWith("agent/task-") &&
+    !branch.includes("..") &&
+    !branch.includes("//") &&
+    !branch.includes("@{") &&
+    !branch.endsWith("/") &&
+    !branch.endsWith(".") &&
+    !branch.endsWith(".lock")
+  );
+}
+
 function deny(reason: string): DraftPullRequestPublicationResult {
   return { outcome: "denied", reason };
 }
@@ -137,6 +152,9 @@ function validateRequest(
   }
   if (!AGENT_TASK_BRANCH.test(input.sourceBranch)) {
     return deny("Only agent/task-* source branches can be published.");
+  }
+  if (!isSafeReviewBaseBranch(input.repository.baseBranch)) {
+    return deny("The configured review base branch is unsafe.");
   }
   if (!FULL_SHA.test(input.checkpointCommitSha)) {
     return deny("The checkpoint commit SHA is invalid.");
