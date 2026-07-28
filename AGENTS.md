@@ -86,6 +86,22 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- Day 27, population 500, 560 buildings (grown 2026-07-28 via Zach's Mac
+  Codex: +36 ordinary claimable homes). Planned addresses 321-356 complete
+  North Ridge: 14 homes on Ridgeview Drive, 16 on Bluebird Court, and six on
+  Summit Court. The canonical Day 26 construction vote site at seed 524 was
+  converted in place into the permanent non-claimable Followville Cinema; no
+  duplicate civic record or population was added. The three-lot Art Deco
+  cinema includes a glazed lobby, marquee, ticket windows, poster cases,
+  auditorium/flytower massing, roof equipment, rear exits/vents, and a
+  browser-matched walkable forecourt and collision layout. Its dedicated
+  streamed chunk replaces `construction-zone.glb`. Supabase updated seed 524
+  in place and inserted all 36 new homes. Full and streamed GLB validation
+  passed. The approved delivery is one 20.000-second, 1080x1920, 30fps,
+  600-frame daytime portrait MP4: a six-second city drone hook, the North
+  Ridge home-rise sequence, and a final downtown transfer into the cinema
+  rise. The authoritative iCloud Blend was rebuilt at the final frame and
+  synchronized to Git after the growth.
 - 2026-07-28 terrain readability pass (Zach via Mac Codex): the continuous
   regional terrain now uses exported vertex color derived from actual
   elevation, slope, and broad deterministic land variation. Sheltered
