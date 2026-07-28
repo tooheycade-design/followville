@@ -7,6 +7,7 @@ import {
   GoalSchema,
   EvidenceArtifactSchema,
   RunSchema,
+  StructuredMessageSchema,
   TaskSchema,
   WorkerNodeSchema,
   type ApprovalDecision,
@@ -15,6 +16,7 @@ import {
   type EvidenceArtifact,
   type Goal,
   type Run,
+  type StructuredMessage,
   type Task,
   type WorkerNode,
 } from "@followville/company-os-core";
@@ -24,6 +26,7 @@ export const CompanyStateSchema = z
     goals: z.array(GoalSchema),
     tasks: z.array(TaskSchema),
     runs: z.array(RunSchema),
+    messages: z.array(StructuredMessageSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
@@ -38,6 +41,7 @@ export interface CompanyState {
   goals: Goal[];
   tasks: Task[];
   runs: Run[];
+  messages: StructuredMessage[];
   workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
@@ -50,6 +54,7 @@ export function emptyState(): CompanyState {
     goals: [],
     tasks: [],
     runs: [],
+    messages: [],
     workers: [],
     approvalRequests: [],
     approvalDecisions: [],

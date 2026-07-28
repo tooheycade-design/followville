@@ -7,6 +7,7 @@ const LINKS = [
   ["/", "Overview"],
   ["/factory", "Factory"],
   ["/reports", "Reports"],
+  ["/messages", "Messages"],
   ["/ceo", "CEO"],
   ["/goals", "Goals"],
   ["/held", "Held"],

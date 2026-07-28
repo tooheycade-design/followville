@@ -450,6 +450,42 @@ button.danger {
   max-width: 76ch;
 }
 
+.message-feed {
+  border-top: 1px solid var(--line);
+}
+
+.message-entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.message-entry header,
+.message-entry footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.message-entry header > div,
+.message-entry footer {
+  display: flex;
+  gap: 10px;
+}
+
+.message-entry p {
+  max-width: 78ch;
+}
+
+@media (max-width: 720px) {
+  .message-entry header,
+  .message-entry footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
 .report-risks li {
   margin: 7px 0;
 }

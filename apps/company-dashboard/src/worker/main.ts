@@ -60,6 +60,7 @@ import type { CompletedWorkRecord } from "../lib/state/types";
 import { OWNER_REGISTRY } from "../lib/config";
 import { SupabaseArtifactStore } from "../lib/artifact-storage";
 import { runPublicationPass } from "./publication";
+import { createAgentMessage } from "./structured-message";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -168,8 +169,7 @@ const workerCapabilities =
     : SEED_AGENTS.engineer.capabilities.filter((capability) => {
         if (
           capability === "git_commit" ||
-          capability === "memory_write" ||
-          capability === "message_send"
+          capability === "memory_write"
         ) {
           return false;
         }
@@ -512,6 +512,33 @@ async function runReviewPass(): Promise<number> {
     if (recorded && completedWork !== undefined) {
       log(`owner ${task.id.slice(0, 8)} -> awaiting your decision`);
     }
+    if (recorded && task.assignedAgentId !== null) {
+      const message = createAgentMessage({
+        task,
+        senderId: SEED_AGENTS.reviewer.id,
+        recipientId: task.assignedAgentId,
+        type:
+          verdict === "changes_requested"
+            ? "changes_requested"
+            : "task_complete",
+        priority: verdict === "changes_requested" ? "high" : "normal",
+        contextSummary: result.summary,
+        requestedAction:
+          verdict === "changes_requested"
+            ? "Address the evidence-backed review findings in the next revision."
+            : "No worker action is required while the owner decides.",
+        expectedOutput:
+          verdict === "changes_requested"
+            ? "A new checkpoint and evidence addressing each finding."
+            : null,
+        evidenceArtifactIds:
+          completedWork?.artifacts.map((artifact) => artifact.id) ?? [],
+        now: new Date(),
+      }, randomUUID);
+      await queue!.sendMessage(message).catch((error) => {
+        log(`message ${task.id.slice(0, 8)} failed: ${(error as Error).message}`);
+      });
+    }
     count += 1;
   }
 }
@@ -597,6 +624,48 @@ async function runWorkQueueJob(): Promise<void> {
   );
   for (const outcome of outcomes) {
     log(`task ${outcome.taskId.slice(0, 8)} -> ${outcome.status}: ${outcome.summary}`);
+  }
+  if (outcomes.some((outcome) => outcome.status === "completed")) {
+    const state = await companyRepository().load();
+    for (const outcome of outcomes.filter(
+      (candidate) => candidate.status === "completed",
+    )) {
+      const task = state.tasks.find((candidate) => candidate.id === outcome.taskId);
+      if (
+        task === undefined ||
+        task.assignedAgentId === null ||
+        task.reviewerAgentId === null
+      ) {
+        continue;
+      }
+      const completion = state.auditEvents
+        .filter(
+          (event) =>
+            event.taskId === task.id && event.action === "worker.completed",
+        )
+        .at(-1);
+      const report = decodeWorkerReport(completion?.reason ?? "");
+      const message = createAgentMessage({
+        task,
+        senderId: task.assignedAgentId,
+        recipientId: task.reviewerAgentId,
+        type: "review_request",
+        priority:
+          task.riskLevel === "high" || task.riskLevel === "critical"
+            ? "high"
+            : "normal",
+        contextSummary: report.summary,
+        requestedAction:
+          "Independently inspect the checkpoint, runtime checks, and durable evidence.",
+        expectedOutput:
+          "Evidence-backed findings or a recommendation for owner approval.",
+        evidenceArtifactIds: report.artifacts.map((artifact) => artifact.id),
+        now: new Date(),
+      }, randomUUID);
+      await queue!.sendMessage(message).catch((error) => {
+        log(`message ${task.id.slice(0, 8)} failed: ${(error as Error).message}`);
+      });
+    }
   }
   const reviewed = await runReviewPass();
   if (reviewed > 0) {

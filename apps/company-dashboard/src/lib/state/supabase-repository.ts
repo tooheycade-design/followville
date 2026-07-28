@@ -7,6 +7,7 @@ import {
   GoalSchema,
   EvidenceArtifactSchema,
   RunSchema,
+  StructuredMessageSchema,
   TaskSchema,
   WorkerNodeSchema,
   type ApprovalRequest,
@@ -191,6 +192,42 @@ export function artifactFromRow(row: Row) {
   });
 }
 
+export function messageFromRow(row: Row) {
+  const payload = (row.payload ?? {}) as Row;
+  return StructuredMessageSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    goalId: row.goal_id,
+    taskId: row.task_id,
+    threadId: row.thread_id,
+    senderType: row.sender_type,
+    senderId: row.sender_id,
+    recipientType: row.recipient_type,
+    recipientId: row.recipient_id,
+    type: row.message_type,
+    priority: row.priority,
+    requestedAction: payload.requestedAction ?? null,
+    contextSummary: payload.contextSummary,
+    evidenceArtifactIds: payload.evidenceArtifactIds ?? [],
+    expectedOutput: payload.expectedOutput ?? null,
+    deadlineAt: row.deadline_at,
+    confidence: row.confidence,
+    estimatedCostUsdMicros: 0,
+    relatedFiles: payload.relatedFiles ?? [],
+    relatedCommits: payload.relatedCommits ?? [],
+    status:
+      row.expires_at !== null &&
+      Date.parse(String(row.expires_at)) <= Date.now() &&
+      row.status !== "resolved"
+        ? "expired"
+        : row.status,
+    fingerprint: row.fingerprint,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+  });
+}
+
 export function workerFromRow(row: Row) {
   return WorkerNodeSchema.parse({
     workerId: row.worker_id,
@@ -291,6 +328,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.goals = rows("goals").map(goalFromRow);
     state.tasks = rows("tasks").map(taskFromRow);
     state.runs = rows("runs").map(runFromRow);
+    state.messages = rows("messages").map(messageFromRow);
     state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),

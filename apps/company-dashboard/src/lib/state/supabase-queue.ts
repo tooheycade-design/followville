@@ -6,6 +6,7 @@ import {
   type AuditEvent,
   type Capability,
   type LeasedTask,
+  type StructuredMessage,
   type Task,
   type WorkQueue,
   type WorkerNode,
@@ -238,6 +239,17 @@ export class SupabaseWorkQueue implements WorkQueue {
       });
       if (error !== null) {
         throw new Error(`audit append failed: ${error.message}`);
+      }
+    });
+  }
+
+  async sendMessage(message: StructuredMessage): Promise<void> {
+    await withRetry("structured message", async () => {
+      const { error } = await this.client.rpc("company_os_send_message", {
+        payload: message,
+      });
+      if (error !== null) {
+        throw new Error(`structured message failed: ${error.message}`);
       }
     });
   }

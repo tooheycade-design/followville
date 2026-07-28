@@ -263,6 +263,7 @@ export const StructuredMessageSchema = z
     id: IdentifierSchema,
     organizationId: IdentifierSchema,
     projectId: IdentifierSchema,
+    goalId: IdentifierSchema.nullable(),
     taskId: IdentifierSchema.nullable(),
     threadId: IdentifierSchema,
     senderType: ActorTypeSchema,
@@ -271,21 +272,53 @@ export const StructuredMessageSchema = z
     recipientId: IdentifierSchema,
     type: MessageTypeSchema,
     priority: z.enum(["low", "normal", "high", "urgent"]),
-    requestedAction: z.string().nullable(),
-    contextSummary: z.string().min(1),
-    evidenceArtifactIds: z.array(IdentifierSchema),
-    expectedOutput: z.string().nullable(),
+    requestedAction: z.string().min(1).max(2_000).nullable(),
+    contextSummary: z.string().min(1).max(8_000),
+    evidenceArtifactIds: z.array(IdentifierSchema).max(25),
+    expectedOutput: z.string().min(1).max(2_000).nullable(),
     deadlineAt: IsoDateTimeSchema.nullable(),
     confidence: ConfidenceSchema,
     estimatedCostUsdMicros: UsdMicrosSchema,
-    relatedFiles: z.array(z.string()),
-    relatedCommits: z.array(z.string()),
+    relatedFiles: z.array(z.string().min(1).max(1_024)).max(50),
+    relatedCommits: z.array(z.string().regex(/^[0-9a-f]{7,64}$/)).max(25),
     status: z.enum(["created", "delivered", "read", "resolved", "expired"]),
-    fingerprint: z.string().min(16),
+    fingerprint: z.string().regex(/^[0-9a-f]{64}$/),
     createdAt: IsoDateTimeSchema,
-    expiresAt: IsoDateTimeSchema.nullable(),
+    expiresAt: IsoDateTimeSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((message, context) => {
+    const created = Date.parse(message.createdAt);
+    const expires = Date.parse(message.expiresAt);
+    const maximum = created + 30 * 24 * 60 * 60 * 1_000;
+    if (expires <= created || expires > maximum) {
+      context.addIssue({
+        code: "custom",
+        message: "Messages must expire within 30 days of creation",
+        path: ["expiresAt"],
+      });
+    }
+    if (
+      message.deadlineAt !== null &&
+      Date.parse(message.deadlineAt) > expires
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Message deadline cannot outlive the message",
+        path: ["deadlineAt"],
+      });
+    }
+    if (
+      message.senderType === message.recipientType &&
+      message.senderId === message.recipientId
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "A structured message requires a distinct recipient",
+        path: ["recipientId"],
+      });
+    }
+  });
 
 /**
  * Something an agent produced that a human may want to look at.

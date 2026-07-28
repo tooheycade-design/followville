@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   artifactFromRow,
+  messageFromRow,
   runFromRow,
   workerFromRow,
 } from "./supabase-repository";
@@ -15,6 +16,8 @@ const ID = {
   run: "50000000-0000-4000-8000-000000000001",
   agent: "60000000-0000-4000-8000-000000000001",
   artifact: "70000000-0000-4000-8000-000000000001",
+  message: "80000000-0000-4000-8000-000000000001",
+  thread: "90000000-0000-4000-8000-000000000001",
 } as const;
 
 const NOW = "2026-07-28T20:00:00.000Z";
@@ -106,4 +109,40 @@ test("database worker rows retain health and compatibility fields", () => {
   assert.equal(worker.status, "online");
   assert.deepEqual(worker.capabilities, ["repository_read", "test_execute"]);
   assert.equal(worker.currentTaskId, ID.task);
+});
+
+test("database message rows unpack bounded structured context", () => {
+  const message = messageFromRow({
+    id: ID.message,
+    organization_id: ID.organization,
+    project_id: ID.project,
+    goal_id: ID.goal,
+    task_id: ID.task,
+    thread_id: ID.thread,
+    sender_type: "agent",
+    sender_id: ID.agent,
+    recipient_type: "agent",
+    recipient_id: "60000000-0000-4000-8000-000000000002",
+    message_type: "review_request",
+    priority: "high",
+    payload: {
+      requestedAction: "Review the checkpoint.",
+      contextSummary: "Implementation and focused tests are complete.",
+      evidenceArtifactIds: [ID.artifact],
+      expectedOutput: "Evidence-backed findings or approval.",
+      relatedFiles: ["company-os/src/domain/schemas.ts"],
+      relatedCommits: ["a".repeat(40)],
+    },
+    confidence: "confirmed",
+    deadline_at: "2026-07-29T18:00:00.000Z",
+    status: "delivered",
+    fingerprint: "b".repeat(64),
+    created_at: NOW,
+    expires_at: "2026-07-30T20:00:00.000Z",
+  });
+
+  assert.equal(message.goalId, ID.goal);
+  assert.equal(message.contextSummary, "Implementation and focused tests are complete.");
+  assert.equal(message.confidence, "confirmed");
+  assert.deepEqual(message.evidenceArtifactIds, [ID.artifact]);
 });

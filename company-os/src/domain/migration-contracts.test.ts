@@ -151,3 +151,23 @@ test("durable artifacts are private, scope-derived, and immutable", () => {
   assert.match(sql, /visibility := 'owner_only'/);
   assert.match(sql, /new\.contains_sensitive_data := new\.kind in/);
 });
+
+test("structured messages carry context but never authority", () => {
+  const sql = migration("0026_structured_agent_messages.sql");
+
+  assert.match(sql, /'message_send'::company_ops\.capability = any\(agent\.capabilities\)/);
+  assert.match(sql, /message evidence does not belong to its scope/);
+  assert.match(sql, /structured message content and scope are immutable/);
+  assert.match(sql, /expires_at <= created_at \+ interval '30 days'/);
+  assert.match(sql, /on conflict \(thread_id, fingerprint\) do nothing/);
+  assert.doesNotMatch(sql, /update company_ops\.tasks\s+set status/i);
+  assert.doesNotMatch(sql, /insert into company_ops\.approval_decisions/i);
+  assert.doesNotMatch(sql, /allowed_capabilities\s*=/i);
+});
+
+test("message deduplication qualifies its payload argument", () => {
+  const sql = migration("0027_fix_message_deduplication.sql");
+
+  assert.match(sql, /message\.thread_id = \(\$1->>'threadId'\)::uuid/);
+  assert.match(sql, /message\.fingerprint = \$1->>'fingerprint'/);
+});

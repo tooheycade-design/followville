@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0025 applied | Done in development; 0017-0025 live-verified |
+| Migrations 0011-0027 applied | Done in development; 0017-0027 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -29,6 +29,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Draft GitHub PR runtime | Live; GitHub App created, installed narrowly, and draft PR #3 proved |
 | Private durable artifacts | Live; private bucket, immutable run scope, verified uploads, owner-only links |
 | Worker registry and compatible dispatch | Live; Cade's worker registered and dashboard-visible |
+| Structured agent communication | Live; bounded, expiring, deduplicated messages are database-enforced and owner-visible |
 
 ## Models
 
@@ -161,6 +162,12 @@ pnpm --dir apps/company-dashboard worker -- --deterministic  # no model
 In `--watch` mode the scheduler runs the queue every two minutes, reclaims
 stalled leases every five, and produces a daily report and cost audit. Schedule
 state is kept on disk, so restarting does not replay every daily job.
+
+Completed work now creates a structured review request for the independent
+reviewer. Review results create either bounded revision instructions or a
+completion notice for the worker. These records appear on **Messages**. They
+carry context and evidence only: the database does not allow a message to
+change task status, grant a capability, or stand in for an owner approval.
 
 Scheduling is interval-based rather than cron on purpose. These machines sleep,
 and a wall-clock cron would silently skip everything due while a laptop was

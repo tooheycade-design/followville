@@ -25,6 +25,7 @@ test("writing then reading round-trips and validates", () => {
     "auditEvents",
     "evidenceArtifacts",
     "goals",
+    "messages",
     "runs",
     "tasks",
     "workers",
