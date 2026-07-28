@@ -37,10 +37,10 @@ export default async function RootLayout({
             */}
             <span
               className="sim-flag"
-              title="Model work runs on existing Codex and Claude subscriptions. Subscription usage is not metered by this ledger, so it is not included here."
+              title="Model work runs on existing Codex and Claude subscriptions. Runs and tokens are tracked, but subscription usage is not assigned invented dollar spend."
             >
               Automated workers active · owner-gated production · $0 metered
-              API spend (subscription usage not measured) ·{" "}
+              API spend (subscription runs tracked) ·{" "}
               {companyRepository().backend === "supabase"
                 ? "shared database"
                 : "local store"}

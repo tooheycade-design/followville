@@ -371,6 +371,11 @@ actual spend. A task is allowed three subscription-backed implementation
 attempts across retries and review cycles; another call is blocked before the
 CLI starts. Metered API providers continue to use dollar budgets.
 
+The **Reports** page is the owner-facing operating readout. It derives daily
+and seven-day counts from the shared control plane, keeps subscription runs
+separate from metered API spend, and puts pending approvals, held work, failed
+tasks, worker health, and current risks in one attention queue.
+
 Candidate 3D work must be exported as `.glb` or `.gltf` under
 `company-os/candidates/`. A compatible worker runs the repository-owned
 headless Blender verifier, captures a neutral PNG plus geometry metrics, and

@@ -103,13 +103,18 @@ Last verified: 2026-07-28, development project
   attempts across retries and review cycles. The fourth attempt is blocked
   before either model CLI starts. Claude Code's API-equivalent estimate is not
   mislabeled as money charged to the subscription account.
+- The dashboard now has a live operating report derived directly from goals,
+  tasks, runs, approvals, workers, and immutable audit events. It separates
+  the last 24 hours from the seven-day review and surfaces owner attention,
+  failures, held work, draft PRs, worker capacity, subscription run counts,
+  and metered API spend.
 
 ## Verification
 
 - Company OS core: 226 tests pass; one Windows symlink-escape fixture is
   skipped because this account cannot create symlinks. The same escape is
   enforced by canonical-path checks and covered where symlinks are permitted.
-- Dashboard: 39 tests pass.
+- Dashboard: 41 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
 - `git diff --check` passes.

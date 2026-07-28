@@ -414,10 +414,57 @@ button.danger {
   font-size: 12px;
 }
 
+.report-periods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  margin-top: 26px;
+}
+
+.report-period {
+  border-top: 2px solid var(--rule-strong);
+}
+
+.report-period dl {
+  display: grid;
+}
+
+.report-period dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.report-period dt {
+  color: var(--ink-soft);
+}
+
+.report-period dd {
+  font: 600 17px/1.2 Georgia, serif;
+}
+
+.report-risks {
+  padding-left: 20px;
+  max-width: 76ch;
+}
+
+.report-risks li {
+  margin: 7px 0;
+}
+
 .auth-page {
   min-height: 55vh;
   display: grid;
   place-items: center;
+}
+
+@media (max-width: 700px) {
+  .report-periods {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
 }
 
 .auth-panel {

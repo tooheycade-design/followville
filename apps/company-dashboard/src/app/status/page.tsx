@@ -1,5 +1,5 @@
 const ROWS: readonly (readonly [string, string, string])[] = [
-  ["Domain contracts and policy kernel", "implemented", "204 core and 37 dashboard tests; strict TypeScript"],
+  ["Domain contracts and policy kernel", "implemented", "226 core and 41 dashboard tests; strict TypeScript"],
   ["Deterministic goal simulation", "implemented", "Runs from the Goals page; zero side effects"],
   ["Owner approval decisions", "implemented", "Digest-pinned kernel; owner-role enforcement"],
   ["Development database", "implemented", "Migration applied to followville-company-os-dev and verified isolated"],
@@ -16,8 +16,10 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Draft pull requests", "implemented", "Narrow GitHub App; exact checkpoint; draft only; no merge authority"],
   ["Browser preview runtime", "implemented", "Desktop/mobile/town screenshots, traces, console, HTTP, and network checks"],
   ["Worker registry", "implemented", "Cade's worker is live; stale machines age offline; Zach-ready"],
-  ["Cost ledger", "planned", "Usage is recorded per run; the per-provider ledger and budgets come next"],
-  ["Followville specialists", "planned", "World QA, Blender, social drafting; see docs/ROADMAP.md"],
+  ["Cost controls", "implemented", "Subscription runs are capped per task and never mislabeled as API spend"],
+  ["Blender preview runtime", "implemented", "Isolated GLB/glTF renders and geometry metrics; Cade's Blender 5.1 is live"],
+  ["Operating reports", "implemented", "Live daily and seven-day owner report from authoritative control-plane state"],
+  ["Followville specialists", "planned", "World QA, social drafting, and town planning; see docs/ROADMAP.md"],
   ["Production merge / deploy / publish", "blocked", "By constitution, owner approval only"],
 ];
 
