@@ -11,6 +11,7 @@ from downtown_visual_plan import (
     mounted_surface_center,
     sample_road_points,
     terrain_height,
+    terrain_surface_color,
     visible_face_clearance,
 )
 from neighborhood_plan import PLAN, validate_plan
@@ -97,6 +98,25 @@ def main():
             errors.append("shifted future house %d overlaps downtown"%house["plan_id"])
     if not all(0 <= height < 40 for height in heights):
         errors.append("terrain produced an invalid current/future height")
+    # The palette must visibly separate lowlands, high ground, and steep faces
+    # while staying continuous and within a natural, non-neon range.
+    terrain_samples = [
+        terrain_surface_color(x, y)
+        for y in range(-300, 501, 20)
+        for x in range(-500, 501, 20)
+    ]
+    channel_ranges = [
+        max(color[channel] for color in terrain_samples)
+        - min(color[channel] for color in terrain_samples)
+        for channel in range(3)
+    ]
+    if channel_ranges[0] < .07 or channel_ranges[1] < .10:
+        errors.append("terrain palette lacks elevation/slope separation")
+    if any(not (0.18 <= color[0] <= .62
+                and .24 <= color[1] <= .70
+                and .15 <= color[2] <= .46)
+           for color in terrain_samples):
+        errors.append("terrain palette escaped natural color bounds")
     if errors:
         raise SystemExit("\n".join(errors))
     print("DOWNTOWN_VISUAL_CHECK_OK day=%d population=%d buildings=%d "

@@ -1802,7 +1802,14 @@ function tuneTownMaterial(material){
   material.userData.followvilleTuned = true;
   const name = (material.name || "").toLowerCase();
 
-  if (name.includes("grass") || name.includes("lawn") || name.includes("bank")){
+  if (name.includes("terrain")){
+    // The regional mesh carries authored COLOR_0 elevation/slope variation.
+    // Preserve it in the balanced renderer; only tune the physical response.
+    material.roughness = 0.98;
+    material.metalness = 0.0;
+    material.flatShading = false;
+    material.needsUpdate = true;
+  } else if (name.includes("grass") || name.includes("lawn") || name.includes("bank")){
     material.roughness = 0.96;
     material.metalness = 0.0;
     material.color.offsetHSL(-0.01, 0.08, -0.015);

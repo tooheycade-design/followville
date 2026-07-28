@@ -99,6 +99,58 @@ def terrain_height(x, y):
     return max(0.0, height)
 
 
+def terrain_surface_color(x, y, z=None):
+    """Natural continuous terrain color that makes landform readable.
+
+    Low, sheltered ground stays a cooler meadow green. Higher ground becomes
+    warmer and slightly drier, while genuinely steep faces expose a muted
+    earth/stone tint. Broad deterministic variation prevents a single flat
+    green sheet without creating artificial contour rings or tiled noise.
+    """
+    x, y = float(x), float(y)
+    z = terrain_height(x, y) if z is None else max(0.0, float(z))
+
+    # A four-metre derivative is stable at the exported terrain resolution and
+    # responds to the real landform rather than to mesh triangulation.
+    sample = 4.0
+    dzdx = (terrain_height(x+sample, y)-terrain_height(x-sample, y))/(sample*2)
+    dzdy = (terrain_height(x, y+sample)-terrain_height(x, y-sample))/(sample*2)
+    grade = math.hypot(dzdx, dzdy)
+
+    elevation = _smoothstep(1.2, 18.0, z)
+    highland = _smoothstep(7.0, 22.0, z)
+    exposed = _smoothstep(.055, .19, grade)
+    broad = .5+.5*math.sin(x*.015+math.sin(y*.010)*1.9)
+    cross = .5+.5*math.sin(x*.043-y*.037+math.sin((x+y)*.009))
+    micro = .5+.5*math.sin(x*.093+y*.071)
+
+    # These deliberately span hue and value, not just "more/less green".
+    # Followville's bright daylight transform lifts the final rendered values,
+    # so the authored colors need enough separation to survive it.
+    lowland = (.292, .505, .222)
+    upland = (.402, .455, .215)
+    ridge = (.505, .398, .205)
+    earth = (.365, .305, .225)
+
+    def blend(a, b, amount):
+        return tuple(av+(bv-av)*amount for av, bv in zip(a, b))
+
+    color = blend(lowland, upland, min(1.0, elevation*.78+broad*.12))
+    color = blend(color, ridge, highland*(.42+.22*broad))
+    color = blend(color, earth, exposed*(.38+.28*highland))
+
+    # Keep close walking views organic but quiet; elevation and slope remain
+    # the dominant large-scale cues in drone views.
+    value = .955+.055*broad+.030*cross+.018*(micro-.5)
+    cool_hollow = (1.0-elevation)*(1.0-exposed)*(.025*(cross-.35))
+    return (
+        max(0.0, min(1.0, color[0]*value-cool_hollow*.35)),
+        max(0.0, min(1.0, color[1]*value+cool_hollow)),
+        max(0.0, min(1.0, color[2]*value+cool_hollow*.22)),
+        1.0,
+    )
+
+
 def sample_road_points(plan, step=8.0):
     sampled = []
     for index, segment in enumerate(plan.get("roads", [])):

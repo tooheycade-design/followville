@@ -9,6 +9,7 @@ from downtown_visual_plan import (
     TERRAIN_BOUNDS,
     mounted_surface_center,
     terrain_height,
+    terrain_surface_color,
 )
 
 
@@ -129,8 +130,6 @@ def _bevel(obj, width=.08, segments=1):
 
 def _terrain_mesh(collection):
     grass = _material("FV_terrain_meadow", (.40,.62,.31), .98)
-    high = _material("FV_terrain_highland", (.25,.39,.20), 1.0)
-    rock = _material("FV_terrain_rock", (.38,.36,.32), 1.0)
     x0, x1, y0, y1 = TERRAIN_BOUNDS
     # Dense enough that browser-side analytic height sampling and the visible
     # mesh agree within a few centimetres on neighborhood grades.
@@ -149,20 +148,14 @@ def _terrain_mesh(collection):
             faces.append((a,b,c,d))
     mesh = bpy.data.meshes.new("regional_walkable_terrain_mesh")
     mesh.from_pydata(vertices, [], faces)
-    # A single continuous ground color avoids artificial contour bands. The
-    # elevation reads through real light, silhouette, and parallax instead.
+    # One continuous material avoids artificial contour bands. Vertex color
+    # now carries ecological elevation and slope cues in addition to subtle
+    # broad variation, so the real landform reads from walking and drone views.
     mesh.materials.append(grass)
-    # Vertex color gives the continuous terrain natural variation without a
-    # tiled bitmap or hard contour bands. It exports efficiently as COLOR_0.
+    # It exports efficiently as COLOR_0, with no bitmap or UV payload.
     color_layer=mesh.color_attributes.new(name="fv_ground_color",type="BYTE_COLOR",domain="POINT")
     for index,(x,y,z) in enumerate(vertices):
-        broad=.5+.5*math.sin(x*.017+math.sin(y*.011)*1.8)
-        fine=.5+.5*math.sin(x*.071+y*.053)
-        elevation=max(0,min(1,z/18.0))
-        dry=max(0,min(1,.22*broad+.12*fine+.28*elevation))
-        color_layer.data[index].color=(.26+.16*(1-dry),
-                                       .40+.20*(1-dry),
-                                       .20+.10*(1-dry),1.0)
+        color_layer.data[index].color=terrain_surface_color(x,y,z)
     shader=grass.node_tree.nodes.get("Principled BSDF")
     vertex_node=grass.node_tree.nodes.get("FV Ground Color")
     if not vertex_node:
@@ -170,6 +163,8 @@ def _terrain_mesh(collection):
         vertex_node.name="FV Ground Color"
     vertex_node.layer_name="fv_ground_color"
     grass.node_tree.links.new(vertex_node.outputs["Color"],shader.inputs["Base Color"])
+    for polygon in mesh.polygons:
+        polygon.use_smooth=True
     mesh.update()
     obj = bpy.data.objects.new("regional_walkable_terrain", mesh)
     collection.objects.link(obj)
