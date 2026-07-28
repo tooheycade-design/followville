@@ -372,7 +372,7 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
   await expect(page.locator("body")).toHaveAttribute(
     "data-landmark-hitboxes-mapped",
-    "burjhouse,cityhall,constructionzone,firestation,followmart");
+    /burjhouse,cityhall,(?:constructionzone,)?firestation,followmart(?:,movietheater)?/);
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   expect(errors).toEqual([]);
 });

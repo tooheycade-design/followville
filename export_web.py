@@ -50,6 +50,7 @@ def _chunk_id_for_building(building):
         "civicsquare": "civic-center",
         "elementaryschool": "elementary-school",
         "constructionzone": "construction-zone",
+        "movietheater": "movie-theater",
         "firestation": "fire-station",
         "fishingpond": "fishing-pond",
         "followmart": "follow-mart",
@@ -76,7 +77,8 @@ def _building_xz(building):
         x = bx * PITCH + ix * LOT + LOT / 2
         y = by * PITCH + iy * LOT + LOT / 2
         size = 3 if building.get("type") in (
-            "elementaryschool", "constructionzone", "followmart", "firestation"
+            "elementaryschool", "constructionzone", "movietheater",
+            "followmart", "firestation"
         ) else 1
         x += (size - 1) * LOT / 2
         y += (size - 1) * LOT / 2
@@ -349,6 +351,7 @@ def export_web_glb():
                  "Fishing Pond" if chunk_id == "fishing-pond" else
                  "Elementary School" if chunk_id == "elementary-school" else
                  "Construction Vote Site" if chunk_id == "construction-zone" else
+                 "Followville Cinema" if chunk_id == "movie-theater" else
                  "East Woods" if chunk_id == "east-woods" else
                  "Downtown block" if chunk_id.startswith("downtown-block-") else
                  (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))

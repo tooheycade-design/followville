@@ -207,10 +207,7 @@ function Sync-Houses {
         $RestoredSchool = @($State.buildings | Where-Object {
             [int64]$_.seed -eq 172 -and $_.type -eq 'elementaryschool'
         })
-        $CorrectedZone = @($State.buildings | Where-Object {
-            [int64]$_.seed -eq 524 -and $_.type -eq 'constructionzone'
-        })
-        if ($RestoredSchool.Count -eq 1 -and $CorrectedZone.Count -eq 1) {
+        if ($RestoredSchool.Count -eq 1) {
             $Row172 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.172&select=id,building_type,claimable') -Headers $Headers -Method Get)
             if ($Row172.Count -ne 1) {
                 throw 'Expected exactly one houses row for canonical seed 172'
@@ -225,12 +222,31 @@ function Sync-Houses {
                 throw 'Seed 172 is not the expected non-claimable school/correctable-zone row'
             }
         }
+        $CompletedTheater = @($State.buildings | Where-Object {
+            [int64]$_.seed -eq 524 -and $_.type -eq 'movietheater'
+        })
+        if ($CompletedTheater.Count -eq 1) {
+            $Row524 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.524&select=id,building_type,claimable,day_built') -Headers $Headers -Method Get)
+            if ($Row524.Count -ne 1) {
+                throw 'Expected exactly one houses row for canonical seed 524'
+            }
+            if ($Row524[0].building_type -eq 'constructionzone' -and -not [bool]$Row524[0].claimable) {
+                $PatchBody = @{ building_type = 'movietheater'; claimable = $false; day_built = [int]$CompletedTheater[0].day } | ConvertTo-Json -Compress
+                $PatchHeaders = $Headers.Clone()
+                $PatchHeaders['Content-Type'] = 'application/json'
+                Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.524') -Headers $PatchHeaders -Method Patch -Body $PatchBody | Out-Null
+                Write-Host 'HOUSES_CORRECTION_OK seed 524 constructionzone -> movietheater'
+            } elseif ($Row524[0].building_type -ne 'movietheater' -or [bool]$Row524[0].claimable) {
+                throw 'Seed 524 is not the expected non-claimable zone/cinema row'
+            }
+        }
         # keep in sync with NON_CLAIMABLE_TYPES in sync_houses.py
         $NonClaimable = @(
             'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
             'streetlight', 'car', 'elementaryschool', 'followmart',
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
-            'civicsquare', 'fishingpond', 'constructionzone', 'forestreserve',
+            'civicsquare', 'fishingpond', 'constructionzone', 'movietheater',
+            'forestreserve',
             'tree', 'bush', 'rock', 'duck'
         )
         $NewRows = @()
