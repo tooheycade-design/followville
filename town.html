@@ -7021,12 +7021,12 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.lookAt(-77,2.0,76);
           camera.updateProjectionMatrix();
         }
-        if(localAuditView === "construction"){
+        if(localAuditView === "construction" || localAuditView === "theater"){
           startScreen.style.display="none";
           document.body.classList.add("preview-mode");
-          camera.fov=61;
-          camera.position.set(-82.3,2.05,-55.6);
-          camera.lookAt(-70.5,4.8,-64.5);
+          camera.fov=66;
+          camera.position.set(-70.5,7.4,-42.2);
+          camera.lookAt(-70.5,7.0,-64.5);
           camera.updateProjectionMatrix();
         }
         if(localAuditView === "traffic"){
