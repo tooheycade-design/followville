@@ -23,6 +23,8 @@ import {
   type CompanyState,
   type GoalSimulationRecord,
   type HeldTaskDecision,
+  HostedControlTickSchema,
+  OwnerNotificationSchema,
 } from "./types";
 
 /**
@@ -273,6 +275,36 @@ function auditFromRow(row: Row) {
   });
 }
 
+function controlTickFromRow(row: Row) {
+  return HostedControlTickSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    tickType: row.tick_type,
+    timeBucket: row.time_bucket,
+    metrics: row.metrics,
+    createdAt: row.created_at,
+  });
+}
+
+function notificationFromRow(row: Row) {
+  return OwnerNotificationSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    notificationType: row.notification_type,
+    targetType: row.target_type,
+    targetId: row.target_id,
+    title: row.title,
+    detail: row.detail,
+    severity: row.severity,
+    deliveryDay: row.delivery_day,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
 
 /**
  * Shared-state backend for the Company OS control plane.
@@ -329,6 +361,10 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.tasks = rows("tasks").map(taskFromRow);
     state.runs = rows("runs").map(runFromRow);
     state.messages = rows("messages").map(messageFromRow);
+    state.controlTicks = rows("control_ticks").map(controlTickFromRow);
+    state.ownerNotifications = rows("owner_notifications").map(
+      notificationFromRow,
+    );
     state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),

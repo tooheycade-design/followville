@@ -171,3 +171,25 @@ test("message deduplication qualifies its payload argument", () => {
   assert.match(sql, /message\.thread_id = \(\$1->>'threadId'\)::uuid/);
   assert.match(sql, /message\.fingerprint = \$1->>'fingerprint'/);
 });
+
+test("hosted control coordinates but cannot execute or approve", () => {
+  const sql = migration("0028_always_on_control_service.sql");
+
+  assert.match(sql, /pg_try_advisory_xact_lock/);
+  assert.match(sql, /unique \(organization_id, project_id, tick_type, time_bucket\)/);
+  assert.match(sql, /company_os_reclaim_expired_leases\(\)/);
+  assert.match(sql, /task\.allowed_capabilities <@ worker\.capabilities/);
+  assert.match(sql, /cron\.schedule\(/);
+  assert.doesNotMatch(sql, /insert into company_ops\.approval_decisions/i);
+  assert.doesNotMatch(sql, /set status = 'approved'/i);
+  assert.doesNotMatch(sql, /production_deploy|canonical_world_growth|payment_charge/i);
+});
+
+test("hosted control history is retained without unbounded dashboard reads", () => {
+  const sql = migration("0029_bound_control_history.sql");
+
+  assert.match(sql, /order by created_at desc limit 500/);
+  assert.match(sql, /created_at < clock_timestamp\(\) - interval '90 days'/);
+  assert.match(sql, /created_at < clock_timestamp\(\) - interval '30 days'/);
+  assert.match(sql, /followville-company-os-control-retention/);
+});

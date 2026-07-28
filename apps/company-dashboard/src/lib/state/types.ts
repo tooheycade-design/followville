@@ -21,12 +21,63 @@ import {
   type WorkerNode,
 } from "@followville/company-os-core";
 
+export const HostedControlTickSchema = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    tickType: z.enum(["queue_health", "daily_report"]),
+    timeBucket: z.string().datetime({ offset: true }),
+    metrics: z
+      .object({
+        reclaimedLeaseCount: z.number().int().nonnegative(),
+        expiredMessageCount: z.number().int().nonnegative(),
+        onlineWorkers: z.number().int().nonnegative(),
+        unavailableWorkers: z.number().int().nonnegative(),
+        queuedTasks: z.number().int().nonnegative(),
+        incompatibleTasks: z.number().int().nonnegative(),
+        pendingApprovals: z.number().int().nonnegative(),
+        heldTasks: z.number().int().nonnegative(),
+      })
+      .strict(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const OwnerNotificationSchema = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    notificationType: z.enum([
+      "approval_reminder",
+      "held_work_reminder",
+      "queue_unavailable",
+      "worker_unavailable",
+    ]),
+    targetType: z.enum(["approval_request", "task", "project", "worker"]),
+    targetId: z.string().min(1),
+    title: z.string().min(1),
+    detail: z.string().min(1),
+    severity: z.enum(["info", "warning", "urgent"]),
+    deliveryDay: z.string(),
+    status: z.enum(["pending", "read", "resolved", "expired"]),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export type HostedControlTick = z.infer<typeof HostedControlTickSchema>;
+export type OwnerNotification = z.infer<typeof OwnerNotificationSchema>;
+
 export const CompanyStateSchema = z
   .object({
     goals: z.array(GoalSchema),
     tasks: z.array(TaskSchema),
     runs: z.array(RunSchema),
     messages: z.array(StructuredMessageSchema).default([]),
+    controlTicks: z.array(HostedControlTickSchema).default([]),
+    ownerNotifications: z.array(OwnerNotificationSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
@@ -42,6 +93,8 @@ export interface CompanyState {
   tasks: Task[];
   runs: Run[];
   messages: StructuredMessage[];
+  controlTicks: HostedControlTick[];
+  ownerNotifications: OwnerNotification[];
   workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
@@ -55,6 +108,8 @@ export function emptyState(): CompanyState {
     tasks: [],
     runs: [],
     messages: [],
+    controlTicks: [],
+    ownerNotifications: [],
     workers: [],
     approvalRequests: [],
     approvalDecisions: [],
