@@ -1,6 +1,6 @@
 # Verified Current State
 
-Last verified: 2026-07-27, development project
+Last verified: 2026-07-28, development project
 `yutscolndfhscxfoavdp`.
 
 ## Live and proven
@@ -28,11 +28,19 @@ Last verified: 2026-07-27, development project
 - The factory view, understandable owner approvals, worktree isolation,
   checkpoint preservation, scheduling, and fail-closed policy kernel are
   implemented.
+- The private dashboard is live at
+  `https://followville-company-os.vercel.app`.
+- Eleven packet-less legacy tasks were canceled with eleven immutable audit
+  events; none remain in the owner queue.
+- Owner-approved write tasks can be published only as exact-checkpoint
+  `agent/task-*` branches and private draft PRs. The adapter uses GitHub App
+  tokens, keeps credentials out of command arguments, pushes with
+  force-with-lease, reconciles retries, and records the resulting URL.
 
 ## Verification
 
-- Company OS core: 176 tests pass.
-- Dashboard: 26 tests pass.
+- Company OS core: 192 tests pass.
+- Dashboard: 29 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 14 routes.
 - `git diff --check` passes.
@@ -50,17 +58,13 @@ Last verified: 2026-07-27, development project
   verification commands. Changes there fail closed rather than claiming safety.
 - Claude may need re-authentication. With only Codex available, implementation
   and judgement are not genuinely independent even though the role checks run.
-- The dashboard is local, not yet a private shared deployment.
-- Six historical tasks reached approval-era statuses before durable packets
-  existed. They require an explicit repair/archive policy, not a blanket update.
-- Evidence references local checkpoint commits. Multi-machine artifact storage
-  is not yet present.
-- GitHub draft-PR support exists on a separate local branch and has not been
-  integrated or credentialed.
+- GitHub draft-PR code is integrated, but the narrowly scoped GitHub App has
+  not yet been created and installed by an owner. Until its credentials are on
+  a worker machine, checkpoints remain local.
 - The scheduler is a Windows logon task on Cade's PC, not a cloud worker.
 
 ## Next milestone
 
-Repair or archive the historical packet-less tasks with an explicit policy,
-then deploy the private dashboard for Cade and Zach. After that, integrate the
-already-started draft pull-request kernel and durable shared artifact storage.
+Create and install the GitHub App, then prove a fresh write task from owner
+intent through draft PR publication. After that, add durable preview artifacts
+for browser and Blender work.

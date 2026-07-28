@@ -62,8 +62,9 @@ export default async function RootLayout({
           <main>{children}</main>
           <footer className="dev-note">
             Identity is validated by Supabase Auth and active Company OS owner
-            membership. Nothing on this dashboard can merge, deploy, publish,
-            spend, or touch the live town.
+            membership. Owner-approved work may open a private draft PR.
+            Nothing here can merge, deploy, publish public content, spend, or
+            touch the live town.
           </footer>
         </div>
       </body>

@@ -230,6 +230,11 @@ export function authorize(request: AuthorizationRequest): PolicyDecision {
   const isAssignedWorker = request.task.assignedAgentId === request.agent.id;
   const isAssignedReviewer = request.task.reviewerAgentId === request.agent.id;
   const productionCapability = PRODUCTION_CAPABILITIES.has(request.capability);
+  const reviewPublication =
+    request.task.status === "approved" &&
+    ["git_push_review_branch", "pull_request_create"].includes(
+      request.capability,
+    );
   const requiredProductionStatus =
     request.capability === "production_deploy" ? "merged" : "approved";
   if (productionCapability && request.task.status !== requiredProductionStatus) {
@@ -244,7 +249,8 @@ export function authorize(request: AuthorizationRequest): PolicyDecision {
   if (
     !productionCapability &&
     !ACTIVE_WORK_STATUSES.has(request.task.status) &&
-    !reviewerMayInspect
+    !reviewerMayInspect &&
+    !reviewPublication
   ) {
     return denied("The task lifecycle does not permit work in its current state.");
   }

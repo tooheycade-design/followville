@@ -126,6 +126,12 @@ function validateRequest(
   if (input.task.status !== "approved") {
     return deny("The task is not approved.");
   }
+  if (
+    !input.task.allowedCapabilities.includes("git_push_review_branch") ||
+    !input.task.allowedCapabilities.includes("pull_request_create")
+  ) {
+    return deny("The task was not granted review publication capabilities.");
+  }
   if (input.task.branchName !== input.sourceBranch) {
     return deny("The task branch does not match the requested source branch.");
   }

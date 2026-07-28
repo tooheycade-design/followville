@@ -24,7 +24,9 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
 | Reviewer revision loop | Done; failed checks and review feedback automatically requeue |
-| Factory dashboard deployment | Local only; shared private deployment remains |
+| Factory dashboard deployment | Done at `https://followville-company-os.vercel.app` |
+| Historical packet-less task cleanup | Done; 11 canceled with immutable audit events |
+| Draft GitHub PR runtime | Implemented and tested; GitHub App owner setup remains |
 
 ## Models
 
@@ -168,12 +170,57 @@ and the diff. Each artifact names how to retrieve it, usually
 `git show <commit>:<path>` against the task's own review branch.
 
 Nothing has been pushed, merged, or deployed at that point. Rejecting means
-deleting a branch nobody depends on.
+deleting a branch nobody depends on. Approving a write task authorizes the
+worker to publish that exact checkpoint to its `agent/task-*` branch and open
+one private draft PR. It does not authorize a merge or deployment.
 
 Artifacts are recorded by reference into that checkpoint commit rather than
 copied into separate storage, so the bytes travel with the branch. The
 `location` field is a union, so object storage can be added later without
 changing what already exists.
+
+## GitHub draft review
+
+Review publication uses a GitHub App installation token, never a personal
+access token. Create an app owned by `tooheycade-design`, install it only on the
+private `followville` repository, and grant exactly:
+
+| Permission | Access |
+| --- | --- |
+| Metadata | Read |
+| Contents | Read and write |
+| Pull requests | Read and write |
+
+Do not grant Actions, Administration, Deployments, Environments, Issues,
+Packages, Secrets, or Webhooks. The app cannot merge through this runtime:
+only an exact local `agent/task-*` checkpoint may be pushed, with
+force-with-lease protection, and every created pull request has `draft: true`.
+
+Put these values in the worker machine's ignored
+`apps/company-dashboard/.env.local`:
+
+```text
+COMPANY_OS_GITHUB_OWNER=tooheycade-design
+COMPANY_OS_GITHUB_REPOSITORY=followville
+COMPANY_OS_GITHUB_APP_ID=...
+COMPANY_OS_GITHUB_INSTALLATION_ID=...
+COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64=...
+```
+
+Encode the downloaded PEM without printing it:
+
+```powershell
+[Convert]::ToBase64String(
+  [IO.File]::ReadAllBytes("C:\path\to\the-downloaded-private-key.pem")
+)
+```
+
+Once all three credentials are present, each worker polling cycle scans for
+approved `pull_request_create` packets. It re-verifies the owner decision,
+scope digest, checkpoint, reviewer verdict, CEO verdict, local branch, and
+remote branch lease before requesting credentials. A successful or reconciled
+draft PR is written to the immutable audit ledger and linked from the Factory
+page. A retry finds the existing marker instead of opening a duplicate.
 
 ## What the machine will and will not do
 
@@ -183,9 +230,10 @@ refuse work that strays outside its approved paths, require evidence before
 accepting success, have a second agent check the result, and put the outcome in
 front of you.
 
-It will not: merge, deploy, publish, spend, or touch the canonical town files.
-Those need an owner decision, and the database enforces that independently of
-the application.
+It will publish an owner-approved checkpoint to a private review branch and
+draft PR. It will not merge, deploy, publish public content, spend, or touch
+the canonical town files. Those remain separate owner decisions, enforced
+independently of the application.
 
 ## Migrations
 
@@ -246,9 +294,10 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-Repair or archive the historical approval rows that predate durable packets,
-restore Claude authentication for genuinely independent review, deploy the
-private dashboard, and integrate draft pull requests through a GitHub App.
+Create and install the narrowly scoped GitHub App, add its credentials to each
+worker machine, then run one fresh write task through CEO, worker, review,
+owner approval, branch publication, and draft PR reconciliation. Restore
+Claude authentication for genuinely independent model review.
 
 The trusted verification registry now runs fixed commands selected from changed
 paths. Company OS code gets strict TypeScript and the core suite; dashboard code

@@ -320,6 +320,24 @@ test("unsafe source branch is denied", async () => {
   assert.equal(auth.calls, 0);
 });
 
+test("a task without publication capabilities is denied", async () => {
+  const auth = fakeAuth();
+  const client = fakeClient();
+
+  const result = await publishDraftPullRequest(
+    request({
+      task: task({
+        allowedCapabilities: ["repository_read", "repository_write"],
+      }),
+    }),
+    { auth, client },
+  );
+
+  assertDenied(result);
+  assert.match(result.reason, /publication capabilities/i);
+  assert.equal(auth.calls, 0);
+});
+
 test("duplicate requests return the existing draft PR instead of creating another", async () => {
   const existing: GitHubDraftPullRequest = {
     number: 7,

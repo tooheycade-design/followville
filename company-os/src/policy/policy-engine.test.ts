@@ -156,6 +156,47 @@ test("work cannot resume after the task reaches human approval", () => {
   assert.equal(decision.outcome, "denied");
 });
 
+test("an approved checkpoint may be published only through owner approval", () => {
+  const task = {
+    ...simulationTask(),
+    status: "approved" as const,
+    allowedCapabilities: [
+      ...simulationTask().allowedCapabilities,
+      "git_push_review_branch" as const,
+      "pull_request_create" as const,
+    ],
+  };
+  for (const capability of [
+    "git_push_review_branch",
+    "pull_request_create",
+  ] as const) {
+    const decision = authorize({
+      agent: SEED_AGENTS.engineer,
+      task,
+      capability,
+      repository: "followville_repo",
+      relativePath: "company-os",
+      repositoryRoot: REPOSITORY_ROOT,
+      environment: "preview",
+    });
+    assert.equal(decision.outcome, "approval_required");
+  }
+});
+
+test("owner approval does not reopen ordinary writes on an approved task", () => {
+  const task = { ...simulationTask(), status: "approved" as const };
+  const decision = authorize({
+    agent: SEED_AGENTS.engineer,
+    task,
+    capability: "repository_write",
+    repository: "followville_repo",
+    relativePath: "company-os/example.ts",
+    repositoryRoot: REPOSITORY_ROOT,
+    environment: "local",
+  });
+  assert.equal(decision.outcome, "denied");
+});
+
 test("worker mutation freezes while independent review is underway", () => {
   const task = { ...simulationTask(), status: "awaiting_review" as const };
   const decision = authorize({

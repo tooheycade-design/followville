@@ -126,6 +126,10 @@ export const SEED_AGENTS = {
       // Still approval-gated below: the agent deciding to commit for itself
       // is a different act, on the path toward publication.
       "git_commit",
+      // These can run only after the owner accepts the exact checkpoint. They
+      // publish a review branch and draft PR; neither capability can merge.
+      "git_push_review_branch",
+      "pull_request_create",
       "test_execute",
       "browser_preview",
       "blender_preview",
@@ -149,7 +153,11 @@ export const SEED_AGENTS = {
     maxRunDurationSeconds: 1800,
     maxRetries: 2,
     maxConcurrentRuns: 1,
-    requiresHumanApprovalFor: ["git_commit"],
+    requiresHumanApprovalFor: [
+      "git_commit",
+      "git_push_review_branch",
+      "pull_request_create",
+    ],
     escalationRules: ["Stop after repeated test failures.", "Never expand file scope silently."],
     promptVersion: "full-stack-engineer-v1",
     active: true,

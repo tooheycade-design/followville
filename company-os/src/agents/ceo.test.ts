@@ -263,6 +263,31 @@ test("every capability the CEO grants is one the worker can actually use", async
   }
 });
 
+test("write tasks carry an owner-gated draft review handoff", async () => {
+  const initiative = await planInitiative({
+    intent: { title: "Change a document", detail: "Make a small edit." },
+    planner: plannerReturning([
+      proposal({
+        requestedCapabilities: ["repository_read", "repository_write"],
+      }),
+    ]),
+    idFactory: nextId,
+    now: NOW,
+  });
+  assert.deepEqual(initiative.tasks[0]?.allowedCapabilities, [
+    "repository_read",
+    "repository_write",
+    "git_checkpoint",
+    "git_push_review_branch",
+    "pull_request_create",
+  ]);
+  assert.ok(
+    SEED_AGENTS.engineer.requiresHumanApprovalFor.includes(
+      "pull_request_create",
+    ),
+  );
+});
+
 test("the CEO can now grant preview capabilities the engineer holds", async () => {
   const initiative = await planInitiative({
     intent: { title: "Check the UI", detail: "Look at the claim flow." },

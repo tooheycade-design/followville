@@ -72,6 +72,11 @@ function taskCard(
 ) {
   const run = [...runs].reverse().find((candidate) => candidate.taskId === task.id);
   const event = latestEventForTask(events, task.id);
+  const publicationUrl =
+    event?.action === "github.draft_pr_published"
+      ? event.reason.match(/https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/pull\/[0-9]+/)?.[0] ??
+        null
+      : null;
   const destination =
     task.status === "awaiting_human_approval" ? "/approvals" : "/audit";
 
@@ -110,6 +115,11 @@ function taskCard(
         <p className="factory-task__event" title={event.reason}>
           {label(event.action)}: {event.reason.split("\n")[0]}
         </p>
+      )}
+      {publicationUrl !== null && (
+        <a href={publicationUrl} target="_blank" rel="noreferrer">
+          Open draft PR
+        </a>
       )}
       <time>{formatWhen(task.updatedAt)}</time>
     </article>

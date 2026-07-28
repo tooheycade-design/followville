@@ -285,6 +285,17 @@ export async function planInitiative(options: PlanOptions): Promise<Initiative> 
     if (granted.includes("repository_write") && !granted.includes("git_checkpoint")) {
       granted.push("git_checkpoint");
     }
+    if (granted.includes("repository_write")) {
+      // Publication is bundled into a write task so the completed-work packet
+      // can ask the owner to publish the exact reviewed checkpoint. Policy
+      // keeps both capabilities unusable until that approval exists.
+      if (!granted.includes("git_push_review_branch")) {
+        granted.push("git_push_review_branch");
+      }
+      if (!granted.includes("pull_request_create")) {
+        granted.push("pull_request_create");
+      }
+    }
 
     return TaskSchema.parse({
       id: make(),

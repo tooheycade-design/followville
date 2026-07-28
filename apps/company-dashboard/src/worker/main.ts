@@ -18,6 +18,8 @@ import {
   AgentTaskExecutor,
   ClaudeCodeProvider,
   CodexProvider,
+  GitHubAppInstallationAuth,
+  GitHubRestPullRequestClient,
   RepositoryReportExecutor,
   RepositoryVerificationRunner,
   SEED_AGENTS,
@@ -50,6 +52,8 @@ import {
   type ScheduleState,
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "../lib/state/types";
+import { OWNER_REGISTRY } from "../lib/config";
+import { runPublicationPass } from "./publication";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -131,9 +135,7 @@ if (ready.length >= 2) {
 if (checkOnly) {
   const reclaimed = await queue.reclaimExpiredLeases();
   log(`worker ${workerId} ready. reclaimed ${reclaimed} expired lease(s).`);
-  process.exit(0);
-}
-
+} else {
 const executor: TaskExecutor =
   deterministic || provider === null
     ? new RepositoryReportExecutor(repositoryRoot)
@@ -192,6 +194,21 @@ log(`worker ${workerId} starting with executor ${executor.name}`);
 
 const reviewQueue = SupabaseReviewQueue.fromEnvironment();
 const reviewer = new EvidenceReviewer();
+const githubRepository = {
+  owner: process.env.COMPANY_OS_GITHUB_OWNER?.trim() || "tooheycade-design",
+  name: process.env.COMPANY_OS_GITHUB_REPOSITORY?.trim() || "followville",
+  baseBranch: "main" as const,
+};
+const githubConfigured = [
+  process.env.COMPANY_OS_GITHUB_APP_ID,
+  process.env.COMPANY_OS_GITHUB_INSTALLATION_ID,
+  process.env.COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64,
+].every((value) => value !== undefined && value.trim().length > 0);
+log(
+  githubConfigured
+    ? `github draft publication ready for ${githubRepository.owner}/${githubRepository.name}`
+    : "github draft publication disabled until the GitHub App credentials are configured",
+);
 
 // The CEO judges with a model when one is available. Without a provider it
 // still applies its mechanical bar, so an unavailable model makes the gate
@@ -350,6 +367,33 @@ async function runReviewPass(): Promise<number> {
   }
 }
 
+async function runDraftPublicationPass(): Promise<number> {
+  if (!githubConfigured) {
+    return 0;
+  }
+  const repository = companyRepository();
+  const state = await repository.load();
+  const results = await runPublicationPass(state, {
+    auth: new GitHubAppInstallationAuth(),
+    client: new GitHubRestPullRequestClient(repositoryRoot),
+    recorder: repository,
+    authorizedOwnerUserIds: new Set(OWNER_REGISTRY.ownerUserIds),
+    repository: githubRepository,
+    idFactory: randomUUID,
+    now: () => new Date().toISOString(),
+  });
+  for (const result of results) {
+    if (result.outcome !== "skipped") {
+      log(
+        `github ${result.taskId.slice(0, 8)} -> ${result.outcome}: ${result.detail}`,
+      );
+    }
+  }
+  return results.filter(
+    (result) => result.outcome === "created" || result.outcome === "existing",
+  ).length;
+}
+
 let stopping = false;
 process.on("SIGINT", () => {
   stopping = true;
@@ -404,6 +448,10 @@ async function runWorkQueueJob(): Promise<void> {
   const reviewed = await runReviewPass();
   if (reviewed > 0) {
     log(`reviewed ${reviewed} task(s)`);
+  }
+  const published = await runDraftPublicationPass();
+  if (published > 0) {
+    log(`published ${published} approved checkpoint(s) for draft review`);
   }
 }
 
@@ -480,3 +528,4 @@ if (!watch) {
 }
 
 log("worker finished");
+}
