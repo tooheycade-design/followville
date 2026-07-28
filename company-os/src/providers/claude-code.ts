@@ -79,6 +79,20 @@ interface ClaudeJsonResult {
   modelUsage?: Record<string, unknown>;
 }
 
+export function claudeSubscriptionUsage(
+  parsed: Pick<ClaudeJsonResult, "usage" | "total_cost_usd">,
+) {
+  return {
+    inputTokens: parsed.usage?.input_tokens ?? 0,
+    outputTokens: parsed.usage?.output_tokens ?? 0,
+    cachedInputTokens: parsed.usage?.cache_read_input_tokens ?? 0,
+    // Claude Code exposes an API-equivalent estimate even when the operator
+    // is authenticated through a flat subscription. Recording that estimate
+    // as actual spend makes the cost ledger false.
+    costUsdMicros: 0,
+  };
+}
+
 function emptyUsage() {
   return {
     inputTokens: 0,
@@ -209,12 +223,7 @@ export class ClaudeCodeProvider implements ModelProvider {
       };
     }
 
-    const usage = {
-      inputTokens: parsed.usage?.input_tokens ?? 0,
-      outputTokens: parsed.usage?.output_tokens ?? 0,
-      cachedInputTokens: parsed.usage?.cache_read_input_tokens ?? 0,
-      costUsdMicros: Math.round((parsed.total_cost_usd ?? 0) * 1_000_000),
-    };
+    const usage = claudeSubscriptionUsage(parsed);
 
     const failed = parsed.is_error === true;
     return {

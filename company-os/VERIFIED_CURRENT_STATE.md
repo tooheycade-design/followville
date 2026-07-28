@@ -17,7 +17,9 @@ Last verified: 2026-07-28, development project
   checks preventing stale writes.
 - Worker, reviewer, CEO, artifacts, and owner approval packets share the same
   run ID.
-- Provider usage records input, output, cached tokens, and actual cost.
+- Provider usage records input, output, and cached tokens. Metered API providers
+  record actual cost; subscription providers record zero spend and are bounded
+  by durable run counts plus wall-clock limits.
 - Verification commands are selected by repository code, never model text.
   Company OS, dashboard, and public-town browser changes have fixed suites;
   unknown code paths fail closed.
@@ -97,10 +99,14 @@ Last verified: 2026-07-28, development project
 - Workers advertise `blender_preview` only when Blender is actually executable
   and the private artifact store is available. Cade's installed Blender 5.1.2
   passed a real GLB import and render.
+- One task may consume at most three subscription-backed implementation
+  attempts across retries and review cycles. The fourth attempt is blocked
+  before either model CLI starts. Claude Code's API-equivalent estimate is not
+  mislabeled as money charged to the subscription account.
 
 ## Verification
 
-- Company OS core: 225 tests pass; one Windows symlink-escape fixture is
+- Company OS core: 226 tests pass; one Windows symlink-escape fixture is
   skipped because this account cannot create symlinks. The same escape is
   enforced by canonical-path checks and covered where symlinks are permitted.
 - Dashboard: 39 tests pass.

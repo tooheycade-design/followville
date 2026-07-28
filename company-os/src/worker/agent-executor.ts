@@ -49,9 +49,13 @@ export interface AgentExecutorOptions {
   invocationTimeoutMs: number;
   /**
    * Subscription providers report zero dollars, so a dollar budget can never
-   * bound them. This caps how long one task may occupy the subscription.
+   * bound them. This caps provider calls across every attempt of one task.
    */
   maxSubscriptionRunsPerTask: number;
+  /** Counts prior subscription-backed runs from the durable run ledger. */
+  subscriptionRunsForTask?:
+    | number
+    | ((task: Task) => number | Promise<number>);
   /** Trusted repository-owned checks, selected independently of model output. */
   verifier?: WorkVerifier;
   /** Private shared evidence storage, supplied by the worker host. */
@@ -153,7 +157,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         artifacts: [],
         testsCompleted: [],
         testsFailed: [],
-        modelProvider: this.options.provider.name,
+        modelProvider: null,
         modelId: null,
         inputTokens: 0,
         outputTokens: 0,
@@ -176,13 +180,65 @@ export class AgentTaskExecutor implements TaskExecutor {
         artifacts: [],
         testsCompleted: [],
         testsFailed: [],
-        modelProvider: this.options.provider.name,
+        modelProvider: null,
         modelId: null,
         inputTokens: 0,
         outputTokens: 0,
         cachedInputTokens: 0,
         costUsdMicros: 0,
       };
+    }
+    if (this.options.provider.billingMode === "subscription") {
+      const priorRuns =
+        typeof this.options.subscriptionRunsForTask === "function"
+          ? await this.options.subscriptionRunsForTask(task)
+          : (this.options.subscriptionRunsForTask ?? 0);
+      if (
+        !Number.isInteger(priorRuns) ||
+        priorRuns < 0 ||
+        !Number.isInteger(this.options.maxSubscriptionRunsPerTask) ||
+        this.options.maxSubscriptionRunsPerTask < 1
+      ) {
+        return {
+          outcome: "blocked",
+          summary:
+            "Subscription run accounting is invalid; the provider was not invoked.",
+          evidence: [],
+          filesChanged: [],
+          diff: null,
+          artifacts: [],
+          testsCompleted: [],
+          testsFailed: [],
+          modelProvider: null,
+          modelId: null,
+          inputTokens: 0,
+          outputTokens: 0,
+          cachedInputTokens: 0,
+          costUsdMicros: 0,
+        };
+      }
+      if (priorRuns >= this.options.maxSubscriptionRunsPerTask) {
+        return {
+          outcome: "blocked",
+          summary:
+            `Subscription run limit reached (${priorRuns}/${this.options.maxSubscriptionRunsPerTask}). ` +
+            "Create a narrower owner-reviewed task before using another model run.",
+          evidence: [
+            `subscription-runs=${priorRuns}/${this.options.maxSubscriptionRunsPerTask}`,
+          ],
+          filesChanged: [],
+          diff: null,
+          artifacts: [],
+          testsCompleted: [],
+          testsFailed: [],
+          modelProvider: null,
+          modelId: null,
+          inputTokens: 0,
+          outputTokens: 0,
+          cachedInputTokens: 0,
+          costUsdMicros: 0,
+        };
+      }
     }
 
     let worktree: Worktree | null = null;

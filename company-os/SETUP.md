@@ -365,6 +365,12 @@ stable worker identity. A compatible later worker receives that bounded
 briefing, but the current task packet, repository scope, and policy engine
 remain the authority.
 
+Codex and Claude Code currently run through owner subscriptions. Their token
+usage is retained, but their API-equivalent estimates are not recorded as
+actual spend. A task is allowed three subscription-backed implementation
+attempts across retries and review cycles; another call is blocked before the
+CLI starts. Metered API providers continue to use dollar budgets.
+
 Candidate 3D work must be exported as `.glb` or `.gltf` under
 `company-os/candidates/`. A compatible worker runs the repository-owned
 headless Blender verifier, captures a neutral PNG plus geometry metrics, and

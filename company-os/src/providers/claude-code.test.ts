@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   claudeExecutableCandidates,
   claudeInvocationArgs,
+  claudeSubscriptionUsage,
 } from "./claude-code.js";
 
 test("Claude discovery prioritizes an explicit executable", () => {
@@ -61,5 +62,24 @@ test("Claude revisions fork the recorded session", () => {
       "019faa11-1111-7111-8111-111111111111",
       "--fork-session",
     ],
+  );
+});
+
+test("subscription usage keeps tokens but never reports API-equivalent cost as spend", () => {
+  assert.deepEqual(
+    claudeSubscriptionUsage({
+      total_cost_usd: 0.250091,
+      usage: {
+        input_tokens: 120,
+        output_tokens: 30,
+        cache_read_input_tokens: 80,
+      },
+    }),
+    {
+      inputTokens: 120,
+      outputTokens: 30,
+      cachedInputTokens: 80,
+      costUsdMicros: 0,
+    },
   );
 });

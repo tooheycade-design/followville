@@ -86,6 +86,7 @@ class ScriptedProvider implements ModelProvider {
   readonly billingMode = "subscription" as const;
   lastPrompt = "";
   lastResumeSessionId: string | null = null;
+  invokeCount = 0;
 
   constructor(
     private readonly writes: readonly string[],
@@ -101,6 +102,7 @@ class ScriptedProvider implements ModelProvider {
   }
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
+    this.invokeCount += 1;
     this.lastPrompt = request.prompt;
     this.lastResumeSessionId = request.resumeSessionId ?? null;
     for (const relative of this.writes) {
@@ -493,6 +495,29 @@ test("an unauthenticated provider blocks the task rather than failing it", async
   assert.equal(result.outcome, "blocked");
   assert.match(result.summary, /not_authenticated/);
   assert.match(result.summary, /claude auth login/);
+});
+
+test("the durable subscription run cap blocks another model call", async () => {
+  const repo = makeRepository();
+  const provider = new ScriptedProvider(["notes.md"]);
+  const executor = new AgentTaskExecutor({
+    agent: SEED_AGENTS.engineer,
+    provider,
+    worktrees: new WorktreeManager(repo.root, repo.worktreeRoot),
+    repository: "followville_repo",
+    invocationTimeoutMs: 30_000,
+    maxSubscriptionRunsPerTask: 3,
+    subscriptionRunsForTask: async () => 3,
+  });
+
+  const result = await executor.execute(
+    makeTask(),
+    new AbortController().signal,
+  );
+
+  assert.equal(result.outcome, "blocked");
+  assert.match(result.summary, /limit reached \(3\/3\)/);
+  assert.equal(provider.invokeCount, 0);
 });
 
 test("a provider failure is reported as failed with usage retained", async () => {
