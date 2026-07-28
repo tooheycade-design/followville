@@ -68,11 +68,21 @@ Last verified: 2026-07-28, development project
   online worker whose project, assigned agent, and capabilities match the task.
 - Agent capability grants are normalized in the database, so a worker cannot
   advertise a capability outside its assigned profile.
+- Cade's worker now uses Codex for implementation and an authenticated Claude
+  Code subscription for model judgement. A direct headless Claude invocation
+  returned the exact requested sentinel with a durable provider session ID.
+- The repository includes an owner-safe macOS launchd provisioner for Zach's
+  worker. It validates private env-file permissions, pinned tooling, provider
+  authentication, and `worker --check` before installing an always-on service;
+  generated service files contain no secrets.
+- Explicit worker states now win over heartbeat freshness in the dashboard, so
+  a graceful stop is shown as offline immediately while stale heartbeats still
+  detect crashed processes.
 
 ## Verification
 
-- Company OS core: 204 tests pass.
-- Dashboard: 37 tests pass.
+- Company OS core: 209 tests pass.
+- Dashboard: 39 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
 - `git diff --check` passes.
@@ -93,19 +103,21 @@ Last verified: 2026-07-28, development project
 - Migrations 0023-0025 live test: worker registration and heartbeat, permission
   isolation, dependency/capability-compatible leasing, stale/offline refusal,
   task-heartbeat propagation, and rollback all passed.
-- Cade's current worker registered live with the Codex provider and its
-  executable capability set, and the shared state loader returned it.
+- Cade's current worker registered live with the Codex provider, Claude Code
+  reviewer metadata, and its executable capability set. Its heartbeat advanced
+  across multiple reads, the shared state loader returned it, and the
+  previously backed-off queue pass recovered to success with zero failures.
 
 ## Honest limits
 
 - Blender/generator and other non-web code areas do not yet have registered
   verification commands. Changes there fail closed rather than claiming safety.
-- Claude may need re-authentication. With only Codex available, implementation
-  and judgement are not genuinely independent even though the role checks run.
-- GitHub draft review is live on Cade's worker. Zach's machine does not yet
-  have its own worker credentials.
+- GitHub draft review is live on Cade's worker. Zach's launchd provisioner is
+  ready, but his Mac still needs its local env file and provider sign-in before
+  it can register.
 - The scheduler is a Windows logon task on Cade's PC, not a cloud worker.
 
 ## Next milestone
 
-Restore genuinely independent Claude review and provision Zach's worker.
+Provision Zach's worker, then register trusted Blender/generator previews and
+the bounded context package used for specialist work.

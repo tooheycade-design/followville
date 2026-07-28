@@ -313,10 +313,39 @@ That refusal is the system working.
 Run `db/verify/0011_0014.sql` after applying the migration set. Every row must
 report `pass`. Do not run any of these files against the live town project.
 
+## Always-on workers
+
+Cade's Windows worker runs as the `Followville Company OS Worker` Scheduled
+Task. It registers its actual provider and executable capabilities, heartbeats
+every 30 seconds, and appears under **Agents -> Worker machines**.
+
+Zach's Mac uses the repository-owned launchd provisioner. After cloning the
+same repository, installing its pinned pnpm version, signing in to Codex or
+Claude Code, and creating `apps/company-dashboard/.env.local`, lock down the
+secret file and install:
+
+```bash
+chmod 600 apps/company-dashboard/.env.local
+node company-os/scripts/provision-macos-worker.mjs install
+node company-os/scripts/provision-macos-worker.mjs status
+```
+
+Installation refuses a symlinked, wrong-owner, or group/world-readable env
+file; requires the Supabase URL and secret key; validates Node, the pinned
+pnpm, and a signed-in model provider; and runs `worker --check` before writing
+the LaunchAgent. The generated plist and runner contain no credentials.
+Private logs live under `~/.followville-company-os/logs`. To remove the
+LaunchAgent while preserving those logs:
+
+```bash
+node company-os/scripts/provision-macos-worker.mjs uninstall
+```
+
 ## Next
 
-Restore Claude authentication for genuinely independent model review and
-provision Zach's worker. Worker health and compatible dispatch are live. The
+Provision Zach's worker on his Mac. Worker health and compatible dispatch are
+live, and Cade's worker now separates Codex implementation from Claude Code
+judgement. The
 controlled browser-preview runtime is complete: public-town changes run the
 fixed Playwright suite, then capture desktop home, desktop town, and mobile
 home evidence with console, HTTP, network, screenshot, and trace records.

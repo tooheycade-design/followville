@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
 import { promisify } from "node:util";
 
 import type {
@@ -11,6 +13,43 @@ import type {
 import { providerEnvironment } from "./environment.js";
 
 const run = promisify(execFile);
+
+export function claudeExecutableCandidates(
+  environment: NodeJS.ProcessEnv = process.env,
+  homeDirectory = homedir(),
+): string[] {
+  const pathEntries = (environment["PATH"] ?? "")
+    .split(path.delimiter)
+    .filter((entry) => entry.length > 0);
+  const appData = environment["APPDATA"];
+  const candidates = [
+    environment["CLAUDE_CODE_PATH"],
+    appData === undefined
+      ? undefined
+      : path.join(
+          appData,
+          "npm",
+          "node_modules",
+          "@anthropic-ai",
+          "claude-code",
+          "bin",
+          "claude.exe",
+        ),
+    path.join(homeDirectory, ".local", "bin", "claude"),
+    path.join(homeDirectory, ".local", "bin", "claude.exe"),
+    path.join(homeDirectory, ".claude", "local", "claude"),
+    path.join(homeDirectory, ".claude", "local", "claude.exe"),
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+    ...pathEntries.flatMap((directory) => [
+      path.join(directory, "claude"),
+      path.join(directory, "claude.exe"),
+      path.join(directory, "claude.cmd"),
+    ]),
+  ].filter((candidate): candidate is string => typeof candidate === "string");
+
+  return [...new Set(candidates)];
+}
 
 interface ClaudeJsonResult {
   is_error?: boolean;
@@ -57,11 +96,7 @@ export class ClaudeCodeProvider implements ModelProvider {
   ) {}
 
   static defaultExecutablePath(): string | null {
-    const candidates = [
-      process.env["CLAUDE_CODE_PATH"],
-      "C:/Users/cadet/AppData/Roaming/Claude/claude-code/2.1.219/claude.exe",
-    ].filter((candidate): candidate is string => typeof candidate === "string");
-    return candidates.find((candidate) => existsSync(candidate)) ?? null;
+    return claudeExecutableCandidates().find((candidate) => existsSync(candidate)) ?? null;
   }
 
   async checkAvailability(): Promise<ProviderAvailability> {

@@ -22,8 +22,10 @@ fixed repository-owned commands produce the pass/fail record, and reviewer
 rejections automatically queue another attempt. Controlled browser previews
 now capture desktop/mobile/town screenshots and traces, fail on console or real
 network/HTTP errors, and persist evidence privately. Registered worker health
-and agent/capability-compatible dispatch are also live. Next: restored
-two-model review and Zach's worker.
+and agent/capability-compatible dispatch are also live. Cade's always-on worker
+now separates Codex implementation from Claude Code judgement, and a
+secret-free macOS launchd provisioner is ready for Zach. Next: activate Zach's
+worker and extend trusted verification to Blender/generator previews.
 See `../VERIFIED_CURRENT_STATE.md`.
 
 ## Phase 0 — Architecture and deterministic foundation (done)
@@ -70,7 +72,9 @@ Remaining work broadens the proven worker:
 Exact-checkpoint draft pull requests, private multi-machine evidence, and
 controlled browser previews are implemented and proven. Worker processes now
 register their machine, provider, executable capabilities, current assignment,
-and heartbeat; incompatible workers cannot lease a task.
+and heartbeat; incompatible workers cannot lease a task. Cade's worker uses
+Codex to implement and Claude Code to judge. Zach's launchd installer is
+implemented but must still be run on his Mac.
 
 Exit: an owner approves or rejects a complete draft PR package that no human
 assembled.

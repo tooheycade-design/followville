@@ -2,20 +2,7 @@ import { SEED_AGENTS } from "@followville/company-os-core";
 
 import { formatUsdMicros, label } from "@/lib/format";
 import { companyRepository } from "@/lib/state";
-
-function freshness(lastSeenAt: string): {
-  label: string;
-  className: string;
-} {
-  const ageMs = Date.now() - Date.parse(lastSeenAt);
-  if (ageMs <= 90_000) {
-    return { label: "online", className: "approved" };
-  }
-  if (ageMs <= 5 * 60_000) {
-    return { label: "delayed", className: "pending" };
-  }
-  return { label: "offline", className: "denied" };
-}
+import { workerHealth } from "@/lib/worker-health";
 
 export default async function AgentsPage() {
   const agents = Object.values(SEED_AGENTS);
@@ -92,7 +79,7 @@ export default async function AgentsPage() {
             {[...state.workers]
               .sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt))
               .map((worker) => {
-                const health = freshness(worker.lastSeenAt);
+                const health = workerHealth(worker);
                 return (
                   <tr key={worker.workerId}>
                     <td>
