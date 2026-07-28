@@ -119,20 +119,66 @@ export default async function ApprovalsPage() {
                 <>
                   <h4>Evidence</h4>
                   <ul className="criteria">
-                    {cited.map((artifact) => (
-                      <li key={artifact.id}>
-                        <b>{label(artifact.kind)}</b> — {artifact.label}{" "}
-                        <span className="muted">
-                          ({artifact.mediaType}, {artifact.sizeBytes} bytes)
-                        </span>
-                        <br />
-                        <code className="mono">
-                          {artifact.location.kind === "git"
-                            ? `git show ${artifact.location.commitSha}:${artifact.location.repositoryPath}`
-                            : "held inline with the record"}
-                        </code>
-                      </li>
-                    ))}
+                    {cited.map((artifact) => {
+                      const url = `/api/artifacts/${artifact.id}`;
+                      const image =
+                        artifact.safeToDisplay &&
+                        artifact.mediaType.startsWith("image/");
+                      const video =
+                        artifact.safeToDisplay &&
+                        artifact.mediaType.startsWith("video/");
+                      return (
+                        <li className="evidence-item" key={artifact.id}>
+                          <span>
+                            <b>{label(artifact.kind)}</b> — {artifact.label}{" "}
+                            <span className="muted">
+                              ({artifact.mediaType}, {artifact.sizeBytes} bytes)
+                            </span>
+                          </span>
+                          {artifact.location.kind === "object" && image && (
+                            <a href={url} target="_blank" rel="noreferrer">
+                              {/* The route verifies the owner before redirecting. */}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                className="evidence-preview"
+                                src={url}
+                                alt={artifact.label}
+                              />
+                            </a>
+                          )}
+                          {artifact.location.kind === "object" && video && (
+                            <video
+                              className="evidence-preview"
+                              controls
+                              preload="metadata"
+                              src={url}
+                            />
+                          )}
+                          {artifact.location.kind === "object" &&
+                            !image &&
+                            !video && (
+                              <a
+                                className="evidence-open"
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Open private evidence
+                              </a>
+                            )}
+                          {artifact.location.kind === "git" && (
+                            <code className="mono">
+                              {`git show ${artifact.location.commitSha}:${artifact.location.repositoryPath}`}
+                            </code>
+                          )}
+                          {artifact.location.kind === "inline" && (
+                            <code className="mono">
+                              held inline with the record
+                            </code>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </>
               );

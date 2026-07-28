@@ -277,7 +277,23 @@ export const ArtifactKindSchema = z.enum([
   "log",
   "patch",
   "report",
+  "trace",
+  "model",
+  "performance",
 ]);
+
+const StorageBucketSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/);
+const StorageObjectPathSchema = z
+  .string()
+  .min(1)
+  .max(1_024)
+  .refine(
+    (value) =>
+      !value.startsWith("/") &&
+      !value.includes("\\") &&
+      !value.split("/").some((part) => part === "" || part === ".."),
+    "Storage object paths must be relative, normalized, and traversal-free",
+  );
 
 export const ArtifactLocationSchema = z.discriminatedUnion("kind", [
   z
@@ -294,6 +310,25 @@ export const ArtifactLocationSchema = z.discriminatedUnion("kind", [
       text: z.string(),
     })
     .strict(),
+  z
+    .object({
+      kind: z.literal("object"),
+      provider: z.literal("supabase_storage"),
+      bucket: StorageBucketSchema,
+      objectPath: StorageObjectPathSchema,
+    })
+    .strict(),
+]);
+
+export const ArtifactVisibilitySchema = z.enum([
+  "owner_only",
+  "company_internal",
+  "public",
+]);
+export const ArtifactRetentionPolicySchema = z.enum([
+  "approval_record",
+  "temporary_preview",
+  "permanent",
 ]);
 
 export const EvidenceArtifactSchema = z
@@ -301,6 +336,7 @@ export const EvidenceArtifactSchema = z
     id: IdentifierSchema,
     organizationId: IdentifierSchema,
     projectId: IdentifierSchema,
+    goalId: IdentifierSchema,
     taskId: IdentifierSchema,
     runId: IdentifierSchema.nullable(),
     kind: ArtifactKindSchema,
@@ -310,6 +346,10 @@ export const EvidenceArtifactSchema = z
     sizeBytes: z.number().int().nonnegative(),
     sha256: z.string().regex(/^[0-9a-f]{64}$/),
     location: ArtifactLocationSchema,
+    visibility: ArtifactVisibilitySchema,
+    containsSensitiveData: z.boolean(),
+    safeToDisplay: z.boolean(),
+    retentionPolicy: ArtifactRetentionPolicySchema,
     createdByAgentId: IdentifierSchema,
     createdAt: IsoDateTimeSchema,
     /**
@@ -319,9 +359,26 @@ export const EvidenceArtifactSchema = z
      */
     expiresAt: IsoDateTimeSchema.nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((artifact, context) => {
+    if (artifact.containsSensitiveData && artifact.safeToDisplay) {
+      context.addIssue({
+        code: "custom",
+        message: "Sensitive artifacts cannot be marked safe for inline display",
+        path: ["safeToDisplay"],
+      });
+    }
+    if (artifact.location.kind === "object" && artifact.runId === null) {
+      context.addIssue({
+        code: "custom",
+        message: "Object-backed artifacts must be pinned to a run",
+        path: ["runId"],
+      });
+    }
+  });
 
 export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;
+export type ArtifactLocation = z.infer<typeof ArtifactLocationSchema>;
 export type EvidenceArtifact = z.infer<typeof EvidenceArtifactSchema>;
 
 export const RunSchema = z

@@ -15,12 +15,13 @@ state, owner authentication, the factory dashboard, leases, isolated
 worktrees, model execution, review, scheduling, durable checkpoints, owner
 feedback, and truthful run records are implemented in development.
 
-The trusted verification-command registry is now implemented for Company OS,
-dashboard, and public-town browser changes. Model prose is not test evidence;
+The trusted verification-command registry, private dashboard, historical task
+cleanup, GitHub App draft review, and private multi-machine artifact storage
+are now implemented and live in development. Model prose is not test evidence;
 fixed repository-owned commands produce the pass/fail record, and reviewer
-rejections automatically queue another attempt. Next: repair historical
-packet-less tasks, restore two-model review, deploy the private dashboard,
-integrate draft pull requests, and add durable multi-machine artifact storage.
+rejections automatically queue another attempt. Next: controlled browser
+previews, worker health/compatibility, restored two-model review, and Zach's
+worker.
 See `../VERIFIED_CURRENT_STATE.md`.
 
 ## Phase 0 — Architecture and deterministic foundation (done)

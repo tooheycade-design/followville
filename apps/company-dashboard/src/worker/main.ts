@@ -53,6 +53,7 @@ import {
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "../lib/state/types";
 import { OWNER_REGISTRY } from "../lib/config";
+import { SupabaseArtifactStore } from "../lib/artifact-storage";
 import { runPublicationPass } from "./publication";
 
 const args = new Set(process.argv.slice(2));
@@ -115,6 +116,12 @@ async function availableProviders(): Promise<ModelProvider[]> {
 }
 
 const ready = await availableProviders();
+const artifactStore = SupabaseArtifactStore.fromEnvironment();
+log(
+  artifactStore === null
+    ? "shared artifact storage unavailable; evidence remains checkpoint-linked"
+    : "shared artifact storage ready in the private Company OS evidence bucket",
+);
 
 /**
  * Work and judgement go to different models when two are signed in.
@@ -150,6 +157,7 @@ const executor: TaskExecutor =
         invocationTimeoutMs: 15 * 60_000,
         maxSubscriptionRunsPerTask: 1,
         verifier: new RepositoryVerificationRunner(repositoryRoot),
+        ...(artifactStore === null ? {} : { artifactStore }),
         reworkBriefing: async (task) => {
           const state = await companyRepository().load();
           const taskRequestIds = new Set(

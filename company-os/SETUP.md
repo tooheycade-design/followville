@@ -19,14 +19,15 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Done, judging |
-| Migrations 0011-0021 applied | Done in development; 0017-0021 live-verified with rollback-only transactions |
+| Migrations 0011-0022 applied | Done in development; 0017-0022 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
 | Reviewer revision loop | Done; failed checks and review feedback automatically requeue |
 | Factory dashboard deployment | Done at `https://followville-company-os.vercel.app` |
 | Historical packet-less task cleanup | Done; 11 canceled with immutable audit events |
-| Draft GitHub PR runtime | Implemented and tested; GitHub App owner setup remains |
+| Draft GitHub PR runtime | Live; GitHub App created, installed narrowly, and draft PR #3 proved |
+| Private durable artifacts | Live; private bucket, immutable run scope, verified uploads, owner-only links |
 
 ## Models
 
@@ -67,6 +68,9 @@ that calls no model and spends nothing, rather than failing.
   and between a run that times out and one that finishes.
 - Codex adds its own `workspace-write` sandbox inside that worktree. The
   dangerous bypass flag is never used.
+- Model subprocesses receive an explicit allowlist of ordinary operating-system
+  variables. Supabase, GitHub App, paid API, and other worker-host secrets are
+  removed before Codex or Claude starts.
 - Every file the agent touched is re-checked against the policy engine
   afterwards. Editing `world_state.json`, or writing `../` out of scope, fails
   the task before it reaches review.
@@ -166,18 +170,23 @@ closed. A machine coming back online notices it is overdue and catches up once.
 Work that passes review and the Chief Executive's gate arrives on the
 **Approvals** page as a request citing its evidence: what the worker said, the
 files it changed, and any artifacts it produced — screenshots, renders, logs,
-and the diff. Each artifact names how to retrieve it, usually
-`git show <commit>:<path>` against the task's own review branch.
+traces, models, and the diff. Small code-adjacent artifacts may name a
+`git show <commit>:<path>` retrieval command. Visual and large evidence is
+stored in a private Supabase Storage bucket and opens through a short-lived
+owner-only dashboard route.
 
 Nothing has been pushed, merged, or deployed at that point. Rejecting means
 deleting a branch nobody depends on. Approving a write task authorizes the
 worker to publish that exact checkpoint to its `agent/task-*` branch and open
 one private draft PR. It does not authorize a merge or deployment.
 
-Artifacts are recorded by reference into that checkpoint commit rather than
-copied into separate storage, so the bytes travel with the branch. The
-`location` field is a union, so object storage can be added later without
-changing what already exists.
+Every object-backed artifact is pinned to its organization, project, goal,
+task, run, creating agent, byte count, MIME type, and SHA-256 digest. The
+database recomputes the exact storage path, rejects scope drift, and blocks
+updates, deletes, and truncation of evidence records. Workers upload with no
+overwrite and immediately download the object to verify its bytes before
+citing it. Active formats, logs, reports, and traces are download-only rather
+than rendered inline.
 
 ## GitHub draft review
 
@@ -270,6 +279,7 @@ numbered migration.
 | 0019 | Reject contradictory run states and retain unknown-model usage |
 | 0020 | Atomically requeue reviewer-requested revisions |
 | 0021 | Stop automatic revision loops after three review cycles |
+| 0022 | Private run-scoped artifact storage, immutable metadata, and owner previews |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -301,10 +311,9 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-Create and install the narrowly scoped GitHub App, add its credentials to each
-worker machine, then run one fresh write task through CEO, worker, review,
-owner approval, branch publication, and draft PR reconciliation. Restore
-Claude authentication for genuinely independent model review.
+Build the controlled browser-preview runtime on top of the private evidence
+vault, then restore Claude authentication for genuinely independent model
+review and provision Zach's worker.
 
 The trusted verification registry now runs fixed commands selected from changed
 paths. Company OS code gets strict TypeScript and the core suite; dashboard code

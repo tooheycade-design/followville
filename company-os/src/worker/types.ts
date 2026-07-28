@@ -66,6 +66,11 @@ export interface WorkerRunFinish {
   completedAt: string;
 }
 
+export interface TaskExecutionContext {
+  /** Durable run opened before the executor starts. */
+  runId: string;
+}
+
 /**
  * Performs the actual work for a task. Implementations range from a
  * deterministic no-model executor to a real coding agent. The runtime treats
@@ -73,7 +78,11 @@ export interface WorkerRunFinish {
  */
 export interface TaskExecutor {
   readonly name: string;
-  execute(task: Task, signal: AbortSignal): Promise<WorkResult>;
+  execute(
+    task: Task,
+    signal: AbortSignal,
+    context?: TaskExecutionContext,
+  ): Promise<WorkResult>;
 }
 
 /** The runtime's view of the queue. Backed by the database in production. */

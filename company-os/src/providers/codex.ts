@@ -8,6 +8,7 @@ import type {
   ProviderRequest,
   ProviderResponse,
 } from "./types.js";
+import { providerEnvironment } from "./environment.js";
 
 const run = promisify(execFile);
 
@@ -53,6 +54,7 @@ export class CodexProvider implements ModelProvider {
       const result = await run(this.executablePath, ["login", "status"], {
         timeout: 30_000,
         maxBuffer: 1_000_000,
+        env: providerEnvironment(),
       });
       output = `${result.stdout}\n${result.stderr}`;
     } catch (error) {
@@ -142,6 +144,7 @@ export function spawnCollecting(
       cwd: options.cwd,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      env: providerEnvironment(),
     });
 
     let stdout = "";

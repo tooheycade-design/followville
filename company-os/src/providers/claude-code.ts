@@ -8,6 +8,7 @@ import type {
   ProviderRequest,
   ProviderResponse,
 } from "./types.js";
+import { providerEnvironment } from "./environment.js";
 
 const run = promisify(execFile);
 
@@ -79,6 +80,7 @@ export class ClaudeCodeProvider implements ModelProvider {
       const { stdout } = await run(this.executablePath, ["auth", "status"], {
         timeout: 30_000,
         maxBuffer: 1_000_000,
+        env: providerEnvironment(),
       });
       output = stdout;
     } catch (error) {
@@ -127,6 +129,7 @@ export class ClaudeCodeProvider implements ModelProvider {
         timeout: request.timeoutMs,
         signal: request.signal,
         maxBuffer: 16_000_000,
+        env: providerEnvironment(),
       });
       stdout = result.stdout;
     } catch (error) {

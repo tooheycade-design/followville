@@ -7,7 +7,7 @@ Last verified: 2026-07-28, development project
 
 - Supabase is the shared authority for goals, tasks, runs, approvals, evidence,
   audit events, release grants, and owner identity.
-- Migrations 0011-0021 are applied. The owner revision flow, reviewer revision
+- Migrations 0011-0022 are applied. The owner revision flow, reviewer revision
   flow, and worker run
   lifecycle both passed rollback-only live database transactions.
 - A request-changes decision preserves the authenticated owner's comment,
@@ -43,18 +43,30 @@ Last verified: 2026-07-28, development project
   `company-os/docs/AUTOMATION_SMOKE_TEST.md` in the review diff.
 - Publication now requires an explicit review base and verifies that the
   approved checkpoint descends from it before any branch push.
+- The private `company-os-evidence` bucket is live with no browser Storage
+  policies. Evidence metadata is goal/task/run scoped, append-only including
+  truncate protection, and database-validated against the creating run.
+- Worker uploads use content-derived immutable paths, refuse overwrite, and
+  verify stored bytes by downloading and hashing them. Approval links are
+  owner-authenticated, organization-scoped, short-lived, and `no-store`.
+- Model provider subprocesses no longer inherit Supabase, GitHub App, paid API,
+  or other host secrets.
 
 ## Verification
 
-- Company OS core: 194 tests pass.
-- Dashboard: 29 tests pass.
+- Company OS core: 198 tests pass.
+- Dashboard: 32 tests pass.
 - Strict TypeScript passes in both packages.
-- The optimized Next.js production build passes with all 14 routes.
+- The optimized Next.js production build passes with all 15 routes.
 - `git diff --check` passes.
 - Migration 0018 live test: task lease, run start, atomic run/task finish, and
   rollback all passed. The source task and database counts were unchanged.
 - Migrations 0020-0021 live tests: reviewer rejection requeued below the cap,
   stopped at the third review cycle, and rolled back without changing the task.
+- Migration 0022 live tests: private bucket configuration, zero browser
+  policies, four-row backfill, exact path/agent scope, insert validation, and
+  update/delete/truncate refusal all passed. A live upload was downloaded and
+  hash-verified; replacement was refused and the test object was removed.
 - The real verification process runner passed against this worktree.
 - An agent-created dependency directory is rejected instead of being used by
   the verifier.
@@ -71,5 +83,6 @@ Last verified: 2026-07-28, development project
 
 ## Next milestone
 
-Add durable preview artifacts for browser and Blender work, then restore Claude
-authentication for genuinely independent review and provision Zach's worker.
+Run browser previews as a controlled worker capability and attach desktop,
+mobile, console, network, trace, and test evidence. Then restore Claude
+authentication and provision Zach's worker.

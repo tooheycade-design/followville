@@ -138,3 +138,16 @@ test("automatic revision loops stop after three review cycles", () => {
   assert.match(sql, /new\.status := 'failed'/);
   assert.match(sql, /before update on company_ops\.tasks/);
 });
+
+test("durable artifacts are private, scope-derived, and immutable", () => {
+  const sql = migration("0022_private_durable_artifacts.sql");
+
+  assert.match(sql, /'company-os-evidence',\s*'company-os-evidence',\s*false/);
+  assert.doesNotMatch(sql, /create policy/i);
+  assert.match(sql, /artifact object path does not match its database scope/);
+  assert.match(sql, /artifact creator does not own its run/);
+  assert.match(sql, /object artifact requires a durable run/);
+  assert.match(sql, /before truncate on company_ops\.evidence_artifacts/);
+  assert.match(sql, /visibility := 'owner_only'/);
+  assert.match(sql, /new\.contains_sensitive_data := new\.kind in/);
+});

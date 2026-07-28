@@ -564,6 +564,25 @@ button.danger {
   margin-top: 8px;
 }
 
+.evidence-item {
+  display: grid;
+  gap: 6px;
+}
+
+.evidence-preview {
+  display: block;
+  width: min(100%, 720px);
+  max-height: 420px;
+  object-fit: contain;
+  border: 1px solid var(--rule);
+  background: #111;
+}
+
+.evidence-open {
+  justify-self: start;
+  font-weight: 600;
+}
+
 .decision-row label.field {
   flex: 1 1 260px;
 }

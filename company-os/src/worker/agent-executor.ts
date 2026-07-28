@@ -2,9 +2,13 @@ import { randomUUID } from "node:crypto";
 
 import type { AgentProfile, Task } from "../domain/schemas.js";
 import type { ModelProvider } from "../providers/types.js";
-import { collectArtifacts } from "./artifacts.js";
+import { collectArtifacts, type ArtifactStore } from "./artifacts.js";
 import { createPathGuard } from "./path-guard.js";
-import type { TaskExecutor, WorkResult } from "./types.js";
+import type {
+  TaskExecutionContext,
+  TaskExecutor,
+  WorkResult,
+} from "./types.js";
 import type { WorkVerifier } from "./verification.js";
 import { WorktreeManager, type Worktree } from "./worktree.js";
 
@@ -39,6 +43,8 @@ export interface AgentExecutorOptions {
   maxSubscriptionRunsPerTask: number;
   /** Trusted repository-owned checks, selected independently of model output. */
   verifier?: WorkVerifier;
+  /** Private shared evidence storage, supplied by the worker host. */
+  artifactStore?: ArtifactStore;
 }
 
 /**
@@ -120,7 +126,11 @@ export class AgentTaskExecutor implements TaskExecutor {
     this.name = `agent:${options.provider.name}`;
   }
 
-  async execute(task: Task, signal: AbortSignal): Promise<WorkResult> {
+  async execute(
+    task: Task,
+    signal: AbortSignal,
+    context?: TaskExecutionContext,
+  ): Promise<WorkResult> {
     const availability = await this.options.provider.checkAvailability();
     if (!availability.available) {
       return {
@@ -328,9 +338,13 @@ export class AgentTaskExecutor implements TaskExecutor {
         filesChanged,
         commitSha: commit,
         diff,
+        runId: context?.runId ?? null,
+        ...(this.options.artifactStore === undefined
+          ? {}
+          : { artifactStore: this.options.artifactStore }),
         createdByAgentId: this.options.agent.id,
         idFactory: randomUUID,
-      }).catch(() => []);
+      });
       const visual = artifacts.filter(
         (artifact) => artifact.kind !== "patch" && artifact.kind !== "log",
       );

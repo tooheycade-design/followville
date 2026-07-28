@@ -234,7 +234,7 @@ export async function runLeasedTask(
 
   let result: WorkResult;
   try {
-    result = await executor.execute(task, controller.signal);
+    result = await executor.execute(task, controller.signal, { runId });
   } catch (error) {
     clearInterval(heartbeat);
     clearTimeout(timeout);

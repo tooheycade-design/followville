@@ -11,6 +11,7 @@ import {
   artifactFromReport,
   collectArtifacts,
   retrievalHint,
+  type ArtifactStore,
 } from "./artifacts.js";
 import { decodeWorkerReport, encodeWorkerReport } from "./report.js";
 
@@ -57,7 +58,7 @@ function makeTask(): Task {
   });
 }
 
-function worktreeWith(files: Record<string, string>): string {
+function worktreeWith(files: Record<string, string | Buffer>): string {
   const root = mkdtempSync(path.join(tmpdir(), "fv-artifacts-"));
   for (const [relative, content] of Object.entries(files)) {
     const target = path.join(root, relative);
@@ -67,9 +68,16 @@ function worktreeWith(files: Record<string, string>): string {
   return root;
 }
 
+function pngBytes(content: string): Buffer {
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    Buffer.from(content),
+  ]);
+}
+
 test("a screenshot becomes an artifact pointing at the checkpoint", async () => {
   const worktreePath = worktreeWith({
-    "company-os/docs/images/claim.png": "not really a png, but bytes are bytes",
+    "company-os/docs/images/claim.png": pngBytes("claim panel"),
     "company-os/docs/GUIDE.md": "# Guide\n",
   });
 
@@ -100,7 +108,7 @@ test("a screenshot becomes an artifact pointing at the checkpoint", async () => 
 });
 
 test("the hash is of the real bytes, so an artifact can be verified", async () => {
-  const bytes = "exact content";
+  const bytes = pngBytes("exact content");
   const worktreePath = worktreeWith({ "company-os/shot.png": bytes });
 
   const [artifact] = await collectArtifacts({
@@ -117,7 +125,7 @@ test("the hash is of the real bytes, so an artifact can be verified", async () =
     artifact?.sha256,
     createHash("sha256").update(bytes).digest("hex"),
   );
-  assert.equal(artifact?.sizeBytes, Buffer.byteLength(bytes));
+  assert.equal(artifact?.sizeBytes, bytes.byteLength);
 });
 
 test("the diff is always an artifact, even with nothing else to show", async () => {
@@ -166,6 +174,28 @@ test("a file that vanished is skipped rather than failing the task", async () =>
   });
 
   assert.deepEqual(artifacts, [], "evidence collection must not fail the work");
+});
+
+test("required shared evidence fails closed when its bytes do not match its type", async () => {
+  const store: ArtifactStore = {
+    async store() {
+      throw new Error("should not upload invalid bytes");
+    },
+  };
+  await assert.rejects(
+    collectArtifacts({
+      task: makeTask(),
+      worktreePath: worktreeWith({ "company-os/fake.png": "plain text" }),
+      filesChanged: ["company-os/fake.png"],
+      commitSha: "abc123def456",
+      diff: null,
+      runId: "94000000-0000-4000-8000-000000000099",
+      artifactStore: store,
+      createdByAgentId: SEED_AGENTS.engineer.id,
+      idFactory: randomUUID,
+    }),
+    /does not match image\/png/,
+  );
 });
 
 test("artifacts survive the audit trail so an owner can find them", () => {
@@ -236,6 +266,59 @@ test("an artifact rebuilt from the trail still points at the same bytes", () => 
     retrievalHint(rebuilt),
     "git show abc123def456:company-os/docs/claim.png",
   );
+});
+
+test("an object artifact keeps its exact private location through the audit trail", () => {
+  const task = makeTask();
+  const runId = "94000000-0000-4000-8000-000000000010";
+  const original = {
+    id: "94000000-0000-4000-8000-000000000011",
+    goalId: task.goalId,
+    runId,
+    kind: "screenshot",
+    label: "desktop.png",
+    mediaType: "image/png",
+    sizeBytes: 100,
+    sha256: "d".repeat(64),
+    commitSha: null,
+    repositoryPath: null,
+    inlineText: null,
+    storageProvider: "supabase_storage" as const,
+    storageBucket: "company-os-evidence",
+    storageObjectPath:
+      `organizations/${task.organizationId}/projects/${task.projectId}/` +
+      `goals/${task.goalId}/tasks/${task.id}/runs/${runId}/artifacts/` +
+      `94000000-0000-4000-8000-000000000011/${"d".repeat(64)}`,
+    visibility: "owner_only" as const,
+    containsSensitiveData: false,
+    safeToDisplay: true,
+    retentionPolicy: "approval_record" as const,
+  };
+  const decoded = decodeWorkerReport(
+    encodeWorkerReport({
+      summary: "Captured it.",
+      evidence: ["provider=codex"],
+      filesChanged: ["evidence/desktop.png"],
+      artifacts: [original],
+    }),
+  );
+  const rebuilt = artifactFromReport(
+    decoded.artifacts[0]!,
+    task,
+    SEED_AGENTS.engineer.id,
+    NOW,
+    runId,
+  );
+
+  assert.deepEqual(rebuilt.location, {
+    kind: "object",
+    provider: "supabase_storage",
+    bucket: "company-os-evidence",
+    objectPath: original.storageObjectPath,
+  });
+  assert.equal(rebuilt.runId, runId);
+  assert.equal(rebuilt.goalId, task.goalId);
+  assert.equal(retrievalHint(rebuilt), "private supabase_storage object");
 });
 
 test("an inline patch rebuilt from the trail keeps the bytes it hashes", () => {

@@ -4,6 +4,7 @@ import { createAuthClient } from "./supabase/server";
 
 export interface AuthenticatedOwner {
   id: string;
+  organizationId: string;
   email: string;
   role: "owner";
 }
@@ -38,6 +39,7 @@ export async function currentOwner(): Promise<AuthenticatedOwner | null> {
 
   return {
     id: subject,
+    organizationId: membership.organizationId,
     email:
       typeof claimsData?.claims.email === "string"
         ? claimsData.claims.email

@@ -49,6 +49,8 @@ export const MAX_LISTED_FILES = 200;
  */
 export interface ReportedArtifact {
   id: string;
+  goalId?: string | undefined;
+  runId?: string | null | undefined;
   kind: string;
   label: string;
   mediaType: string;
@@ -58,7 +60,18 @@ export interface ReportedArtifact {
   commitSha: string | null;
   repositoryPath: string | null;
   /** Inline bytes, when the artifact is not stored in git. */
-  inlineText?: string | null;
+  inlineText?: string | null | undefined;
+  storageProvider?: "supabase_storage" | null | undefined;
+  storageBucket?: string | null | undefined;
+  storageObjectPath?: string | null | undefined;
+  visibility?: "owner_only" | "company_internal" | "public" | undefined;
+  containsSensitiveData?: boolean | undefined;
+  safeToDisplay?: boolean | undefined;
+  retentionPolicy?:
+    | "approval_record"
+    | "temporary_preview"
+    | "permanent"
+    | undefined;
 }
 
 export interface WorkerReport {
@@ -107,7 +120,7 @@ function decodeArtifact(line: string): ReportedArtifact | null {
     ) {
       return null;
     }
-    return {
+    const decoded: ReportedArtifact = {
       id: parsed.id,
       kind: parsed.kind,
       label: typeof parsed.label === "string" ? parsed.label : parsed.kind,
@@ -122,6 +135,42 @@ function decodeArtifact(line: string): ReportedArtifact | null {
         typeof parsed.repositoryPath === "string" ? parsed.repositoryPath : null,
       inlineText: typeof parsed.inlineText === "string" ? parsed.inlineText : null,
     };
+    if (typeof parsed.goalId === "string") {
+      decoded.goalId = parsed.goalId;
+    }
+    if (typeof parsed.runId === "string" || parsed.runId === null) {
+      decoded.runId = parsed.runId;
+    }
+    if (parsed.storageProvider === "supabase_storage") {
+      decoded.storageProvider = parsed.storageProvider;
+    }
+    if (typeof parsed.storageBucket === "string") {
+      decoded.storageBucket = parsed.storageBucket;
+    }
+    if (typeof parsed.storageObjectPath === "string") {
+      decoded.storageObjectPath = parsed.storageObjectPath;
+    }
+    if (
+      parsed.visibility === "owner_only" ||
+      parsed.visibility === "company_internal" ||
+      parsed.visibility === "public"
+    ) {
+      decoded.visibility = parsed.visibility;
+    }
+    if (typeof parsed.containsSensitiveData === "boolean") {
+      decoded.containsSensitiveData = parsed.containsSensitiveData;
+    }
+    if (typeof parsed.safeToDisplay === "boolean") {
+      decoded.safeToDisplay = parsed.safeToDisplay;
+    }
+    if (
+      parsed.retentionPolicy === "approval_record" ||
+      parsed.retentionPolicy === "temporary_preview" ||
+      parsed.retentionPolicy === "permanent"
+    ) {
+      decoded.retentionPolicy = parsed.retentionPolicy;
+    }
+    return decoded;
   } catch {
     // A malformed line is skipped rather than failing the whole report; the
     // summary and diff still have to reach a judge.
