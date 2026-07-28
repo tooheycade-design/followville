@@ -13,6 +13,7 @@ import {
   verificationKinds,
   type VerificationCommand,
 } from "./verification.js";
+import type { BrowserPreviewRunner } from "./browser-preview.js";
 
 const task = TaskSchema.parse({
   id: "81000000-0000-4000-8000-000000000001",
@@ -187,4 +188,113 @@ test("an agent-created dependency directory is never trusted", async () => {
     provisionTrustedDirectory(trusted, poisoned),
     /Refusing untrusted dependency path/,
   );
+});
+
+test("public town changes capture durable desktop and mobile evidence", async () => {
+  const invoked: string[] = [];
+  const preview: BrowserPreviewRunner = {
+    async run(input) {
+      invoked.push(input.runId);
+      return {
+        passed: true,
+        output: "three previews captured",
+        artifactFiles: ["evidence/desktop.png", "evidence/mobile.png"],
+      };
+    },
+  };
+  const runner = new RepositoryVerificationRunner(
+    "C:/trusted",
+    async (command) => ({ exitCode: 0, output: command.id }),
+    preview,
+  );
+  const runId = "81000000-0000-4000-8000-000000000010";
+  const result = await runner.verify({
+    task: {
+      ...task,
+      allowedCapabilities: [
+        "repository_read",
+        "repository_write",
+        "test_execute",
+        "browser_preview",
+      ],
+    },
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-test",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: ["town.html"],
+    runId,
+    signal: new AbortController().signal,
+  });
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(invoked, [runId]);
+  assert.deepEqual(result.artifactFiles, [
+    "evidence/desktop.png",
+    "evidence/mobile.png",
+  ]);
+  assert.equal(result.checks.at(-1)?.id, "browser-preview");
+});
+
+test("public town changes fail closed without browser preview capability", async () => {
+  const preview: BrowserPreviewRunner = {
+    async run() {
+      throw new Error("must not capture");
+    },
+  };
+  const runner = new RepositoryVerificationRunner(
+    "C:/trusted",
+    async () => ({ exitCode: 0, output: "passed" }),
+    preview,
+  );
+  const result = await runner.verify({
+    task,
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-test",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: ["town.html"],
+    runId: "81000000-0000-4000-8000-000000000011",
+    signal: new AbortController().signal,
+  });
+
+  assert.equal(result.passed, false);
+  assert.match(result.unverifiedPaths[0] ?? "", /browser_preview/);
+});
+
+test("a failed browser capture fails verification and keeps its evidence", async () => {
+  const preview: BrowserPreviewRunner = {
+    async run() {
+      return {
+        passed: false,
+        output: "town failed to load",
+        artifactFiles: ["evidence/failed-trace.zip"],
+      };
+    },
+  };
+  const runner = new RepositoryVerificationRunner(
+    "C:/trusted",
+    async () => ({ exitCode: 0, output: "passed" }),
+    preview,
+  );
+  const result = await runner.verify({
+    task: {
+      ...task,
+      allowedCapabilities: [...task.allowedCapabilities, "browser_preview"],
+    },
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-test",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: ["town.html"],
+    runId: "81000000-0000-4000-8000-000000000012",
+    signal: new AbortController().signal,
+  });
+
+  assert.equal(result.passed, false);
+  assert.equal(result.checks.at(-1)?.passed, false);
+  assert.deepEqual(result.artifactFiles, ["evidence/failed-trace.zip"]);
 });

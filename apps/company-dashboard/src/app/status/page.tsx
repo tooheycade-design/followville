@@ -1,5 +1,5 @@
 const ROWS: readonly (readonly [string, string, string])[] = [
-  ["Domain contracts and policy kernel", "implemented", "198 core tests; strict TypeScript"],
+  ["Domain contracts and policy kernel", "implemented", "203 core tests; strict TypeScript"],
   ["Deterministic goal simulation", "implemented", "Runs from the Goals page; zero side effects"],
   ["Owner approval decisions", "implemented", "Digest-pinned kernel; owner-role enforcement"],
   ["Development database", "implemented", "Migration applied to followville-company-os-dev and verified isolated"],
@@ -14,7 +14,7 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Scheduled wake-ups", "implemented", "Interval-based scheduler with failure backoff; survives machines that sleep"],
   ["Model-backed CEO planning", "implemented", "Provider output is clamped by deterministic capability policy"],
   ["Draft pull requests", "implemented", "Narrow GitHub App; exact checkpoint; draft only; no merge authority"],
-  ["Browser preview runtime", "planned", "Capture desktop/mobile, console, network failures, traces, and health"],
+  ["Browser preview runtime", "implemented", "Desktop/mobile/town screenshots, traces, console, HTTP, and network checks"],
   ["Cost ledger", "planned", "Usage is recorded per run; the per-provider ledger and budgets come next"],
   ["Followville specialists", "planned", "World QA, Blender, social drafting; see docs/ROADMAP.md"],
   ["Production merge / deploy / publish", "blocked", "By constitution, owner approval only"],

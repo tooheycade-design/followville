@@ -70,6 +70,7 @@ admin.bat
 node_modules/
 playwright-report/
 test-results/
+.company-os/
 
 # Local secrets for the Company OS dashboard. Never commit.
 .env.local

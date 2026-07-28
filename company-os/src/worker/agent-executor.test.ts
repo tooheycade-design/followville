@@ -195,9 +195,10 @@ test("runtime-owned passing checks reach the completed-work evidence", async () 
   const verifier: WorkVerifier = {
     async verify() {
       return {
-        passed: true,
-        unverifiedPaths: [],
-        checks: [
+          passed: true,
+          unverifiedPaths: [],
+          artifactFiles: [],
+          checks: [
           {
             id: "core-tests",
             label: "Company OS test suite",
@@ -225,9 +226,10 @@ test("a failed trusted check reaches review with diagnostics for revision", asyn
   const verifier: WorkVerifier = {
     async verify() {
       return {
-        passed: false,
-        unverifiedPaths: [],
-        checks: [
+          passed: false,
+          unverifiedPaths: [],
+          artifactFiles: [],
+          checks: [
           {
             id: "core-typecheck",
             label: "Company OS strict TypeScript",

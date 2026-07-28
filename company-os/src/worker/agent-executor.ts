@@ -150,6 +150,28 @@ export class AgentTaskExecutor implements TaskExecutor {
         costUsdMicros: 0,
       };
     }
+    if (
+      task.allowedCapabilities.includes("browser_preview") &&
+      this.options.artifactStore === undefined
+    ) {
+      return {
+        outcome: "blocked",
+        summary:
+          "Browser preview work requires private shared artifact storage on this worker.",
+        evidence: [],
+        filesChanged: [],
+        diff: null,
+        artifacts: [],
+        testsCompleted: [],
+        testsFailed: [],
+        modelProvider: this.options.provider.name,
+        modelId: null,
+        inputTokens: 0,
+        outputTokens: 0,
+        cachedInputTokens: 0,
+        costUsdMicros: 0,
+      };
+    }
 
     let worktree: Worktree | null = null;
     try {
@@ -290,11 +312,17 @@ export class AgentTaskExecutor implements TaskExecutor {
 
       const verification =
         this.options.verifier === undefined
-          ? { passed: true, checks: [], unverifiedPaths: [] }
+          ? {
+              passed: true,
+              checks: [],
+              unverifiedPaths: [],
+              artifactFiles: [],
+            }
           : await this.options.verifier.verify({
               task,
               worktree,
               filesChanged,
+              ...(context?.runId === undefined ? {} : { runId: context.runId }),
               signal,
             });
       for (const check of verification.checks) {
@@ -336,6 +364,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         task,
         worktreePath: worktree.path,
         filesChanged,
+        evidenceFiles: verification.artifactFiles ?? [],
         commitSha: commit,
         diff,
         runId: context?.runId ?? null,

@@ -37,8 +37,13 @@ const RECOGNIZED: readonly { pattern: RegExp; kind: ArtifactKind; mediaType: str
   { pattern: /\.log$/i, kind: "log", mediaType: "text/plain" },
   { pattern: /\.glb$/i, kind: "model", mediaType: "model/gltf-binary" },
   { pattern: /\.gltf$/i, kind: "model", mediaType: "model/gltf+json" },
-  { pattern: /(?:^|\/)trace\.zip$/i, kind: "trace", mediaType: "application/zip" },
+  { pattern: /(?:^|\/)(?:trace|.*-trace)\.zip$/i, kind: "trace", mediaType: "application/zip" },
   { pattern: /(?:^|\/)junit\.xml$/i, kind: "report", mediaType: "application/xml" },
+  {
+    pattern: /(?:^|\/)(?:browser-preview-report|evidence-report)\.json$/i,
+    kind: "report",
+    mediaType: "application/json",
+  },
   {
     pattern: /(?:^|\/)(?:playwright-report|evidence|artifacts)\/.*\.html$/i,
     kind: "report",
@@ -114,6 +119,11 @@ export interface CollectArtifactsInput {
   /** Where the files still exist, before the worktree is removed. */
   worktreePath: string;
   filesChanged: readonly string[];
+  /**
+   * Runtime-created evidence that was not part of the checkpoint. These files
+   * may only be preserved in the shared object store.
+   */
+  evidenceFiles?: readonly string[];
   /** The checkpoint the files were recorded in, if one was made. */
   commitSha: string | null;
   diff: string | null;
@@ -177,18 +187,33 @@ export async function collectArtifacts(
     );
   }
 
-  if (input.commitSha === null) {
-    // Without a checkpoint there is nowhere durable to point, and recording a
-    // path into a worktree about to be deleted would be a broken reference.
-    return artifacts;
-  }
+  const checkpointFiles =
+    input.commitSha === null ? [] : input.filesChanged.map((file) => ({ file, runtime: false }));
+  const runtimeFiles = (input.evidenceFiles ?? []).map((file) => ({
+    file,
+    runtime: true,
+  }));
+  const seen = new Set<string>();
 
-  for (const file of input.filesChanged) {
+  for (const { file, runtime } of [...checkpointFiles, ...runtimeFiles]) {
+    const normalizedFile = file.replaceAll("\\", "/");
+    if (seen.has(normalizedFile)) {
+      continue;
+    }
+    seen.add(normalizedFile);
     const recognized = classify(file);
     if (recognized === null) {
       continue;
     }
     try {
+      if (
+        runtime &&
+        (input.artifactStore === undefined || !input.runId)
+      ) {
+        throw new Error(
+          `Runtime evidence requires shared object storage and a run ID: ${file}`,
+        );
+      }
       const worktreeRoot = path.resolve(input.worktreePath);
       const absolute = path.resolve(worktreeRoot, file);
       if (!isInside(worktreeRoot, absolute)) {
@@ -227,7 +252,7 @@ export async function collectArtifacts(
             })
           : {
               kind: "git" as const,
-              commitSha: input.commitSha,
+              commitSha: input.commitSha!,
               repositoryPath: file,
             };
       artifacts.push(
@@ -249,7 +274,7 @@ export async function collectArtifacts(
         }),
       );
     } catch (error) {
-      if (input.artifactStore !== undefined) {
+      if (runtime || input.artifactStore !== undefined) {
         throw error;
       }
       // Unreadable or vanished. Skip it rather than fail the task.

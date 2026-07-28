@@ -51,10 +51,22 @@ Last verified: 2026-07-28, development project
   owner-authenticated, organization-scoped, short-lived, and `no-store`.
 - Model provider subprocesses no longer inherit Supabase, GitHub App, paid API,
   or other host secrets.
+- Public-town changes require the `browser_preview` capability after the fixed
+  Playwright suite passes. The runtime captures desktop home, loaded desktop
+  town, and mobile home screenshots plus Playwright traces and a structured
+  report.
+- Browser evidence records console errors, failed requests, and HTTP error
+  responses. Deliberate Chromium `ERR_ABORTED` cancellations are retained as
+  ignored diagnostics instead of being mislabeled as network failures.
+- Runtime evidence is never described as a Git checkpoint file. It requires a
+  run ID and private object storage, then follows the same immutable,
+  owner-only artifact path as other approval evidence.
+- The preview server serves only real paths inside the isolated worktree and
+  rejects symlink escapes.
 
 ## Verification
 
-- Company OS core: 198 tests pass.
+- Company OS core: 203 tests pass.
 - Dashboard: 32 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
@@ -70,6 +82,9 @@ Last verified: 2026-07-28, development project
 - The real verification process runner passed against this worktree.
 - An agent-created dependency directory is rejected instead of being used by
   the verifier.
+- A real three-viewport browser preview passed: all pages rendered, the town
+  loading overlay cleared, no console errors or real HTTP/network failures
+  occurred, and three screenshots, three traces, and one report were produced.
 
 ## Honest limits
 
@@ -83,6 +98,5 @@ Last verified: 2026-07-28, development project
 
 ## Next milestone
 
-Run browser previews as a controlled worker capability and attach desktop,
-mobile, console, network, trace, and test evidence. Then restore Claude
-authentication and provision Zach's worker.
+Register worker health and compatible dispatch, restore genuinely independent
+Claude review, and provision Zach's worker.

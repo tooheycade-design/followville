@@ -4,6 +4,10 @@ import path from "node:path";
 import { promisify } from "node:util";
 
 import type { Task } from "../domain/schemas.js";
+import {
+  PlaywrightBrowserPreviewRunner,
+  type BrowserPreviewRunner,
+} from "./browser-preview.js";
 import type { Worktree } from "./worktree.js";
 
 const exec = promisify(execFile);
@@ -30,6 +34,7 @@ export interface VerificationResult {
   passed: boolean;
   checks: readonly VerificationCheck[];
   unverifiedPaths: readonly string[];
+  artifactFiles: readonly string[];
 }
 
 export interface WorkVerifier {
@@ -37,6 +42,7 @@ export interface WorkVerifier {
     task: Task;
     worktree: Worktree;
     filesChanged: readonly string[];
+    runId?: string;
     signal: AbortSignal;
   }): Promise<VerificationResult>;
 }
@@ -174,6 +180,8 @@ export class RepositoryVerificationRunner implements WorkVerifier {
     private readonly trustedRepositoryRoot: string,
     private readonly commandRunner: VerificationCommandRunner =
       runVerificationCommand,
+    private readonly browserPreview: BrowserPreviewRunner =
+      new PlaywrightBrowserPreviewRunner(trustedRepositoryRoot),
   ) {
     this.provisionDependencies = commandRunner === runVerificationCommand;
   }
@@ -309,6 +317,7 @@ export class RepositoryVerificationRunner implements WorkVerifier {
     task: Task;
     worktree: Worktree;
     filesChanged: readonly string[];
+    runId?: string;
     signal: AbortSignal;
   }): Promise<VerificationResult> {
     const plan = verificationKinds(input.filesChanged);
@@ -322,6 +331,7 @@ export class RepositoryVerificationRunner implements WorkVerifier {
         unverifiedPaths: [
           "The task changed files but does not permit the test_execute capability.",
         ],
+        artifactFiles: [],
       };
     }
 
@@ -380,12 +390,56 @@ export class RepositoryVerificationRunner implements WorkVerifier {
       }
     }
 
+    let artifactFiles: readonly string[] = [];
+    if (
+      plan.kinds.includes("town-browser-tests") &&
+      plan.unverifiedPaths.length === 0 &&
+      checks.every((check) => check.passed)
+    ) {
+      if (!input.task.allowedCapabilities.includes("browser_preview")) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "Public town changes require the browser_preview capability.",
+          ],
+          artifactFiles: [],
+        };
+      }
+      if (input.runId === undefined) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "A durable run ID is required before browser evidence can be captured.",
+          ],
+          artifactFiles: [],
+        };
+      }
+      const started = Date.now();
+      const preview = await this.browserPreview.run({
+        task: input.task,
+        worktree: input.worktree,
+        runId: input.runId,
+        signal: input.signal,
+      });
+      checks.push({
+        id: "browser-preview",
+        label: "Desktop and mobile browser evidence",
+        passed: preview.passed,
+        durationMs: Date.now() - started,
+        output: cleanOutput(preview.output),
+      });
+      artifactFiles = preview.artifactFiles;
+    }
+
     return {
       passed:
         plan.unverifiedPaths.length === 0 &&
         checks.every((check) => check.passed),
       checks,
       unverifiedPaths: plan.unverifiedPaths,
+      artifactFiles,
     };
   }
 }

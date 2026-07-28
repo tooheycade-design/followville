@@ -198,6 +198,59 @@ test("required shared evidence fails closed when its bytes do not match its type
   );
 });
 
+test("runtime browser evidence is uploaded even though it is not in the checkpoint", async () => {
+  const relative =
+    ".company-os/evidence/94000000-0000-4000-8000-000000000098/browser/desktop-home.png";
+  const worktreePath = worktreeWith({ [relative]: pngBytes("browser proof") });
+  const stored: string[] = [];
+  const store: ArtifactStore = {
+    async store(input) {
+      stored.push(input.fileName);
+      return {
+        kind: "object",
+        provider: "supabase_storage",
+        bucket: "company-os-evidence",
+        objectPath: `private/${input.artifactId}/${input.sha256}`,
+      };
+    },
+  };
+
+  const artifacts = await collectArtifacts({
+    task: makeTask(),
+    worktreePath,
+    filesChanged: ["town.html"],
+    evidenceFiles: [relative],
+    commitSha: "abc123def456",
+    diff: null,
+    runId: "94000000-0000-4000-8000-000000000098",
+    artifactStore: store,
+    createdByAgentId: SEED_AGENTS.engineer.id,
+    idFactory: randomUUID,
+  });
+
+  assert.deepEqual(stored, ["desktop-home.png"]);
+  assert.equal(artifacts.length, 1);
+  assert.equal(artifacts[0]?.location.kind, "object");
+});
+
+test("runtime browser evidence fails closed without shared storage", async () => {
+  const relative = ".company-os/evidence/run/browser/desktop-home.png";
+  await assert.rejects(
+    collectArtifacts({
+      task: makeTask(),
+      worktreePath: worktreeWith({ [relative]: pngBytes("browser proof") }),
+      filesChanged: [],
+      evidenceFiles: [relative],
+      commitSha: null,
+      diff: null,
+      runId: "94000000-0000-4000-8000-000000000097",
+      createdByAgentId: SEED_AGENTS.engineer.id,
+      idFactory: randomUUID,
+    }),
+    /requires shared object storage/,
+  );
+});
+
 test("artifacts survive the audit trail so an owner can find them", () => {
   const decoded = decodeWorkerReport(
     encodeWorkerReport({

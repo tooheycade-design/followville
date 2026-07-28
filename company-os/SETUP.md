@@ -311,9 +311,13 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-Build the controlled browser-preview runtime on top of the private evidence
-vault, then restore Claude authentication for genuinely independent model
-review and provision Zach's worker.
+Restore Claude authentication for genuinely independent model review, add
+worker health and compatible dispatch, and provision Zach's worker. The
+controlled browser-preview runtime is complete: public-town changes run the
+fixed Playwright suite, then capture desktop home, desktop town, and mobile
+home evidence with console, HTTP, network, screenshot, and trace records.
+Runtime evidence is uploaded to the private vault and cannot be represented as
+a checkpoint file.
 
 The trusted verification registry now runs fixed commands selected from changed
 paths. Company OS code gets strict TypeScript and the core suite; dashboard code

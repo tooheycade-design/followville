@@ -19,9 +19,10 @@ The trusted verification-command registry, private dashboard, historical task
 cleanup, GitHub App draft review, and private multi-machine artifact storage
 are now implemented and live in development. Model prose is not test evidence;
 fixed repository-owned commands produce the pass/fail record, and reviewer
-rejections automatically queue another attempt. Next: controlled browser
-previews, worker health/compatibility, restored two-model review, and Zach's
-worker.
+rejections automatically queue another attempt. Controlled browser previews
+now capture desktop/mobile/town screenshots and traces, fail on console or real
+network/HTTP errors, and persist evidence privately. Next: worker
+health/compatibility, restored two-model review, and Zach's worker.
 See `../VERIFIED_CURRENT_STATE.md`.
 
 ## Phase 0 — Architecture and deterministic foundation (done)
@@ -44,11 +45,12 @@ Done:
   work decisions, finished-work approvals, and owner-requested revisions.
 - A factory view showing work moving through the lifecycle.
 
-Remaining:
+Completed:
 
-- Private deployment so Cade and Zach reach the same dashboard from anywhere.
-- Repair or explicitly archive historical approval-state tasks created before
-  durable approval packets existed.
+- Private production deployment at `https://followville-company-os.vercel.app`
+  so Cade and Zach reach the same shared state.
+- Historical packet-less approval tasks were canceled with immutable audit
+  events.
 
 Exit: both owners see identical company state, and every action is
 reconstructable from the audit trail.
@@ -59,14 +61,15 @@ This phase is in progress. The queue, leases, heartbeats, isolated worktrees,
 Codex and Claude adapters, durable checkpoint branches, evidence review, CEO
 gate, revision loop, local scheduler, and run/usage ledger exist.
 
-Remaining work turns a reviewed checkpoint into a complete draft pull request:
+Remaining work broadens the proven worker:
 
 1. Assemble a context package: constitution, agent profile, task, retrieved
    memory, relevant files. Not the whole company history.
 2. Extend trusted verification to Blender and generator changes.
-3. Open a draft pull request through a GitHub App.
-4. Store evidence bytes where both owners' machines can retrieve them.
-5. Register worker health and capacity across machines.
+3. Register worker health and capacity across machines.
+
+Exact-checkpoint draft pull requests, private multi-machine evidence, and
+controlled browser previews are implemented and proven.
 
 Exit: an owner approves or rejects a complete draft PR package that no human
 assembled.
