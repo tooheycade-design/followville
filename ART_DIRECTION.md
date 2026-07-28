@@ -28,6 +28,10 @@ Friendly low-poly Instagram town. Readable on a phone. Colorful, clean, walkable
 - Mart: blue panel body, yellow canopy/cornice, dark-blue parapet, large yellow **FOLLOW MART** sign, glass vestibule, asphalt parking + light poles, monument sign at the lot corner
 - Roads: dark asphalt, lighter sidewalks/curbs
 - Grass: soft meadow under pad, never over asphalt
+- Regional terrain: one continuous blended material, but never one flat green.
+  Preserve cooler lowlands, warmer olive uplands, and muted dry-earth cues on
+  high/steep faces. Variation must come from real elevation/slope plus broad
+  deterministic landform noise; do not introduce contour bands or tiled maps.
 
 ## Walk surface contract (anti-sink)
 

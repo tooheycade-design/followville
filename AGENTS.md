@@ -86,6 +86,16 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- 2026-07-28 terrain readability pass (Zach via Mac Codex): the continuous
+  regional terrain now uses exported vertex color derived from actual
+  elevation, slope, and broad deterministic land variation. Sheltered
+  lowlands stay cooler meadow green, uplands warm toward olive, and genuinely
+  steep/high faces pick up muted dry-earth color, with smooth interpolation
+  and no contour bands or bitmap texture. Terrain geometry, walk heights,
+  roads, pads, Day 26 population 464, all 524 records, claims, ownership, and
+  `world_state.json` are unchanged. The full fallback and 28 streamed chunks
+  were regenerated together; manifest hashes, exported `COLOR_0`, walking and
+  free-drone reviews, 60 FPS local play, and all 14 browser stories passed.
 - Day 26, population 464, 524 building records (grown and corrected 2026-07-27
   via Zach's Mac Codex: +25 ordinary claimable homes, East Woods, and a
   non-claimable downtown construction vote site). Seeds
