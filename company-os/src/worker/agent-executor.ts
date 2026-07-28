@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { AgentProfile, Task } from "../domain/schemas.js";
 import type { ModelProvider } from "../providers/types.js";
 import { collectArtifacts, type ArtifactStore } from "./artifacts.js";
+import { createHandoffArtifact } from "./handoff.js";
 import { createPathGuard } from "./path-guard.js";
 import type {
   TaskExecutionContext,
@@ -392,6 +393,38 @@ export class AgentTaskExecutor implements TaskExecutor {
         createdByAgentId: this.options.agent.id,
         idFactory: randomUUID,
       });
+      const remainingWork = verification.passed
+        ? [
+            "Independent review",
+            "Chief Executive quality gate",
+            "Authenticated owner decision",
+          ]
+        : testsFailed.map((failure) => `Correct failed verification: ${failure}`);
+      const handoff = createHandoffArtifact({
+        id: randomUUID(),
+        task,
+        runId: context?.runId ?? null,
+        agentId: this.options.agent.id,
+        branch: worktree.branch,
+        baseCommit: worktree.baseCommit,
+        checkpointCommit: commit,
+        workCompleted: summary,
+        remainingWork,
+        filesChanged,
+        testsRun: testsCompleted,
+        testFailures: testsFailed,
+        artifactIds: artifacts.map((artifact) => artifact.id),
+        blockers: verification.unverifiedPaths,
+        modelProvider: this.options.provider.name,
+        modelId: response.model,
+        workerContinuityKey:
+          this.options.continuityKey ??
+          `unknown-host:${this.options.provider.name}`,
+        recommendedNextAction: verification.passed
+          ? "Have the independent reviewer inspect the checkpoint and recorded evidence."
+          : "Start a revision from this checkpoint and address every failed trusted check.",
+      });
+      artifacts.push(handoff);
       const visual = artifacts.filter(
         (artifact) => artifact.kind !== "patch" && artifact.kind !== "log",
       );

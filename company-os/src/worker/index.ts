@@ -7,5 +7,6 @@ export * from "./worktree.js";
 export * from "./review.js";
 export * from "./report.js";
 export * from "./artifacts.js";
+export * from "./handoff.js";
 export * from "./verification.js";
 export * from "./browser-preview.js";

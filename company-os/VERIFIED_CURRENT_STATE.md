@@ -82,6 +82,12 @@ Last verified: 2026-07-28, development project
   resetting the task branch to the operator checkout. Same-machine revisions
   also resume and fork the prior provider conversation; provider and stable
   machine identity must both match, so sessions are never assumed portable.
+- Every worker attempt now records a versioned, machine-readable handoff in
+  the audit report. It pins the task version, branch, base and checkpoint,
+  changed files, checks and failures, evidence IDs, blockers, provider,
+  stable worker identity, remaining work, and recommended next action. A later
+  worker receives that record as context while current task scope and policy
+  remain authoritative.
 
 ## Verification
 
@@ -113,6 +119,8 @@ Last verified: 2026-07-28, development project
   previously backed-off queue pass recovered to success with zero failures.
 - A real two-turn headless Claude run resumed its recorded session, recalled
   the first turn's sentinel, and returned a different forked session ID.
+- The durable handoff survives the worker report encode/decode path and is
+  included in the next revision briefing without granting it authority.
 
 ## Honest limits
 
@@ -125,5 +133,5 @@ Last verified: 2026-07-28, development project
 
 ## Next milestone
 
-Provision Zach's worker, then register trusted Blender/generator previews and
-the bounded context package used for specialist work.
+Register trusted Blender/generator previews, then provision Zach's worker and
+expand the specialist workflow catalog.

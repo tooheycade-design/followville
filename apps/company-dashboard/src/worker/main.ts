@@ -45,6 +45,7 @@ import {
   completedWorkApproval,
   decodeWorkerReport,
   gateAuditEvent,
+  handoffBriefing,
   priorRejectionsFrom,
   reworkBriefing,
   resumableSessionFromReports,
@@ -274,6 +275,17 @@ const executor: TaskExecutor =
           const reviewerFeedback = reviewReworkBriefing(
             state.auditEvents.filter((event) => event.taskId === task.id),
           );
+          const latestCompletion = state.auditEvents
+            .filter(
+              (event) =>
+                event.taskId === task.id &&
+                event.action === "worker.completed",
+            )
+            .at(-1);
+          const priorHandoff =
+            latestCompletion === undefined
+              ? ""
+              : handoffBriefing(decodeWorkerReport(latestCompletion.reason));
           const ownerBriefing =
             ownerFeedback.length === 0
               ? ""
@@ -284,7 +296,7 @@ const executor: TaskExecutor =
                   ...ownerFeedback.map((comment) => `- ${comment}`),
                   "Preserve the prior checkpoint. Address this feedback in a new revision.",
                 ].join("\n");
-          return [gateFeedback, reviewerFeedback, ownerBriefing]
+          return [priorHandoff, gateFeedback, reviewerFeedback, ownerBriefing]
             .filter((section) => section.length > 0)
             .join("\n");
         },

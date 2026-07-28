@@ -358,4 +358,11 @@ gets strict TypeScript, tests, and a production build; public-town web changes
 get the Playwright suite; every change gets `git diff --check`. Unknown code
 areas fail closed until a maintainer adds a repository-owned verifier.
 
+Each attempt also leaves a versioned JSON handoff in its audit report. The
+record points to the exact checkpoint and evidence, names completed and
+remaining work, records test failures and blockers, and carries provider plus
+stable worker identity. A compatible later worker receives that bounded
+briefing, but the current task packet, repository scope, and policy engine
+remain the authority.
+
 See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.
