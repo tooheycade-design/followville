@@ -11,7 +11,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { hostname } from "node:os";
+import { arch, hostname, platform } from "node:os";
 import path from "node:path";
 
 import {
@@ -22,6 +22,8 @@ import {
   GitHubRestPullRequestClient,
   RepositoryReportExecutor,
   RepositoryVerificationRunner,
+  ORGANIZATION_ID,
+  PROJECT_ID,
   SEED_AGENTS,
   WorktreeManager,
   runWorker,
@@ -133,15 +135,74 @@ log(
  */
 const provider = ready[0] ?? null;
 const judgeProvider = ready[1] ?? ready[0] ?? null;
+const githubPublicationAvailable = [
+  process.env.COMPANY_OS_GITHUB_BASE_BRANCH,
+  process.env.COMPANY_OS_GITHUB_APP_ID,
+  process.env.COMPANY_OS_GITHUB_INSTALLATION_ID,
+  process.env.COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64,
+].every((value) => value !== undefined && value.trim().length > 0);
 if (ready.length >= 2) {
   log(`roles: ${provider?.name} implements, ${judgeProvider?.name} judges`);
 } else if (ready.length === 1) {
   log(`roles: ${provider?.name} both implements and judges (only one model signed in)`);
 }
 
+const workerCapabilities =
+  deterministic || provider === null
+    ? (["repository_read"] as const)
+    : SEED_AGENTS.engineer.capabilities.filter((capability) => {
+        if (
+          capability === "blender_preview" ||
+          capability === "git_commit" ||
+          capability === "memory_write" ||
+          capability === "message_send"
+        ) {
+          return false;
+        }
+        if (capability === "browser_preview" && artifactStore === null) {
+          return false;
+        }
+        if (
+          (capability === "git_push_review_branch" ||
+            capability === "pull_request_create") &&
+          !githubPublicationAvailable
+        ) {
+          return false;
+        }
+        return true;
+      });
+
+const workerRegistration = {
+  workerId,
+  organizationId: ORGANIZATION_ID,
+  projectId: PROJECT_ID,
+  agentId: SEED_AGENTS.engineer.id,
+  displayName: `${hostname()} worker`,
+  machineName: hostname(),
+  platform: `${platform()}-${arch()}`,
+  provider: deterministic ? "deterministic" : (provider?.name ?? "unavailable"),
+  modelId: null,
+  softwareVersion:
+    process.env.COMPANY_OS_WORKER_VERSION?.trim() || "company-os-0.1.0",
+  capabilities: workerCapabilities,
+  metadata: {
+    reviewerProvider: judgeProvider?.name ?? null,
+    sharedArtifactStorage: artifactStore !== null,
+  },
+} as const;
+
+async function reportWorker(
+  status: "online" | "draining" | "offline" | "error",
+): Promise<void> {
+  await queue!.upsertWorker({ ...workerRegistration, status });
+}
+
+await reportWorker("online");
+
 if (checkOnly) {
   const reclaimed = await queue.reclaimExpiredLeases();
   log(`worker ${workerId} ready. reclaimed ${reclaimed} expired lease(s).`);
+  await reportWorker("offline");
 } else {
 const executor: TaskExecutor =
   deterministic || provider === null
@@ -199,6 +260,11 @@ const executor: TaskExecutor =
       });
 
 log(`worker ${workerId} starting with executor ${executor.name}`);
+const registryHeartbeat = setInterval(() => {
+  void reportWorker("online").catch((error) => {
+    log(`worker registry heartbeat failed: ${(error as Error).message}`);
+  });
+}, 30_000);
 
 const reviewQueue = SupabaseReviewQueue.fromEnvironment();
 const reviewer = new EvidenceReviewer();
@@ -207,12 +273,7 @@ const githubRepository = {
   name: process.env.COMPANY_OS_GITHUB_REPOSITORY?.trim() || "followville",
   baseBranch: process.env.COMPANY_OS_GITHUB_BASE_BRANCH?.trim() || "",
 };
-const githubConfigured = [
-  process.env.COMPANY_OS_GITHUB_BASE_BRANCH,
-  process.env.COMPANY_OS_GITHUB_APP_ID,
-  process.env.COMPANY_OS_GITHUB_INSTALLATION_ID,
-  process.env.COMPANY_OS_GITHUB_PRIVATE_KEY_BASE64,
-].every((value) => value !== undefined && value.trim().length > 0);
+const githubConfigured = githubPublicationAvailable;
 log(
   githubConfigured
     ? `github draft publication ready for ${githubRepository.owner}/${githubRepository.name} -> ${githubRepository.baseBranch}`
@@ -408,6 +469,10 @@ process.on("SIGINT", () => {
   stopping = true;
   log("stopping after the current task");
 });
+process.on("SIGTERM", () => {
+  stopping = true;
+  log("stopping after the current task");
+});
 
 /**
  * Schedule state is kept on disk so a restarted worker does not immediately
@@ -536,5 +601,9 @@ if (!watch) {
   }
 }
 
+clearInterval(registryHeartbeat);
+await reportWorker("offline").catch((error) => {
+  log(`could not mark worker offline: ${(error as Error).message}`);
+});
 log("worker finished");
 }

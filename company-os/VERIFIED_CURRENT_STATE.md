@@ -7,7 +7,7 @@ Last verified: 2026-07-28, development project
 
 - Supabase is the shared authority for goals, tasks, runs, approvals, evidence,
   audit events, release grants, and owner identity.
-- Migrations 0011-0022 are applied. The owner revision flow, reviewer revision
+- Migrations 0011-0025 are applied. The owner revision flow, reviewer revision
   flow, and worker run
   lifecycle both passed rollback-only live database transactions.
 - A request-changes decision preserves the authenticated owner's comment,
@@ -63,11 +63,16 @@ Last verified: 2026-07-28, development project
   owner-only artifact path as other approval evidence.
 - The preview server serves only real paths inside the isolated worktree and
   rejects symlink escapes.
+- Worker nodes register machine, provider, software version, executable
+  capabilities, health, and current assignment. Leasing requires a fresh
+  online worker whose project, assigned agent, and capabilities match the task.
+- Agent capability grants are normalized in the database, so a worker cannot
+  advertise a capability outside its assigned profile.
 
 ## Verification
 
-- Company OS core: 203 tests pass.
-- Dashboard: 34 tests pass.
+- Company OS core: 204 tests pass.
+- Dashboard: 37 tests pass.
 - Strict TypeScript passes in both packages.
 - The optimized Next.js production build passes with all 15 routes.
 - `git diff --check` passes.
@@ -85,6 +90,11 @@ Last verified: 2026-07-28, development project
 - A real three-viewport browser preview passed: all pages rendered, the town
   loading overlay cleared, no console errors or real HTTP/network failures
   occurred, and three screenshots, three traces, and one report were produced.
+- Migrations 0023-0025 live test: worker registration and heartbeat, permission
+  isolation, dependency/capability-compatible leasing, stale/offline refusal,
+  task-heartbeat propagation, and rollback all passed.
+- Cade's current worker registered live with the Codex provider and its
+  executable capability set, and the shared state loader returned it.
 
 ## Honest limits
 
@@ -98,5 +108,4 @@ Last verified: 2026-07-28, development project
 
 ## Next milestone
 
-Register worker health and compatible dispatch, restore genuinely independent
-Claude review, and provision Zach's worker.
+Restore genuinely independent Claude review and provision Zach's worker.

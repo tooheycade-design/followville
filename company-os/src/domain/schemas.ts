@@ -107,6 +107,38 @@ export const AgentProfileSchema = z
     }
   });
 
+export const WorkerNodeStatusSchema = z.enum([
+  "online",
+  "draining",
+  "offline",
+  "error",
+]);
+
+export const WorkerNodeSchema = z
+  .object({
+    workerId: z.string().min(1).max(160),
+    organizationId: IdentifierSchema,
+    projectId: IdentifierSchema,
+    agentId: IdentifierSchema,
+    displayName: z.string().min(1).max(120),
+    machineName: z.string().min(1).max(120),
+    platform: z.string().min(1).max(120),
+    provider: z.string().min(1).max(80),
+    modelId: z.string().min(1).max(160).nullable(),
+    softwareVersion: z.string().min(1).max(80),
+    capabilities: z.array(CapabilitySchema),
+    status: WorkerNodeStatusSchema,
+    currentTaskId: IdentifierSchema.nullable(),
+    currentRunId: IdentifierSchema.nullable(),
+    metadata: z.record(z.string(), z.unknown()),
+    startedAt: IsoDateTimeSchema,
+    lastSeenAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type WorkerNodeStatus = z.infer<typeof WorkerNodeStatusSchema>;
+export type WorkerNode = z.infer<typeof WorkerNodeSchema>;
+
 export const TaskStatusSchema = z.enum([
   "proposed",
   "planned",

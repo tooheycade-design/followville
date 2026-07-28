@@ -18,8 +18,8 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Chief Executive verified live | Done |
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
-| Real model execution (Claude) | Done, judging |
-| Migrations 0011-0022 applied | Done in development; 0017-0022 live-verified |
+| Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
+| Migrations 0011-0025 applied | Done in development; 0017-0025 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -28,6 +28,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Historical packet-less task cleanup | Done; 11 canceled with immutable audit events |
 | Draft GitHub PR runtime | Live; GitHub App created, installed narrowly, and draft PR #3 proved |
 | Private durable artifacts | Live; private bucket, immutable run scope, verified uploads, owner-only links |
+| Worker registry and compatible dispatch | Live; Cade's worker registered and dashboard-visible |
 
 ## Models
 
@@ -280,6 +281,9 @@ numbered migration.
 | 0020 | Atomically requeue reviewer-requested revisions |
 | 0021 | Stop automatic revision loops after three review cycles |
 | 0022 | Private run-scoped artifact storage, immutable metadata, and owner previews |
+| 0023 | Worker health registry and agent/capability-compatible task dispatch |
+| 0024 | Database-normalized agent capability grants for dispatch |
+| 0025 | Require every registered worker to name its provider |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -311,8 +315,8 @@ report `pass`. Do not run any of these files against the live town project.
 
 ## Next
 
-Restore Claude authentication for genuinely independent model review, add
-worker health and compatible dispatch, and provision Zach's worker. The
+Restore Claude authentication for genuinely independent model review and
+provision Zach's worker. Worker health and compatible dispatch are live. The
 controlled browser-preview runtime is complete: public-town changes run the
 fixed Playwright suite, then capture desktop home, desktop town, and mobile
 home evidence with console, HTTP, network, screenshot, and trace records.

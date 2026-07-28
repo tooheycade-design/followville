@@ -21,8 +21,9 @@ are now implemented and live in development. Model prose is not test evidence;
 fixed repository-owned commands produce the pass/fail record, and reviewer
 rejections automatically queue another attempt. Controlled browser previews
 now capture desktop/mobile/town screenshots and traces, fail on console or real
-network/HTTP errors, and persist evidence privately. Next: worker
-health/compatibility, restored two-model review, and Zach's worker.
+network/HTTP errors, and persist evidence privately. Registered worker health
+and agent/capability-compatible dispatch are also live. Next: restored
+two-model review and Zach's worker.
 See `../VERIFIED_CURRENT_STATE.md`.
 
 ## Phase 0 — Architecture and deterministic foundation (done)
@@ -66,10 +67,10 @@ Remaining work broadens the proven worker:
 1. Assemble a context package: constitution, agent profile, task, retrieved
    memory, relevant files. Not the whole company history.
 2. Extend trusted verification to Blender and generator changes.
-3. Register worker health and capacity across machines.
-
 Exact-checkpoint draft pull requests, private multi-machine evidence, and
-controlled browser previews are implemented and proven.
+controlled browser previews are implemented and proven. Worker processes now
+register their machine, provider, executable capabilities, current assignment,
+and heartbeat; incompatible workers cannot lease a task.
 
 Exit: an owner approves or rejects a complete draft PR package that no human
 assembled.

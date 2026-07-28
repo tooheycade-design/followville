@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { artifactFromRow, runFromRow } from "./supabase-repository";
+import {
+  artifactFromRow,
+  runFromRow,
+  workerFromRow,
+} from "./supabase-repository";
 
 const ID = {
   organization: "10000000-0000-4000-8000-000000000001",
@@ -76,4 +80,30 @@ test("database artifact rows retain their required goal scope", () => {
 
   assert.equal(artifact.goalId, ID.goal);
   assert.equal(artifact.runId, ID.run);
+});
+
+test("database worker rows retain health and compatibility fields", () => {
+  const worker = workerFromRow({
+    worker_id: "Cades-Omen-1234",
+    organization_id: ID.organization,
+    project_id: ID.project,
+    agent_id: ID.agent,
+    display_name: "Cade's worker",
+    machine_name: "Cades-Omen",
+    platform: "win32-x64",
+    provider: "codex",
+    model_id: null,
+    software_version: "test",
+    capabilities: ["repository_read", "test_execute"],
+    status: "online",
+    current_task_id: ID.task,
+    current_run_id: ID.run,
+    metadata: {},
+    started_at: NOW,
+    last_seen_at: NOW,
+  });
+
+  assert.equal(worker.status, "online");
+  assert.deepEqual(worker.capabilities, ["repository_read", "test_execute"]);
+  assert.equal(worker.currentTaskId, ID.task);
 });

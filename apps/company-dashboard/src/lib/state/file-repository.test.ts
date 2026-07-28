@@ -27,6 +27,7 @@ test("writing then reading round-trips and validates", () => {
     "goals",
     "runs",
     "tasks",
+    "workers",
   ]);
   assert.deepEqual(readState(statePath), emptyState());
 });

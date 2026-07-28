@@ -8,6 +8,7 @@ import {
   EvidenceArtifactSchema,
   RunSchema,
   TaskSchema,
+  WorkerNodeSchema,
   type ApprovalDecision,
   type ApprovalRequest,
   type AuditEvent,
@@ -15,6 +16,7 @@ import {
   type Goal,
   type Run,
   type Task,
+  type WorkerNode,
 } from "@followville/company-os-core";
 
 export const CompanyStateSchema = z
@@ -22,6 +24,7 @@ export const CompanyStateSchema = z
     goals: z.array(GoalSchema),
     tasks: z.array(TaskSchema),
     runs: z.array(RunSchema),
+    workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
     // Defaulted, not required: a store written before artifacts existed must
@@ -35,6 +38,7 @@ export interface CompanyState {
   goals: Goal[];
   tasks: Task[];
   runs: Run[];
+  workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
   evidenceArtifacts: EvidenceArtifact[];
@@ -46,6 +50,7 @@ export function emptyState(): CompanyState {
     goals: [],
     tasks: [],
     runs: [],
+    workers: [],
     approvalRequests: [],
     approvalDecisions: [],
     evidenceArtifacts: [],

@@ -1,15 +1,31 @@
 import { SEED_AGENTS } from "@followville/company-os-core";
 
 import { formatUsdMicros, label } from "@/lib/format";
+import { companyRepository } from "@/lib/state";
 
-export default function AgentsPage() {
+function freshness(lastSeenAt: string): {
+  label: string;
+  className: string;
+} {
+  const ageMs = Date.now() - Date.parse(lastSeenAt);
+  if (ageMs <= 90_000) {
+    return { label: "online", className: "approved" };
+  }
+  if (ageMs <= 5 * 60_000) {
+    return { label: "delayed", className: "pending" };
+  }
+  return { label: "offline", className: "denied" };
+}
+
+export default async function AgentsPage() {
   const agents = Object.values(SEED_AGENTS);
+  const state = await companyRepository().load();
 
   return (
     <>
       <h2>Agent directory</h2>
       <p className="deck">
-        The five seed profiles from the approved foundation. Every profile is
+        The six seed profiles from the approved foundation. Every profile is
         least-privilege: all budgets are $0 in Phase 1, no profile can write to
         the canonical town files, and production-class capabilities always
         route to a human owner.
@@ -51,6 +67,61 @@ export default function AgentsPage() {
           ))}
         </tbody>
       </table>
+
+      <h2>Worker machines</h2>
+      <p className="deck">
+        Live processes eligible to take work. Compatibility is enforced before
+        a task is leased.
+      </p>
+      {state.workers.length === 0 ? (
+        <p className="muted">No worker has registered yet.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Worker</th>
+              <th>Health</th>
+              <th>Provider</th>
+              <th>Platform</th>
+              <th>Capabilities</th>
+              <th>Current task</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...state.workers]
+              .sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt))
+              .map((worker) => {
+                const health = freshness(worker.lastSeenAt);
+                return (
+                  <tr key={worker.workerId}>
+                    <td>
+                      <b>{worker.displayName}</b>
+                      <div className="muted mono">{worker.workerId}</div>
+                    </td>
+                    <td className={`status status--${health.className}`}>
+                      {health.label}
+                    </td>
+                    <td className="mono">{worker.provider}</td>
+                    <td className="muted">
+                      {worker.machineName}
+                      <div>{worker.platform}</div>
+                    </td>
+                    <td className="mono">
+                      {worker.capabilities.map(label).join(", ")}
+                    </td>
+                    <td className="mono">
+                      {worker.currentTaskId?.slice(0, 8) ?? "-"}
+                    </td>
+                    <td className="mono">
+                      {new Date(worker.lastSeenAt).toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }

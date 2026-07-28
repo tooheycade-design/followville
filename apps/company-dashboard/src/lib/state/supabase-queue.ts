@@ -2,16 +2,38 @@ import { createClient } from "@supabase/supabase-js";
 
 import {
   TaskSchema,
+  WorkerNodeSchema,
   type AuditEvent,
+  type Capability,
   type LeasedTask,
   type Task,
   type WorkQueue,
+  type WorkerNode,
+  type WorkerNodeStatus,
   type WorkerRunFinish,
   type WorkerRunStart,
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "./types";
 
 type Row = Record<string, unknown>;
+
+export interface WorkerRegistration {
+  workerId: string;
+  organizationId: string;
+  projectId: string;
+  agentId: string;
+  displayName: string;
+  machineName: string;
+  platform: string;
+  provider: string;
+  modelId: string | null;
+  softwareVersion: string;
+  capabilities: readonly Capability[];
+  status: WorkerNodeStatus;
+  currentTaskId?: string | null;
+  currentRunId?: string | null;
+  metadata: Readonly<Record<string, unknown>>;
+}
 
 function toNumber(value: unknown): number {
   return typeof value === "string" ? Number(value) : (value as number);
@@ -118,14 +140,46 @@ export class SupabaseWorkQueue implements WorkQueue {
     return new SupabaseWorkQueue(createControlPlaneClient(url, key));
   }
 
+  async upsertWorker(worker: WorkerRegistration): Promise<WorkerNode> {
+    const { data, error } = await this.client.rpc("company_os_upsert_worker", {
+      payload: worker,
+    });
+    if (error !== null) {
+      throw new Error(`worker registry update failed: ${error.message}`);
+    }
+    const row = data as Row;
+    return WorkerNodeSchema.parse({
+      workerId: row.worker_id,
+      organizationId: row.organization_id,
+      projectId: row.project_id,
+      agentId: row.agent_id,
+      displayName: row.display_name,
+      machineName: row.machine_name,
+      platform: row.platform,
+      provider: row.provider,
+      modelId: row.model_id,
+      softwareVersion: row.software_version,
+      capabilities: row.capabilities,
+      status: row.status,
+      currentTaskId: row.current_task_id,
+      currentRunId: row.current_run_id,
+      metadata: row.metadata,
+      startedAt: row.started_at,
+      lastSeenAt: row.last_seen_at,
+    });
+  }
+
   async leaseNextTask(
     workerId: string,
     leaseSeconds: number,
   ): Promise<LeasedTask | null> {
-    const { data, error } = await this.client.rpc("company_os_lease_next_task", {
-      worker_id: workerId,
-      lease_seconds: leaseSeconds,
-    });
+    const { data, error } = await this.client.rpc(
+      "company_os_lease_next_compatible_task",
+      {
+        worker_id: workerId,
+        lease_seconds: leaseSeconds,
+      },
+    );
     if (error !== null) {
       throw new Error(`lease failed: ${error.message}`);
     }

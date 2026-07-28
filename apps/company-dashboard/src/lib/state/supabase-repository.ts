@@ -8,6 +8,7 @@ import {
   EvidenceArtifactSchema,
   RunSchema,
   TaskSchema,
+  WorkerNodeSchema,
   type ApprovalRequest,
   type AuditEvent,
   type Goal,
@@ -190,6 +191,28 @@ export function artifactFromRow(row: Row) {
   });
 }
 
+export function workerFromRow(row: Row) {
+  return WorkerNodeSchema.parse({
+    workerId: row.worker_id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    agentId: row.agent_id,
+    displayName: row.display_name,
+    machineName: row.machine_name,
+    platform: row.platform,
+    provider: row.provider,
+    modelId: row.model_id,
+    softwareVersion: row.software_version,
+    capabilities: row.capabilities,
+    status: row.status,
+    currentTaskId: row.current_task_id,
+    currentRunId: row.current_run_id,
+    metadata: row.metadata,
+    startedAt: row.started_at,
+    lastSeenAt: row.last_seen_at,
+  });
+}
+
 function auditFromRow(row: Row) {
   return AuditEventSchema.parse({
     id: row.id,
@@ -268,6 +291,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.goals = rows("goals").map(goalFromRow);
     state.tasks = rows("tasks").map(taskFromRow);
     state.runs = rows("runs").map(runFromRow);
+    state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),
     );
