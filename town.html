@@ -188,6 +188,8 @@
     #startScreen .btn { padding:11px 24px; font-size:14px; }
     #hud { font-size:13px; }
     #homeLink { font-size:12px; padding:6px 12px; }
+    #fishingCard { padding:17px; }
+    #fishingCard h2 { font-size:21px; }
   }
 
   /* A real in-town pause keeps the camera exactly where the player stopped.
@@ -364,6 +366,65 @@
     display:inline-block; background:#fff; color:#1c2b45; border-radius:6px;
     padding:1px 8px; margin-right:7px; font-weight:800;
   }
+
+  #fishPrompt {
+    position:fixed; bottom:92px; left:50%; transform:translateX(-50%); z-index:8;
+    display:none; border:1px solid rgba(255,255,255,.30); border-radius:24px;
+    padding:11px 20px; background:rgba(8,48,66,.86); color:#fff;
+    font:750 14.5px inherit; cursor:pointer; backdrop-filter:blur(6px);
+    box-shadow:0 9px 28px rgba(0,0,0,.24); user-select:none;
+  }
+  #fishPrompt .key {
+    display:inline-block; margin-right:7px; padding:1px 8px; border-radius:6px;
+    background:#fff; color:#12394b; font-weight:850;
+  }
+  #fishingGame {
+    position:fixed; inset:0; z-index:29; display:none; align-items:center; justify-content:center;
+    padding:18px; background:rgba(5,20,30,.68); backdrop-filter:blur(8px);
+    color:#173246; touch-action:none;
+  }
+  #fishingGame.open { display:flex; }
+  #fishingCard {
+    width:min(440px,calc(100vw - 36px)); padding:22px; border-radius:22px;
+    background:#f4eddd; border:1px solid rgba(255,255,255,.72);
+    box-shadow:0 26px 76px rgba(0,0,0,.42); text-align:center;
+  }
+  #fishingCard h2 { margin:0; font-size:25px; letter-spacing:-.4px; }
+  #fishingStatus { min-height:44px; margin:8px 0 13px; color:#526271; font-size:14px; line-height:1.5; }
+  #castMeter {
+    position:relative; height:42px; overflow:hidden; border-radius:21px;
+    border:2px solid #23465a; background:linear-gradient(90deg,#b8d4d8,#e5dbb9,#b8d4d8);
+  }
+  #castTarget {
+    position:absolute; top:5px; bottom:5px; width:30%; left:35%;
+    border:3px solid #f8f2dd; border-radius:50%; background:rgba(60,132,88,.30);
+    box-shadow:0 0 0 2px rgba(33,92,56,.5) inset;
+  }
+  #castLine {
+    position:absolute; top:-2px; bottom:-2px; width:5px; left:0;
+    background:#e95534; border-radius:4px; box-shadow:0 0 0 2px rgba(255,255,255,.65);
+    transform:translateX(-50%);
+  }
+  #fishAction {
+    width:100%; min-height:54px; margin-top:15px; border:0; border-radius:14px;
+    background:#173f55; color:#fff; font:850 15px inherit; cursor:pointer;
+    touch-action:none; user-select:none;
+  }
+  #fishAction.bite { background:#b94a2e; animation:fishBitePulse .54s ease-in-out infinite alternate; }
+  #reelTrack {
+    height:15px; margin-top:14px; overflow:hidden; border-radius:9px;
+    background:#d8d0be; border:1px solid #aaa18e; display:none;
+  }
+  #reelFill { width:0; height:100%; background:linear-gradient(90deg,#3a8c70,#e2a640); transition:width .08s linear; }
+  #caughtBadge {
+    display:none; margin:12px auto 2px; padding:15px; border-radius:16px;
+    background:#fff; border:1px solid #d5cdbc; font-size:17px; font-weight:850;
+  }
+  #fishingClose {
+    margin-top:13px; border:0; background:none; color:#536473;
+    font:700 13px inherit; cursor:pointer; text-decoration:underline;
+  }
+  @keyframes fishBitePulse { to { transform:scale(1.025); filter:brightness(1.12); } }
 
   #toast {
     position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:30;
@@ -943,6 +1004,20 @@
 <button id="mapToggle" type="button">town map <span aria-hidden="true">M</span></button>
 <button id="avatarToggle" type="button">avatar <span aria-hidden="true">V</span></button>
 <div id="claimPrompt"><span class="key">E</span><span id="claimPromptText">claim this house</span></div>
+<button id="fishPrompt" type="button"><span class="key">E</span><span id="fishPromptText">fish from the dock</span></button>
+<section id="fishingGame" role="dialog" aria-modal="true" aria-labelledby="fishingTitle" aria-hidden="true">
+  <div id="fishingCard">
+    <h2 id="fishingTitle">Followville Fishing</h2>
+    <div id="fishingStatus">Hold the button, then release when the red line is inside the green oval.</div>
+    <div id="castMeter" aria-label="Casting timing meter">
+      <div id="castTarget"></div><div id="castLine"></div>
+    </div>
+    <button id="fishAction" type="button">hold to cast</button>
+    <div id="reelTrack"><div id="reelFill"></div></div>
+    <div id="caughtBadge" aria-live="polite"></div>
+    <button id="fishingClose" type="button">back to the pond</button>
+  </div>
+</section>
 <div id="toast"></div>
 <div id="authModal"><div id="authCard"></div></div>
 <div id="crosshair"></div>
@@ -1025,7 +1100,7 @@
         <div id="townMapQuick">
           <button class="map-quick active" type="button" data-map-quick="streets">streets</button>
           <button class="map-quick" type="button" data-map-quick="newest">newest homes</button>
-          <button class="map-quick" type="button" data-map-quick="school">school</button>
+          <button class="map-quick" type="button" data-map-quick="development">what's next</button>
           <button class="map-quick" type="button" data-map-quick="claimed">claimed homes</button>
           <button class="map-quick" id="townMapMyHome" type="button" data-map-quick="mine" style="display:none;">my home</button>
         </div>
@@ -1727,7 +1802,14 @@ function tuneTownMaterial(material){
   material.userData.followvilleTuned = true;
   const name = (material.name || "").toLowerCase();
 
-  if (name.includes("grass") || name.includes("lawn") || name.includes("bank")){
+  if (name.includes("terrain")){
+    // The regional mesh carries authored COLOR_0 elevation/slope variation.
+    // Preserve it in the balanced renderer; only tune the physical response.
+    material.roughness = 0.98;
+    material.metalness = 0.0;
+    material.flatShading = false;
+    material.needsUpdate = true;
+  } else if (name.includes("grass") || name.includes("lawn") || name.includes("bank")){
     material.roughness = 0.96;
     material.metalness = 0.0;
     material.color.offsetHSL(-0.01, 0.08, -0.015);
@@ -2407,7 +2489,6 @@ document.getElementById("adminCoordsCopy").addEventListener("click",async event=
   clearTimeout(button._copyReset);
   button._copyReset=setTimeout(()=>{
     button.textContent="copy coordinates";
-    delete button.dataset.copyState;
   },2400);
   try{
     if(!navigator.clipboard?.writeText)throw new Error("clipboard API unavailable");
@@ -2736,6 +2817,18 @@ const pauseResumeBtn = document.getElementById("pauseResumeBtn");
 const pauseMapBtn = document.getElementById("pauseMapBtn");
 const pauseHomesBtn = document.getElementById("pauseHomesBtn");
 const pauseExitBtn = document.getElementById("pauseExitBtn");
+const fishPrompt = document.getElementById("fishPrompt");
+const fishPromptText = document.getElementById("fishPromptText");
+const fishingGame = document.getElementById("fishingGame");
+const fishingStatus = document.getElementById("fishingStatus");
+const castMeter = document.getElementById("castMeter");
+const castTarget = document.getElementById("castTarget");
+const castLine = document.getElementById("castLine");
+const fishAction = document.getElementById("fishAction");
+const reelTrack = document.getElementById("reelTrack");
+const reelFill = document.getElementById("reelFill");
+const caughtBadge = document.getElementById("caughtBadge");
+const fishingClose = document.getElementById("fishingClose");
 
 let gameRunning = false; // true once walking has actually started, desktop or touch
 let resumeWalkingAfterChat = false;
@@ -2851,7 +2944,8 @@ function returnToHomepage(){
 
 function pauseMenuOpen(){ return pauseMenu.classList.contains("open"); }
 function openPauseMenu(){
-  if (pauseMenuOpen() || townMapOpen() || chatOpen() || modalOpen() || avatarStudioOpen()) return;
+  if (pauseMenuOpen() || townMapOpen() || chatOpen() || modalOpen() ||
+      avatarStudioOpen() || fishingOpen()) return;
   pauseOpenedAt = performance.now();
   clearMovementInput();
   gameRunning = false;
@@ -2887,6 +2981,164 @@ function clearMovementInput(){
   move.z = 0;
   move.run = false;
 }
+
+/* ─── Fishing Pond: intentionally session-only v1 ───
+   The timing/reeling game is real, but catches are not persisted or sold yet.
+   That lets the town ship the fun interaction before adding an economy or a
+   permanent inventory schema that would be much harder to change safely. */
+let fishingSpot = null;
+let fishingStage = "idle";
+let fishingHeld = false;
+let fishingLinePosition = 0;
+let fishingLineDirection = 1;
+let fishingTargetLeft = .35;
+let fishingLastReadyAt = 0;
+let fishingBiteTimer = null;
+let fishingEscapeTimer = null;
+let fishingReelClicks = 0;
+const FISHING_REEL_GOAL = 12;
+const FISHING_TARGET_WIDTH = .30;
+function fishingOpen(){ return fishingGame.classList.contains("open"); }
+function setFishingStage(stage){
+  fishingStage = stage;
+  document.body.dataset.fishingGame = stage;
+}
+function fishingRarity(){
+  const roll = Math.random();
+  if (roll < .75) return ["Common","#587d88"];
+  if (roll < .90) return ["Uncommon","#43875f"];
+  if (roll < .96) return ["Rare","#3977b7"];
+  if (roll < .99) return ["Legendary","#c07a22"];
+  return ["Mythical","#9b4bb3"];
+}
+function resetFishingRound(){
+  clearTimeout(fishingBiteTimer);
+  clearTimeout(fishingEscapeTimer);
+  fishingHeld = false;
+  fishingReelClicks = 0;
+  fishingLinePosition = .08 + Math.random() * .84;
+  fishingLineDirection = Math.random() < .5 ? -1 : 1;
+  fishingLastReadyAt = 0;
+  fishingTargetLeft = .18 + Math.random() * .34;
+  castTarget.style.left = `${fishingTargetLeft * 100}%`;
+  castMeter.style.display = "block";
+  reelTrack.style.display = "none";
+  reelFill.style.width = "0";
+  caughtBadge.style.display = "none";
+  caughtBadge.textContent = "";
+  fishAction.disabled = false;
+  fishAction.classList.remove("bite");
+  fishAction.textContent = "hold to cast";
+  fishingStatus.textContent = "Hold the button, then release when the red line is inside the green oval.";
+  document.body.dataset.fishingAim = "moving";
+  setFishingStage("aim");
+}
+function startFishing(){
+  if (!fishingSpot || fishingOpen()) return;
+  clearMovementInput();
+  gameRunning = false;
+  hint.style.display = "none";
+  if (isTouch){
+    lookZone.style.display = "none";
+    joystickZone.style.display = "none";
+    runBtn.style.display = "none";
+    jumpBtn.style.display = "none";
+  }
+  if (document.pointerLockElement) document.exitPointerLock();
+  fishPrompt.style.display = "none";
+  fishingGame.classList.add("open");
+  fishingGame.setAttribute("aria-hidden","false");
+  resetFishingRound();
+  requestAnimationFrame(()=>fishAction.focus({preventScroll:true}));
+}
+function closeFishing(){
+  if (!fishingOpen()) return;
+  clearTimeout(fishingBiteTimer);
+  clearTimeout(fishingEscapeTimer);
+  fishingGame.classList.remove("open");
+  fishingGame.setAttribute("aria-hidden","true");
+  setFishingStage("closed");
+  if (isTouch) resumeWalkingWithoutPointerLock();
+  else resumeDesktopWalking();
+}
+function successfulCast(){
+  document.body.dataset.fishingAim = "landed";
+  setFishingStage("waiting");
+  castMeter.style.display = "none";
+  fishAction.disabled = true;
+  fishAction.textContent = "line cast…";
+  fishingStatus.textContent = "Nice cast. Watch the line—something is circling.";
+  fishingBiteTimer = setTimeout(()=>{
+    if (!fishingOpen() || fishingStage !== "waiting") return;
+    setFishingStage("bite");
+    fishAction.disabled = false;
+    fishAction.classList.add("bite");
+    fishAction.textContent = "BITE! click fast to reel";
+    reelTrack.style.display = "block";
+    fishingStatus.textContent = "You have a bite! Click or tap quickly to reel it in.";
+    fishingEscapeTimer = setTimeout(()=>{
+      if (fishingStage !== "bite") return;
+      setFishingStage("escaped");
+      fishAction.classList.remove("bite");
+      fishAction.textContent = "try another cast";
+      fishingStatus.textContent = "The fish slipped the hook. That was close.";
+    },4500);
+  },1100 + Math.random() * 1100);
+}
+function reelFishing(){
+  if (fishingStage === "caught" || fishingStage === "escaped"){
+    resetFishingRound();
+    return;
+  }
+  if (fishingStage !== "bite") return;
+  fishingReelClicks += 1;
+  reelFill.style.width = `${Math.min(100,fishingReelClicks/FISHING_REEL_GOAL*100)}%`;
+  if (fishingReelClicks < FISHING_REEL_GOAL) return;
+  clearTimeout(fishingEscapeTimer);
+  const [rarity,color] = fishingRarity();
+  setFishingStage("caught");
+  fishAction.classList.remove("bite");
+  fishAction.textContent = "fish again";
+  fishingStatus.textContent = "Catch complete!";
+  caughtBadge.style.display = "block";
+  caughtBadge.style.color = color;
+  caughtBadge.textContent = `You caught a ${rarity} fish!`;
+}
+fishAction.addEventListener("pointerdown",event=>{
+  if (fishingStage !== "aim") return;
+  event.preventDefault();
+  fishingHeld = true;
+  fishAction.textContent = "release to cast";
+  fishAction.setPointerCapture?.(event.pointerId);
+});
+function finishFishingCast(event){
+  if (fishingStage !== "aim" || !fishingHeld) return;
+  event?.preventDefault();
+  fishingHeld = false;
+  const inTarget = (fishingLinePosition >= fishingTargetLeft &&
+    fishingLinePosition <= fishingTargetLeft + FISHING_TARGET_WIDTH) ||
+    (fishingLastReadyAt && performance.now() - fishingLastReadyAt < 900);
+  if (inTarget){
+    successfulCast();
+  }else{
+    setFishingStage("missed");
+    fishAction.textContent = "almost—try again";
+    fishingStatus.textContent = "The cast fell short. The green oval is wide—give it one more try.";
+    setTimeout(()=>{if(fishingOpen()&&fishingStage==="missed")resetFishingRound();},850);
+  }
+}
+fishAction.addEventListener("pointerup",finishFishingCast);
+// Pointer capture is widely supported, but a window-level release also makes
+// mouse and touch casts reliable if the player's finger slides off the button.
+window.addEventListener("pointerup",finishFishingCast);
+window.addEventListener("pointercancel",()=>{
+  if(fishingStage==="aim")fishingHeld=false;
+});
+fishAction.addEventListener("click",reelFishing);
+fishPrompt.addEventListener("click",startFishing);
+fishingClose.addEventListener("click",closeFishing);
+fishingGame.addEventListener("pointerdown",event=>event.stopPropagation());
+document.body.dataset.fishingGame = "closed";
 function clearPassiveChatFeed(){
   clearTimeout(chatFeedTimer);
   chatFeedTimer = null;
@@ -2945,7 +3197,8 @@ if (isTouch){
 
 let cameraDragActive=false,cameraDragButton=2,cameraDragX=0,cameraDragY=0;
 function cameraDragAllowed(){
-  return gameRunning&&!isTouch&&!chatOpen()&&!townMapOpen()&&!modalOpen()&&!avatarStudioOpen()&&!pauseMenuOpen();
+  return gameRunning&&!isTouch&&!chatOpen()&&!townMapOpen()&&!modalOpen()&&
+    !avatarStudioOpen()&&!pauseMenuOpen()&&!fishingOpen();
 }
 function endCameraDrag(){
   if(!cameraDragActive)return;
@@ -3025,6 +3278,10 @@ function updatePlayerJump(dt){
   document.body.dataset.jumpHeight=playerJumpOffset.toFixed(2);
 }
 document.addEventListener("keydown", e => {
+  if (fishingOpen()){
+    if (e.code === "Escape"){ e.preventDefault(); closeFishing(); }
+    return;
+  }
   if (avatarStudioOpen()){
     if (e.code === "Escape"){ e.preventDefault(); closeAvatarStudio(true); }
     return;
@@ -3072,7 +3329,10 @@ document.addEventListener("keydown", e => {
     case "KeyD": case "ArrowRight": move.x = 1; break;
     case "ShiftLeft": case "ShiftRight": move.run = true; break;
     case "Space": e.preventDefault(); if(!e.repeat)requestPlayerJump(); break;
-    case "KeyE": if (gameRunning) attemptClaim(); break;
+    case "KeyE":
+      if (gameRunning && fishPrompt.style.display === "block") startFishing();
+      else if (gameRunning) attemptClaim();
+      break;
   }
 });
 document.addEventListener("keyup", e => {
@@ -3294,7 +3554,7 @@ function downtownBuiltSurfaceHeight(x,z){
   return onWalk ? .28 : 0;
 }
 
-let localWalkSurfaces={segments:[],bulbs:[]};
+let localWalkSurfaces={segments:[],bulbs:[],pads:[]};
 function suburbanRoadSurfaceHeight(x,z){
   let height=0;
   for(const segment of localWalkSurfaces.segments||[]){
@@ -3326,6 +3586,8 @@ function suburbanRoadSurfaceHeight(x,z){
 const CIVIC_WALK = Object.freeze({
   followmart: { half: 17.0, top: 0.19, size: 3 },
   elementaryschool: { half: 15.0, top: 0.28, size: 3 },
+  constructionzone: { half: 16.9, top: 0.27, size: 3 },
+  movietheater: { half: 16.9, top: 0.27, size: 3 },
   firestation: { half: 18.0, top: 0.32, size: 3 },
 });
 /** Populated by rebuildCivicWalkPads() after world_state loads. */
@@ -3364,16 +3626,31 @@ function civicCampusSurfaceHeight(x,z){
   return height;
 }
 
+function fishingDockSurfaceHeight(x,z){
+  let height=0;
+  for(const pad of localWalkSurfaces.pads||[]){
+    const [cx,cz,top,hx,hz,type]=pad;
+    if(type==="fishing-dock"&&Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
+      height=Math.max(height,top);
+  }
+  return height;
+}
+function auditFishingDockSurface(){
+  document.body.dataset.fishingDockWalkable =
+    fishingDockSurfaceHeight(105.2,68.7)>1.1 ? "pass" : "fail";
+}
+
 function walkSurfaceHeight(x,z){
   return Math.max(0,regionalTerrainHeight(x,z),
                   downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
                   storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z),
-                  civicCampusSurfaceHeight(x,z));
+                  civicCampusSurfaceHeight(x,z),fishingDockSurfaceHeight(x,z));
 }
 if(localDesignPreview){
   window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
     downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,civicCampusSurfaceHeight,
-    CIVIC_WALK, civicWalkPads:()=>civicWalkPads, surfaces:()=>localWalkSurfaces};
+    fishingDockSurfaceHeight,CIVIC_WALK,civicWalkPads:()=>civicWalkPads,
+    surfaces:()=>localWalkSurfaces};
 }
 document.body.dataset.storybookWalkable =
   walkSurfaceHeight(305,-60)>2.7 && walkSurfaceHeight(246,-69)>1.5 ? "pass" : "fail";
@@ -3577,7 +3854,7 @@ function addLandmarkColliders(root){
   const mapped=new Set();
   const configured=new Set();
   for(const building of worldBuildings){
-    if(!["burjhouse","followmart","firestation","cityhall"].includes(building.type))continue;
+    if(!["burjhouse","followmart","firestation","cityhall","constructionzone","movietheater"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -3594,6 +3871,16 @@ function addLandmarkColliders(root){
     }else if(building.type==="firestation"){
       colliders.push(rootLocalBoxCollider(visual,0,-3.4,14.5,8.7,"landmark-firestation-hall"));
       colliders.push(rootLocalBoxCollider(visual,11.9,5.95,2.3,.9,"landmark-firestation-entry"));
+    }else if(building.type==="movietheater"){
+      colliders.push(rootLocalBoxCollider(visual,-8,-3.6,5.9,9.5,
+                                          "landmark-cinema-left"));
+      colliders.push(rootLocalBoxCollider(visual,8,-3.6,5.9,9.5,
+                                          "landmark-cinema-right"));
+      colliders.push(rootLocalBoxCollider(visual,0,1.0,5.8,6.4,
+                                          "landmark-cinema-lobby"));
+    }else if(building.type==="constructionzone"){
+      colliders.push(rootLocalBoxCollider(visual,0,0,16.2,16.2,
+                                          "landmark-construction-zone"));
     }else{
       colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
       colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
@@ -3601,7 +3888,9 @@ function addLandmarkColliders(root){
     }
     mapped.add(building.type);
   }
-  const expected=["burjhouse","followmart","firestation","cityhall"];
+  const destinationType=worldBuildings.some(b=>b.type==="movietheater")
+    ?"movietheater":"constructionzone";
+  const expected=["burjhouse","followmart","firestation","cityhall",destinationType];
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }
@@ -3630,6 +3919,13 @@ function buildGLBColliders(root){
     colliders.push(boxCollider(x,z,1,0,0,1,5.25,5.25,`downtown-tower-${bx}-${by}`));
   }
   addLandmarkColliders(root);
+  const fishingPond=worldBuildings.find(building=>building.type==="fishingpond");
+  if(fishingPond){
+    const [pondX,pondZ]=buildingWorldXZ(fishingPond);
+    // The dock reaches the west edge of this protected deep-water circle, so
+    // players can stand and cast without walking through the pond.
+    colliders.push(circleCollider(pondX,pondZ,10.5,"fishing-pond-water"));
+  }
   root.traverse(obj => {
     const name = obj.name || "";
     if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);
@@ -4289,7 +4585,10 @@ function frontDirsFor(b){
    the map without a second map file or any hand-maintained coordinates. */
 const MAP_LANDMARK_NAMES = {
   elementaryschool:"Followville Elementary", firestation:"Followville Fire & Rescue",
+  constructionzone:"What Should Rise Next?", movietheater:"Followville Cinema",
+  forestreserve:"East Woods",
   cityhall:"Followville City Hall", civicsquare:"Civic Square",
+  fishingpond:"Followville Fishing Pond",
   parkdistrict:"Founder Park",
   park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
   stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
@@ -4411,8 +4710,9 @@ function townMapFilteredItems(){
     items = mapState.items
       .filter(item => item.isHome && Number(item.building.day) === latestDay)
       .sort((a,b) => Number(b.building.plan_id||b.houseId)-Number(a.building.plan_id||a.houseId));
-  } else if (mapState.filter === "school"){
-    items = mapState.items.filter(item => item.building.type === "elementaryschool");
+  } else if (mapState.filter === "development"){
+    items = mapState.items.filter(item =>
+      item.building.type === "constructionzone" || item.building.type === "movietheater");
   } else if (mapState.filter === "claimed"){
     items = mapState.items.filter(item => item.isHome && item.owner);
   } else if (mapState.filter === "mine"){
@@ -4452,7 +4752,7 @@ function townMapLocationMarkup(items,limit=48){
 function renderTownMapResults(){
   const items=townMapFilteredItems();
   const query=townMapSearch.value.trim();
-  const showLocations=!!query || mapState.filter==="school" || mapState.filter==="mine" ||
+  const showLocations=!!query || mapState.filter==="development" || mapState.filter==="mine" ||
     (todayRoute && mapState.filter==="newest");
   for(const button of document.querySelectorAll("[data-map-quick]")){
     button.classList.toggle("active",!query && button.dataset.mapQuick===mapState.filter);
@@ -4770,17 +5070,28 @@ function rebuildTownMap3D(){
     let geometry,material;
     if(item.building.type==="parkdistrict"){
       geometry=new THREE.CylinderGeometry(8,8,1.1,32);material=new THREE.MeshStandardMaterial({color:0x6ca366,roughness:.95});
-    }else if(item.building.type==="pond"){
-      geometry=new THREE.CylinderGeometry(7,7,.5,32);material=new THREE.MeshStandardMaterial({color:0x4f9bc2,roughness:.45,metalness:.05});
+    }else if(item.building.type==="pond"||item.building.type==="fishingpond"){
+      const radius=item.building.type==="fishingpond"?14:7;
+      geometry=new THREE.CylinderGeometry(radius,radius,.5,32);material=new THREE.MeshStandardMaterial({color:0x4f9bc2,roughness:.45,metalness:.05});
     }else if(item.building.type==="civicsquare"){
       geometry=new THREE.BoxGeometry(16,.45,14);material=new THREE.MeshStandardMaterial({color:0xb9b5a9,roughness:.88});
     }else if(item.building.type==="cityhall"){
       geometry=new THREE.BoxGeometry(18,7,11);material=new THREE.MeshStandardMaterial({color:0xd8d1bd,roughness:.78});
+    }else if(item.building.type==="constructionzone"){
+      geometry=new THREE.BoxGeometry(18,1.2,18);
+      material=new THREE.MeshStandardMaterial({color:0xe9812c,roughness:.78});
+    }else if(item.building.type==="movietheater"){
+      geometry=new THREE.BoxGeometry(18,8.5,13);
+      material=new THREE.MeshStandardMaterial({color:0x6f1830,roughness:.62,metalness:.08});
+    }else if(item.building.type==="forestreserve"){
+      geometry=new THREE.CylinderGeometry(19,23,4.5,18);
+      material=new THREE.MeshStandardMaterial({color:0x3c6f39,roughness:.95});
     }else{
       geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
       material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});
     }
-    const landmarkY=item.building.type==="parkdistrict"?.55:item.building.type==="pond"?.25:2.4;
+    const landmarkY=item.building.type==="parkdistrict" ? .55 :
+      (item.building.type==="pond"||item.building.type==="fishingpond" ? .25 : 2.4);
     const mesh=new THREE.Mesh(geometry,material);mesh.position.set(item.x,landmarkY,item.z);
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.mapItem=item;
     mapState.pickMeshes.push(mesh);townMapRoot.add(mesh);
@@ -5161,7 +5472,7 @@ document.getElementById("townMapQuick").addEventListener("click",e=>{
   renderTownMapResults();renderTownMapSelection();
   const items=townMapFilteredItems();
   if(mapState.filter==="streets")fitTownMap();
-  else if(mapState.filter==="school"||mapState.filter==="mine"){
+  else if(mapState.filter==="development"||mapState.filter==="mine"){
     if(items[0])selectTownMapItem(items[0]);
   }else focusTownMapItems(items);
 });
@@ -6268,6 +6579,7 @@ function validateTownManifest(manifest,buildings){
   if(!(loadDistance>0&&unloadDistance>loadDistance))
     throw new Error("town stream manifest has unsafe load/unload distances");
   localWalkSurfaces=manifest.walk_surfaces;
+  auditFishingDockSurface();
   const canonical=new Set(buildings.map(building=>Number(building.seed)));
   const byId=new Map(buildings.map(building=>[Number(building.seed),building]));
   const seen=new Set();
@@ -6439,6 +6751,7 @@ function ensureTownChunkForBuilding(building){
 
 function updateTownDistrictStreaming(force=false){
   if(!townManifest)return;
+  if(townManifest.streaming?.preload_all)return;
   const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
   townStreamLastCheck=now;
   let unloaded=false;
@@ -6481,7 +6794,7 @@ async function loadStreamedTown(buildings){
   document.body.dataset.streamInitialBytes=String(
     Number(manifest.base.bytes||0)+initial.reduce((sum,chunk)=>sum+Number(chunk.asset.bytes||0),0));
   updateTownDistrictStreaming(true);
-  console.info(`[Followville] district streaming active: ${initial.length} detailed + ${manifest.chunks.length-initial.length} low-detail districts at boot.`);
+  console.info(`[Followville] ${initial.length} detailed district chunks loaded and kept resident.`);
   return true;
 }
 
@@ -6546,7 +6859,10 @@ async function loadFromGLB(buildings){
       const response=await fetch("town_manifest.json",{cache:"no-store"});
       if(response.ok){
         const manifest=await response.json();
-        if(Array.isArray(manifest.walk_surfaces?.segments))localWalkSurfaces=manifest.walk_surfaces;
+        if(Array.isArray(manifest.walk_surfaces?.segments)){
+          localWalkSurfaces=manifest.walk_surfaces;
+          auditFishingDockSurface();
+        }
       }
     }catch(_){ /* town.glb remains the emergency fallback */ }
     return loadFullTown(buildings);
@@ -6565,6 +6881,9 @@ const localWalkSurfacePromise=localDesignPreview
   ? fetch("local_walk_surfaces.json").then(r=>{
       if(!r.ok)throw new Error(`local walk surface manifest ${r.status}`);
       return r.json();
+    }).catch(error=>{
+      console.warn("Local walk-surface preview unavailable; using the exported town manifest.",error);
+      return null;
     })
   : Promise.resolve(null);
 
@@ -6574,6 +6893,20 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
     const buildings = state.buildings || [];
     applyWorldLayout(buildings);
     worldBuildings = buildings;
+    const fishingPondBuilding = buildings.find(building=>building.type==="fishingpond");
+    if (fishingPondBuilding){
+      const [pondX,pondZ] = buildingWorldXZ(fishingPondBuilding);
+      // Local dock head is 10.8m west and 2.7m south in Blender space.
+      fishingSpot = {x:pondX-10.8,z:pondZ+2.7};
+      document.body.dataset.fishingPond = "ready";
+      auditFishingDockSurface();
+      if (isTouch){
+        fishPrompt.querySelector(".key").style.display = "none";
+        fishPromptText.textContent = "tap to fish from the dock";
+      }
+    }else{
+      document.body.dataset.fishingPond = "missing";
+    }
     rebuildCivicWalkPads(buildings);
     townMapMeta = { day:state.day ?? null, population:state.pop ?? null };
     initSupabase();   // accounts + claiming; no-op until configured
@@ -6688,6 +7021,30 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.lookAt(-77,2.0,76);
           camera.updateProjectionMatrix();
         }
+        if(localAuditView === "construction" || localAuditView === "theater"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=66;
+          camera.position.set(-70.5,7.4,-42.2);
+          camera.lookAt(-70.5,7.0,-64.5);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "traffic"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=62;
+          camera.position.set(-18.0,1.82,4.4);
+          camera.lookAt(-.3,4.75,4.4);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "east-woods"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=64;
+          camera.position.set(125,7.5,-134);
+          camera.lookAt(170,6.5,-180);
+          camera.updateProjectionMatrix();
+        }
         if(localAuditView === "facade-side"){
           startScreen.style.display="none";
           document.body.classList.add("preview-mode");
@@ -6703,6 +7060,15 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.position.set(125,7.50,108);
           camera.lookAt(2,7.0,4);
           camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "fishing"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          playerPosition.set(105.2,walkSurfaceHeight(105.2,68.7),68.7);
+          if(localAvatar)localAvatar.position.copy(playerPosition);
+          cameraOrbitYaw=-.55;
+          cameraOrbitPitch=-.18;
+          updateThirdPersonCamera(true);
         }
         if(localAuditView === "street"){
           startScreen.style.display="none";
@@ -6722,6 +7088,16 @@ const _camDir = new THREE.Vector3();
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  if (fishingOpen() && fishingStage === "aim"){
+    fishingLinePosition += fishingLineDirection * dt * .52;
+    if (fishingLinePosition >= .985){ fishingLinePosition=.985; fishingLineDirection=-1; }
+    if (fishingLinePosition <= .015){ fishingLinePosition=.015; fishingLineDirection=1; }
+    castLine.style.left = `${fishingLinePosition * 100}%`;
+    const fishingAimReady = fishingLinePosition >= fishingTargetLeft &&
+      fishingLinePosition <= fishingTargetLeft + FISHING_TARGET_WIDTH;
+    if(fishingAimReady)fishingLastReadyAt=performance.now();
+    document.body.dataset.fishingAim = fishingAimReady ? "ready" : "moving";
+  }
 
   let localMovementSpeed=0;
   if (gameRunning){
@@ -6753,6 +7129,11 @@ function animate(){
       localAvatar.rotation.y+=avatarYawDelta*Math.min(1,dt*14);
     }
     updateThirdPersonCamera();
+
+    const nearFishingDock = fishingSpot &&
+      Math.hypot(p.x-fishingSpot.x,p.z-fishingSpot.z) <= 7.5;
+    fishPrompt.style.display = nearFishingDock ? "block" : "none";
+    document.body.dataset.fishingNearby = nearFishingDock ? "true" : "false";
 
     // name tags on claimed houses: only visible when you're near that house
     for (const spr of nameTags.children){

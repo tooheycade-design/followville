@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 19
+# Codex handoff -- current through Day 26
 
-Updated 2026-07-20 for Cade and Zach's next Claude/Codex session.
+Updated 2026-07-27 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,33 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 26 is population 464 with 524 total building records. One guarded +25
+  growth consumed addresses 296-320 (Juniper Court, Hemlock Court, then the
+  first two Ridgeview Drive lots). Seed 523 added permanent East Woods at
+  Blender `(170,180)`, using the regional elevation for its forest floor,
+  142 mixed trees, understory, terrain ribbon trail, rocks, fallen log, and
+  overlook. Seed 172 remains the non-claimable elementary school. New
+  non-claimable seed 524 is the construction vote site at grid `(-6,3)`, where
+  it suppresses the anonymous tower around website `(-83,-56)`. Central civic
+  junctions have finished mast/lens/pedestrian signals and outer approaches
+  have stop signs/bars. The exact
+  claim snapshot remained 34 claims / 33 accounts with identical SHA-256
+  `ec58555325ae4e0228a013be895cc5a0e212b92dc896430aaf761d67e006c294`.
+  The full fallback and 28 preload-all chunks validate exactly. Fourteen local
+  browser stories and two live smoke tests passed. The reviewed delivery is
+  one 18.000-second 1080x1920 golden-hour portrait MP4 moving from the full
+  city through all 25 home rises to the construction-site rise.
+
+- Day 25 is population 439 with 497 total building records. The guarded +39
+  growth consumed addresses 257-295 and added one permanent non-claimable
+  Followville Fishing Pond near Fire Station 1. Its terrain-following sidewalk
+  and dock are walkable, and the website offers a deliberately session-only
+  timing/bite/rapid-reel fishing loop with five rarity tiers; money, selling,
+  and inventory remain future work. Civic Square stays, its fountain now has
+  clear authored water, and the temporary Day 24 election/400/fireworks layer
+  is retired. The Day 25 delivery is one reviewed 18-second daytime portrait
+  drone film moving from the city through all 39 home rises to the pond.
 
 - Day 19 is population 331 with 334 total buildings. Zach's guarded Mac +10
   growth consumed plan IDs 178-187: seeds 325-331 completed Lantern Court and

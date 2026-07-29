@@ -100,11 +100,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
   const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(loadedChunks).toContain("creekside-bend");
+  expect(new Set(loadedChunks)).toEqual(new Set(townManifest.chunks.map(chunk => chunk.id)));
+  expect(townManifest.streaming.preload_all).toBe(true);
+  expect(townManifest.chunks.every(chunk => chunk.initial)).toBe(true);
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
   expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
     .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
-  expect(initialBytes).toBeLessThan(fullTownBytes * 0.4);
+  expect(initialBytes).toBeLessThan(fullTownBytes);
   await expect(page.locator("#chatPanel")).toBeHidden();
   await expect(page.locator("#chatPanel")).not.toHaveClass(/feed-visible/);
   await expect(page.locator("body")).toHaveAttribute("data-chat-feed", "idle");
@@ -137,6 +139,47 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("#pauseMenu")).toBeVisible();
   await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
+  expect(errors).toEqual([]);
+});
+
+test("the fishing pond offers an easy timing cast and rapid-click catch", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors=watchPageErrors(page);
+  await page.goto("/town.html?local=1&view=fishing#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
+  await expect(page.locator("#fishPrompt")).toBeVisible();
+  await page.locator("#fishPrompt").click();
+  await expect(page.locator("#fishingGame")).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","aim");
+
+  await page.locator("#fishAction").evaluate(async button=>{
+    button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:1}));
+    await new Promise((resolve,reject)=>{
+      const started=performance.now();
+      const releaseWhenReady=()=>{
+        if(document.body.dataset.fishingAim==="ready")return resolve();
+        if(performance.now()-started>8_000)return reject(new Error("casting target was never reached"));
+        requestAnimationFrame(releaseWhenReady);
+      };
+      releaseWhenReady();
+    });
+    button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
+  });
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","bite",{timeout:5_000});
+  // Dispatch the rapid burst in-page so a software WebGL runner cannot stretch
+  // twelve driver round-trips beyond the game's intentionally short reel timer.
+  await page.locator("#fishAction").evaluate(button=>{
+    for(let click=0;click<12;click++)button.click();
+  });
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");
+  await expect(page.locator("#caughtBadge")).toContainText(
+    /You caught a (Common|Uncommon|Rare|Legendary|Mythical) fish!/);
+  await page.getByRole("button",{name:"back to the pond"}).click();
+  await expect(page.locator("#fishingGame")).toBeHidden();
+  await expect(page.locator("#fishPrompt")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -300,19 +343,20 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(errors).toEqual([]);
 });
 
-test("visiting a house loads its district before teleporting", async ({ page }) => {
+test("visiting a house keeps every detailed district resident", async ({ page }) => {
   const errors = watchPageErrors(page);
   const willowHome = allHomes.find(building => building.district === "Willow Hills");
   expect(willowHome).toBeTruthy();
   await page.goto(`/house/${willowHome.seed}`);
   await waitForTown(page);
   await expect(page.locator("#townMapPanel")).toBeVisible();
-  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
   await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
   await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).not.toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/, { timeout:10_000 });
-  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads"))).toBeGreaterThan(0);
+  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
+  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0")).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -327,7 +371,8 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
   await expect(page.locator("body")).toHaveAttribute("data-claim-tag-roof-clearance", "1.25");
   await expect(page.locator("body")).toHaveAttribute("data-storybook-hitboxes", "pass");
   await expect(page.locator("body")).toHaveAttribute(
-    "data-landmark-hitboxes-mapped","burjhouse,cityhall,firestation,followmart");
+    "data-landmark-hitboxes-mapped",
+    /burjhouse,cityhall,(?:constructionzone,)?firestation,followmart(?:,movietheater)?/);
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   expect(errors).toEqual([]);
 });

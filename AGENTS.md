@@ -66,7 +66,111 @@ ownership, `world_state.json`, town GLBs, or `neighborhood.blend`. Read
 This block and the actual current scripts override conflicting historical text
 later in this file.
 
+## Visible-surface depth rule (mandatory)
+
+- Never place two independently rendered visible faces on the same plane.
+  This includes tops, bottoms, front/back faces, side faces, corner trim,
+  glazing, markings, paving, foundations, signs, and transparent layers.
+- A permanent fix must physically separate the geometry. Browser
+  `polygonOffset` may be a temporary compatibility fallback, but it is not a
+  substitute for corrected Blender/source geometry.
+- Facade details that visually sit on a supporting wall must use
+  `mounted_face_center` or an audited equivalent. Their visible face needs at
+  least `MIN_VISIBLE_SURFACE_CLEARANCE` (currently 5cm) from the support plane,
+  while the hidden side may remain embedded for a connected appearance.
+- Horizontal hardscape layers need distinct elevations and no overlapping
+  vertical side walls. Coplanar or near-coplanar surfaces must fail a
+  standalone geometry check before any video render, GLB export, or deploy.
+- Review every new repeated asset head-on and from both oblique side angles.
+  A front-only screenshot is not sufficient because shared corner/side planes
+  can remain hidden until the camera moves.
+
 ## Current canon (update this section each day!)
+- Day 27, population 500, 560 buildings (grown 2026-07-28 via Zach's Mac
+  Codex: +36 ordinary claimable homes). Planned addresses 321-356 complete
+  North Ridge: 14 homes on Ridgeview Drive, 16 on Bluebird Court, and six on
+  Summit Court. The canonical Day 26 construction vote site at seed 524 was
+  converted in place into the permanent non-claimable Followville Cinema; no
+  duplicate civic record or population was added. The three-lot Art Deco
+  cinema includes a glazed lobby, marquee, ticket windows, poster cases,
+  auditorium/flytower massing, roof equipment, rear exits/vents, and a
+  browser-matched walkable forecourt and collision layout. Its dedicated
+  streamed chunk replaces `construction-zone.glb`. Supabase updated seed 524
+  in place and inserted all 36 new homes. Full and streamed GLB validation
+  passed. The approved delivery is one 20.000-second, 1080x1920, 30fps,
+  600-frame daytime portrait MP4: a six-second city drone hook, the North
+  Ridge home-rise sequence, and a final downtown transfer into the cinema
+  rise. The authoritative iCloud Blend was rebuilt at the final frame and
+  synchronized to Git after the growth.
+- 2026-07-28 terrain readability pass (Zach via Mac Codex): the continuous
+  regional terrain now uses exported vertex color derived from actual
+  elevation, slope, and broad deterministic land variation. Sheltered
+  lowlands stay cooler meadow green, uplands warm toward olive, and genuinely
+  steep/high faces pick up muted dry-earth color, with smooth interpolation
+  and no contour bands or bitmap texture. Terrain geometry, walk heights,
+  roads, pads, Day 26 population 464, all 524 records, claims, ownership, and
+  `world_state.json` are unchanged. The full fallback and 28 streamed chunks
+  were regenerated together; manifest hashes, exported `COLOR_0`, walking and
+  free-drone reviews, 60 FPS local play, and all 14 browser stories passed.
+- Day 26, population 464, 524 building records (grown and corrected 2026-07-27
+  via Zach's Mac Codex: +25 ordinary claimable homes, East Woods, and a
+  non-claimable downtown construction vote site). Seeds
+  498-522 consumed planned addresses 296-320: Juniper Court finished, Hemlock
+  Court filled, and North Ridge opened on Ridgeview Drive. Seed 523 owns the
+  permanent terrain-conforming East Woods biome near Blender `(170,180)` /
+  website `(170,-180)`, with 142 mixed low-poly trees, understory, boulders,
+  trail, fallen log, overlook bench, and a naturally rising forest floor.
+  Seed 172 remains the original Day 12 `elementaryschool`. New seed 524 owns
+  the fenced full-block construction site at grid `(-6,3)`, replacing the
+  anonymous downtown tower near website `(-83,-56)` with foundations/rebar,
+  crane, excavator, cones, and `YOU DECIDE / WHAT RISES NEXT?` board. Central
+  civic crossroads use finished mast/backplate/lens/pedestrian signals;
+  peripheral approaches use octagonal stop signs and stop bars. Claims
+  remained byte-for-byte identical at 34 across 33 accounts. The full fallback
+  and all 28 detailed chunks passed exact validation; every chunk preloads and
+  remains resident so distant City Hall stays visible. All 14 browser stories
+  passed with the resident-chunk contract. The delivery is one reviewed 18.000-
+  second 1080x1920 golden-hour portrait drone film: full city, all 25 home
+  rises, then the construction-site rise and settled vote-site hold.
+- Day 25, population 439, 497 building records (grown 2026-07-26 via Zach's
+  Mac Codex: +39 ordinary claimable homes plus the non-population Followville
+  Fishing Pond). Seeds 458-496 consumed planned addresses 257-295, completing
+  Meadow Run's Sunset Court, continuing Pine Hollow Road, and opening Juniper
+  Court; seed 497 added the off-grid pond near Fire Station 1 around website
+  x116/z70. The pond has an organic shoreline, connected terrain-following
+  sidewalk, walkable fishing dock, reeds, lilies, rocks, ducks, rods, and a
+  simple session-only fishing game: forgiving timing cast, delayed bite,
+  rapid-click reel, and common/uncommon/rare/legendary/mythical catch reveal.
+  There is intentionally no money or persistent inventory yet. Civic Square is
+  preserved with a rebuilt visible-water fountain; the temporary Day 24
+  election/400/fireworks layer is retired. Exact full/streamed GLB validation,
+  browser fishing regression, and visual QA passed. The approved delivery is
+  one continuous 18-second daytime portrait drone film moving from the city to
+  all 39 home rises and then the pond.
+- 2026-07-26 final townhouse side-edge correction (Zach via Mac Codex): the
+  remaining faint vertical shimmer shown around website `(-9,48)` came from
+  urban-townhouse storefront corner piers and structural side walls ending on
+  the same X planes. Every left/right corner pier now owns its exposed edge
+  with 6cm physical clearance. `mounted_face_center`,
+  `visible_face_clearance`, a mandatory 5cm minimum, and the project-wide
+  visible-surface depth rule now cover front/back, side, corner, transparent,
+  and hardscape faces. The full town and all 23 chunks were regenerated;
+  exact GLB/state validation, geometry validation, and head-on/left/right
+  close browser review passed. Both Blend copies carry the corrected source
+  geometry. Day 24, population 400, 457 records, claims, ownership, state, and
+  Supabase are unchanged.
+- 2026-07-26 final downtown facade rebuild (Zach via Mac Codex): the complete
+  Day 24 town and all 23 streamed chunks were replayed after Cade's curb,
+  apron, storefront, wall-shader, camera, hitbox, and block-streaming fixes.
+  Downtown podium glazing and horizontal facade frames now use one shared
+  mounting rule: each remains anchored 1cm inside its supporting wall while
+  its visible face projects at least 5cm beyond it. A standalone regression
+  audit prevents exact shared planes from returning. Full/streamed GLB
+  validation, downtown validation, four focused Playwright walking/streaming
+  stories, and head-on/left/right browser facade reviews passed. The embedded
+  generator and both Blend copies were synchronized to the rebuilt geometry.
+  Day 24, population 400, all 457 building records, addresses, claims,
+  ownership, `world_state.json`, and Supabase are unchanged.
 - 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
   pale building apron no longer competes with the bottom of downtown facades;
   the browser pushes the current exported apron behind opaque walls, while the

@@ -3,6 +3,28 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Urban-townhouse side-edge depth correction (2026-07-26)
+- Projected every storefront corner pier 6cm beyond its structural side wall,
+  removing the last shared vertical X plane visible around website `(-9,48)`.
+- Added reusable axis-independent mounting and clearance helpers plus a
+  standalone 5cm minimum-clearance regression check.
+- Added a mandatory project rule covering front/back, side, corner,
+  transparent, marking, paving, and hardscape faces; physical separation is
+  required and side-angle review is part of completion.
+- Regenerated and validated the complete GLB and all 23 chunks, then reviewed
+  the affected townhouse head-on and from both oblique sides.
+
+## Final physical downtown facade separation (2026-07-26)
+- Rebuilt the complete Day 24 GLB and all 23 streamed chunks after the walking,
+  apron, storefront, wall-shader, camera, hitbox, and block-streaming fixes.
+- Replaced the tower podium's small ad hoc offset with a shared mounting rule:
+  glazing and horizontal frames retain a 1cm wall embed while their visible
+  faces project at least 5cm, eliminating near-coplanar depth competition.
+- Added a standalone geometry regression check for both facade sides and both
+  attachment depths.
+- Exact full/streamed GLB validation, downtown validation, four focused
+  Playwright stories, and head-on/left/right facade reviews passed.
+
 ## Downtown walking, hitboxes, and block streaming (2026-07-26)
 - Removed the lower-facade depth conflict by pushing the current exported
   building apron behind opaque walls and changing its source geometry to a

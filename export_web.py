@@ -49,8 +49,12 @@ def _chunk_id_for_building(building):
         "cityhallroad": "civic-center",
         "civicsquare": "civic-center",
         "elementaryschool": "elementary-school",
+        "constructionzone": "construction-zone",
+        "movietheater": "movie-theater",
         "firestation": "fire-station",
+        "fishingpond": "fishing-pond",
         "followmart": "follow-mart",
+        "forestreserve": "east-woods",
     }
     if building_type in civic_chunks:
         return civic_chunks[building_type]
@@ -73,7 +77,8 @@ def _building_xz(building):
         x = bx * PITCH + ix * LOT + LOT / 2
         y = by * PITCH + iy * LOT + LOT / 2
         size = 3 if building.get("type") in (
-            "elementaryschool", "followmart", "firestation"
+            "elementaryschool", "constructionzone", "movietheater",
+            "followmart", "firestation"
         ) else 1
         x += (size - 1) * LOT / 2
         y += (size - 1) * LOT / 2
@@ -325,9 +330,9 @@ def export_web_glb():
         grouped.setdefault(_chunk_id_for_building(building), []).append(building)
 
     chunk_records = []
-    # Creekside borders the player spawn and Kaleidoscope carries runtime
-    # geometry audits. Downtown and civic chunks now stream only when nearby.
-    initial_ids = {"creekside-bend", "kaleidoscope-crest"}
+    # Followville is small enough to keep every detailed district resident.
+    # This preserves the chunked deployment/validation boundary without
+    # replacing distant landmarks with silhouettes as the player walks.
     for chunk_id in sorted(grouped):
         chunk_buildings = grouped[chunk_id]
         chunk_objects = []
@@ -343,7 +348,11 @@ def export_web_glb():
                  "Civic Center" if chunk_id == "civic-center" else
                  "Follow Mart" if chunk_id == "follow-mart" else
                  "Fire Station" if chunk_id == "fire-station" else
+                 "Fishing Pond" if chunk_id == "fishing-pond" else
                  "Elementary School" if chunk_id == "elementary-school" else
+                 "Construction Vote Site" if chunk_id == "construction-zone" else
+                 "Followville Cinema" if chunk_id == "movie-theater" else
+                 "East Woods" if chunk_id == "east-woods" else
                  "Downtown block" if chunk_id.startswith("downtown-block-") else
                  (districts[0] if len(districts) == 1 else chunk_id.replace("-", " ").title()))
         building_ids = sorted(int(building["seed"]) for building in chunk_buildings)
@@ -352,7 +361,7 @@ def export_web_glb():
         chunk_records.append({
             "id": chunk_id,
             "label": label,
-            "initial": chunk_id in initial_ids,
+            "initial": True,
             "bounds": _chunk_bounds(chunk_buildings),
             "building_ids": building_ids,
             "house_ids": house_ids,
@@ -380,6 +389,7 @@ def export_web_glb():
         "base": _asset_record(base, base_path, compression="draco"),
         "chunks": chunk_records,
         "streaming": {
+            "preload_all": True,
             "detail_load_distance": 52,
             "detail_unload_distance": 84,
             "lod": "simple-houses",

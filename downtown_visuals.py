@@ -5,7 +5,12 @@ import random
 
 import bpy
 
-from downtown_visual_plan import TERRAIN_BOUNDS, terrain_height
+from downtown_visual_plan import (
+    TERRAIN_BOUNDS,
+    mounted_surface_center,
+    terrain_height,
+    terrain_surface_color,
+)
 
 
 DISTRICT_NAME = "Downtown Core"
@@ -81,6 +86,37 @@ def _batch_boxes(collection, name, boxes, material, role):
     return _tag(obj, role)
 
 
+def _batch_octagonal_signs(collection, name, signs, material, role):
+    """Batch vertical octagons; axis is 'x' for an X-facing sign, else Y."""
+    if not signs:
+        return None
+    vertices, faces = [], []
+    for x, y, z, radius, thickness, axis in signs:
+        start = len(vertices)
+        for depth in (-thickness*.5, thickness*.5):
+            for index in range(8):
+                angle = math.tau * index / 8 + math.pi / 8
+                horizontal = math.cos(angle) * radius
+                vertical = math.sin(angle) * radius
+                if axis == "x":
+                    vertices.append((x + depth, y + horizontal, z + vertical))
+                else:
+                    vertices.append((x + horizontal, y + depth, z + vertical))
+        faces.append(tuple(start + i for i in range(7, -1, -1)))
+        faces.append(tuple(start + 8 + i for i in range(8)))
+        for index in range(8):
+            nxt = (index + 1) % 8
+            faces.append((start + index, start + nxt,
+                          start + 8 + nxt, start + 8 + index))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    return _tag(obj, role)
+
+
 def _bevel(obj, width=.08, segments=1):
     """Small real edge catches: the fastest way to stop boxes reading as beta primitives."""
     if not obj:
@@ -94,8 +130,6 @@ def _bevel(obj, width=.08, segments=1):
 
 def _terrain_mesh(collection):
     grass = _material("FV_terrain_meadow", (.40,.62,.31), .98)
-    high = _material("FV_terrain_highland", (.25,.39,.20), 1.0)
-    rock = _material("FV_terrain_rock", (.38,.36,.32), 1.0)
     x0, x1, y0, y1 = TERRAIN_BOUNDS
     # Dense enough that browser-side analytic height sampling and the visible
     # mesh agree within a few centimetres on neighborhood grades.
@@ -114,20 +148,14 @@ def _terrain_mesh(collection):
             faces.append((a,b,c,d))
     mesh = bpy.data.meshes.new("regional_walkable_terrain_mesh")
     mesh.from_pydata(vertices, [], faces)
-    # A single continuous ground color avoids artificial contour bands. The
-    # elevation reads through real light, silhouette, and parallax instead.
+    # One continuous material avoids artificial contour bands. Vertex color
+    # now carries ecological elevation and slope cues in addition to subtle
+    # broad variation, so the real landform reads from walking and drone views.
     mesh.materials.append(grass)
-    # Vertex color gives the continuous terrain natural variation without a
-    # tiled bitmap or hard contour bands. It exports efficiently as COLOR_0.
+    # It exports efficiently as COLOR_0, with no bitmap or UV payload.
     color_layer=mesh.color_attributes.new(name="fv_ground_color",type="BYTE_COLOR",domain="POINT")
     for index,(x,y,z) in enumerate(vertices):
-        broad=.5+.5*math.sin(x*.017+math.sin(y*.011)*1.8)
-        fine=.5+.5*math.sin(x*.071+y*.053)
-        elevation=max(0,min(1,z/18.0))
-        dry=max(0,min(1,.22*broad+.12*fine+.28*elevation))
-        color_layer.data[index].color=(.26+.16*(1-dry),
-                                       .40+.20*(1-dry),
-                                       .20+.10*(1-dry),1.0)
+        color_layer.data[index].color=terrain_surface_color(x,y,z)
     shader=grass.node_tree.nodes.get("Principled BSDF")
     vertex_node=grass.node_tree.nodes.get("FV Ground Color")
     if not vertex_node:
@@ -135,6 +163,8 @@ def _terrain_mesh(collection):
         vertex_node.name="FV Ground Color"
     vertex_node.layer_name="fv_ground_color"
     grass.node_tree.links.new(vertex_node.outputs["Color"],shader.inputs["Base Color"])
+    for polygon in mesh.polygons:
+        polygon.use_smooth=True
     mesh.update()
     obj = bpy.data.objects.new("regional_walkable_terrain", mesh)
     collection.objects.link(obj)
@@ -199,6 +229,15 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     sign_mat=_material("FV_street_sign",(.055,.25,.17),.62,.18)
     shelter_glass=_material("FV_shelter_glass",(.08,.22,.29),.12,.10,.72,.34,.72,1.48)
     transit_mat=_material("FV_transit_marker",(.08,.28,.46),.56,.12)
+    signal_dark=_material("FV_traffic_signal_housing",(.055,.065,.06),.55,.28)
+    signal_mast=_material("FV_traffic_signal_mast",(.11,.13,.13),.48,.52)
+    signal_trim=_material("FV_traffic_signal_trim",(.20,.22,.19),.48,.42)
+    signal_red=_emissive_material("FV_traffic_signal_red",(.92,.055,.035),5.0)
+    signal_amber=_material("FV_traffic_signal_amber",(.88,.47,.04),.55,.08)
+    signal_green=_emissive_material("FV_traffic_signal_green",(.055,.72,.22),4.2)
+    pedestrian_glow=_emissive_material("FV_pedestrian_signal_glow",(.82,.91,.74),2.4)
+    stop_red=_material("FV_stop_sign_red",(.72,.025,.025),.68,.08)
+    stop_white=_material("FV_stop_marking",(.80,.79,.74),.92)
 
     sidewalks=[];furnishing=[];aprons=[];curbs=[];ramps=[];tactile=[]
     tree_wells=[];plazas=[];planters=[];benches=[];poles=[];arms=[];lamp_heads=[]
@@ -206,6 +245,10 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     paving_joints=[];courtyard_planters=[];courtyard_soil=[];courtyard_hedges=[]
     crosswalks=[];bollards=[];bike_racks=[];street_signs=[];street_sign_poles=[]
     shelter_frames=[];shelter_glazing=[];shelter_roofs=[];shelter_seats=[];transit_markers=[]
+    signal_bases=[];signal_poles=[];signal_arms=[];signal_head_trim=[];signal_heads=[]
+    signal_visors=[];pedestrian_heads=[];pedestrian_lenses=[];signal_red_lenses=[]
+    signal_amber_lenses=[];signal_green_lenses=[]
+    stop_poles=[];stop_signs=[];stop_bars=[]
     bus_stop_blocks={(-1,0),(0,-1)}
     walk=3.40; furniture_width=1.12; apron_width=.62; curb_width=.28
     apron_gap=.30
@@ -320,6 +363,64 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
                 transit_markers.extend(((stop_x+2.00,stop_y,.30,.10,.10,2.80),
                                         (stop_x+2.00,stop_y,2.42,.42,.12,.52)))
 
+    # MUTCD-informed hierarchy: signals are limited to the central civic
+    # crossroads; edge approaches use stop control and a clear stop bar.
+    # This prevents the toy-like result of signalizing every quiet junction.
+    signal_intersections = {
+        (0.0, 0.0), (-pitch, 0.0), (0.0, -pitch), (-pitch, -pitch)
+    }
+    for ix, iy in signal_intersections:
+        if not (min_bx*pitch <= ix <= (max_bx+1)*pitch
+                and min_by*pitch <= iy <= (max_by+1)*pitch):
+            continue
+        for sx, sy, dx, dy in ((-4.4, -4.4, 1, 0), (4.4, 4.4, -1, 0),
+                               (-4.4, 4.4, 0, -1), (4.4, -4.4, 0, 1)):
+            px, py = ix + sx, iy + sy
+            signal_bases.extend(((px, py, .18, .58, .58, .22),
+                                 (px, py, .40, .42, .42, .18)))
+            signal_poles.append((px, py, .58, .24, .24, 5.05))
+            signal_arms.append((px+dx*2.24, py+dy*2.24, 5.43,
+                                4.70 if dx else .24, 4.70 if dy else .24, .24))
+            hx, hy = px+dx*4.34, py+dy*4.34
+            # A warm metal backplate, deep dark housing and projecting hoods
+            # give the signal a deliberate civic silhouette from eye level.
+            signal_head_trim.append((hx, hy, 3.78, .82 if dx else .48,
+                                     .48 if dx else .82, 1.94))
+            signal_heads.append((hx-dx*.035, hy-dy*.035, 3.84,
+                                 .68 if dx else .40, .40 if dx else .68, 1.82))
+            pedestrian_heads.append((px-dx*.15, py-dy*.15, 2.46,
+                                     .16 if dx else .58, .58 if dx else .16, .72))
+            pedestrian_lenses.append((px-dx*.245, py-dy*.245, 2.82, .19, .055,
+                                      "x" if dx else "y"))
+            for target, z in ((signal_red_lenses, 5.30),
+                              (signal_amber_lenses, 4.79),
+                              (signal_green_lenses, 4.28)):
+                target.append((hx-dx*.255, hy-dy*.255, z, .205, .065,
+                               "x" if dx else "y"))
+                # The low-poly town is explored from every direction, so the
+                # paired face prevents a dead blank slab when a walker comes
+                # through the intersection from the opposite sidewalk.
+                target.append((hx+dx*.255, hy+dy*.255, z, .205, .065,
+                               "x" if dx else "y"))
+
+    edge_approaches = (
+        (min_bx*pitch, 0.0, "x", 1, 0),
+        ((max_bx+1)*pitch, 0.0, "x", -1, 0),
+        (min_bx*pitch, -pitch, "x", 1, 0),
+        ((max_bx+1)*pitch, -pitch, "x", -1, 0),
+        (0.0, min_by*pitch, "y", 0, 1),
+        (0.0, (max_by+1)*pitch, "y", 0, -1),
+        (-pitch, min_by*pitch, "y", 0, 1),
+        (-pitch, (max_by+1)*pitch, "y", 0, -1),
+    )
+    for ix, iy, axis, dx, dy in edge_approaches:
+        px, py = ix-dy*4.45-dx*4.45, iy-dx*4.45-dy*4.45
+        stop_poles.append((px, py, .18, .12, .12, 2.7))
+        stop_signs.append((px, py, 2.55, .62, .11, axis))
+        # A 3.6m bar spans the controlled approach just before the crosswalk.
+        stop_bars.append((ix-dx*4.9, iy-dy*4.9, .176,
+                          .22 if dx else 3.6, 3.6 if dx else .22, .025))
+
     px,py=-pitch+block_size/2,-pitch+block_size/2
     plazas.append((px,py,.18,11.5,11.5,.18))
     for ox,oy in ((-4.5,-4.5),(4.5,-4.5),(-4.5,4.5),(4.5,4.5)):
@@ -355,13 +456,34 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         ("city_shelter_roofs",shelter_roofs,metal_mat,"transit-shelter"),
         ("city_shelter_seats",shelter_seats,wood_mat,"transit-shelter"),
         ("city_transit_markers",transit_markers,transit_mat,"transit-marker"),
+        ("city_signal_bases",signal_bases,signal_mast,"traffic-signal"),
+        ("city_signal_poles",signal_poles,signal_mast,"traffic-signal"),
+        ("city_signal_arms",signal_arms,signal_mast,"traffic-signal"),
+        ("city_signal_head_trim",signal_head_trim,signal_trim,"traffic-signal"),
+        ("city_signal_heads",signal_heads,signal_dark,"traffic-signal"),
+        ("city_signal_visors",signal_visors,signal_dark,"traffic-signal"),
+        ("city_pedestrian_signal_heads",pedestrian_heads,signal_dark,"traffic-signal"),
+        ("city_stop_poles",stop_poles,metal_mat,"stop-control"),
+        ("city_stop_bars",stop_bars,stop_white,"stop-control"),
         ("civic_square",plazas,plaza_mat,"plaza"),("city_planters",planters,planter_mat,"planter"),
         ("city_benches",benches,wood_mat,"bench"),("city_litter_bins",bins,bin_mat,"litter-bin"),
         ("city_hydrants",hydrants,hydrant_mat,"hydrant"),("city_lamp_posts",poles,metal_mat,"streetlight"),
         ("city_lamp_arms",arms,metal_mat,"streetlight"),("city_lamp_glow",lamp_heads,lamp_mat,"streetlight")):
         obj=_batch_boxes(collection,name,boxes,mat,role)
+        if role == "traffic-signal":
+            _bevel(obj,.045,2)
         if role in {"curb","planter","bench","litter-bin","hydrant"}:
             _bevel(obj,.055,1)
+    _batch_octagonal_signs(collection, "city_stop_signs", stop_signs,
+                           stop_red, "stop-control")
+    _batch_octagonal_signs(collection, "city_signal_red", signal_red_lenses,
+                           signal_red, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_signal_amber", signal_amber_lenses,
+                           signal_amber, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_signal_green", signal_green_lenses,
+                           signal_green, "traffic-signal")
+    _batch_octagonal_signs(collection, "city_pedestrian_signal_glow",
+                           pedestrian_lenses, pedestrian_glow, "traffic-signal")
 
 
 def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
@@ -402,18 +524,23 @@ def _downtown_massing(collection, occupied, extent, block_n, lot, pitch):
             masses[facade].append((cx,cy,setback_z,upper_width-.48,upper_depth-.48,height-setback_z))
             # Transparent podium glazing and dark transoms make the bottom of
             # each tower read as occupied lobby/retail instead of a blank box.
-            # Offset glazing and transoms 12 mm outside the podium shell.
-            # Their former outer faces shared the shell plane exactly.
-            facade_gap=.012
+            podium_front=cy-(depth+1.8)/2
+            podium_back=cy+(depth+1.8)/2
+            glass_depth=.09
+            frame_depth=.12
+            glass_front_y=mounted_surface_center(podium_front,-1,glass_depth)
+            glass_back_y=mounted_surface_center(podium_back,1,glass_depth)
+            frame_front_y=mounted_surface_center(podium_front,-1,frame_depth)
+            frame_back_y=mounted_surface_center(podium_back,1,frame_depth)
+            # These panes and transoms formerly ended exactly on the podium
+            # wall plane. At walking distance the depth buffer alternated
+            # between both faces, producing the same shimmer as a coplanar
+            # parking lot. Keep 1 cm embedded and project the visible faces.
             for lane in (-.29,0,.29):
-                masses[podium_glass].extend(
-                    ((cx+lane*width,cy-(depth+1.8)/2+.045-facade_gap,
-                      .68,width*.20,.09,2.55),
-                     (cx+lane*width,cy+(depth+1.8)/2-.045+facade_gap,
-                      .68,width*.20,.09,2.55)))
-            masses[frame].extend(
-                ((cx,cy-(depth+1.8)/2+.06-facade_gap,3.25,width+1.25,.12,.18),
-                 (cx,cy+(depth+1.8)/2-.06+facade_gap,3.25,width+1.25,.12,.18)))
+                masses[podium_glass].extend(((cx+lane*width,glass_front_y,.68,width*.20,glass_depth,2.55),
+                                             (cx+lane*width,glass_back_y,.68,width*.20,glass_depth,2.55)))
+            masses[frame].extend(((cx,frame_front_y,3.25,width+1.25,frame_depth,.18),
+                                  (cx,frame_back_y,3.25,width+1.25,frame_depth,.18)))
             # Strong masonry piers give the glass tower believable structure.
             pier=.42
             for sx in (-1,1):

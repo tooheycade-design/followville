@@ -3,7 +3,17 @@
 import json
 import math
 
-from downtown_visual_plan import audit_terrain, sample_road_points, terrain_height
+from downtown_visual_plan import (
+    FACADE_ATTACHMENT_EMBED,
+    MIN_VISIBLE_SURFACE_CLEARANCE,
+    audit_terrain,
+    mounted_face_center,
+    mounted_surface_center,
+    sample_road_points,
+    terrain_height,
+    terrain_surface_color,
+    visible_face_clearance,
+)
 from neighborhood_plan import PLAN, validate_plan
 from world_layout import DISTRICT_CONNECTORS, transform_building_point, transform_point
 
@@ -35,6 +45,33 @@ def main():
                       for t in range(5))
     heights = [terrain_height(*point) for _label, point in points]
     errors = validate_plan()+audit_terrain(PLAN)
+    # Ground-floor tower glazing and transoms must project beyond their podium
+    # wall while retaining only a narrow structural embed. Exact shared planes
+    # cause distance-dependent facade shimmer in the browser.
+    for label, depth in (("podium glazing", .09), ("podium frame", .12)):
+        for outward in (-1, 1):
+            center=mounted_surface_center(0.0,outward,depth)
+            visible_clearance=visible_face_clearance(
+                0.0,outward,center,depth)
+            inner_embed=-(center-outward*depth/2)*outward
+            if visible_clearance < MIN_VISIBLE_SURFACE_CLEARANCE:
+                errors.append("%s projects only %.3f m from wall" %
+                              (label,visible_clearance))
+            if abs(inner_embed-FACADE_ATTACHMENT_EMBED) > 1e-9:
+                errors.append("%s embed %.3f differs from %.3f" %
+                              (label,inner_embed,FACADE_ATTACHMENT_EMBED))
+    # Urban-townhouse corner piers must own the exposed side edge instead of
+    # ending on the same X plane as the structural ground-floor side walls.
+    corner_pier_width=.46
+    corner_clearance=.06
+    for outward in (-1,1):
+        center=mounted_face_center(
+            0.0,outward,corner_pier_width,corner_clearance)
+        clearance=visible_face_clearance(
+            0.0,outward,center,corner_pier_width)
+        if clearance < MIN_VISIBLE_SURFACE_CLEARANCE:
+            errors.append("storefront corner pier projects only %.3f m" %
+                          clearance)
     # The full rectangular downtown datum must stay clear of meadow terrain.
     # This includes outer grid corners and the elementary-school campus; the
     # old circular mask clipped these diagonals and buried paved surfaces.
@@ -61,6 +98,25 @@ def main():
             errors.append("shifted future house %d overlaps downtown"%house["plan_id"])
     if not all(0 <= height < 40 for height in heights):
         errors.append("terrain produced an invalid current/future height")
+    # The palette must visibly separate lowlands, high ground, and steep faces
+    # while staying continuous and within a natural, non-neon range.
+    terrain_samples = [
+        terrain_surface_color(x, y)
+        for y in range(-300, 501, 20)
+        for x in range(-500, 501, 20)
+    ]
+    channel_ranges = [
+        max(color[channel] for color in terrain_samples)
+        - min(color[channel] for color in terrain_samples)
+        for channel in range(3)
+    ]
+    if channel_ranges[0] < .07 or channel_ranges[1] < .10:
+        errors.append("terrain palette lacks elevation/slope separation")
+    if any(not (0.18 <= color[0] <= .62
+                and .24 <= color[1] <= .70
+                and .15 <= color[2] <= .46)
+           for color in terrain_samples):
+        errors.append("terrain palette escaped natural color bounds")
     if errors:
         raise SystemExit("\n".join(errors))
     print("DOWNTOWN_VISUAL_CHECK_OK day=%d population=%d buildings=%d "

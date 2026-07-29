@@ -30,6 +30,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in global
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+from downtown_visual_plan import mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           transform_building_point, transform_point)
@@ -127,8 +128,15 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day22reveal  14-second skyline, ten-home, and fire-station reveal
 #   --cam day23reveal  16-second skyline, homes, civic road, and City Hall reveal
 #   --cam day24reveal  20-second dusk milestone flight through homes and Civic Square
+#   --cam day25reveal  18-second skyline-to-homes-to-fishing-pond flight
+#   --cam day26reveal  18-second city-to-homes-to-construction-zone flight
+#   --cam day27reveal  20-second city-to-36-homes-to-movie-theater flight
 #   --cityhall       add the permanent City Hall and its terrain-following road
 #   --civicsquare    add the permanent terrain-following square beside City Hall
+#   --fishingpond    add the permanent off-grid fishing pond beside Fire Station 1
+#   --constructionzone add the cleared downtown vote site at block (-2, 1)
+#   --movietheater  replace the canonical vote site with Followville Cinema
+#   --eastwoods      add the permanent raised East Woods reserve
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -141,10 +149,14 @@ def _cli():
         return {}
     args = sys.argv[sys.argv.index("--") + 1:]
     flags = {"--render": "render", "--still": "still", "--replay": "replay",
-             "--hero": "hero", "--celebrate": "celebrate", "--pond": "pond",
+             "--hero": "hero", "--pond": "pond",
              "--parkring": "parkring", "--scatter": "scatter",
              "--godzilla": "godzilla", "--forest": "forest",
-             "--cityhall": "cityhall", "--civicsquare": "civicsquare"}
+             "--cityhall": "cityhall", "--civicsquare": "civicsquare",
+             "--fishingpond": "fishingpond",
+             "--constructionzone": "constructionzone",
+             "--movietheater": "movietheater",
+             "--eastwoods": "eastwoods"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -178,6 +190,10 @@ LOT      = 13                    # expanded downtown lot spacing (m)
 BLOCK_N  = 3                     # lots per block side
 ROAD     = 6                     # road width (m)
 PITCH    = BLOCK_N * LOT + ROAD  # block repeat distance
+
+EAST_WOODS_X = 170.0
+EAST_WOODS_Y = 180.0
+EAST_WOODS_RADIUS = 58.0
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -486,6 +502,376 @@ def build_tree(col, rng, scale=1.0, px=0.0, py=0.0):
         blob = add_ngon_cone(col, "blob", 1.9 * s, 0.7 * s, 2.8 * s, 7, px, py, 1.8 * s, green)
         add_ngon_cone(col, "blobtop", 0.7 * s, 0, 0.9 * s, 7, px, py, 4.6 * s, green)
 
+
+def _forest_floor_mesh(col, material):
+    """Terrain-conforming irregular forest floor centered on East Woods."""
+    rings, segments = 5, 32
+    vertices = [(0.0, 0.0,
+                 terrain_height(EAST_WOODS_X, EAST_WOODS_Y)
+                 - terrain_height(EAST_WOODS_X, EAST_WOODS_Y) + .055)]
+    for ring in range(1, rings + 1):
+        fraction = ring / rings
+        for segment in range(segments):
+            a = segment / segments * math.tau
+            wobble = 1.0 + .08 * math.sin(a * 3 + .8) + .05 * math.sin(a * 7)
+            radius = EAST_WOODS_RADIUS * fraction * wobble
+            lx = math.cos(a) * radius
+            ly = math.sin(a) * radius * .82
+            lz = (terrain_height(EAST_WOODS_X + lx, EAST_WOODS_Y + ly)
+                  - terrain_height(EAST_WOODS_X, EAST_WOODS_Y) + .055)
+            vertices.append((lx, ly, lz))
+    faces = []
+    first = 1
+    for segment in range(segments):
+        faces.append((0, first + segment, first + (segment + 1) % segments))
+    for ring in range(1, rings):
+        inner = 1 + (ring - 1) * segments
+        outer = inner + segments
+        for segment in range(segments):
+            nxt = (segment + 1) % segments
+            faces.append((inner + segment, outer + segment,
+                          outer + nxt, inner + nxt))
+    mesh = bpy.data.meshes.new("east_woods_floor_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new("east_woods_floor", mesh)
+    col.objects.link(obj)
+
+
+def build_east_woods(col, seed):
+    """Dense mixed low-poly woodland with a trail and overlook clearing."""
+    rng = random.Random(seed)
+    m = std_mats()
+    forest_floor = mat("NB_east_woods_floor", (.19, .31, .16), .98)
+    trail = mat("NB_east_woods_trail", (.38, .29, .19), .98)
+    fern = mat("NB_east_woods_fern", (.20, .42, .18), 1.0)
+    bark = mat("NB_east_woods_bark", (.25, .15, .085), 1.0)
+    stone = mat("NB_east_woods_stone", (.34, .36, .34), .96)
+    _forest_floor_mesh(col, forest_floor)
+    base_height = terrain_height(EAST_WOODS_X, EAST_WOODS_Y)
+
+    # A narrow curved trail gives the biome a legible human-scale entrance.
+    trail_points = [(-52, -27), (-42, -23), (-31, -17), (-20, -12),
+                    (-9, -6), (2, 1), (13, 8), (24, 14), (35, 19),
+                    (46, 22), (52, 20)]
+    for index, ((ax, ay), (bx, by)) in enumerate(zip(trail_points, trail_points[1:])):
+        az = terrain_height(EAST_WOODS_X + ax, EAST_WOODS_Y + ay) - base_height + .08
+        bz = terrain_height(EAST_WOODS_X + bx, EAST_WOODS_Y + by) - base_height + .08
+        length = math.hypot(bx - ax, by - ay)
+        ribbon = add_box(col, "east_woods_trail_%02d" % index,
+                         length + .18, 2.35, .12,
+                         (ax + bx) / 2, (ay + by) / 2,
+                         (az + bz) / 2 - .035, trail)
+        ribbon.rotation_euler.z = math.atan2(by - ay, bx - ax)
+
+    tree_points = []
+    attempts = 0
+    while len(tree_points) < 142 and attempts < 6500:
+        attempts += 1
+        x = rng.uniform(-EAST_WOODS_RADIUS, EAST_WOODS_RADIUS)
+        y = rng.uniform(-EAST_WOODS_RADIUS * .82, EAST_WOODS_RADIUS * .82)
+        if (x / EAST_WOODS_RADIUS) ** 2 + (y / (EAST_WOODS_RADIUS * .82)) ** 2 > 1:
+            continue
+        # Preserve the trail and a small overlook clearing at its high end.
+        if min(math.hypot(x - px, y - py) for px, py in trail_points) < 3.4:
+            continue
+        if math.hypot(x - 35, y - 19) < 8.6:
+            continue
+        if any(math.hypot(x - px, y - py) < 2.4 for px, py in tree_points):
+            continue
+        tree_points.append((x, y))
+
+    for index, (x, y) in enumerate(tree_points):
+        z = terrain_height(EAST_WOODS_X + x, EAST_WOODS_Y + y) - base_height
+        scale = rng.uniform(.82, 1.42) * (1.12 if index % 9 == 0 else 1.0)
+        build_tree(col, rng, scale, x, y)
+        # Shift every object created at this tree's local x/y to the sampled terrain.
+        for obj in list(col.objects):
+            if obj.name.startswith(("trunk", "pine", "blob")) and abs(obj.location.x-x) < .01 and abs(obj.location.y-y) < .01:
+                obj.location.z += z
+
+    # Understory, rocks, a fallen log and a simple overlook bench.
+    for index in range(86):
+        a = rng.random() * math.tau
+        r = rng.uniform(8, EAST_WOODS_RADIUS - 3)
+        x, y = math.cos(a) * r, math.sin(a) * r * .82
+        if min(math.hypot(x-px, y-py) for px, py in trail_points) < 2.3:
+            continue
+        z = terrain_height(EAST_WOODS_X+x, EAST_WOODS_Y+y) - base_height + .05
+        add_ngon_cone(col, "east_woods_fern", rng.uniform(.28, .48), .06,
+                      rng.uniform(.35, .72), 7, x, y, z, fern,
+                      rot=rng.random()*math.tau)
+    for index, (x, y, radius) in enumerate(((-38, 15, 1.2), (43, -15, .9),
+                                            (11, -30, 1.35), (39, 29, .75),
+                                            (-8, 34, 1.05), (-45, -20, .82))):
+        z = terrain_height(EAST_WOODS_X+x, EAST_WOODS_Y+y)-base_height+.03
+        add_ngon_cone(col, "east_woods_boulder", radius, radius*.72,
+                      radius*.82, 7, x, y, z, stone, rot=index*.41)
+    log_z = terrain_height(EAST_WOODS_X-4, EAST_WOODS_Y+29)-base_height+.25
+    log = add_ngon_cone(col, "east_woods_fallen_log", .42, .38, 8.5, 9,
+                        -4, 29, log_z, bark)
+    log.rotation_euler = (0, math.pi/2, math.radians(18))
+    bench_z = terrain_height(EAST_WOODS_X+35, EAST_WOODS_Y+19)-base_height+.1
+    add_box(col, "east_woods_bench_seat", 3.3, .62, .22, 35, 19, bench_z+.55, bark)
+    add_box(col, "east_woods_bench_back", 3.3, .18, 1.05, 35, 19.3, bench_z+.72, bark)
+    for x in (33.7, 36.3):
+        add_box(col, "east_woods_bench_leg", .18, .48, .58, x, 19, bench_z, m["metal"])
+    _merge_asset_meshes(col, "east_woods_batched")
+
+
+def build_construction_zone(col, seed):
+    """Full-block public vote site for a cleared downtown redevelopment block."""
+    rng = random.Random(seed)
+    m = std_mats()
+    gravel = mat("NB_construction_gravel", (.34, .32, .28), .99)
+    soil = mat("NB_construction_soil", (.30, .18, .09), 1.0)
+    concrete = mat("NB_construction_concrete", (.52, .51, .47), .96)
+    orange = mat("NB_construction_orange", (.94, .34, .045), .72)
+    yellow = mat("NB_construction_yellow", (.95, .61, .06), .7)
+    dark = mat("NB_construction_dark", (.09, .10, .10), .64, .25)
+    safety = mat("NB_construction_safety", (1.0, .72, .08), .68)
+    add_box(col, "construction_pad", 33.8, 33.8, .22, 0, 0, 0, gravel)
+    add_box(col, "construction_excavation", 17.0, 13.0, .42, 2.0, 3.5, .22, soil)
+    # Foundation forms and rebar establish that this is an active build site.
+    for x in (-5.8, 9.8):
+        add_box(col, "construction_footing", .72, 13.4, .55, x, 3.5, .42, concrete)
+    for y in (-2.7, 9.7):
+        add_box(col, "construction_footing", 16.2, .72, .55, 2.0, y, .42, concrete)
+    for x in (-5.2, -1.6, 2.0, 5.6, 9.2):
+        for y in (-2.1, 9.1):
+            add_ngon_cone(col, "construction_rebar", .055, .055, 2.1, 8,
+                          x, y, .95, m["metal"])
+    # Tower crane.
+    add_box(col, "construction_crane_base", 3.2, 3.2, .55, -10.5, 8.5, .25, concrete)
+    for z in range(1, 17, 2):
+        add_box(col, "construction_crane_mast", 1.05, 1.05, 1.78,
+                -10.5, 8.5, z, yellow)
+    add_box(col, "construction_crane_jib", 22.0, .55, .58, -1.0, 8.5, 17.2, yellow)
+    add_box(col, "construction_crane_counter", 3.0, 1.5, 1.2, -11.8, 8.5, 16.7, dark)
+    add_box(col, "construction_crane_cable", .07, .07, 8.0, 5.8, 8.5, 9.2, dark)
+    add_box(col, "construction_crane_hook", .32, .18, .65, 5.8, 8.5, 8.6, orange)
+    # Excavator with articulated boom and bucket.
+    add_box(col, "construction_excavator_tracks", 5.8, 3.4, .72, 8.7, -7.4, .25, dark)
+    add_box(col, "construction_excavator_body", 4.2, 3.0, 1.8, 8.2, -7.4, .92, yellow)
+    add_box(col, "construction_excavator_cab", 2.0, 2.55, 2.35, 7.2, -7.4, 2.45, m["windark"])
+    add_beam_between(col, "construction_excavator_boom",
+                     (9.5, -7.4, 3.6), (13.4, -7.4, 6.8), .62, yellow)
+    add_beam_between(col, "construction_excavator_stick",
+                     (13.4, -7.4, 6.8), (15.2, -7.4, 2.1), .52, yellow)
+    add_ngon_cone(col, "construction_excavator_bucket", 1.15, .55, 1.3, 6,
+                  15.2, -7.4, .85, dark, rot=math.pi/6)
+    # Perimeter fence, orange barriers and cones leave a clear south gate.
+    for x in range(-16, 17, 4):
+        if abs(x) > 4:
+            add_box(col, "construction_fence_post", .13, .13, 2.0, x, -16.2, .22, m["metal"])
+        add_box(col, "construction_fence_post", .13, .13, 2.0, x, 16.2, .22, m["metal"])
+    for y in range(-16, 17, 4):
+        for x in (-16.2, 16.2):
+            add_box(col, "construction_fence_post", .13, .13, 2.0, x, y, .22, m["metal"])
+    for y in (-16.2, 16.2):
+        for x in range(-14, 15, 4):
+            if y > 0 or abs(x) > 4:
+                add_box(col, "construction_fence_panel", 3.75, .08, 1.35, x, y, .48, orange)
+    for x in (-16.2, 16.2):
+        for y in range(-14, 15, 4):
+            add_box(col, "construction_fence_panel", .08, 3.75, 1.35, x, y, .48, orange)
+    for x in (-5.2, -2.6, 2.6, 5.2):
+        add_ngon_cone(col, "construction_cone", .34, .06, .82, 8,
+                      x, -15.0, .22, safety)
+    # Front-facing vote board is the human-readable purpose of the site.
+    add_box(col, "construction_vote_board", 10.5, .48, 4.2, 0, -12.3, .38, dark)
+    add_box(col, "construction_vote_face", 9.7, .12, 3.45, 0, -12.58, .72, orange)
+    add_text(col, "construction_vote_title", "YOU DECIDE", .82, .045,
+             0, -12.72, 3.18, safety)
+    add_text(col, "construction_vote_subtitle", "WHAT RISES NEXT?", .42, .035,
+             0, -12.72, 2.0, safety)
+    _merge_asset_meshes(col, "construction_zone_batched")
+
+
+def build_movie_theater(col, seed):
+    """Followville Cinema: a full-block, front-readable Art Deco movie palace.
+
+    The building faces local -Y.  Its public forecourt shares one 0.22m top
+    plane so the browser can treat the whole civic pad as a walk surface.
+    """
+    rng = random.Random(seed)
+    burgundy = mat("NB_cinema_burgundy", (.31, .045, .075), .72)
+    burgundy_hi = mat("NB_cinema_burgundy_hi", (.50, .075, .105), .62)
+    midnight = mat("NB_cinema_midnight", (.035, .055, .095), .62, .08)
+    charcoal = mat("NB_cinema_charcoal", (.075, .075, .085), .76)
+    cream = mat("NB_cinema_cream", (.88, .80, .66), .82)
+    stone = mat("NB_cinema_stone", (.54, .51, .47), .94)
+    brass = mat("NB_cinema_brass", (.72, .47, .13), .34, .68)
+    gold = mat("NB_cinema_gold", (1.0, .65, .13), .32, .28)
+    glass = mat("NB_cinema_glass", (.10, .30, .44), .12, .12, .88, .08, .66)
+    glass_dark = mat("NB_cinema_glass_dark", (.025, .095, .15), .10, .18, .94, .12, .72)
+    warm = mat("NB_cinema_warm_light", (1.0, .72, .30), .22)
+    red = mat("NB_cinema_velvet", (.48, .025, .045), .78)
+    poster_mats = [
+        mat("NB_cinema_poster_teal", (.06, .47, .54), .56),
+        mat("NB_cinema_poster_coral", (.82, .20, .14), .58),
+        mat("NB_cinema_poster_violet", (.31, .12, .55), .54),
+        mat("NB_cinema_poster_gold", (.93, .55, .08), .58),
+    ]
+
+    WALK_TOP = .22
+    # Paved forecourt and side service apron; all top faces are separated.
+    add_box(col, "cinema_block_pad", 33.8, 33.8, WALK_TOP, 0, 0, 0, stone)
+    add_box(col, "cinema_forecourt", 28.8, 8.2, .035, 0, -12.4,
+            WALK_TOP, cream)
+    for x in (-10.8, -7.2, -3.6, 0, 3.6, 7.2, 10.8):
+        add_box(col, "cinema_forecourt_inlay", .10, 7.6, .018, x, -12.4,
+                WALK_TOP + .035, brass)
+    add_box(col, "cinema_entry_carpet", 6.8, 6.1, .025, 0, -11.5,
+            WALK_TOP + .055, red)
+
+    # Auditorium masses step upward toward the rear for a convincing drone
+    # silhouette.  The central lobby tower gives the front a strong landmark.
+    add_box(col, "cinema_auditorium_left", 11.8, 19.0, 9.8, -8.0, 3.6,
+            WALK_TOP, burgundy)
+    add_box(col, "cinema_auditorium_right", 11.8, 19.0, 9.8, 8.0, 3.6,
+            WALK_TOP, burgundy)
+    add_box(col, "cinema_rear_flytower", 25.0, 6.8, 13.5, 0, 9.8,
+            WALK_TOP, midnight)
+    # Rear articulation matters in downtown drone passes: relief frames,
+    # service doors and vents prevent the flytower reading as an empty cube.
+    for x in (-9.8, -6.5, -3.25, 0, 3.25, 6.5, 9.8):
+        add_box(col, "cinema_rear_rib", .34, .38, 11.6, x, 13.34,
+                WALK_TOP + .8, brass if x in (-9.8, 9.8) else stone)
+    for x in (-6.2, 6.2):
+        add_box(col, "cinema_rear_exit", 2.25, .30, 3.2, x, 13.42,
+                WALK_TOP + .12, burgundy_hi)
+        add_box(col, "cinema_rear_exit_bar", 1.5, .12, .13, x, 13.61,
+                WALK_TOP + 1.55, brass)
+    for x in (-3.0, 0, 3.0):
+        add_box(col, "cinema_rear_vent", 1.9, .24, 1.15, x, 13.48,
+                WALK_TOP + 7.8, charcoal)
+        for z in (8.05, 8.35, 8.65):
+            add_box(col, "cinema_rear_vent_louver", 1.55, .10, .08, x, 13.63,
+                    WALK_TOP + z, stone)
+    add_box(col, "cinema_lobby_core", 11.6, 12.8, 13.9, 0, -1.0,
+            WALK_TOP, cream)
+    add_box(col, "cinema_lobby_crown", 9.2, 10.8, 3.0, 0, .1,
+            WALK_TOP + 13.9, burgundy_hi)
+    add_box(col, "cinema_crown_cap", 9.9, 11.4, .42, 0, .1,
+            WALK_TOP + 16.9, brass)
+
+    # Art Deco stepping, pilasters, and vertical fins hold up at street and
+    # aerial distance without becoming surface noise.
+    for x in (-13.1, -10.7, -5.8, 5.8, 10.7, 13.1):
+        height = 10.8 if abs(x) < 7 else 9.2
+        add_box(col, "cinema_front_pilaster", .55, .70, height, x, -6.25,
+                WALK_TOP, cream)
+        add_box(col, "cinema_pilaster_cap", .85, .92, .34, x, -6.37,
+                WALK_TOP + height, brass)
+    for x, height in ((-3.8, 14.8), (-2.45, 16.0), (0, 17.8),
+                      (2.45, 16.0), (3.8, 14.8)):
+        add_box(col, "cinema_deco_fin", .48, .62, height, x, -7.18,
+                WALK_TOP + 1.0, brass)
+
+    # Two-storey glazed lobby with visible warm interior bands.
+    add_box(col, "cinema_lobby_glass", 10.4, .28, 10.1, 0, -7.48,
+            WALK_TOP + 1.0, glass)
+    add_box(col, "cinema_lobby_glow", 9.8, .18, 3.8, 0, -7.22,
+            WALK_TOP + 1.2, warm)
+    for x in (-5.0, -2.5, 0, 2.5, 5.0):
+        add_box(col, "cinema_lobby_mullion", .16, .36, 10.2, x, -7.58,
+                WALK_TOP + .95, brass)
+    for z in (4.6, 8.0, 11.2):
+        add_box(col, "cinema_lobby_transom", 10.6, .38, .17, 0, -7.60,
+                WALK_TOP + z, brass)
+    # Four real entrance doors and handles.
+    for x in (-3.75, -1.25, 1.25, 3.75):
+        add_box(col, "cinema_entry_door", 2.05, .22, 3.3, x, -7.72,
+                WALK_TOP + .10, glass_dark)
+        add_box(col, "cinema_door_handle", .07, .16, .75,
+                x + (-.42 if x < 0 else .42), -7.88, WALK_TOP + 1.35, brass)
+
+    # Deep cantilevered marquee is the visual anchor of the final shot.
+    add_box(col, "cinema_marquee", 24.0, 5.3, .66, 0, -9.7,
+            WALK_TOP + 6.1, midnight)
+    add_box(col, "cinema_marquee_face", 23.6, .42, 2.25, 0, -12.20,
+            WALK_TOP + 5.25, burgundy_hi)
+    add_box(col, "cinema_marquee_top_trim", 24.4, .48, .22, 0, -12.28,
+            WALK_TOP + 7.35, brass)
+    add_box(col, "cinema_marquee_bottom_trim", 24.4, .48, .22, 0, -12.28,
+            WALK_TOP + 5.10, brass)
+    for x in [(-10.7 + i * 1.07) for i in range(21)]:
+        add_ngon_cone(col, "cinema_marquee_bulb", .10, .10, .10, 10,
+                      x, -12.55, WALK_TOP + 5.36, warm)
+    _add_followmart_text(col, "NOW SHOWING", 1.18, 0, -12.56,
+                         WALK_TOP + 6.2, cream, extrude=.10, bevel=.014)
+
+    # Tower sign and medallion establish a unique civic identity.
+    add_box(col, "cinema_tower_sign", 8.6, .52, 3.8, 0, -7.63,
+            WALK_TOP + 11.15, midnight)
+    _add_followmart_text(col, "FOLLOWVILLE", 1.0, 0, -7.98,
+                         WALK_TOP + 13.45, gold, extrude=.12, bevel=.018)
+    _add_followmart_text(col, "CINEMA", 1.62, 0, -8.01,
+                         WALK_TOP + 11.70, cream, extrude=.13, bevel=.020)
+    add_ngon_cone(col, "cinema_crown_medallion", 1.22, 1.22, .28, 20,
+                  0, -7.82, WALK_TOP + 16.0, brass, rot=math.pi/20)
+
+    # Ticket windows and four illuminated poster cases flank the entry.
+    for side in (-1, 1):
+        tx = side * 7.2
+        add_box(col, "cinema_ticket_frame", 3.15, .48, 3.0, tx, -7.52,
+                WALK_TOP + .75, brass)
+        add_box(col, "cinema_ticket_glass", 2.62, .20, 2.42, tx, -7.82,
+                WALK_TOP + 1.02, glass_dark)
+        add_box(col, "cinema_ticket_counter", 3.35, .72, .25, tx, -8.02,
+                WALK_TOP + 1.15, cream)
+    for index, x in enumerate((-12.2, -9.7, 9.7, 12.2)):
+        add_box(col, "cinema_poster_case", 2.05, .44, 3.35, x, -6.62,
+                WALK_TOP + 1.0, brass)
+        add_box(col, "cinema_poster", 1.65, .18, 2.92, x, -6.89,
+                WALK_TOP + 1.22, poster_mats[index])
+        add_box(col, "cinema_poster_title", 1.25, .08, .14, x, -7.00,
+                WALK_TOP + 3.35, cream)
+
+    # Street furniture gives the facade believable pedestrian scale.
+    for x in (-11.8, -8.4, 8.4, 11.8):
+        add_ngon_cone(col, "cinema_bollard", .16, .13, .95, 10, x, -10.8,
+                      WALK_TOP + .06, brass)
+    for x in (-13.0, 13.0):
+        add_box(col, "cinema_bench_seat", 2.8, .62, .18, x, -13.4,
+                WALK_TOP + .48, cream)
+        add_box(col, "cinema_bench_back", 2.8, .16, .85, x, -13.1,
+                WALK_TOP + .58, midnight)
+        for lx in (x - 1.05, x + 1.05):
+            add_box(col, "cinema_bench_leg", .15, .45, .48, lx, -13.4,
+                    WALK_TOP + .06, brass)
+
+    # Roofline detail keeps the building authored from the drone perspective.
+    for x, y, w, d in ((-7.0, 5.8, 3.4, 2.2), (7.0, 5.8, 3.4, 2.2)):
+        add_box(col, "cinema_roof_screen", w + .5, d + .5, 1.15, x, y,
+                WALK_TOP + 10.0, midnight)
+        add_box(col, "cinema_hvac", w, d, .85, x, y,
+                WALK_TOP + 10.15, charcoal)
+    # Flytower roof equipment sits above its actual 13.72m roof instead of
+    # disappearing inside it, and a parapet gives the top a finished edge.
+    add_box(col, "cinema_flytower_parapet_front", 25.5, .42, .85, 0, 6.45,
+            WALK_TOP + 13.5, burgundy_hi)
+    add_box(col, "cinema_flytower_parapet_rear", 25.5, .42, .85, 0, 13.15,
+            WALK_TOP + 13.5, burgundy_hi)
+    for x in (-11.9, 11.9):
+        add_box(col, "cinema_flytower_parapet_side", .42, 6.4, .85, x, 9.8,
+                WALK_TOP + 13.5, burgundy_hi)
+    for x in (-6.2, 0, 6.2):
+        add_box(col, "cinema_roof_screen", 3.8, 2.7, 1.35, x, 9.8,
+                WALK_TOP + 13.5, stone)
+        add_box(col, "cinema_hvac", 3.15, 2.15, .85, x, 9.8,
+                WALK_TOP + 13.75, charcoal)
+        add_box(col, "cinema_hvac_fan", 1.25, 1.25, .12, x, 9.8,
+                WALK_TOP + 14.62, brass)
+    for y in (-2.0, 3.0, 8.0):
+        add_box(col, "cinema_side_belt_l", .22, 3.4, .28, -14.02, y,
+                WALK_TOP + 6.6, brass)
+        add_box(col, "cinema_side_belt_r", .22, 3.4, .28, 14.02, y,
+                WALK_TOP + 6.6, brass)
+    _merge_asset_meshes(col, "movie_theater_batched")
+
 SUBURBAN_PALETTES = [
     # wall, roof, door, shutter -- restrained colors keep whole streets cohesive
     ((0.88, 0.80, 0.66), (0.32, 0.23, 0.18), (0.18, 0.37, 0.24), (0.22, 0.40, 0.48)),
@@ -640,7 +1026,10 @@ def _merge_asset_meshes(col, name):
         # instanced. Blender does not always evaluate matrix_local for those
         # objects, so build the transform explicitly; otherwise every roof,
         # window and porch collapses toward the collection origin when merged.
-        matrix = Matrix.LocRotScale(obj.location, obj.rotation_euler.to_quaternion(), obj.scale)
+        rotation = (obj.rotation_quaternion.copy()
+                    if obj.rotation_mode == "QUATERNION"
+                    else obj.rotation_euler.to_quaternion())
+        matrix = Matrix.LocRotScale(obj.location, rotation, obj.scale)
         base = len(vertices)
         vertices.extend(tuple(matrix @ v.co) for v in obj.data.vertices)
         for poly in obj.data.polygons:
@@ -1106,8 +1495,17 @@ def build_urban_townhouse(col, variant):
     glass_y=facade_plane_y+glass_depth/2
     add_box(col,"storefront_base",width+.12,facade_depth,.30,0,front_y,.18,frame)
     add_box(col,"storefront_lintel",width+.12,facade_depth,.34,0,front_y,2.62,frame)
-    add_box(col,"storefront_left_pier",.46,facade_depth,2.44,-width/2+.23,front_y,.48,frame)
-    add_box(col,"storefront_right_pier",.46,facade_depth,2.44,width/2-.23,front_y,.48,frame)
+    corner_pier_width=.46
+    corner_clearance=.06
+    left_pier_x=mounted_face_center(-width/2,-1,corner_pier_width,corner_clearance)
+    right_pier_x=mounted_face_center(width/2,1,corner_pier_width,corner_clearance)
+    # The structural side walls and these corner piers formerly ended on the
+    # same X planes. Their competing side faces produced a faint vertical
+    # shimmer at oblique walking angles even after the front plane was fixed.
+    add_box(col,"storefront_left_pier",corner_pier_width,facade_depth,2.44,
+            left_pier_x,front_y,.48,frame)
+    add_box(col,"storefront_right_pier",corner_pier_width,facade_depth,2.44,
+            right_pier_x,front_y,.48,frame)
     add_box(col,"storefront_center_pier",.48,facade_depth,2.44,-width*.10,front_y,.48,frame)
     door_x=-width*.28
     # A framed glazed door replaces the old solid door with a glass rectangle
@@ -2471,6 +2869,10 @@ CITY_HALL_Y = -134.0
 CITY_HALL_ROAD_Y = -93.0
 CIVIC_SQUARE_X = 43.0
 CIVIC_SQUARE_Y = -134.0
+FISHING_POND_X = 116.0
+FISHING_POND_Y = -66.0
+FISHING_POND_RX = 21.5
+FISHING_POND_RY = 15.0
 
 
 def build_city_hall_road(col, seed):
@@ -2693,14 +3095,33 @@ def build_civic_square(col, seed):
                   -1.0, 1.0, fountain_grade + .76, water)
     add_ngon_cone(col, "civic_fountain_pedestal", 1.35, .82, 2.1, 20,
                   -1.0, 1.0, fountain_grade + .78, stone)
-    add_ngon_cone(col, "civic_fountain_finial", .70, 0, 1.45, 20,
-                  -1.0, 1.0, fountain_grade + 2.88, bronze)
+    add_ngon_cone(col, "civic_fountain_nozzle", .34, .22, .58, 16,
+                  -1.0, 1.0, fountain_grade + 2.76, bronze)
     for angle in (0, math.pi / 2, math.pi, 3 * math.pi / 2):
         x, y = -1.0 + 1.65 * math.cos(angle), 1.0 + 1.65 * math.sin(angle)
-        jet = add_ngon_cone(col, "civic_fountain_jet", .055, .028, 1.25, 8,
-                            x, y, fountain_grade + .82, water)
-        jet.rotation_euler.x = math.radians(12) * math.sin(angle)
-        jet.rotation_euler.y = -math.radians(12) * math.cos(angle)
+        # Thick, luminous water arcs are readable from the square and from
+        # daily aerial footage. The old hair-thin straight cones disappeared
+        # against the basin at normal viewing distance.
+        start = Vector((x, y, fountain_grade + 1.02))
+        end = Vector((-1.0 + .34 * math.cos(angle),
+                      1.0 + .34 * math.sin(angle),
+                      fountain_grade + 1.72))
+        midpoint = (start + end) * .5 + Vector((0, 0, .66))
+        _add_connected_tube(
+            col, "civic_fountain_water_arc",
+            (start, midpoint, end), (.115, .108, .10), water, 10)
+        add_uv_sphere(col, "civic_fountain_splash", .20,
+                      end.x, end.y, end.z, water, 7, 10)
+    # A central plume and two stepped spill bowls make the fountain read as a
+    # working civic centerpiece instead of a stone finial in a blue disk.
+    add_ngon_cone(col, "civic_fountain_lower_bowl", 1.42, 1.18, .20, 24,
+                  -1.0, 1.0, fountain_grade + 2.02, stone)
+    add_ngon_cone(col, "civic_fountain_upper_bowl", .90, .66, .17, 24,
+                  -1.0, 1.0, fountain_grade + 2.56, border)
+    add_ngon_cone(col, "civic_fountain_center_plume", .10, .055, 1.70, 10,
+                  -1.0, 1.0, fountain_grade + 3.22, water)
+    add_uv_sphere(col, "civic_fountain_plume_crown", .26,
+                  -1.0, 1.0, fountain_grade + 5.02, water, 7, 10)
 
     # A modest permanent stage at the south edge supports future civic events.
     stage_y = -11.8
@@ -2750,6 +3171,150 @@ def build_civic_square(col, seed):
                               x + dx, y, z + .52,
                               flower_a if (index + side) % 2 else flower_b,
                               5, 8)
+
+
+def build_fishing_pond(col, seed):
+    """Large off-grid fishing destination with a walk-up dock and shoreline."""
+    rng = random.Random(seed)
+    water = mat("NB_fishing_water", (.10, .40, .56), .22, .10)
+    deep = mat("NB_fishing_deep", (.045, .20, .28), .72)
+    bank = mat("NB_fishing_bank", (.34, .52, .25), .96)
+    shore = mat("NB_fishing_shore", (.53, .48, .34), .94)
+    stone = mat("NB_fishing_stone", (.46, .47, .44), .92)
+    dock = mat("NB_fishing_dock", (.36, .22, .11), .86)
+    metal = mat("NB_fishing_metal", (.12, .16, .17), .72, .42)
+    reed = mat("NB_fishing_reed", (.31, .46, .18), .90)
+    lily = mat("NB_fishing_lily", (.20, .45, .24), .80)
+    sign = mat("NB_fishing_sign", (.80, .70, .48), .88)
+    red = mat("NB_fishing_buoy_red", (.76, .10, .08), .64)
+    white = mat("NB_fishing_buoy_white", (.94, .93, .86), .70)
+    m = std_mats()
+    segments = 48
+
+    def irregular(angle, phase):
+        return 1.0 + .045 * math.sin(angle * 3 + phase) + .025 * math.sin(angle * 7 - phase)
+
+    inner_points = []
+    outer_points = []
+    for index in range(segments):
+        angle = math.tau * index / segments
+        outer_scale = irregular(angle, .35)
+        inner_scale = irregular(angle, 1.15)
+        outer_points.append((FISHING_POND_RX * outer_scale * math.cos(angle),
+                             FISHING_POND_RY * outer_scale * math.sin(angle)))
+        inner_points.append((18.0 * inner_scale * math.cos(angle),
+                             11.3 * inner_scale * math.sin(angle)))
+
+    # Keep the water genuinely level while allowing the surrounding bank to
+    # follow the meadow. The inner bank rises just above this datum and masks
+    # the untouched terrain below the opaque deep-water layer.
+    water_z = max(
+        terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y)
+        for x, y in inner_points) + .14
+    verts = []
+    for x, y in outer_points:
+        verts.append((x, y, terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y) + .06))
+    for x, y in inner_points:
+        verts.append((x, y, max(water_z + .07,
+                               terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y) + .08)))
+    faces = []
+    for index in range(segments):
+        nxt = (index + 1) % segments
+        faces.append((index, nxt, segments + nxt, segments + index))
+    bank_mesh = bpy.data.meshes.new("fishing_pond_bank_mesh")
+    bank_mesh.from_pydata(verts, [], faces)
+    bank_mesh.materials.append(bank)
+    bank_mesh.update()
+    bank_obj = bpy.data.objects.new("fishing_pond_bank", bank_mesh)
+    col.objects.link(bank_obj)
+
+    water_verts = [(0, 0, water_z)] + [(x, y, water_z) for x, y in inner_points]
+    water_faces = [(0, index + 1, (index + 1) % segments + 1)
+                   for index in range(segments)]
+    for name, z_offset, material in (
+            ("fishing_pond_deep", -.16, deep),
+            ("fishing_pond_water", 0, water)):
+        mesh = bpy.data.meshes.new(name + "_mesh")
+        mesh.from_pydata([(x, y, z + z_offset) for x, y, z in water_verts],
+                         [], water_faces)
+        mesh.materials.append(material)
+        mesh.update()
+        obj = bpy.data.objects.new(name, mesh)
+        col.objects.link(obj)
+
+    # Terrain-following public sidewalk from the fire-station block to the
+    # west-bank fishing deck. It is intentionally a path, not a new road.
+    approach = [(-31.8, -14.8, 0), (-27.0, -12.2, 0),
+                (-23.0, -8.0, 0), (-20.0, -3.0, 0)]
+    _add_road_strip(col, "fishing_pond_sidewalk", approach, shore,
+                    width=2.65, bottom_offset=.025, top_offset=.09,
+                    terrain_origin=(FISHING_POND_X, FISHING_POND_Y))
+
+    dock_z = water_z + .28
+    add_box(col, "fishing_dock_walk", 9.0, 3.0, .28,
+            -15.1, -2.7, dock_z - .28, dock)
+    add_box(col, "fishing_dock_head", 4.8, 7.0, .28,
+            -10.8, -2.7, dock_z - .28, dock)
+    for x in (-19.4, -15.0, -10.7, -8.5):
+        for y in (-5.8, .4):
+            add_ngon_cone(col, "fishing_dock_pile", .18, .16, 1.55, 10,
+                          x, y, water_z - .72, metal)
+    for x in (-17.8, -14.0, -10.2):
+        for y in (-4.35, -1.05):
+            add_ngon_cone(col, "fishing_dock_rail_post", .075, .065, 1.10, 8,
+                          x, y, dock_z, metal)
+    for y in (-4.35, -1.05):
+        add_beam_between(col, "fishing_dock_rail",
+                         (-17.8, y, dock_z + .92), (-10.2, y, dock_z + .92),
+                         .12, metal)
+
+    # Shore stones, reeds, lilies, and a small buoy add scale without
+    # cluttering the clear casting lane off the center of the dock.
+    for index in range(14):
+        angle = math.tau * (index + .25) / 14
+        radius_x = 19.0 + rng.uniform(-.4, .5)
+        radius_y = 12.3 + rng.uniform(-.3, .4)
+        x, y = radius_x * math.cos(angle), radius_y * math.sin(angle)
+        z = max(water_z + .03,
+                terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y) + .08)
+        rock = add_uv_sphere(col, "fishing_shore_stone",
+                             rng.uniform(.35, .68), x, y, z, stone, 5, 8)
+        rock.scale.z = rng.uniform(.55, .78)
+    for index in range(22):
+        angle = rng.uniform(0, math.tau)
+        x, y = 17.2 * math.cos(angle), 10.7 * math.sin(angle)
+        if x < -8 and abs(y + 2.7) < 5.5:
+            continue
+        height = rng.uniform(.8, 1.45)
+        stalk = add_ngon_cone(col, "fishing_reed", .05, .025, height, 7,
+                              x, y, water_z + .01, reed)
+        stalk.rotation_euler.x = rng.uniform(-.10, .10)
+        stalk.rotation_euler.y = rng.uniform(-.10, .10)
+    for x, y, scale in ((3.5, 2.8, 1.0), (7.2, -3.4, .8), (-.8, -5.8, .72),
+                        (10.5, 4.4, .62), (-5.4, 5.6, .74)):
+        add_ngon_cone(col, "fishing_lily", .82 * scale, .82 * scale, .055, 12,
+                      x, y, water_z + .035, lily)
+    add_ngon_cone(col, "fishing_buoy", .34, .24, .62, 12,
+                  4.2, -1.0, water_z + .02, red)
+    add_uv_sphere(col, "fishing_buoy_cap", .16,
+                  4.2, -1.0, water_z + .71, white, 6, 8)
+
+    # Landmark sign and rod rack face the station-side approach.
+    sign_grade = terrain_height(FISHING_POND_X - 21.5, FISHING_POND_Y - 7.4)
+    for x in (-23.8, -19.2):
+        add_ngon_cone(col, "fishing_sign_post", .10, .08, 2.25, 8,
+                      x, -7.4, sign_grade + .04, metal)
+    add_box(col, "fishing_sign_board", 5.2, .22, 1.45,
+            -21.5, -7.4, sign_grade + 1.25, sign)
+    add_text(col, "fishing_sign_text", "FISHING POND", .34, .035,
+             -21.5, -7.56, sign_grade + 1.74, metal)
+    add_box(col, "fishing_rod_rack", 2.1, .45, .22,
+            -18.4, 1.15, dock_z + .05, dock)
+    for index in range(3):
+        x = -19.05 + index * .65
+        rod = add_ngon_cone(col, "fishing_rod", .035, .018, 2.45, 7,
+                            x, 1.15, dock_z + .22, metal)
+        rod.rotation_euler.x = math.radians(-8)
 
 
 def build_ring_house(col, seed):
@@ -2906,12 +3471,16 @@ ASSET_VARIANTS = {
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
+    "constructionzone": [("AST_constructionzone_0", lambda c: build_construction_zone(c, 3300))],
+    "movietheater": [("AST_movietheater_0", lambda c: build_movie_theater(c, 3500))],
     "followmart":  [("AST_followmart_4", lambda c: build_followmart(c, 2600))],
     "coffeetruck": [("AST_coffeetruck_0", lambda c: build_coffee_truck(c, 2700))],
     "firestation": [("AST_firestation_0", lambda c: build_fire_station(c, 2800))],
     "cityhallroad": [("AST_cityhallroad_0", lambda c: build_city_hall_road(c, 2900))],
     "cityhall": [("AST_cityhall_0", lambda c: build_city_hall(c, 3000))],
     "civicsquare": [("AST_civicsquare_0", lambda c: build_civic_square(c, 3100))],
+    "fishingpond": [("AST_fishingpond_0", lambda c: build_fishing_pond(c, 3200))],
+    "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
     # now draw from the same normal suburban library as every other resident.
@@ -2953,6 +3522,14 @@ def web_chunk_id(b):
         return "-".join(part for part in slug.split("-") if part)
     if b.get("type") in ("ringhouse", "parkdistrict"):
         return "founder-park"
+    if b.get("type") == "fishingpond":
+        return "fishing-pond"
+    if b.get("type") == "constructionzone":
+        return "construction-zone"
+    if b.get("type") == "movietheater":
+        return "movie-theater"
+    if b.get("type") == "forestreserve":
+        return "east-woods"
     return "original-town"
 
 
@@ -2974,8 +3551,9 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
-        "elementaryschool": 3, "followmart": 3, "coffeetruck": 1, "firestation": 3,
-        "cityhallroad": 1, "cityhall": 4, "civicsquare": 3}
+        "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
+        "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
+        "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -2984,7 +3562,8 @@ def footprint(b):
     # Planned suburban houses use exact world positions on curving roads, not
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
     if (b.get("plan_id") or b.get("feature_id") or
-            b["type"] in ("cityhallroad", "cityhall", "civicsquare")):
+            b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
+                          "forestreserve")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -3101,7 +3680,7 @@ def place_instance(world_col, b, name):
                 authored_z = hillside_pad_levels(x, y, b.get("rot", 0.0))[1]
             elif b["type"] == "ringhouse":
                 authored_z = 0.1
-            elif b["type"] in ("tree", "bush", "rock"):
+            elif b["type"] in ("tree", "bush", "rock", "forestreserve"):
                 authored_z = terrain_height(x, y)
             else:
                 authored_z = 0
@@ -3110,7 +3689,8 @@ def place_instance(world_col, b, name):
         lx = x + (s - 1) * LOT / 2
         ly = y + (s - 1) * LOT / 2
         # Civic campuses sit slightly above meadow so pads stay readable.
-        if b["type"] in ("followmart", "elementaryschool", "firestation"):
+        if b["type"] in ("followmart", "elementaryschool", "constructionzone",
+                         "movietheater", "firestation"):
             lz = max(0.05, terrain_height(lx, ly))
         else:
             lz = 0
@@ -3122,16 +3702,18 @@ def place_instance(world_col, b, name):
         # This lot's public street is on +Y. Rotate the authored -Y service
         # hatch toward it so customers order from the sidewalk side.
         empty.rotation_euler = (0, 0, math.pi)
-    elif b["type"] in ("elementaryschool", "followmart", "firestation"):
+    elif b["type"] in ("elementaryschool", "constructionzone", "movietheater",
+                       "followmart", "firestation"):
         # Campus assets are authored with main doors facing local -Y;
         # keep that deliberate frontage instead of lot-house rotation.
         empty.rotation_euler = (0, 0, 0)
     elif b.get("face"):  # explicit facing override stored in the state file
         empty.rotation_euler = (0, 0, {"s": 0.0, "e": math.pi / 2,
                                        "n": math.pi, "w": -math.pi / 2}[b["face"]])
-    elif b["type"] in ("tree", "bush", "rock"):
+    elif b["type"] in ("tree", "bush", "rock", "forestreserve"):
         empty.rotation_euler = (0, 0, rng.random() * math.tau)
-    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car", "pond", "duck", "parkdistrict"):
+    elif b["type"] not in ("park", "plaza", "stadium", "streetlight", "car",
+                           "pond", "fishingpond", "duck", "parkdistrict"):
         # face the front door toward the nearest road edge of the block
         bn = BLOCK_N - s
         ix, iy = b["gx"] % BLOCK_N, b["gy"] % BLOCK_N
@@ -4448,6 +5030,7 @@ def scatter_nature(world_col, occupied, buildings):
                            if b.get("plan_id") and "px" in b and "py" in b]
     city_hall_present = any(b.get("type") == "cityhall" for b in buildings)
     civic_square_present = any(b.get("type") == "civicsquare" for b in buildings)
+    fishing_pond_present = any(b.get("type") == "fishingpond" for b in buildings)
     if city_hall_present:
         active_segments.append(((CITY_HALL_X, CITY_HALL_ROAD_Y),
                                 (CITY_HALL_X, CITY_HALL_Y + 18.0)))
@@ -4490,6 +5073,10 @@ def scatter_nature(world_col, occupied, buildings):
             if civic_square_present and (
                     abs(point[0] - CIVIC_SQUARE_X) < 23.0 and
                     abs(point[1] - CIVIC_SQUARE_Y) < 22.0):
+                continue
+            if fishing_pond_present and (
+                    abs(point[0] - FISHING_POND_X) < FISHING_POND_RX + 6.0 and
+                    abs(point[1] - FISHING_POND_Y) < FISHING_POND_RY + 7.0):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()
@@ -4548,22 +5135,29 @@ def animate_ducks(world_col, buildings, frame_end):
     """Ducks paddle slow loops around every pond in town -- the water version
     of animate_traffic. Ducks aren't saved to world_state; they're
     re-spawned fresh each run from the pond's own seed."""
-    ponds = [b for b in buildings if b["type"] == "pond"]
+    ponds = [b for b in buildings if b["type"] in ("pond", "fishingpond")]
     for b in ponds:
-        cx, cy = lot_to_world(b["gx"], b["gy"])
+        large = b["type"] == "fishingpond"
+        cx, cy = build_pos(b) if large else lot_to_world(b["gx"], b["gy"])
         rng = random.Random(5000 + b["seed"])
-        n = 2 + rng.randrange(3)
+        n = (5 if large else 2 + rng.randrange(3))
+        pond_z = (max(terrain_height(cx + 18.0 * math.cos(math.tau * i / 48),
+                                     cy + 11.3 * math.sin(math.tau * i / 48))
+                      for i in range(48)) + .18) if large else .02
         for _ in range(n):
             d = {"type": "duck", "gx": 0, "gy": 0, "seed": rng.randrange(999)}
             e = place_instance(world_col, d, "duck")
-            r = 1.6 + rng.random() * 1.6  # swim radius -- stays inside the pond
+            r = ((5.0 + rng.random() * 7.0) if large
+                 else (1.6 + rng.random() * 1.6))
             a0 = rng.random() * math.tau
             spin = (1 if rng.random() < 0.5 else -1) * (0.5 + rng.random() * 0.4)
             waypoints = 5
             for wp in range(waypoints + 1):
                 frame = 1 + (frame_end - 1) * wp / waypoints
                 a = a0 + spin * math.tau * wp / waypoints
-                e.location = (cx + math.cos(a) * r, cy + math.sin(a) * r, 0.02)
+                e.location = (cx + math.cos(a) * r,
+                              cy + math.sin(a) * r * (.62 if large else 1.0),
+                              pond_z)
                 e.rotation_euler = (0, 0, a + math.pi / 2 * (1 if spin > 0 else -1))
                 e.keyframe_insert("location", frame=frame)
                 e.keyframe_insert("rotation_euler", frame=frame)
@@ -4795,8 +5389,10 @@ def build_day24_election_kickoff(world_col, frame_end):
 TODS = {
     "day":    dict(sun_e=2.0, sun_c=(1.00, 0.95, 0.86), sun_rot=(50, 0, 120),
                    sky=(0.54, 0.72, 0.86), sky_s=.72, win=0.0, lamp=0.0),
-    "sunset": dict(sun_e=2.3, sun_c=(1.00, 0.52, 0.28), sun_rot=(78, 0, 100),
-                   sky=(0.93, 0.60, 0.42), sky_s=1.0, win=3.0, lamp=5.0),
+    # Bright golden hour: warm low-angle key light, but a blue ambient sky
+    # preserves material color and avoids the old all-over beige sunset wash.
+    "sunset": dict(sun_e=2.65, sun_c=(1.00, 0.68, 0.42), sun_rot=(76, 0, 102),
+                   sky=(0.43, 0.61, 0.80), sky_s=.80, win=2.2, lamp=4.5),
     "dusk":   dict(sun_e=.82, sun_c=(1.00, 0.58, 0.38), sun_rot=(79, 0, 108),
                    sky=(0.16, 0.22, 0.34), sky_s=.68, win=6.0, lamp=18.0),
     "night":  dict(sun_e=0.30, sun_c=(0.55, 0.65, 1.00), sun_rot=(55, 0, 140),
@@ -5786,6 +6382,159 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day25reveal":
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest = [b for b in buildings
+                  if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest]
+        hx = sum(x for x, _y in points) / len(points) if points else cx
+        hy = sum(y for _x, y in points) / len(points) if points else cy
+
+        aim = bpy.data.objects.new("Day25RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day25RevealCamera")
+        cam_data.lens = 39
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day25RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.1s: completed-city angled drone establishing shot.
+            (1, (178.0, -112.0, 122.0), (-5.0, -26.0, 13.0)),
+            (92, (143.0, -145.0, 108.0), (-18.0, -86.0, 11.0)),
+            # 3.1-10.7s: all three new-home areas share one broad portrait
+            # composition while the drone eases steadily toward them.
+            (128, (66.0, -288.0, 158.0), (hx - 16.0, hy, 5.0)),
+            (320, (50.0, -270.0, 133.0), (hx - 8.0, hy + 2.0, 5.5)),
+            # 10.7-14.1s: clean aerial transfer back toward Fire Station 1.
+            (366, (76.0, -178.0, 110.0), (70.0, -126.0, 7.5)),
+            (423, (151.0, -104.0, 72.0),
+             (FISHING_POND_X, FISHING_POND_Y, 4.0)),
+            # 14.1-18.0s: settled descending push across pond and dock.
+            (frame_end, (144.0, -96.0, 39.0),
+             (FISHING_POND_X - 3.0, FISHING_POND_Y, 2.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day27reveal":
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest = [b for b in buildings
+                  if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest]
+        hx = sum(x for x, _y in points) / len(points) if points else cx
+        hy = sum(y for _x, y in points) / len(points) if points else cy
+        theater = next((b for b in buildings if b["type"] == "movietheater"), None)
+        tx, ty = build_pos(theater) if theater else (-83.5, 60.5)
+        if theater and "px" not in theater:
+            tx += LOT
+            ty += LOT
+
+        aim = bpy.data.objects.new("Day27RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day27RevealCamera")
+        cam_data.lens = 46
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 5000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day27RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-6s: strong whole-city hook with a single curved drone push.
+            (1, (238.0, -325.0, 168.0), (0.0, -46.0, 15.0)),
+            (92, (195.0, -300.0, 138.0), (18.0, -76.0, 12.0)),
+            (180, (154.0, -278.0, 108.0), (60.0, -122.0, 9.0)),
+            # 6-14s: North Ridge fills the portrait frame as all 36 homes rise.
+            (218, (121.0, -313.0, 86.0), (hx, hy - 7.0, 5.2)),
+            (330, (139.0, -294.0, 61.0), (hx + 7.0, hy, 5.0)),
+            (418, (158.0, -273.0, 50.0), (hx + 12.0, hy + 5.0, 5.0)),
+            # 14-20s: decisive transfer and descending final push to the cinema.
+            (450, (88.0, -150.0, 98.0), (tx, ty, 10.0)),
+            (505, (-15.0, -18.0, 58.0), (tx, ty, 8.5)),
+            (frame_end, (-57.0, 18.0, 25.0), (tx, ty, 7.2)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day26reveal":
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest = [b for b in buildings
+                  if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest]
+        hx = sum(x for x, _y in points) / len(points) if points else cx
+        hy = sum(y for _x, y in points) / len(points) if points else cy
+        zone = next((b for b in buildings
+                     if b["type"] == "constructionzone" and b.get("day") == latest_day),
+                    None)
+        zx, zy = build_pos(zone) if zone else (-83.5, -83.5)
+        if zone and "px" not in zone:
+            zx += LOT
+            zy += LOT
+
+        aim = bpy.data.objects.new("Day26RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day26RevealCamera")
+        cam_data.lens = 48
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 4000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day26RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # A brief whole-city opener keeps the larger East Woods present
+            # without sacrificing the scale of today's actual growth.
+            (1, (205.0, -300.0, 150.0), (0.0, -38.0, 14.0)),
+            (72, (170.0, -276.0, 125.0), (22.0, -72.0, 11.0)),
+            # Move close enough that every Pine Hollow house reads as a house,
+            # rather than as a tiny roof dot in an overhead diagram.
+            (112, (150.0, -278.0, 75.0), (hx, hy - 4.0, 5.2)),
+            (270, (128.0, -242.0, 50.0), (hx, hy + 5.0, 5.0)),
+            # Give the final North Ridge pair their own visible rise beat.
+            (312, (132.0, -154.0, 43.0), (98.0, -87.0, 5.5)),
+            (360, (121.0, -137.0, 35.0), (98.0, -87.0, 5.5)),
+            # Transfer southeast of the corrected downtown block, then settle
+            # at pedestrian-readable height while the copied site rises.
+            (410, (25.0, 2.0, 64.0), (zx, zy, 7.0)),
+            (472, (-12.0, 14.0, 43.0), (zx, zy, 6.5)),
+            (frame_end, (-24.0, 20.0, 30.0), (zx, zy, 5.2)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day24reveal":
         # One controlled 20-second milestone flight. Camera motion is mostly
         # forward or lateral; there are no repeated orbits or full spins.
@@ -6427,7 +7176,10 @@ def main(cfg=None):
                                 ("apartment", n_apart, None), ("park", n_parks, None),
                                 ("tree", n_trees, None)]
         if (gained or lost or n_apart or n_parks or n_trees or n_mush or
-                specials or cfg.get("cityhall") or cfg.get("civicsquare")):
+                specials or cfg.get("cityhall") or cfg.get("civicsquare") or
+                cfg.get("fishingpond") or cfg.get("constructionzone") or
+                cfg.get("movietheater") or
+                cfg.get("eastwoods")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -6569,6 +7321,61 @@ def main(cfg=None):
                 state["buildings"].append(b)
                 occupied.update(footprint(b))
                 new_batch.append(b)
+        # Keep today's 39 follower homes contiguous (seeds 458-496), then add
+        # the non-population destination as the final Day 25 record.
+        if cfg.get("fishingpond"):
+            if any(b["type"] == "fishingpond" for b in state["buildings"]):
+                raise RuntimeError("Fishing pond already exists")
+            fishing_pond = {
+                "type": "fishingpond", "gx": 0, "gy": 0,
+                "px": FISHING_POND_X, "py": FISHING_POND_Y, "pz": 0.0,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(fishing_pond)
+            new_batch.append(fishing_pond)
+        if cfg.get("constructionzone"):
+            existing_zone = [b for b in state["buildings"]
+                             if b["type"] == "constructionzone"]
+            if existing_zone:
+                raise RuntimeError("Construction zone already exists")
+            zone = {
+                "type": "constructionzone", "gx": -6, "gy": 3,
+                "seed": state["seed_counter"], "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(zone)
+            occupied.update(footprint(zone))
+            new_batch.append(zone)
+        if cfg.get("movietheater"):
+            zones = [b for b in state["buildings"]
+                     if b["type"] == "constructionzone"]
+            theaters = [b for b in state["buildings"]
+                        if b["type"] == "movietheater"]
+            if theaters:
+                raise RuntimeError("Movie theater already exists")
+            if len(zones) != 1 or int(zones[0].get("seed", -1)) != 524:
+                raise RuntimeError(
+                    "Movie theater requires canonical construction zone seed 524")
+            theater = zones[0]
+            theater["type"] = "movietheater"
+            theater["day"] = state["day"]
+            new_batch.append(theater)
+        if cfg.get("eastwoods"):
+            if any(b["type"] == "forestreserve" for b in state["buildings"]):
+                raise RuntimeError("East Woods already exists")
+            woods = {
+                "type": "forestreserve", "gx": 0, "gy": 0,
+                "px": EAST_WOODS_X, "py": EAST_WOODS_Y,
+                "pz": terrain_height(EAST_WOODS_X, EAST_WOODS_Y),
+                "rot": 0.0, "radius": EAST_WOODS_RADIUS,
+                "feature_id": "east_woods_day26",
+                "district": "East Woods",
+                "seed": state["seed_counter"], "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(woods)
 
     # rebuild world (removed houses still placed so they can sink on camera)
     world_col = clear_world()
@@ -6619,7 +7426,11 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day24reveal":
+    if cfg.get("cam") == "day27reveal":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") in ("day25reveal", "day26reveal"):
+        frame_end = max(frame_end, FPS * 18)
+    elif cfg.get("cam") == "day24reveal":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day23reveal":
         frame_end = max(frame_end, FPS * 16)
@@ -6637,7 +7448,55 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day24reveal":
+    if cfg.get("cam") == "day27reveal":
+        theater_roots = [e for e in rise if e.name.startswith("movietheater_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        ridgeview = [e for e in home_roots
+                     if e.get("nb_world_district") == "North Ridge"]
+        for index, e in enumerate(ridgeview):
+            # Four overlapping waves keep motion continuous without turning
+            # the 36-home milestone into a one-at-a-time checklist.
+            animate_rise(e, 210 + index * 5, dur=29)
+        for e in theater_roots:
+            animate_rise(e, 486, dur=48)
+        for e in rise:
+            if e not in theater_roots and e not in home_roots:
+                animate_rise(e, 224)
+    elif cfg.get("cam") == "day26reveal":
+        zone_roots = [e for e in rise if e.name.startswith("constructionzone_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        pine_roots = [e for e in home_roots
+                      if e.get("nb_world_district") == "Pine Hollow"]
+        ridge_roots = [e for e in home_roots
+                       if e.get("nb_world_district") == "North Ridge"]
+        for index, e in enumerate(pine_roots):
+            animate_rise(e, 142 + index * 6, dur=27)
+        for index, e in enumerate(ridge_roots):
+            animate_rise(e, 326 + index * 9, dur=27)
+        for e in zone_roots:
+            animate_rise(e, 440, dur=42)
+        for e in rise:
+            if (e not in zone_roots and e not in home_roots
+                    and not e.name.startswith("forestreserve_d")):
+                animate_rise(e, 160)
+    elif cfg.get("cam") == "day25reveal":
+        pond_roots = [e for e in rise if e.name.startswith("fishingpond_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        meadow_roots = home_roots[:4]
+        pine_roots = home_roots[4:23]
+        juniper_roots = home_roots[23:]
+        for index, e in enumerate(meadow_roots):
+            animate_rise(e, 128 + index * 7, dur=24)
+        for index, e in enumerate(pine_roots):
+            animate_rise(e, 150 + index * 5, dur=25)
+        for index, e in enumerate(juniper_roots):
+            animate_rise(e, 242 + index * 5, dur=25)
+        for e in pond_roots:
+            animate_rise(e, 424, dur=36)
+        for e in rise:
+            if e not in pond_roots and e not in home_roots:
+                animate_rise(e, 150)
+    elif cfg.get("cam") == "day24reveal":
         square_roots = [e for e in rise if e.name.startswith("civicsquare_d")]
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         larkspur_roots = home_roots[:7]
@@ -6732,23 +7591,10 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
-    if cfg.get("cam") == "day24reveal":
-        build_day24_election_kickoff(world_col, frame_end)
     if cfg.get("cam") == "football":
         build_football_vignette(world_col, state["buildings"], frame_end)
     if cfg.get("godzilla"):
         build_godzilla_attack(world_col, state["buildings"], building_roots, frame_end)
-    if cfg.get("celebrate"):
-        # fireworks over today's new batch if there is one (e.g. the day-8
-        # park district), otherwise over the founders' custom homes
-        today = [b for b in state["buildings"] if b.get("day") == state["day"]]
-        customs = new_batch or today or [b for b in state["buildings"]
-                                if b["type"].endswith("house") and b["type"] != "house"]
-        if customs:
-            pts = [build_pos(b) for b in customs]
-            build_fireworks(world_col,
-                            sum(p[0] for p in pts) / len(pts),
-                            sum(p[1] for p in pts) / len(pts), frame_end)
     apply_mood(tod, season)
     setup_render(state, frame_end, cfg.get("tag"))
 
