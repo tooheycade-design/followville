@@ -110,6 +110,27 @@ test("candidate glTF sidecars are accepted only beside a candidate model", () =>
   ]);
 });
 
+test("private content provenance is patch-reviewed without trusting arbitrary scripts", () => {
+  const packetId = "8c7fd5ae-5247-4ab2-b117-2e03191cdcda";
+  const privateArtifacts = verificationKinds([
+    `company-os/content/${packetId}/packet.json`,
+    `company-os/candidates/cinematic/${packetId}/generate-candidate.mjs`,
+    `company-os/candidates/cinematic/${packetId}/review.json`,
+    `company-os/candidates/cinematic/${packetId}/evidence/blender/technical-report.json`,
+  ]);
+  assert.deepEqual(privateArtifacts, {
+    kinds: ["diff-check"],
+    unverifiedPaths: [],
+  });
+
+  assert.deepEqual(
+    verificationKinds([
+      `company-os/candidates/cinematic/${packetId}/publish.mjs`,
+    ]).unverifiedPaths,
+    [`company-os/candidates/cinematic/${packetId}/publish.mjs`],
+  );
+});
+
 test("documentation needs only patch integrity", () => {
   assert.deepEqual(verificationKinds(["company-os/docs/ROADMAP.md"]), {
     kinds: ["diff-check"],

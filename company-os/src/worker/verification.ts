@@ -117,6 +117,10 @@ const BLENDER_CANDIDATE =
   /^company-os\/candidates\/.+\.(?:glb|gltf)$/i;
 const BLENDER_CANDIDATE_SIDECAR =
   /^company-os\/candidates\/.+\.(?:bin|png|jpe?g|webp)$/i;
+const PRIVATE_CONTENT_ARTIFACT =
+  /^company-os\/content\/[^/]+\/packet\.json$/i;
+const PRIVATE_CINEMATIC_ARTIFACT =
+  /^company-os\/candidates\/cinematic\/[^/]+\/(?:generate-candidate\.mjs|review\.json|evidence\/blender\/technical-report\.json)$/i;
 const WORKSPACE_DEPENDENCIES = /^(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$/;
 const NON_CODE = /(?:^|\/)(?:docs?\/|README(?:\.[^/]*)?$)|\.(?:md|txt)$/i;
 
@@ -155,6 +159,12 @@ export function verificationKinds(filesChanged: readonly string[]): {
       filesChanged.some((candidate) => BLENDER_CANDIDATE.test(candidate))
     ) {
       // The Blender runner validates every URI before opening a changed glTF.
+    } else if (
+      PRIVATE_CONTENT_ARTIFACT.test(file) ||
+      PRIVATE_CINEMATIC_ARTIFACT.test(file)
+    ) {
+      // Private packet metadata and isolated candidate provenance are reviewed
+      // as patch data. They are never executed or published by this workflow.
     } else if (!NON_CODE.test(file)) {
       unverifiedPaths.push(file);
     }
