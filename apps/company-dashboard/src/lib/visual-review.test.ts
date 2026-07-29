@@ -81,6 +81,22 @@ test("only safe object-backed images are selected without silently truncating", 
   assert.equal(visualReviewArtifacts(candidates).length, 8);
 });
 
+test("portrait JPEG and WebP evidence reaches the bounded visual manifest", () => {
+  const jpeg = artifact("80000000-0000-4000-8000-000000000011", {
+    mediaType: "image/jpeg",
+    label: "Portrait front",
+  });
+  const webp = artifact("80000000-0000-4000-8000-000000000012", {
+    mediaType: "image/webp",
+    label: "Portrait rear",
+  });
+
+  assert.deepEqual(
+    visualReviewArtifacts([jpeg, webp]).map((item) => item.id),
+    [jpeg.id, webp.id],
+  );
+});
+
 test("verified pixels exist during review and the temporary directory is removed", async () => {
   let directory = "";
   const reviewer = {

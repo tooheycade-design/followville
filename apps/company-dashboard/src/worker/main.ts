@@ -288,7 +288,7 @@ const executor: TaskExecutor =
         ),
         repository: "followville_repo",
         invocationTimeoutMs: taskInvocationTimeoutMs,
-        maxSubscriptionRunsPerTask: 5,
+        maxSubscriptionRunsPerTask: 6,
         subscriptionRunsForTask: async (task) => {
           const state = await companyRepository().load();
           return state.runs.filter(

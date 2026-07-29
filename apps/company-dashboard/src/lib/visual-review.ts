@@ -23,6 +23,8 @@ export interface PixelVisualReviewer {
 
 const EXTENSIONS: Readonly<Record<string, string>> = {
   "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/webp": ".webp",
 };
 
 export function visualReviewArtifacts(

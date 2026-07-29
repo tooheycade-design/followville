@@ -280,3 +280,19 @@ test("visual work gets a larger but still bounded revision budget", () => {
     /revoke all on function public\.company_os_resume_bounded_visual_revision\(jsonb\)\s+from public, anon, authenticated;/,
   );
 });
+
+test("portrait-manifest repair permits only one final visual revision", () => {
+  const sql = migration("0042_include_portrait_evidence_in_visual_review.sql");
+
+  assert.match(sql, /then 6\s+else 3/);
+  assert.match(sql, /v_task\.review_cycle_count >= 6/);
+  assert.match(sql, /v_latest_visual\.action <> 'visual_review\.changes_requested'/);
+  assert.doesNotMatch(
+    sql,
+    /set\s+(allowed_capabilities|status)\s*=\s*'approved'|social_publish|published/i,
+  );
+  assert.match(
+    sql,
+    /revoke all on function public\.company_os_resume_bounded_visual_revision\(jsonb\)\s+from public, anon, authenticated;/,
+  );
+});
