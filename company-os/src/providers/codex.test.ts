@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   codexInvocationArgs,
+  collectedFailureReason,
   describeFailure,
   parseCodexOutput,
 } from "./codex.js";
@@ -117,4 +118,18 @@ test("an unknown failure keeps the first line of the real message", () => {
   const detail = describeFailure(new Error("spawn ENOENT\nstack trace"), 900_000);
   assert.match(detail, /spawn ENOENT/);
   assert.ok(!detail.includes("stack trace"));
+});
+
+test("a failed CLI surfaces its actionable provider error", () => {
+  const reason = collectedFailureReason(
+    "The CLI exited with code 1.",
+    [
+      "WARN: harmless setup warning",
+      "ERROR: You've hit your usage limit. Try again next week.",
+      "WARN: shutdown cleanup failed",
+    ].join("\n"),
+  );
+  assert.match(reason, /usage limit/);
+  assert.match(reason, /exited with code 1/);
+  assert.ok(!reason.includes("setup warning"));
 });

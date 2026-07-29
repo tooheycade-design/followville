@@ -114,6 +114,7 @@ test("private content provenance is patch-reviewed without trusting arbitrary sc
   const packetId = "8c7fd5ae-5247-4ab2-b117-2e03191cdcda";
   const privateArtifacts = verificationKinds([
     `company-os/content/${packetId}/packet.json`,
+    `company-os/content/${packetId}/production-request.json`,
     `company-os/candidates/cinematic/${packetId}/generate-candidate.mjs`,
     `company-os/candidates/cinematic/${packetId}/review.json`,
     `company-os/candidates/cinematic/${packetId}/evidence/blender/technical-report.json`,
@@ -495,8 +496,7 @@ test("private content renders the trusted town source without widening task scop
       baseCommit: "a".repeat(40),
     },
     filesChanged: [
-      "company-os/content/8c7fd5ae-5247-4ab2-b117-2e03191cdcda/packet.json",
-      "company-os/candidates/cinematic/8c7fd5ae-5247-4ab2-b117-2e03191cdcda/candidate.glb",
+      "company-os/content/8c7fd5ae-5247-4ab2-b117-2e03191cdcda/production-request.json",
     ],
     runId: "81000000-0000-4000-8000-000000000021",
     signal: new AbortController().signal,

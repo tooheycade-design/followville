@@ -1,7 +1,10 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import type { AgentProfile, Task } from "../domain/schemas.js";
 import type { ModelProvider } from "../providers/types.js";
+import type { ProviderResponse } from "../providers/types.js";
 import { collectArtifacts, type ArtifactStore } from "./artifacts.js";
 import { createHandoffArtifact } from "./handoff.js";
 import { createPathGuard } from "./path-guard.js";
@@ -22,6 +25,95 @@ import { WorktreeManager, type Worktree } from "./worktree.js";
  * only has to hold prose, but it has to hold all of it.
  */
 const MAX_SUMMARY_CHARS = 6_000;
+const PRIVATE_CONTENT_TASK = /^Produce private preview: /;
+const CONTENT_PACKET_ID =
+  /^Content packet ([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/im;
+const TRUSTED_CONTENT_CAPABILITIES = [
+  "blender_preview",
+  "git_checkpoint",
+  "repository_read",
+  "repository_write",
+  "test_execute",
+] as const;
+
+function trustedContentPacketId(task: Task): string | null {
+  const packetId = task.objective.match(CONTENT_PACKET_ID)?.[1] ?? null;
+  if (
+    packetId === null ||
+    !PRIVATE_CONTENT_TASK.test(task.title) ||
+    task.allowedCapabilities.length !== TRUSTED_CONTENT_CAPABILITIES.length ||
+    !TRUSTED_CONTENT_CAPABILITIES.every((capability) =>
+      task.allowedCapabilities.includes(capability),
+    ) ||
+    task.repositoryScopes.length !== 1 ||
+    !task.repositoryScopes.some(
+      (scope) =>
+        scope.repository === "followville_repo" &&
+        scope.allowedPathPrefixes.length === 2 &&
+        scope.allowedPathPrefixes.includes("company-os/content") &&
+        scope.allowedPathPrefixes.includes("company-os/candidates/cinematic") &&
+        scope.deniedPathPrefixes.length === 4 &&
+        scope.deniedPathPrefixes.includes("world_state.json") &&
+        scope.deniedPathPrefixes.includes("town.glb") &&
+        scope.deniedPathPrefixes.includes("town_chunks") &&
+        scope.deniedPathPrefixes.includes("neighborhood.blend"),
+    )
+  ) {
+    return null;
+  }
+  return packetId;
+}
+
+async function prepareTrustedContentRequest(input: {
+  task: Task;
+  worktreePath: string;
+  packetId: string;
+}): Promise<ProviderResponse> {
+  const relativeFile = path.join(
+    "company-os",
+    "content",
+    input.packetId,
+    "production-request.json",
+  );
+  const absoluteFile = path.join(input.worktreePath, relativeFile);
+  await mkdir(path.dirname(absoluteFile), { recursive: true });
+  await writeFile(
+    absoluteFile,
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        taskId: input.task.id,
+        packetId: input.packetId,
+        title: input.task.title,
+        objectiveSha256: createHash("sha256")
+          .update(input.task.objective, "utf8")
+          .digest("hex"),
+        source: "trusted-read-only:town.glb",
+        runtimeAsset: false,
+        publishAuthorized: false,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return {
+    ok: true,
+    text:
+      "Prepared a source-pinned private render request for the trusted " +
+      "canonical Followville town. No model-created proxy, canonical mutation, " +
+      "or publishing action was used.",
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      costUsdMicros: 0,
+    },
+    model: "trusted-content-renderer-v1",
+    sessionId: null,
+    failureReason: null,
+  };
+}
 
 export interface AgentExecutorOptions {
   agent: AgentProfile;
@@ -155,24 +247,27 @@ export class AgentTaskExecutor implements TaskExecutor {
     signal: AbortSignal,
     context?: TaskExecutionContext,
   ): Promise<WorkResult> {
-    const availability = await this.options.provider.checkAvailability();
-    if (!availability.available) {
-      return {
-        outcome: "blocked",
-        summary: `Provider unavailable (${availability.reason}): ${availability.detail}`,
-        evidence: [],
-        filesChanged: [],
-        diff: null,
-        artifacts: [],
-        testsCompleted: [],
-        testsFailed: [],
-        modelProvider: null,
-        modelId: null,
-        inputTokens: 0,
-        outputTokens: 0,
-        cachedInputTokens: 0,
-        costUsdMicros: 0,
-      };
+    const contentPacketId = trustedContentPacketId(task);
+    if (contentPacketId === null) {
+      const availability = await this.options.provider.checkAvailability();
+      if (!availability.available) {
+        return {
+          outcome: "blocked",
+          summary: `Provider unavailable (${availability.reason}): ${availability.detail}`,
+          evidence: [],
+          filesChanged: [],
+          diff: null,
+          artifacts: [],
+          testsCompleted: [],
+          testsFailed: [],
+          modelProvider: null,
+          modelId: null,
+          inputTokens: 0,
+          outputTokens: 0,
+          cachedInputTokens: 0,
+          costUsdMicros: 0,
+        };
+      }
     }
     if (
       (task.allowedCapabilities.includes("browser_preview") ||
@@ -197,7 +292,10 @@ export class AgentTaskExecutor implements TaskExecutor {
         costUsdMicros: 0,
       };
     }
-    if (this.options.provider.billingMode === "subscription") {
+    if (
+      contentPacketId === null &&
+      this.options.provider.billingMode === "subscription"
+    ) {
       const priorRuns =
         typeof this.options.subscriptionRunsForTask === "function"
           ? await this.options.subscriptionRunsForTask(task)
@@ -270,13 +368,22 @@ export class AgentTaskExecutor implements TaskExecutor {
         typeof this.options.invocationTimeoutMs === "function"
           ? this.options.invocationTimeoutMs(task)
           : this.options.invocationTimeoutMs;
-      const response = await this.options.provider.invoke({
-        workingDirectory,
-        prompt: buildPrompt(task, workingDirectory) + reworkBriefing,
-        ...(resumeSessionId === null ? {} : { resumeSessionId }),
-        timeoutMs: invocationTimeoutMs,
-        signal,
-      });
+      const response =
+        contentPacketId === null
+          ? await this.options.provider.invoke({
+              workingDirectory,
+              prompt: buildPrompt(task, workingDirectory) + reworkBriefing,
+              ...(resumeSessionId === null ? {} : { resumeSessionId }),
+              timeoutMs: invocationTimeoutMs,
+              signal,
+            })
+          : await prepareTrustedContentRequest({
+              task,
+              worktreePath: worktree.path,
+              packetId: contentPacketId,
+            });
+      const executionProvider =
+        contentPacketId === null ? this.options.provider.name : "trusted-runtime";
 
       const changes = await this.options.worktrees.changes(worktree);
       const filesChanged = changes.map((change) => change.file);
@@ -310,12 +417,12 @@ export class AgentTaskExecutor implements TaskExecutor {
             [
               `Agent work for task ${task.id.slice(0, 8)}`,
               "",
-              `Unreviewed output of ${this.options.provider.name}, kept so an owner`,
+              `Unreviewed output of ${executionProvider}, kept so an owner`,
               "can inspect it. This branch is never pushed and never merged.",
               "",
               `Task: ${task.id}`,
               `Base: ${worktree.baseCommit}`,
-              `Provider: ${this.options.provider.name}`,
+              `Provider: ${executionProvider}`,
             ].join("\n"),
           );
         } catch (error) {
@@ -333,7 +440,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           artifacts: [],
           testsCompleted: [],
           testsFailed: [],
-          modelProvider: this.options.provider.name,
+        modelProvider: executionProvider,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
           outputTokens: response.usage.outputTokens,
@@ -364,7 +471,7 @@ export class AgentTaskExecutor implements TaskExecutor {
           artifacts: [],
           testsCompleted: [],
           testsFailed: [],
-          modelProvider: this.options.provider.name,
+          modelProvider: executionProvider,
           modelId: response.model,
           inputTokens: response.usage.inputTokens,
           outputTokens: response.usage.outputTokens,
@@ -374,7 +481,7 @@ export class AgentTaskExecutor implements TaskExecutor {
       }
 
       const evidence = [
-        `provider=${this.options.provider.name}`,
+        `provider=${executionProvider}`,
         ...(this.options.continuityKey === undefined
           ? []
           : [`continuity=${this.options.continuityKey}`]),
@@ -485,11 +592,11 @@ export class AgentTaskExecutor implements TaskExecutor {
         testFailures: testsFailed,
         artifactIds: artifacts.map((artifact) => artifact.id),
         blockers: verification.unverifiedPaths,
-        modelProvider: this.options.provider.name,
+          modelProvider: executionProvider,
         modelId: response.model,
         workerContinuityKey:
           this.options.continuityKey ??
-          `unknown-host:${this.options.provider.name}`,
+          `unknown-host:${executionProvider}`,
         recommendedNextAction: verification.passed
           ? "Have the independent reviewer inspect the checkpoint and recorded evidence."
           : "Start a revision from this checkpoint and address every failed trusted check.",
@@ -514,7 +621,7 @@ export class AgentTaskExecutor implements TaskExecutor {
         artifacts,
         testsCompleted,
         testsFailed,
-        modelProvider: this.options.provider.name,
+        modelProvider: executionProvider,
         modelId: response.model,
         inputTokens: response.usage.inputTokens,
         outputTokens: response.usage.outputTokens,

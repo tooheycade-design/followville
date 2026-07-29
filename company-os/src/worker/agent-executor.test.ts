@@ -191,6 +191,103 @@ test("preview tasks receive a larger bounded provider window", () => {
   assert.equal(taskInvocationTimeoutMs(preview), 25 * 60_000);
 });
 
+test("private social content uses the trusted runtime without spending a model run", async () => {
+  const repo = makeRepository();
+  const provider = new ScriptedProvider([], {
+    available: false,
+    reason: "unknown",
+    detail: "subscription quota exhausted",
+  });
+  const packetId = "8c7fd5ae-5247-4ab2-b117-2e03191cdcda";
+  const base = makeTask();
+  const task = TaskSchema.parse({
+    ...base,
+    title: "Produce private preview: 500 Residents, One Living Town",
+    objective: [
+      `Content packet ${packetId}`,
+      "Milestone: Day 27 / 500 residents / 560 buildings",
+      '0-2s: Open on town. Text: "Every follow built this." VO: "Start."',
+    ].join("\n"),
+    allowedCapabilities: [
+      "repository_read",
+      "repository_write",
+      "git_checkpoint",
+      "test_execute",
+      "blender_preview",
+    ],
+    repositoryScopes: [
+      {
+        repository: "followville_repo",
+        allowedPathPrefixes: [
+          "company-os/content",
+          "company-os/candidates/cinematic",
+        ],
+        deniedPathPrefixes: [
+          "world_state.json",
+          "town.glb",
+          "town_chunks",
+          "neighborhood.blend",
+        ],
+        environments: ["local", "preview"],
+      },
+    ],
+  });
+  let verifiedFiles: readonly string[] = [];
+  const verifier: WorkVerifier = {
+    async verify(input) {
+      verifiedFiles = input.filesChanged;
+      return {
+        passed: true,
+        checks: [
+          {
+            id: "blender-preview:trusted-town",
+            label: "Trusted read-only Followville evidence",
+            passed: true,
+            durationMs: 12,
+            output: "rendered",
+          },
+        ],
+        unverifiedPaths: [],
+        artifactFiles: [],
+      };
+    },
+  };
+  const executor = new AgentTaskExecutor({
+    agent: SEED_AGENTS.engineer,
+    provider,
+    worktrees: new WorktreeManager(repo.root, repo.worktreeRoot),
+    repository: "followville_repo",
+    invocationTimeoutMs: 30_000,
+    maxSubscriptionRunsPerTask: 1,
+    verifier,
+    artifactStore: {
+      async store(input) {
+        return {
+          kind: "object",
+          provider: "supabase_storage",
+          bucket: "company-os-evidence",
+          objectPath: `${input.runId}/${input.artifactId}`,
+        };
+      },
+    },
+  });
+
+  const result = await executor.execute(
+    task,
+    new AbortController().signal,
+    { runId: "81000000-0000-4000-8000-000000000099" },
+  );
+
+  assert.equal(result.outcome, "completed");
+  assert.equal(provider.invokeCount, 0);
+  assert.deepEqual(verifiedFiles, [
+    `company-os/content/${packetId}/production-request.json`,
+  ]);
+  assert.ok(result.evidence.includes("provider=trusted-runtime"));
+  assert.equal(result.modelProvider, "trusted-runtime");
+  assert.equal(result.inputTokens, 0);
+});
+
 test("finished work survives on its branch after the worktree is gone", async () => {
   // The failure this guards: `git worktree remove --force` discarded
   // everything the agent produced, so an owner was asked to approve a file

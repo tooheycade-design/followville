@@ -118,7 +118,7 @@ const BLENDER_CANDIDATE =
 const BLENDER_CANDIDATE_SIDECAR =
   /^company-os\/candidates\/.+\.(?:bin|png|jpe?g|webp)$/i;
 const PRIVATE_CONTENT_ARTIFACT =
-  /^company-os\/content\/[^/]+\/packet\.json$/i;
+  /^company-os\/content\/[^/]+\/(?:packet|production-request)\.json$/i;
 const PRIVATE_CINEMATIC_ARTIFACT =
   /^company-os\/candidates\/cinematic\/[^/]+\/(?:generate-candidate\.mjs|review\.json|evidence\/blender\/technical-report\.json)$/i;
 const WORKSPACE_DEPENDENCIES = /^(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$/;
@@ -508,13 +508,16 @@ export class RepositoryVerificationRunner implements WorkVerifier {
     const blenderFiles = input.filesChanged.filter((file) =>
       BLENDER_CANDIDATE.test(file),
     );
+    const privateContentRequest = input.filesChanged.some((file) =>
+      /^company-os\/content\/[^/]+\/production-request\.json$/i.test(file),
+    );
     const trustedTownEvidence =
-      blenderFiles.length > 0 && usesTrustedTownEvidence(input.task);
+      privateContentRequest && usesTrustedTownEvidence(input.task);
     const trustedTownMilestone = trustedTownEvidence
       ? privateContentMilestone(input.task)
       : undefined;
     if (
-      blenderFiles.length > 0 &&
+      (blenderFiles.length > 0 || trustedTownEvidence) &&
       plan.unverifiedPaths.length === 0 &&
       checks.every((check) => check.passed)
     ) {

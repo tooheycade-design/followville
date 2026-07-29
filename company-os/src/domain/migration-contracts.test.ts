@@ -296,3 +296,22 @@ test("portrait-manifest repair permits only one final visual revision", () => {
     /revoke all on function public\.company_os_resume_bounded_visual_revision\(jsonb\)\s+from public, anon, authenticated;/,
   );
 });
+
+test("trusted content recovery is service-only and cannot reopen changed work", () => {
+  const sql = migration("0043_retry_failed_trusted_content.sql");
+  assert.match(sql, /company_os_retry_failed_trusted_content/);
+  assert.match(sql, /v_task\.status <> 'failed'/);
+  assert.match(sql, /cardinality\(v_task\.allowed_capabilities\) <> 5/);
+  assert.match(sql, /jsonb_array_length\(v_task\.repository_scopes\) <> 1/);
+  assert.match(sql, /v_latest_action <> 'worker\.failed'/);
+  assert.match(sql, /v_latest_reason not like '%files: 0%'/);
+  assert.match(sql, /status = 'queued'/);
+  assert.match(
+    sql,
+    /revoke all on function public\.company_os_retry_failed_trusted_content\(uuid\)[\s\S]*from public, anon, authenticated/,
+  );
+  assert.match(
+    sql,
+    /grant execute on function public\.company_os_retry_failed_trusted_content\(uuid\)[\s\S]*to service_role/,
+  );
+});

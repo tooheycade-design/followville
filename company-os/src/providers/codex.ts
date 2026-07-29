@@ -108,7 +108,10 @@ export class CodexProvider implements ModelProvider {
     // The transcript is emitted on stderr; the final answer on stdout.
     const stdout = `${result.stderr}\n${result.stdout}`.trim();
     const failed = result.failure !== null;
-    const failureDetail = result.failure;
+    const failureDetail =
+      result.failure === null
+        ? null
+        : collectedFailureReason(result.failure, stdout);
 
     if (failed && stdout.length === 0) {
       return {
@@ -131,6 +134,24 @@ export class CodexProvider implements ModelProvider {
       ? { ...parsed, failureReason: failureDetail }
       : parsed;
   }
+}
+
+export function collectedFailureReason(
+  fallback: string,
+  output: string,
+): string {
+  const actionable = output
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .reverse()
+    .find(
+      (line) =>
+        /^ERROR:/i.test(line) &&
+        !/failed to initialize MCP client during shutdown/i.test(line),
+    );
+  if (actionable === undefined) return fallback;
+  const detail = actionable.replace(/^ERROR:\s*/i, "").slice(0, 800);
+  return `${fallback} ${detail}`;
 }
 
 export interface CollectedRun {

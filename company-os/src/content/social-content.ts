@@ -393,8 +393,8 @@ export function buildContentProductionInitiative(input: {
       },
       {
         id: input.criterionIds[1],
-        description: "A cinematic candidate produces private Blender preview renders.",
-        verificationMethod: "Run the trusted cinematic Blender candidate verifier.",
+        description: "The real canonical town produces private portrait Blender preview renders.",
+        verificationMethod: "Run the trusted read-only canonical-town Blender verifier.",
         required: true,
       },
       {
@@ -442,10 +442,10 @@ export function buildContentProductionInitiative(input: {
     branchName: null,
     expectedOutputs: [
       "Complete social-content packet",
-      "Cinematic GLB or glTF candidate",
+      "Source-pinned trusted town render request",
       "Private Blender preview renders",
     ],
-    testRequirements: ["Cinematic candidate Blender preview"],
+    testRequirements: ["Trusted canonical-town Blender preview"],
     approvalRequired: true,
     version: 1,
     createdAt: now,
