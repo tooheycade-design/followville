@@ -165,6 +165,29 @@ test("malformed or partially invalid findings fail closed", async () => {
   assert.equal(result.findings[0]?.code, "evidence_unreadable");
 });
 
+test("harmless extra fields are stripped and long notes are bounded", async () => {
+  const fake = provider(
+    JSON.stringify([
+      {
+        code: "clutter",
+        note: "x".repeat(700),
+        severity: "medium",
+      },
+    ]),
+  );
+  const result = await new ModelVisualReviewer(fake.value).review({
+    task: task(),
+    workingDirectory: "C:\\private-review",
+    evidence,
+  });
+
+  assert.equal(result.accepted, false);
+  assert.equal(result.retryable, false);
+  assert.equal(result.findings[0]?.code, "clutter");
+  assert.equal(result.findings[0]?.note.length, 500);
+  assert.equal("severity" in (result.findings[0] ?? {}), false);
+});
+
 test("an unavailable judge fails closed", async () => {
   const fake = provider("[]", false);
   const result = await new ModelVisualReviewer(fake.value).review({

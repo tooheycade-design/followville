@@ -22,9 +22,9 @@ export const VisualFindingCodeSchema = z.enum([
 export const VisualFindingSchema = z
   .object({
     code: VisualFindingCodeSchema,
-    note: z.string().min(1).max(500),
+    note: z.string().min(1).transform((note) => note.slice(0, 500)),
   })
-  .strict();
+  .strip();
 
 export type VisualFinding = z.infer<typeof VisualFindingSchema>;
 
