@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import type { Goal, Task } from "@followville/company-os-core";
+import type { Goal, MemoryRecord, Task } from "@followville/company-os-core";
 
 import {
   CompanyStateSchema,
@@ -65,6 +65,48 @@ export class FileCompanyRepository implements CompanyRepository {
     const next = this.#chain.then(() => readState(this.statePath));
     this.#chain = next.catch(() => undefined);
     return next;
+  }
+
+  async retrieveMemories(
+    role: MemoryRecord["audienceRoles"][number],
+    query: string,
+    tags: readonly string[] = [],
+    limit = 8,
+  ): Promise<MemoryRecord[]> {
+    const state = await this.load();
+    const terms = query
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((term) => term.length > 2);
+    const now = Date.now();
+    return state.memories
+      .filter(
+        (memory) =>
+          memory.status === "active" &&
+          memory.audienceRoles.includes(role) &&
+          (memory.expiresAt === null || Date.parse(memory.expiresAt) > now),
+      )
+      .map((memory) => {
+        const text = `${memory.subject} ${memory.body} ${memory.tags.join(" ")}`.toLowerCase();
+        const termScore = terms.filter((term) => text.includes(term)).length;
+        const tagScore = tags.filter((tag) => memory.tags.includes(tag)).length;
+        const confidenceScore =
+          memory.confidence === "confirmed"
+            ? 40
+            : memory.confidence === "likely"
+              ? 25
+              : memory.confidence === "uncertain"
+                ? 10
+                : 0;
+        return { memory, rank: confidenceScore + termScore * 5 + tagScore * 8 };
+      })
+      .sort(
+        (left, right) =>
+          right.rank - left.rank ||
+          right.memory.createdAt.localeCompare(left.memory.createdAt),
+      )
+      .slice(0, Math.max(1, Math.min(limit, 25)))
+      .map(({ memory }) => memory);
   }
 
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void> {

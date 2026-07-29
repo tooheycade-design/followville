@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   artifactFromRow,
+  memoryFromRow,
   messageFromRow,
   runFromRow,
   workerFromRow,
@@ -145,4 +146,36 @@ test("database message rows unpack bounded structured context", () => {
   assert.equal(message.contextSummary, "Implementation and focused tests are complete.");
   assert.equal(message.confidence, "confirmed");
   assert.deepEqual(message.evidenceArtifactIds, [ID.artifact]);
+});
+
+test("database memory rows retain provenance and correction links", () => {
+  const memory = memoryFromRow({
+    id: "31000000-0000-4000-8000-000000000001",
+    organization_id: ID.organization,
+    project_id: ID.project,
+    memory_type: "project",
+    category: "current_state",
+    subject: "Current town state",
+    body: "Day 24, population 400.",
+    source_type: "repository",
+    source_reference: "world_state.json@sha256:test",
+    source_digest: "c".repeat(64),
+    confidence: "confirmed",
+    status: "active",
+    version: 2,
+    tags: ["day-24", "population"],
+    audience_roles: ["owner", "engineer"],
+    created_by_type: "system",
+    created_by_id: ID.agent,
+    created_at: NOW,
+    expires_at: null,
+    superseded_by_id: null,
+    supersedes_id: "31000000-0000-4000-8000-000000000000",
+    correction_reason: "Population advanced.",
+  });
+
+  assert.equal(memory.category, "current_state");
+  assert.equal(memory.version, 2);
+  assert.deepEqual(memory.audienceRoles, ["owner", "engineer"]);
+  assert.equal(memory.supersedesId, "31000000-0000-4000-8000-000000000000");
 });

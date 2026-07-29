@@ -288,7 +288,21 @@ const executor: TaskExecutor =
         ),
         ...(artifactStore === null ? {} : { artifactStore }),
         reworkBriefing: async (task) => {
-          const state = await companyRepository().load();
+          const repository = companyRepository();
+          const [state, memories] = await Promise.all([
+            repository.load(),
+            repository.retrieveMemories(
+              "engineer",
+              `${task.title} ${task.objective} ${task.reason}`,
+              task.repositoryScopes.flatMap((scope) =>
+                [scope.repository, ...scope.allowedPathPrefixes]
+                  .flatMap((value) => value.split(/[\\/]/))
+                  .map((part) => part.toLowerCase())
+                  .filter((part) => part.length > 2),
+              ),
+              8,
+            ),
+          ]);
           const taskRequestIds = new Set(
             state.approvalRequests
               .filter((request) => request.taskId === task.id)
@@ -332,7 +346,25 @@ const executor: TaskExecutor =
                   ...ownerFeedback.map((comment) => `- ${comment}`),
                   "Preserve the prior checkpoint. Address this feedback in a new revision.",
                 ].join("\n");
-          return [priorHandoff, gateFeedback, reviewerFeedback, ownerBriefing]
+          const memoryBriefing =
+            memories.length === 0
+              ? ""
+              : [
+                  "",
+                  "Bounded Followville memory relevant to this task:",
+                  ...memories.map(
+                    (memory) =>
+                      `- [${memory.category}; ${memory.confidence}; v${memory.version}] ${memory.subject}: ${memory.body} Source: ${memory.sourceReference}`,
+                  ),
+                  "Treat repository files and current tests as authoritative if they conflict with memory.",
+                ].join("\n");
+          return [
+            memoryBriefing,
+            priorHandoff,
+            gateFeedback,
+            reviewerFeedback,
+            ownerBriefing,
+          ]
             .filter((section) => section.length > 0)
             .join("\n");
         },

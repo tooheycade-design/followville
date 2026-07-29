@@ -26,6 +26,7 @@ test("writing then reading round-trips and validates", () => {
     "controlTicks",
     "evidenceArtifacts",
     "goals",
+    "memories",
     "messages",
     "ownerNotifications",
     "runs",

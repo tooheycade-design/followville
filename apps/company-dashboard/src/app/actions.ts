@@ -128,6 +128,33 @@ export async function directCeoAction(
   return result;
 }
 
+export async function correctMemoryAction(
+  _previous: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireOwner();
+  const body = String(formData.get("body") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (body.length === 0 || reason.length === 0) {
+    return { ok: false, message: "A corrected fact and reason are required." };
+  }
+
+  const client = await createAuthClient();
+  const { error } = await client.rpc("company_os_correct_memory", {
+    payload: {
+      memoryId: String(formData.get("memoryId") ?? ""),
+      expectedVersion: Number(formData.get("expectedVersion") ?? 0),
+      body,
+      reason,
+    },
+  });
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+  revalidatePath("/memory");
+  return { ok: true, message: "Correction recorded as a new memory version." };
+}
+
 export async function loginAction(formData: FormData): Promise<void> {
   const client = await createAuthClient();
   const destination = safeReturnPath(formData.get("next"));

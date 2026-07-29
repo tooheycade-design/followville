@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0029 applied | Done in development; 0017-0029 live-verified |
+| Migrations 0011-0031 applied | Done in development; 0017-0031 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -31,6 +31,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Worker registry and compatible dispatch | Live; Cade's worker registered and dashboard-visible |
 | Structured agent communication | Live; bounded, expiring, deduplicated messages are database-enforced and owner-visible |
 | Always-on hosted control | Live; Supabase Cron records five-minute queue health and daily owner reminders |
+| Structured Followville memory | Live; 20 source-backed facts, bounded role retrieval, and owner correction |
 
 ## Models
 
@@ -173,6 +174,24 @@ change task status, grant a capability, or stand in for an owner approval.
 Scheduling is interval-based rather than cron on purpose. These machines sleep,
 and a wall-clock cron would silently skip everything due while a laptop was
 closed. A machine coming back online notices it is overdue and catches up once.
+
+## Company memory
+
+Open **Memory** to inspect the source-backed project facts available to the
+team. Each record names its category, source digest, confidence, version, tags,
+and intended roles. The initial Day 24 facts come only from canonical
+`world_state.json` and `AGENTS.md`.
+
+Workers do not receive this full ledger. Before a task begins, the repository
+returns at most eight active, unexpired records ranked for that task and the
+worker's role. Retrieval itself is service-only. A model cannot widen its
+audience, grant itself access, or turn a memory into an approval.
+
+Owners correct a fact from the Memory page. A correction creates a confirmed
+new version and marks the prior version superseded; in-place edits, deletes,
+truncation, stale-version corrections, and a second active fact with the same
+category and subject are rejected by Postgres. For current-state facts, record
+a new version rather than rewriting history.
 
 ## Deciding on finished work
 

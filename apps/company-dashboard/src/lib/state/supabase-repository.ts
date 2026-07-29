@@ -5,6 +5,7 @@ import {
   ApprovalRequestSchema,
   AuditEventSchema,
   GoalSchema,
+  MemoryRecordSchema,
   EvidenceArtifactSchema,
   RunSchema,
   StructuredMessageSchema,
@@ -305,6 +306,33 @@ function notificationFromRow(row: Row) {
   });
 }
 
+export function memoryFromRow(row: Row) {
+  return MemoryRecordSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    type: row.memory_type,
+    category: row.category,
+    subject: row.subject,
+    body: row.body,
+    sourceType: row.source_type,
+    sourceReference: row.source_reference,
+    sourceDigest: row.source_digest,
+    confidence: row.confidence,
+    status: row.status,
+    version: toNumber(row.version),
+    tags: row.tags,
+    audienceRoles: row.audience_roles,
+    createdByType: row.created_by_type,
+    createdById: row.created_by_id,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    supersededById: row.superseded_by_id,
+    supersedesId: row.supersedes_id,
+    correctionReason: row.correction_reason,
+  });
+}
+
 
 /**
  * Shared-state backend for the Company OS control plane.
@@ -361,6 +389,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.tasks = rows("tasks").map(taskFromRow);
     state.runs = rows("runs").map(runFromRow);
     state.messages = rows("messages").map(messageFromRow);
+    state.memories = rows("memories").map(memoryFromRow);
     state.controlTicks = rows("control_ticks").map(controlTickFromRow);
     state.ownerNotifications = rows("owner_notifications").map(
       notificationFromRow,
@@ -373,6 +402,22 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.evidenceArtifacts = rows("evidence_artifacts").map(artifactFromRow);
     state.auditEvents = rows("audit_events").map(auditFromRow);
     return state;
+  }
+
+  async retrieveMemories(
+    role: Parameters<CompanyRepository["retrieveMemories"]>[0],
+    query: string,
+    tags: readonly string[] = [],
+    limit = 8,
+  ) {
+    const { data, error } = await this.client.rpc("company_os_retrieve_memories", {
+      p_role: role,
+      p_query: query,
+      p_tags: tags,
+      p_limit: limit,
+    });
+    failOn("company_os_retrieve_memories", error);
+    return ((data ?? []) as Row[]).map(memoryFromRow);
   }
 
   async appendGoalSimulation(record: GoalSimulationRecord): Promise<void> {

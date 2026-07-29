@@ -8,6 +8,7 @@ const LINKS = [
   ["/factory", "Factory"],
   ["/reports", "Reports"],
   ["/messages", "Messages"],
+  ["/memory", "Memory"],
   ["/control", "Control"],
   ["/ceo", "CEO"],
   ["/goals", "Goals"],

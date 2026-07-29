@@ -5,6 +5,7 @@ import {
   ApprovalRequestSchema,
   AuditEventSchema,
   GoalSchema,
+  MemoryRecordSchema,
   EvidenceArtifactSchema,
   RunSchema,
   StructuredMessageSchema,
@@ -15,6 +16,7 @@ import {
   type AuditEvent,
   type EvidenceArtifact,
   type Goal,
+  type MemoryRecord,
   type Run,
   type StructuredMessage,
   type Task,
@@ -76,6 +78,7 @@ export const CompanyStateSchema = z
     tasks: z.array(TaskSchema),
     runs: z.array(RunSchema),
     messages: z.array(StructuredMessageSchema).default([]),
+    memories: z.array(MemoryRecordSchema).default([]),
     controlTicks: z.array(HostedControlTickSchema).default([]),
     ownerNotifications: z.array(OwnerNotificationSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
@@ -93,6 +96,7 @@ export interface CompanyState {
   tasks: Task[];
   runs: Run[];
   messages: StructuredMessage[];
+  memories: MemoryRecord[];
   controlTicks: HostedControlTick[];
   ownerNotifications: OwnerNotification[];
   workers: WorkerNode[];
@@ -108,6 +112,7 @@ export function emptyState(): CompanyState {
     tasks: [],
     runs: [],
     messages: [],
+    memories: [],
     controlTicks: [],
     ownerNotifications: [],
     workers: [],
@@ -167,6 +172,12 @@ export interface HeldTaskDecision {
 export interface CompanyRepository {
   readonly backend: "file" | "supabase";
   load(): Promise<CompanyState>;
+  retrieveMemories(
+    role: MemoryRecord["audienceRoles"][number],
+    query: string,
+    tags?: readonly string[],
+    limit?: number,
+  ): Promise<MemoryRecord[]>;
   /** Releases or rejects held work. Returns the task's resulting status. */
   decideHeldTask(decision: HeldTaskDecision): Promise<string>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;
