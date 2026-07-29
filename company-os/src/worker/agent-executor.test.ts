@@ -214,6 +214,7 @@ test("private social content uses the trusted runtime without spending a model r
       "git_checkpoint",
       "test_execute",
       "blender_preview",
+      "message_send",
     ],
     repositoryScopes: [
       {

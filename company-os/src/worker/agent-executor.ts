@@ -31,6 +31,7 @@ const CONTENT_PACKET_ID =
 const TRUSTED_CONTENT_CAPABILITIES = [
   "blender_preview",
   "git_checkpoint",
+  "message_send",
   "repository_read",
   "repository_write",
   "test_execute",
@@ -56,7 +57,10 @@ function trustedContentPacketId(task: Task): string | null {
         scope.deniedPathPrefixes.includes("world_state.json") &&
         scope.deniedPathPrefixes.includes("town.glb") &&
         scope.deniedPathPrefixes.includes("town_chunks") &&
-        scope.deniedPathPrefixes.includes("neighborhood.blend"),
+        scope.deniedPathPrefixes.includes("neighborhood.blend") &&
+        scope.environments.length === 2 &&
+        scope.environments.includes("local") &&
+        scope.environments.includes("preview"),
     )
   ) {
     return null;

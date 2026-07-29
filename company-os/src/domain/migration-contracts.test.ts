@@ -315,3 +315,15 @@ test("trusted content recovery is service-only and cannot reopen changed work", 
     /grant execute on function public\.company_os_retry_failed_trusted_content\(uuid\)[\s\S]*to service_role/,
   );
 });
+
+test("trusted content recovery matches only the complete production task contract", () => {
+  const sql = migration("0044_align_trusted_content_recovery.sql");
+  assert.match(sql, /cardinality\(v_task\.allowed_capabilities\) <> 6/);
+  assert.match(sql, /'message_send'/);
+  assert.match(sql, /jsonb_array_length\(scope->'environments'\) = 2/);
+  assert.match(sql, /\(scope->'environments'\) \? 'local'/);
+  assert.match(sql, /\(scope->'environments'\) \? 'preview'/);
+  assert.match(sql, /packet\.status = 'rejected'/);
+  assert.match(sql, /v_latest_reason not like '%files: 0%'/);
+  assert.doesNotMatch(sql, /social_publish|published/i);
+});
