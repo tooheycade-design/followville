@@ -7,7 +7,7 @@ Last verified: 2026-07-29, development project
 
 - Supabase is the shared authority for goals, tasks, runs, approvals, evidence,
   audit events, release grants, and owner identity.
-- Migrations 0011-0037 are applied. The owner revision flow, reviewer revision
+- Migrations 0011-0038 are applied. The owner revision flow, reviewer revision
   flow, and worker run
   lifecycle both passed rollback-only live database transactions.
 - A request-changes decision preserves the authenticated owner's comment,

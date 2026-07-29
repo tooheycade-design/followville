@@ -214,3 +214,11 @@ test("social content decision history rejects truncate", () => {
   assert.match(sql, /before truncate on company_ops\.content_concept_decisions/);
   assert.match(sql, /content_packets_project_created_idx/);
 });
+
+test("social content selection hashes explicit UTF-8 bytes", () => {
+  const sql = migration("0038_fix_content_selection_digest.sql");
+
+  assert.match(sql, /extensions\.digest\(convert_to\(/);
+  assert.match(sql, /packet\.version <> \(payload->>'expectedVersion'\)::integer/);
+  assert.match(sql, /grant execute on function public\.company_os_select_content_concept\(jsonb\)\s+to authenticated/);
+});
