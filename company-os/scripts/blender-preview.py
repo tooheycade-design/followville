@@ -23,6 +23,12 @@ def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument(
+        "--profile",
+        choices=("candidate", "canonical-content"),
+        default="candidate",
+    )
+    parser.add_argument("--overlay", action="append", default=[])
     return parser.parse_args(forwarded)
 
 
@@ -58,6 +64,19 @@ def renderable_meshes():
     ]
 
 
+def content_focus_meshes(objects):
+    excluded_prefixes = (
+        "regional_walkable_terrain",
+        "ground",
+    )
+    focused = [
+        obj
+        for obj in objects
+        if not obj.name.lower().startswith(excluded_prefixes)
+    ]
+    return focused or objects
+
+
 def scene_bounds(objects):
     corners = [
         obj.matrix_world @ Vector(corner)
@@ -75,7 +94,7 @@ def point_at(obj, target):
     obj.rotation_euler = (target - obj.location).to_track_quat("-Z", "Y").to_euler()
 
 
-def install_neutral_stage(minimum, maximum):
+def install_neutral_stage(minimum, maximum, profile):
     scene = bpy.context.scene
     for obj in list(scene.objects):
         if obj.type in {"CAMERA", "LIGHT"}:
@@ -113,8 +132,12 @@ def install_neutral_stage(minimum, maximum):
     world = bpy.data.worlds.new("CompanyOS_Neutral_World")
     world.use_nodes = True
     background = world.node_tree.nodes.get("Background")
-    background.inputs["Color"].default_value = (0.055, 0.065, 0.08, 1.0)
-    background.inputs["Strength"].default_value = 0.45
+    if profile == "canonical-content":
+        background.inputs["Color"].default_value = (0.35, 0.55, 0.8, 1.0)
+        background.inputs["Strength"].default_value = 0.8
+    else:
+        background.inputs["Color"].default_value = (0.055, 0.065, 0.08, 1.0)
+        background.inputs["Strength"].default_value = 0.45
     scene.world = world
 
 
@@ -175,7 +198,7 @@ def collect_metrics(objects):
     }
 
 
-def configure_render():
+def configure_render(profile):
     scene = bpy.context.scene
     engines = {
         item.identifier
@@ -187,8 +210,12 @@ def configure_render():
             break
     else:
         raise RuntimeError("No supported Blender preview render engine is available.")
-    scene.render.resolution_x = 960
-    scene.render.resolution_y = 960
+    if profile == "canonical-content":
+        scene.render.resolution_x = 720
+        scene.render.resolution_y = 1280
+    else:
+        scene.render.resolution_x = 960
+        scene.render.resolution_y = 960
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
@@ -196,20 +223,65 @@ def configure_render():
     scene.render.use_file_extension = True
 
 
-def render_angles(output_directory, camera, center, radius):
+def add_camera_text(camera, value, position):
+    font = bpy.data.curves.new("CompanyOS_Overlay_Font", "FONT")
+    font.body = value
+    font.align_x = "CENTER"
+    font.align_y = "CENTER"
+    font.size = 0.12
+    font.extrude = 0.006
+    material = bpy.data.materials.get("CompanyOS_Overlay_Material")
+    if material is None:
+        material = bpy.data.materials.new("CompanyOS_Overlay_Material")
+        material.diffuse_color = (1.0, 1.0, 1.0, 1.0)
+        material.use_nodes = True
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+        bsdf.inputs["Emission Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+        bsdf.inputs["Emission Strength"].default_value = 1.0
+        bsdf.inputs["Roughness"].default_value = 1.0
+    font.materials.append(material)
+    text = bpy.data.objects.new("CompanyOS_Overlay", font)
+    bpy.context.scene.collection.objects.link(text)
+    text.parent = camera
+    text.location = Vector((0.0, position, -5.0))
+    text.rotation_euler = (0.0, 0.0, 0.0)
+    return text
+
+
+def render_angles(output_directory, camera, center, radius, profile, overlays):
     artifacts = []
-    angles = (
-        ("front", (1.45, -1.75, 1.2)),
-        ("side", (1.9, 0.25, 1.05)),
-        ("rear", (-1.45, 1.75, 1.2)),
-    )
-    for label, offset in angles:
+    if profile == "canonical-content":
+        camera.data.type = "PERSP"
+        camera.data.lens = 52
+        camera.data.sensor_fit = "VERTICAL"
+        angles = (
+            ("portrait-street", (0.62, -1.18, 0.52)),
+            ("portrait-town", (0.9, -1.12, 1.45)),
+            ("portrait-overhead", (-0.72, 0.92, 1.85)),
+        )
+    else:
+        angles = (
+            ("front", (1.45, -1.75, 1.2)),
+            ("side", (1.9, 0.25, 1.05)),
+            ("rear", (-1.45, 1.75, 1.2)),
+        )
+    for index, (label, offset) in enumerate(angles):
         camera.location = center + Vector(offset) * radius
         point_at(camera, center)
+        overlay = None
+        if profile == "canonical-content" and overlays:
+            overlay = add_camera_text(
+                camera,
+                overlays[min(index, len(overlays) - 1)],
+                -0.78 if index < 2 else 0.78,
+            )
         filename = "preview-" + label + ".png"
         bpy.context.scene.render.filepath = os.path.join(output_directory, filename)
         bpy.ops.render.render(write_still=True)
         artifacts.append(filename)
+        if overlay is not None:
+            bpy.data.objects.remove(overlay, do_unlink=True)
     return artifacts
 
 
@@ -276,23 +348,44 @@ def main():
 
     load_input(input_path)
     meshes = renderable_meshes()
-    minimum, maximum = scene_bounds(meshes)
+    framing_meshes = (
+        content_focus_meshes(meshes)
+        if args.profile == "canonical-content"
+        else meshes
+    )
+    minimum, maximum = scene_bounds(framing_meshes)
     metrics = collect_metrics(meshes)
     normalized_input = input_path.replace("\\", "/").lower()
-    profile = "cinematic" if "/cinematic/" in normalized_input else "runtime"
-    assessment = runtime_assessment(metrics, profile)
-    bpy.ops.export_scene.gltf(
-        filepath=validated_glb_path,
-        export_format="GLB",
-        use_visible=True,
+    profile = (
+        "cinematic"
+        if args.profile == "canonical-content" or "/cinematic/" in normalized_input
+        else "runtime"
     )
+    assessment = runtime_assessment(metrics, profile)
+    if args.profile != "canonical-content":
+        bpy.ops.export_scene.gltf(
+            filepath=validated_glb_path,
+            export_format="GLB",
+            use_visible=True,
+        )
     center = (minimum + maximum) * 0.5
     radius = max((maximum - minimum).length * 0.5, 0.5)
-    install_neutral_stage(minimum, maximum)
+    install_neutral_stage(minimum, maximum, args.profile)
     camera = bpy.context.scene.camera
-    configure_render()
-    preview_artifacts = render_angles(output_directory, camera, center, radius)
-    animation_artifact = render_animation_preview(output_directory, metrics)
+    configure_render(args.profile)
+    preview_artifacts = render_angles(
+        output_directory,
+        camera,
+        center,
+        radius,
+        args.profile,
+        args.overlay[:3],
+    )
+    animation_artifact = (
+        None
+        if args.profile == "canonical-content"
+        else render_animation_preview(output_directory, metrics)
+    )
     if animation_artifact:
         preview_artifacts.append(animation_artifact)
     report = {"metrics": metrics, "assessment": assessment}
@@ -303,11 +396,17 @@ def main():
         {
             "passed": assessment["suitable"],
             "message": (
-                "Rendered and validated isolated Blender candidate."
+                (
+                    "Rendered trusted read-only canonical town evidence."
+                    if args.profile == "canonical-content"
+                    else "Rendered and validated isolated Blender candidate."
+                )
                 if assessment["suitable"]
                 else "Candidate failed its Blender suitability assessment."
             ),
-            "artifacts": preview_artifacts + ["technical-report.json", "validated.glb"],
+            "artifacts": preview_artifacts
+            + ["technical-report.json"]
+            + ([] if args.profile == "canonical-content" else ["validated.glb"]),
             "metrics": report,
         }
     )

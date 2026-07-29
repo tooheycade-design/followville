@@ -333,3 +333,82 @@ test("reports command timeout and malformed subprocess output", async () => {
   assert.match(result.output, /render stopped/);
   assert.deepEqual(result.artifactFiles, []);
 });
+
+test("canonical content preview reads only the trusted town and records provenance", async () => {
+  const setup = await fixture();
+  const trustedTown = path.join(setup.trustedRoot, "town.glb");
+  await writeFile(trustedTown, "canonical town");
+  await writeFile(
+    path.join(setup.trustedRoot, "world_state.json"),
+    JSON.stringify({ day: 27, pop: 500, buildings: [{}, {}] }),
+  );
+  const commands: BlenderPreviewCommand[] = [];
+  const runner = new HeadlessBlenderPreviewRunner(setup.trustedRoot, {
+    environment: { FOLLOWVILLE_BLENDER_PATH: "blender" },
+    commandRunner: async (command) => {
+      commands.push(command);
+      if (command.args[0] === "--version") {
+        return { exitCode: 0, stdout: "Blender 5.1", stderr: "" };
+      }
+      const outputIndex = command.args.indexOf("--output");
+      assert.notEqual(outputIndex, -1);
+      await mkdir(command.args[outputIndex + 1] as string, { recursive: true });
+      return {
+        exitCode: 0,
+        stdout:
+          'COMPANY_OS_BLENDER_RESULT={"passed":true,"artifacts":["preview-portrait-town.png"]}',
+        stderr: "",
+      };
+    },
+  });
+
+  const result = await runner.run({
+    worktree: setup.worktree,
+    inputFile: "town.glb",
+    runId: "run-canonical",
+    signal: new AbortController().signal,
+    profile: "canonical-content",
+    overlays: ["Every follow built this.", "500 residents"],
+    expectedTownState: { day: 27, population: 500, buildingCount: 2 },
+  });
+
+  assert.equal(result.passed, true);
+  assert.equal(result.artifactFiles.length, 2);
+  assert.match(result.artifactFiles[1] ?? "", /source-provenance\.json$/);
+  const render = commands.at(-1);
+  assert.ok(render);
+  assert.ok(render.args.includes(await realpath(trustedTown)));
+  assert.deepEqual(
+    render.args.slice(render.args.indexOf("--profile")),
+    [
+      "--profile",
+      "canonical-content",
+      "--overlay",
+      "Every follow built this.",
+      "--overlay",
+      "500 residents",
+    ],
+  );
+
+  const refused = await runner.run({
+    worktree: setup.worktree,
+    inputFile: "another.glb",
+    runId: "run-canonical-refused",
+    signal: new AbortController().signal,
+    profile: "canonical-content",
+    expectedTownState: { day: 27, population: 500, buildingCount: 2 },
+  });
+  assert.equal(refused.passed, false);
+  assert.match(refused.output, /only use the trusted town\.glb/);
+
+  const stale = await runner.run({
+    worktree: setup.worktree,
+    inputFile: "town.glb",
+    runId: "run-canonical-stale",
+    signal: new AbortController().signal,
+    profile: "canonical-content",
+    expectedTownState: { day: 28, population: 501, buildingCount: 3 },
+  });
+  assert.equal(stale.passed, false);
+  assert.match(stale.output, /does not match trusted town state/);
+});

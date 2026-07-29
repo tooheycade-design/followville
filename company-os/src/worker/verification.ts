@@ -123,6 +123,55 @@ const PRIVATE_CINEMATIC_ARTIFACT =
   /^company-os\/candidates\/cinematic\/[^/]+\/(?:generate-candidate\.mjs|review\.json|evidence\/blender\/technical-report\.json)$/i;
 const WORKSPACE_DEPENDENCIES = /^(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$/;
 const NON_CODE = /(?:^|\/)(?:docs?\/|README(?:\.[^/]*)?$)|\.(?:md|txt)$/i;
+const PRIVATE_CONTENT_TASK = /^Produce private preview: /;
+
+function privateContentOverlays(task: Task): readonly string[] {
+  const storyboardText = [...task.objective.matchAll(/Text: "([^"]+)"/g)]
+    .map((match) => match[1]?.trim())
+    .filter((value): value is string => Boolean(value));
+  if (storyboardText.length === 0) {
+    return [task.title.replace(PRIVATE_CONTENT_TASK, "").slice(0, 160)];
+  }
+  const middle = storyboardText[Math.floor(storyboardText.length / 2)];
+  return [storyboardText[0], middle, storyboardText.at(-1)]
+    .filter((value): value is string => Boolean(value))
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .slice(0, 3);
+}
+
+function privateContentMilestone(task: Task):
+  | { day: number; population: number; buildingCount: number }
+  | undefined {
+  const match = task.objective.match(
+    /^Milestone: Day ([\d,]+) \/ ([\d,]+) residents \/ ([\d,]+) buildings$/m,
+  );
+  if (match === null) return undefined;
+  const values = match.slice(1).map((value) =>
+    Number.parseInt(value.replaceAll(",", ""), 10),
+  );
+  if (values.some((value) => !Number.isSafeInteger(value) || value < 0)) {
+    return undefined;
+  }
+  return {
+    day: values[0] as number,
+    population: values[1] as number,
+    buildingCount: values[2] as number,
+  };
+}
+
+function usesTrustedTownEvidence(task: Task): boolean {
+  return (
+    PRIVATE_CONTENT_TASK.test(task.title) &&
+    task.allowedCapabilities.includes("blender_preview") &&
+    task.repositoryScopes.some(
+      (scope) =>
+        scope.repository === "followville_repo" &&
+        scope.deniedPathPrefixes.includes("town.glb") &&
+        scope.allowedPathPrefixes.includes("company-os/content") &&
+        scope.allowedPathPrefixes.includes("company-os/candidates/cinematic"),
+    )
+  );
+}
 
 /** Fixed check selection. No task or model text is ever interpreted as a command. */
 export function verificationKinds(filesChanged: readonly string[]): {
@@ -459,6 +508,11 @@ export class RepositoryVerificationRunner implements WorkVerifier {
     const blenderFiles = input.filesChanged.filter((file) =>
       BLENDER_CANDIDATE.test(file),
     );
+    const trustedTownEvidence =
+      blenderFiles.length > 0 && usesTrustedTownEvidence(input.task);
+    const trustedTownMilestone = trustedTownEvidence
+      ? privateContentMilestone(input.task)
+      : undefined;
     if (
       blenderFiles.length > 0 &&
       plan.unverifiedPaths.length === 0 &&
@@ -484,7 +538,17 @@ export class RepositoryVerificationRunner implements WorkVerifier {
           artifactFiles,
         };
       }
-      if (blenderFiles.length > 3) {
+      if (trustedTownEvidence && trustedTownMilestone === undefined) {
+        return {
+          passed: false,
+          checks,
+          unverifiedPaths: [
+            "Private content requires a structured, source-backed town milestone.",
+          ],
+          artifactFiles,
+        };
+      }
+      if (!trustedTownEvidence && blenderFiles.length > 3) {
         return {
           passed: false,
           checks,
@@ -494,17 +558,29 @@ export class RepositoryVerificationRunner implements WorkVerifier {
           artifactFiles,
         };
       }
-      for (const file of blenderFiles) {
+      const previewInputs = trustedTownEvidence ? ["town.glb"] : blenderFiles;
+      for (const file of previewInputs) {
         const started = Date.now();
         const preview = await this.blenderPreview.run({
           worktree: input.worktree,
           inputFile: file,
           runId: input.runId,
           signal: input.signal,
+          profile: trustedTownEvidence ? "canonical-content" : "candidate",
+          ...(trustedTownEvidence
+            ? {
+                overlays: privateContentOverlays(input.task),
+                expectedTownState: trustedTownMilestone!,
+              }
+            : {}),
         });
         checks.push({
-          id: `blender-preview:${file}`,
-          label: `Blender evidence: ${file}`,
+          id: trustedTownEvidence
+            ? "blender-preview:trusted-town"
+            : `blender-preview:${file}`,
+          label: trustedTownEvidence
+            ? "Trusted read-only Followville evidence"
+            : `Blender evidence: ${file}`,
           passed: preview.passed,
           durationMs: Date.now() - started,
           output: cleanOutput(preview.output),

@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile, realpath, stat } from "node:fs/promises";
+import { readFile, realpath, stat, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -48,6 +48,13 @@ export interface BlenderPreviewRunner {
     inputFile: string;
     runId: string;
     signal: AbortSignal;
+    profile?: "candidate" | "canonical-content";
+    overlays?: readonly string[];
+    expectedTownState?: {
+      day: number;
+      population: number;
+      buildingCount: number;
+    };
   }): Promise<BlenderPreviewResult>;
 }
 
@@ -319,6 +326,13 @@ export class HeadlessBlenderPreviewRunner implements BlenderPreviewRunner {
     inputFile: string;
     runId: string;
     signal: AbortSignal;
+    profile?: "candidate" | "canonical-content";
+    overlays?: readonly string[];
+    expectedTownState?: {
+      day: number;
+      population: number;
+      buildingCount: number;
+    };
   }): Promise<BlenderPreviewResult> {
     try {
       if (!SAFE_RUN_ID.test(input.runId)) {
@@ -330,16 +344,78 @@ export class HeadlessBlenderPreviewRunner implements BlenderPreviewRunner {
       }
 
       const worktreeRoot = await realpath(input.worktree.path);
-      const requestedPath = path.isAbsolute(input.inputFile)
-        ? input.inputFile
-        : path.resolve(worktreeRoot, input.inputFile);
+      const profile = input.profile ?? "candidate";
+      if (profile === "canonical-content" && input.inputFile !== "town.glb") {
+        throw new Error(
+          "Canonical content preview may only use the trusted town.glb source.",
+        );
+      }
+      const requestedPath =
+        profile === "canonical-content"
+          ? path.resolve(this.trustedRepositoryRoot, "town.glb")
+          : path.isAbsolute(input.inputFile)
+            ? input.inputFile
+            : path.resolve(worktreeRoot, input.inputFile);
       const resolvedInput = await realpath(requestedPath);
-      if (!isInside(worktreeRoot, resolvedInput)) {
+      if (profile === "candidate" && !isInside(worktreeRoot, resolvedInput)) {
         throw new Error("Blender preview input must resolve inside the worktree.");
       }
       const inputStat = await stat(resolvedInput);
       if (!inputStat.isFile()) {
         throw new Error("Blender preview input must be a regular file.");
+      }
+      let trustedState:
+        | { day: number; population: number; buildingCount: number }
+        | undefined;
+      let trustedStateDigest: string | undefined;
+      if (profile === "canonical-content") {
+        if (input.expectedTownState === undefined) {
+          throw new Error(
+            "Canonical content preview requires a source-backed town milestone.",
+          );
+        }
+        const statePath = path.resolve(
+          this.trustedRepositoryRoot,
+          "world_state.json",
+        );
+        const stateBytes = await readFile(statePath);
+        trustedStateDigest = createHash("sha256")
+          .update(stateBytes)
+          .digest("hex");
+        const stateDocument = JSON.parse(
+          stateBytes.toString("utf8").replace(/^\uFEFF/, ""),
+        ) as Record<string, unknown>;
+        trustedState = {
+          day: stateDocument["day"] as number,
+          population: stateDocument["pop"] as number,
+          buildingCount: Array.isArray(stateDocument["buildings"])
+            ? stateDocument["buildings"].length
+            : -1,
+        };
+        if (
+          !Number.isInteger(trustedState.day) ||
+          !Number.isInteger(trustedState.population) ||
+          trustedState.buildingCount < 0
+        ) {
+          throw new Error(
+            "Trusted world_state.json has no valid canonical milestone.",
+          );
+        }
+        if (
+          trustedState.day !== input.expectedTownState.day ||
+          trustedState.population !== input.expectedTownState.population ||
+          trustedState.buildingCount !== input.expectedTownState.buildingCount
+        ) {
+          throw new Error(
+            `Content milestone does not match trusted town state: expected ` +
+              `Day ${input.expectedTownState.day} / ` +
+              `${input.expectedTownState.population} residents / ` +
+              `${input.expectedTownState.buildingCount} buildings; trusted ` +
+              `source is Day ${trustedState.day} / ` +
+              `${trustedState.population} residents / ` +
+              `${trustedState.buildingCount} buildings.`,
+          );
+        }
       }
       if (extension === ".gltf") {
         await validateExternalGltfUris(resolvedInput, worktreeRoot);
@@ -351,7 +427,11 @@ export class HeadlessBlenderPreviewRunner implements BlenderPreviewRunner {
         input.runId,
         "blender",
         createHash("sha256")
-          .update(path.relative(worktreeRoot, resolvedInput))
+          .update(
+            profile === "canonical-content"
+              ? "trusted:town.glb"
+              : path.relative(worktreeRoot, resolvedInput),
+          )
           .digest("hex")
           .slice(0, 12),
       );
@@ -385,6 +465,12 @@ export class HeadlessBlenderPreviewRunner implements BlenderPreviewRunner {
           resolvedInput,
           "--output",
           outputDirectory,
+          "--profile",
+          profile,
+          ...((input.overlays ?? []).flatMap((overlay) => [
+            "--overlay",
+            overlay.slice(0, 160),
+          ])),
         ],
         cwd: worktreeRoot,
         timeoutMs: this.#timeoutMs,
@@ -421,6 +507,37 @@ export class HeadlessBlenderPreviewRunner implements BlenderPreviewRunner {
           .split(path.sep)
           .join("/"),
       );
+      if (profile === "canonical-content" && parsed.passed === true) {
+        const sourceDigest = createHash("sha256")
+          .update(await readFile(resolvedInput))
+          .digest("hex");
+        const provenanceName = "source-provenance.json";
+        await writeFile(
+          path.join(outputDirectory, provenanceName),
+          `${JSON.stringify(
+            {
+              source: "town.glb",
+              sha256: sourceDigest,
+              worldStateSha256: trustedStateDigest,
+              milestone: trustedState,
+              access: "trusted-read-only",
+              runtimeAsset: false,
+            },
+            null,
+            2,
+          )}\n`,
+          "utf8",
+        );
+        artifactFiles.push(
+          path
+            .relative(
+              worktreeRoot,
+              path.resolve(outputDirectory, provenanceName),
+            )
+            .split(path.sep)
+            .join("/"),
+        );
+      }
       const passed = result.exitCode === 0 && parsed.passed === true;
       const message =
         typeof parsed.message === "string"

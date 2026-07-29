@@ -412,3 +412,112 @@ test("candidate models require capability and produce run-scoped Blender evidenc
     "blender-preview:company-os/candidates/storefront.glb");
   assert.equal(withCapability.artifactFiles.length, 2);
 });
+
+test("private content renders the trusted town source without widening task scope", async () => {
+  const invocations: Array<{
+    inputFile: string;
+    profile?: "candidate" | "canonical-content";
+    overlays?: readonly string[];
+    expectedTownState?: {
+      day: number;
+      population: number;
+      buildingCount: number;
+    };
+  }> = [];
+  const blender: BlenderPreviewRunner = {
+    async checkAvailability() {
+      return { available: true, detail: "fixture" };
+    },
+    async run(input) {
+      invocations.push({
+        inputFile: input.inputFile,
+        ...(input.profile ? { profile: input.profile } : {}),
+        ...(input.overlays ? { overlays: input.overlays } : {}),
+        ...(input.expectedTownState
+          ? { expectedTownState: input.expectedTownState }
+          : {}),
+      });
+      return {
+        passed: true,
+        output: "trusted town rendered",
+        artifactFiles: [".company-os/evidence/run/blender/town/portrait.png"],
+      };
+    },
+  };
+  const runner = new RepositoryVerificationRunner(
+    "C:/trusted",
+    async () => ({ exitCode: 0, output: "passed" }),
+    {
+      async run() {
+        throw new Error("browser preview must not run");
+      },
+    },
+    blender,
+  );
+  const contentTask = {
+    ...task,
+    title: "Produce private preview: 500 Residents, One Living Town",
+    objective: [
+      "Content packet 8c7fd5ae-5247-4ab2-b117-2e03191cdcda",
+      "Milestone: Day 27 / 500 residents / 560 buildings",
+      '0-2s: Street view. Text: "Every follow built this." VO: "Start."',
+      '2-5s: Pull back. Text: "Day 27" VO: "Grow."',
+      '5-9s: Overhead. Text: "500 residents" VO: "Reveal."',
+      '9-12s: Downtown. Text: "Your house is waiting." VO: "Join."',
+    ].join("\n"),
+    allowedCapabilities: [
+      ...task.allowedCapabilities,
+      "blender_preview" as const,
+    ],
+    repositoryScopes: [
+      {
+        repository: "followville_repo",
+        allowedPathPrefixes: [
+          "company-os/content",
+          "company-os/candidates/cinematic",
+        ],
+        deniedPathPrefixes: [
+          "world_state.json",
+          "town.glb",
+          "town_chunks",
+          "neighborhood.blend",
+        ],
+        environments: ["local" as const, "preview" as const],
+      },
+    ],
+  };
+
+  const result = await runner.verify({
+    task: contentTask,
+    worktree: {
+      path: "C:/worktree",
+      branch: "agent/task-content",
+      baseCommit: "a".repeat(40),
+    },
+    filesChanged: [
+      "company-os/content/8c7fd5ae-5247-4ab2-b117-2e03191cdcda/packet.json",
+      "company-os/candidates/cinematic/8c7fd5ae-5247-4ab2-b117-2e03191cdcda/candidate.glb",
+    ],
+    runId: "81000000-0000-4000-8000-000000000021",
+    signal: new AbortController().signal,
+  });
+
+  assert.equal(result.passed, true);
+  assert.deepEqual(invocations, [
+    {
+      inputFile: "town.glb",
+      profile: "canonical-content",
+      overlays: [
+        "Every follow built this.",
+        "500 residents",
+        "Your house is waiting.",
+      ],
+      expectedTownState: {
+        day: 27,
+        population: 500,
+        buildingCount: 560,
+      },
+    },
+  ]);
+  assert.equal(result.checks.at(-1)?.id, "blender-preview:trusted-town");
+});
