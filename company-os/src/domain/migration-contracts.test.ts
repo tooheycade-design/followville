@@ -222,3 +222,14 @@ test("social content selection hashes explicit UTF-8 bytes", () => {
   assert.match(sql, /packet\.version <> \(payload->>'expectedVersion'\)::integer/);
   assert.match(sql, /grant execute on function public\.company_os_select_content_concept\(jsonb\)\s+to authenticated/);
 });
+
+test("social content packets follow private production without gaining publish authority", () => {
+  const sql = migration("0039_sync_content_packet_lifecycle.sql");
+
+  assert.match(sql, /after update of status on company_ops\.tasks/);
+  assert.match(sql, /awaiting_human_approval' then 'ready_for_owner'/);
+  assert.match(sql, /new\.status in \('approved', 'merged'\) then 'approved'/);
+  assert.match(sql, /status <> 'published'/);
+  assert.doesNotMatch(sql, /then 'published'/);
+  assert.doesNotMatch(sql, /approval_decisions|social_publish|instagram/i);
+});

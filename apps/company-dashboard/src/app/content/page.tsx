@@ -11,6 +11,9 @@ export default async function ContentPage() {
     right.createdAt.localeCompare(left.createdAt),
   );
   const taskById = new Map(state.tasks.map((task) => [task.id, task]));
+  const artifactsById = new Map(
+    state.evidenceArtifacts.map((artifact) => [artifact.id, artifact] as const),
+  );
 
   return (
     <>
@@ -40,6 +43,15 @@ export default async function ContentPage() {
             packet.productionTaskId === null
               ? undefined
               : taskById.get(packet.productionTaskId);
+          const approval = state.approvalRequests
+            .filter((request) => request.taskId === packet.productionTaskId)
+            .sort((left, right) =>
+              right.createdAt.localeCompare(left.createdAt),
+            )[0];
+          const evidence =
+            approval?.evidenceArtifactIds
+              .map((id) => artifactsById.get(id))
+              .filter((artifact) => artifact !== undefined) ?? [];
           return (
             <section className="content-packet" key={packet.id}>
               <header>
@@ -85,6 +97,78 @@ export default async function ContentPage() {
                     ))}
                   </ul>
                 </div>
+              )}
+              {packet.priorContentNotes.length > 0 && (
+                <div className="notice">
+                  <b>Previous-content review</b>
+                  <ul>
+                    {packet.priorContentNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {evidence.length > 0 && (
+                <>
+                  <h4>Private production evidence</h4>
+                  <ul className="criteria">
+                    {evidence.map((artifact) => {
+                      const url = `/api/artifacts/${artifact.id}`;
+                      const image =
+                        artifact.safeToDisplay &&
+                        artifact.mediaType.startsWith("image/");
+                      const video =
+                        artifact.safeToDisplay &&
+                        artifact.mediaType.startsWith("video/");
+                      return (
+                        <li className="evidence-item" key={artifact.id}>
+                          <span>
+                            <b>{label(artifact.kind)}</b> - {artifact.label}{" "}
+                            <span className="muted">
+                              ({artifact.mediaType}, {artifact.sizeBytes} bytes)
+                            </span>
+                          </span>
+                          {artifact.location.kind === "object" && image && (
+                            <a href={url} target="_blank" rel="noreferrer">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                className="evidence-preview"
+                                src={url}
+                                alt={artifact.label}
+                              />
+                            </a>
+                          )}
+                          {artifact.location.kind === "object" && video && (
+                            <video
+                              className="evidence-preview"
+                              controls
+                              preload="metadata"
+                              src={url}
+                            />
+                          )}
+                          {artifact.location.kind === "object" &&
+                            !image &&
+                            !video && (
+                              <a
+                                className="evidence-open"
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Open private evidence
+                              </a>
+                            )}
+                          {artifact.location.kind === "git" && (
+                            <code className="mono">
+                              {`git show ${artifact.location.commitSha}:${artifact.location.repositoryPath}`}
+                            </code>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               )}
 
               <div className="content-concepts">
