@@ -106,6 +106,7 @@ export class ModelVisualReviewer {
   constructor(
     private readonly provider: ModelProvider,
     private readonly timeoutMs = 3 * 60_000,
+    private readonly fallbackProvider?: ModelProvider,
   ) {}
 
   async review(input: {
@@ -116,30 +117,42 @@ export class ModelVisualReviewer {
     if (input.evidence.length === 0) {
       return failClosed("No safe visual evidence was available to inspect.", false);
     }
-    const availability = await this.provider.checkAvailability();
-    if (!availability.available) {
-      return failClosed("The independent visual reviewer was unavailable.", true);
+    const providers = [
+      this.provider,
+      ...(this.fallbackProvider === undefined ? [] : [this.fallbackProvider]),
+    ];
+    const failures: string[] = [];
+    let response = null;
+    for (const provider of providers) {
+      const availability = await provider.checkAvailability();
+      if (!availability.available) {
+        failures.push(`${provider.name} was unavailable`);
+        continue;
+      }
+      try {
+        const candidate = await provider.invoke({
+          workingDirectory: input.workingDirectory,
+          accessMode: "read-only",
+          prompt: reviewPrompt(input.task, input.evidence),
+          timeoutMs: this.timeoutMs,
+          signal: new AbortController().signal,
+        });
+        if (candidate.ok) {
+          response = candidate;
+          break;
+        }
+        failures.push(
+          `${provider.name}: ${
+            candidate.failureReason ?? "unknown provider failure"
+          }`,
+        );
+      } catch (error) {
+        failures.push(`${provider.name}: ${(error as Error).message}`);
+      }
     }
-    let response;
-    try {
-      response = await this.provider.invoke({
-        workingDirectory: input.workingDirectory,
-        accessMode: "read-only",
-        prompt: reviewPrompt(input.task, input.evidence),
-        timeoutMs: this.timeoutMs,
-        signal: new AbortController().signal,
-      });
-    } catch (error) {
+    if (response === null) {
       return failClosed(
-        `The independent visual review failed: ${(error as Error).message}`,
-        true,
-      );
-    }
-    if (!response.ok) {
-      return failClosed(
-        `The independent visual review failed: ${
-          response.failureReason ?? "unknown provider failure"
-        }`,
+        `The independent visual review failed: ${failures.join("; ")}`,
         true,
       );
     }

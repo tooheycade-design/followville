@@ -422,7 +422,18 @@ const gate = new CeoGate({
 const visualReviewer =
   independentVisualProvider === null
     ? null
-    : new ModelVisualReviewer(independentVisualProvider, 10 * 60_000);
+    : new ModelVisualReviewer(
+        independentVisualProvider,
+        10 * 60_000,
+        independentVisualProvider.name === "claude-code"
+          ? (() => {
+              const executable = ClaudeCodeProvider.defaultExecutablePath();
+              return executable === null
+                ? undefined
+                : new ClaudeCodeProvider(executable, "haiku");
+            })()
+          : undefined,
+      );
 
 /**
  * Reviews work the worker finished.

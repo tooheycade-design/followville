@@ -177,6 +177,38 @@ test("an unavailable judge fails closed", async () => {
   assert.match(result.summary, /unavailable/);
 });
 
+test("a provider outage retries the same read-only review with a fallback", async () => {
+  const primary = provider("[]");
+  primary.value.invoke = async (): Promise<ProviderResponse> => ({
+    ok: false,
+    text: "",
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      costUsdMicros: 0,
+    },
+    model: "primary",
+    sessionId: null,
+    failureReason: "overloaded",
+  });
+  const fallback = provider("[]");
+  const result = await new ModelVisualReviewer(
+    primary.value,
+    10_000,
+    fallback.value,
+  ).review({
+    task: task(),
+    workingDirectory: "C:\\private-review",
+    evidence,
+  });
+
+  assert.equal(result.accepted, true);
+  assert.equal(result.retryable, false);
+  assert.equal(fallback.prompts.length, 1);
+  assert.match(fallback.prompts[0] ?? "", /Inspect every listed image file/);
+});
+
 test("visual decisions pin the evidence and Design Director identity", () => {
   const current = task();
   const event = visualReviewAuditEvent(
