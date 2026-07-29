@@ -205,6 +205,7 @@ export function reviewAuditEvent(
       taskId: task.id,
       verdict: result.verdict,
       cycle: task.reviewCycleCount,
+      reviewedAt: now,
     }),
     requestDigest: digest({ taskId: task.id, criteria: task.acceptanceCriteria }),
     resultDigest: digest(result.findings),

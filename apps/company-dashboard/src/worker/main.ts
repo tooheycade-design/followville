@@ -422,7 +422,7 @@ const gate = new CeoGate({
 const visualReviewer =
   independentVisualProvider === null
     ? null
-    : new ModelVisualReviewer(independentVisualProvider);
+    : new ModelVisualReviewer(independentVisualProvider, 10 * 60_000);
 
 /**
  * Reviews work the worker finished.
@@ -487,7 +487,8 @@ async function runReviewPass(): Promise<number> {
     // The reviewer checks that evidence exists; the CEO decides whether the
     // work is good. Both must pass before an owner is asked to look, which is
     // what makes the approval queue finished work rather than a triage pile.
-    let verdict = result.verdict;
+    let verdict: "approved_for_owner" | "changes_requested" | "deferred" =
+      result.verdict;
     let decisionSummary = result.summary;
     let visualSummary: string | null = null;
     let completedWork: CompletedWorkRecord | undefined;
@@ -514,6 +515,7 @@ async function runReviewPass(): Promise<number> {
         visual = {
           result: {
             accepted: false,
+            retryable: false,
             findings: [
               {
                 code: "evidence_unreadable",
@@ -530,6 +532,7 @@ async function runReviewPass(): Promise<number> {
           visual = {
             result: {
               accepted: false,
+              retryable: true,
               findings: [
                 {
                   code: "evidence_unreadable",
@@ -553,6 +556,7 @@ async function runReviewPass(): Promise<number> {
             visual = {
               result: {
                 accepted: false,
+                retryable: true,
                 findings: [
                   {
                     code: "evidence_unreadable",
@@ -587,9 +591,11 @@ async function runReviewPass(): Promise<number> {
         decisionSummary = visual.result.summary;
         visualSummary = visual.result.summary;
         if (!visual.result.accepted) {
-          verdict = "changes_requested";
+          verdict = visual.result.retryable ? "deferred" : "changes_requested";
           log(
-            `design ${task.id.slice(0, 8)} -> sent back: ${visual.result.summary}`,
+            visual.result.retryable
+              ? `design ${task.id.slice(0, 8)} -> deferred: ${visual.result.summary}`
+              : `design ${task.id.slice(0, 8)} -> sent back: ${visual.result.summary}`,
           );
         }
       }
@@ -654,6 +660,7 @@ async function runReviewPass(): Promise<number> {
       workerId,
       verdict,
       auditEvents,
+      ...(verdict === "deferred" ? { retryAfterSeconds: 300 } : {}),
       ...(completedWork === undefined ? {} : { completedWork }),
     });
     log(
@@ -664,7 +671,11 @@ async function runReviewPass(): Promise<number> {
     if (recorded && completedWork !== undefined) {
       log(`owner ${task.id.slice(0, 8)} -> awaiting your decision`);
     }
-    if (recorded && task.assignedAgentId !== null) {
+    if (
+      recorded &&
+      verdict !== "deferred" &&
+      task.assignedAgentId !== null
+    ) {
       const message = createAgentMessage({
         task,
         senderId: SEED_AGENTS.reviewer.id,

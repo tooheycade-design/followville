@@ -333,15 +333,31 @@ export class SupabaseReviewQueue {
   async recordReview(payload: {
     taskId: string;
     workerId: string;
-    verdict: "approved_for_owner" | "changes_requested";
+    verdict: "approved_for_owner" | "changes_requested" | "deferred";
     auditEvents: readonly unknown[];
     completedWork?: CompletedWorkRecord;
+    retryAfterSeconds?: number;
   }): Promise<boolean> {
     const { data, error } = await this.client.rpc("company_os_record_review", {
       payload,
     });
     if (error !== null) {
       throw new Error(`record review failed: ${error.message}`);
+    }
+    return data === true;
+  }
+
+  async retryFailedReview(payload: {
+    taskId: string;
+    expectedRunId: string;
+    auditEvent: unknown;
+  }): Promise<boolean> {
+    const { data, error } = await this.client.rpc(
+      "company_os_retry_failed_review",
+      { payload },
+    );
+    if (error !== null) {
+      throw new Error(`retry failed review failed: ${error.message}`);
     }
     return data === true;
   }

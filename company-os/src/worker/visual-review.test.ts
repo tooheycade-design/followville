@@ -116,6 +116,7 @@ test("the Design Director is told to inspect actual untrusted image files", asyn
     evidence,
   });
   assert.equal(result.accepted, true);
+  assert.equal(result.retryable, false);
   assert.equal(fake.directories[0], "C:\\private-review");
   assert.match(fake.prompts[0] ?? "", /Inspect every listed image file/);
   assert.match(fake.prompts[0] ?? "", /untrusted evidence/);
@@ -146,6 +147,7 @@ test("specific valid visual findings send work back", async () => {
     evidence,
   });
   assert.equal(result.accepted, false);
+  assert.equal(result.retryable, false);
   assert.match(result.summary, /primary action is clipped/);
 });
 
@@ -159,6 +161,7 @@ test("malformed or partially invalid findings fail closed", async () => {
     evidence,
   });
   assert.equal(result.accepted, false);
+  assert.equal(result.retryable, true);
   assert.equal(result.findings[0]?.code, "evidence_unreadable");
 });
 
@@ -170,6 +173,7 @@ test("an unavailable judge fails closed", async () => {
     evidence,
   });
   assert.equal(result.accepted, false);
+  assert.equal(result.retryable, true);
   assert.match(result.summary, /unavailable/);
 });
 
@@ -177,7 +181,12 @@ test("visual decisions pin the evidence and Design Director identity", () => {
   const current = task();
   const event = visualReviewAuditEvent(
     current,
-    { accepted: false, findings: [], summary: "Spacing is inconsistent." },
+    {
+      accepted: false,
+      retryable: false,
+      findings: [],
+      summary: "Spacing is inconsistent.",
+    },
     SEED_AGENTS.designDirector.id,
     [nextId()],
     nextId,
@@ -186,4 +195,28 @@ test("visual decisions pin the evidence and Design Director identity", () => {
   assert.equal(event.actorId, SEED_AGENTS.designDirector.id);
   assert.equal(event.action, "visual_review.changes_requested");
   assert.equal(event.evidenceArtifactIds.length, 1);
+});
+
+test("reviewer infrastructure failures are auditable without becoming feedback", () => {
+  const current = task();
+  const event = visualReviewAuditEvent(
+    current,
+    {
+      accepted: false,
+      retryable: true,
+      findings: [
+        {
+          code: "evidence_unreadable",
+          note: "The independent reviewer timed out.",
+        },
+      ],
+      summary: "The independent reviewer timed out.",
+    },
+    SEED_AGENTS.designDirector.id,
+    [nextId()],
+    nextId,
+    NOW,
+  );
+  assert.equal(event.action, "visual_review.unavailable");
+  assert.equal(event.outcome, "failed");
 });

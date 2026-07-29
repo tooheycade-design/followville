@@ -88,7 +88,12 @@ test("verified pixels exist during review and the temporary directory is removed
       directory = input.workingDirectory;
       assert.equal(input.evidence[0]?.fileName, "evidence-01.png");
       assert.deepEqual(await readFile(path.join(directory, "evidence-01.png")), bytes);
-      return { accepted: true, findings: [], summary: "Pixels inspected." };
+      return {
+        accepted: true,
+        retryable: false,
+        findings: [],
+        summary: "Pixels inspected.",
+      };
     },
   };
   const result = await runPixelBackedVisualReview({

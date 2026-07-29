@@ -8,7 +8,11 @@ import {
   type StructuredMessage,
 } from "@followville/company-os-core";
 
-import { SupabaseWorkQueue, type WorkerRegistration } from "./supabase-queue";
+import {
+  SupabaseReviewQueue,
+  SupabaseWorkQueue,
+  type WorkerRegistration,
+} from "./supabase-queue";
 
 const NOW = "2026-07-28T20:00:00.000Z";
 const worker: WorkerRegistration = {
@@ -127,6 +131,54 @@ test("structured messages use the bounded service RPC", async () => {
     {
       name: "company_os_send_message",
       args: { payload: message },
+    },
+  ]);
+});
+
+test("transient reviewer failures request a bounded deferred review", async () => {
+  const calls: Array<{ name: string; args: unknown }> = [];
+  const queue = new SupabaseReviewQueue({
+    async rpc(name: string, args: unknown) {
+      calls.push({ name, args });
+      return { error: null, data: true };
+    },
+  } as never);
+  const payload = {
+    taskId: "50000000-0000-4000-8000-000000000001",
+    workerId: worker.workerId,
+    verdict: "deferred" as const,
+    auditEvents: [],
+    retryAfterSeconds: 300,
+  };
+
+  assert.equal(await queue.recordReview(payload), true);
+  assert.deepEqual(calls, [
+    {
+      name: "company_os_record_review",
+      args: { payload },
+    },
+  ]);
+});
+
+test("failed reviews recover through the guarded service RPC", async () => {
+  const calls: Array<{ name: string; args: unknown }> = [];
+  const queue = new SupabaseReviewQueue({
+    async rpc(name: string, args: unknown) {
+      calls.push({ name, args });
+      return { error: null, data: true };
+    },
+  } as never);
+  const payload = {
+    taskId: "50000000-0000-4000-8000-000000000001",
+    expectedRunId: "60000000-0000-4000-8000-000000000001",
+    auditEvent: { action: "review.retry_scheduled" },
+  };
+
+  assert.equal(await queue.retryFailedReview(payload), true);
+  assert.deepEqual(calls, [
+    {
+      name: "company_os_retry_failed_review",
+      args: { payload },
     },
   ]);
 });

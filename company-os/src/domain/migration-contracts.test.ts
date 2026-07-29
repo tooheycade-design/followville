@@ -233,3 +233,31 @@ test("social content packets follow private production without gaining publish a
   assert.doesNotMatch(sql, /then 'published'/);
   assert.doesNotMatch(sql, /approval_decisions|social_publish|instagram/i);
 });
+
+test("reviewer outages defer the judge without consuming a worker revision", () => {
+  const sql = migration("0040_defer_unavailable_visual_reviews.sql");
+  const recordReview = sql.slice(
+    sql.indexOf("create or replace function public.company_os_record_review"),
+    sql.indexOf(
+      "create or replace function public.company_os_retry_failed_review",
+    ),
+  );
+
+  assert.match(sql, /lease_expires_at is null or t\.lease_expires_at <= now\(\)/);
+  assert.match(recordReview, /'deferred'/);
+  assert.match(recordReview, /v_retry_after < 60 or v_retry_after > 1800/);
+  assert.match(recordReview, /set lease_expires_at = now\(\) \+ make_interval/);
+  assert.doesNotMatch(
+    recordReview.slice(
+      recordReview.indexOf("if v_verdict = 'deferred' then"),
+      recordReview.indexOf("v_next_status :="),
+    ),
+    /review_cycle_count/,
+  );
+  assert.match(sql, /v_latest_visual\.reason not like 'The independent visual review failed:%'/);
+  assert.match(sql, /v_audit->>'action' <> 'review\.retry_scheduled'/);
+  assert.match(
+    sql,
+    /revoke all on function public\.company_os_retry_failed_review\(jsonb\)\s+from public, anon, authenticated;/,
+  );
+});

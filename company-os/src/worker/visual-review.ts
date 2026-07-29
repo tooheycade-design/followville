@@ -30,6 +30,8 @@ export type VisualFinding = z.infer<typeof VisualFindingSchema>;
 
 export interface VisualReviewResult {
   accepted: boolean;
+  /** Infrastructure failures defer review; they are not worker feedback. */
+  retryable: boolean;
   findings: readonly VisualFinding[];
   summary: string;
 }
@@ -87,13 +89,14 @@ function reviewPrompt(
   ].join("\n");
 }
 
-function failClosed(note: string): VisualReviewResult {
+function failClosed(note: string, retryable: boolean): VisualReviewResult {
   const finding: VisualFinding = {
     code: "evidence_unreadable",
     note: note.slice(0, 500),
   };
   return {
     accepted: false,
+    retryable,
     findings: [finding],
     summary: finding.note,
   };
@@ -111,11 +114,11 @@ export class ModelVisualReviewer {
     evidence: readonly VisualEvidenceFile[];
   }): Promise<VisualReviewResult> {
     if (input.evidence.length === 0) {
-      return failClosed("No safe visual evidence was available to inspect.");
+      return failClosed("No safe visual evidence was available to inspect.", false);
     }
     const availability = await this.provider.checkAvailability();
     if (!availability.available) {
-      return failClosed("The independent visual reviewer was unavailable.");
+      return failClosed("The independent visual reviewer was unavailable.", true);
     }
     let response;
     try {
@@ -129,6 +132,7 @@ export class ModelVisualReviewer {
     } catch (error) {
       return failClosed(
         `The independent visual review failed: ${(error as Error).message}`,
+        true,
       );
     }
     if (!response.ok) {
@@ -136,18 +140,28 @@ export class ModelVisualReviewer {
         `The independent visual review failed: ${
           response.failureReason ?? "unknown provider failure"
         }`,
+        true,
       );
     }
     const parsed = extractJsonArray(response.text);
     if (parsed === null) {
-      return failClosed("The independent visual review returned malformed evidence.");
+      return failClosed(
+        "The independent visual review returned malformed evidence.",
+        true,
+      );
     }
     if (parsed.length > 12) {
-      return failClosed("The independent visual review returned too many findings.");
+      return failClosed(
+        "The independent visual review returned too many findings.",
+        true,
+      );
     }
     const validated = parsed.map((entry) => VisualFindingSchema.safeParse(entry));
     if (validated.some((entry) => !entry.success)) {
-      return failClosed("The independent visual review returned an invalid finding.");
+      return failClosed(
+        "The independent visual review returned an invalid finding.",
+        true,
+      );
     }
     const findings: VisualFinding[] = [];
     for (const entry of validated) {
@@ -157,6 +171,7 @@ export class ModelVisualReviewer {
     }
     return {
       accepted: findings.length === 0,
+      retryable: false,
       findings,
       summary:
         findings.length === 0
@@ -187,7 +202,9 @@ export function visualReviewAuditEvent(
     actorId: reviewerAgentId,
     action: result.accepted
       ? "visual_review.approved_for_owner"
-      : "visual_review.changes_requested",
+      : result.retryable
+        ? "visual_review.unavailable"
+        : "visual_review.changes_requested",
     targetType: "task",
     targetId: task.id,
     outcome: result.accepted ? "succeeded" : "failed",
@@ -197,6 +214,7 @@ export function visualReviewAuditEvent(
       taskId: task.id,
       visualReview: result.accepted,
       cycle: task.reviewCycleCount,
+      reviewedAt: now,
     }),
     requestDigest: digest({
       taskId: task.id,
