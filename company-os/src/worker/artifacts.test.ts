@@ -251,10 +251,11 @@ test("runtime browser evidence fails closed without shared storage", async () =>
   );
 });
 
-test("runtime Blender preview and metrics are preserved in the private store", async () => {
+test("runtime Blender preview, report, and validated model reach the private store", async () => {
   const prefix = ".company-os/evidence/run/blender/model-hash";
-  const preview = `${prefix}/preview.png`;
-  const metrics = `${prefix}/metrics.json`;
+  const preview = `${prefix}/preview-front.png`;
+  const report = `${prefix}/technical-report.json`;
+  const model = `${prefix}/validated.glb`;
   const stored: string[] = [];
   const artifactStore: ArtifactStore = {
     async store(input) {
@@ -271,10 +272,11 @@ test("runtime Blender preview and metrics are preserved in the private store", a
     task: makeTask(),
     worktreePath: worktreeWith({
       [preview]: pngBytes("blender proof"),
-      [metrics]: Buffer.from('{"triangles":12}\n'),
+      [report]: Buffer.from('{"metrics":{"triangles":12}}\n'),
+      [model]: Buffer.from("glTF validated model"),
     }),
     filesChanged: [],
-    evidenceFiles: [preview, metrics],
+    evidenceFiles: [preview, report, model],
     commitSha: null,
     diff: null,
     runId: "94000000-0000-4000-8000-000000000096",
@@ -283,12 +285,17 @@ test("runtime Blender preview and metrics are preserved in the private store", a
     idFactory: randomUUID,
   });
 
-  assert.deepEqual(stored, ["preview.png", "metrics.json"]);
+  assert.deepEqual(stored, [
+    "preview-front.png",
+    "technical-report.json",
+    "validated.glb",
+  ]);
   assert.deepEqual(
     artifacts.map((artifact) => [artifact.kind, artifact.mediaType]),
     [
       ["screenshot", "image/png"],
       ["report", "application/json"],
+      ["model", "model/gltf-binary"],
     ],
   );
 });

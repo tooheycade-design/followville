@@ -437,10 +437,16 @@ tasks, worker health, and current risks in one attention queue.
 
 Candidate 3D work must be exported as `.glb` or `.gltf` under
 `company-os/candidates/`. A compatible worker runs the repository-owned
-headless Blender verifier, captures a neutral PNG plus geometry metrics, and
-stores both in the private evidence vault. External glTF files are accepted
-only when every URI resolves inside the isolated task worktree. Candidate
-`.blend` files are intentionally unsupported because linked data cannot yet be
-confined by the current process boundary.
+headless Blender verifier, captures neutral front, side, and rear PNGs, writes
+a technical report, and produces a validated GLB re-export. Reports include
+geometry, materials, texture dimensions and bytes, missing assets, and
+animation range; animated inputs also receive a bounded 480px MP4 preview of
+at most 24 sampled frames. Models under `company-os/candidates/cinematic/` are assessed
+as cinematic assets; every other candidate must also pass explicit web-runtime
+limits. All evidence is stored in the private evidence vault. External glTF
+files are accepted only when every URI resolves inside the isolated task
+worktree. Candidate `.blend` files and agent-authored Blender scripts remain
+intentionally unsupported because linked data and arbitrary Python cannot yet
+be confined by the current process boundary.
 
 See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.

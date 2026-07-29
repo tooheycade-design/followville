@@ -94,6 +94,22 @@ test("candidate models select patch integrity and the isolated preview", () => {
   );
 });
 
+test("candidate glTF sidecars are accepted only beside a candidate model", () => {
+  const withModel = verificationKinds([
+    "company-os/candidates/runtime/house.gltf",
+    "company-os/candidates/runtime/house.bin",
+    "company-os/candidates/runtime/albedo.png",
+  ]);
+  assert.deepEqual(withModel.unverifiedPaths, []);
+
+  const sidecarOnly = verificationKinds([
+    "company-os/candidates/runtime/orphan.bin",
+  ]);
+  assert.deepEqual(sidecarOnly.unverifiedPaths, [
+    "company-os/candidates/runtime/orphan.bin",
+  ]);
+});
+
 test("documentation needs only patch integrity", () => {
   assert.deepEqual(verificationKinds(["company-os/docs/ROADMAP.md"]), {
     kinds: ["diff-check"],

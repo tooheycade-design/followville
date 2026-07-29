@@ -45,7 +45,8 @@ const RECOGNIZED: readonly { pattern: RegExp; kind: ArtifactKind; mediaType: str
     mediaType: "application/json",
   },
   {
-    pattern: /(?:^|\/)blender\/[^/]+\/metrics\.json$/i,
+    pattern:
+      /(?:^|\/)blender\/[^/]+\/(?:metrics|technical-report)\.json$/i,
     kind: "report",
     mediaType: "application/json",
   },

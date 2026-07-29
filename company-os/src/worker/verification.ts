@@ -115,6 +115,8 @@ const TOWN_WEB =
   /^(?:index\.html|town\.html|admin\.html|vercel\.json|playwright\.config\.mjs|tests\/|assets\/)/;
 const BLENDER_CANDIDATE =
   /^company-os\/candidates\/.+\.(?:glb|gltf)$/i;
+const BLENDER_CANDIDATE_SIDECAR =
+  /^company-os\/candidates\/.+\.(?:bin|png|jpe?g|webp)$/i;
 const WORKSPACE_DEPENDENCIES = /^(?:package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$/;
 const NON_CODE = /(?:^|\/)(?:docs?\/|README(?:\.[^/]*)?$)|\.(?:md|txt)$/i;
 
@@ -148,6 +150,11 @@ export function verificationKinds(filesChanged: readonly string[]): {
       kinds.add("town-browser-tests");
     } else if (BLENDER_CANDIDATE.test(file)) {
       // Candidate models are verified by the isolated Blender runtime below.
+    } else if (
+      BLENDER_CANDIDATE_SIDECAR.test(file) &&
+      filesChanged.some((candidate) => BLENDER_CANDIDATE.test(candidate))
+    ) {
+      // The Blender runner validates every URI before opening a changed glTF.
     } else if (!NON_CODE.test(file)) {
       unverifiedPaths.push(file);
     }

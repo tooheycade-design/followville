@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import os
 import sys
 import traceback
@@ -88,7 +89,8 @@ def install_neutral_stage(minimum, maximum):
     camera = bpy.data.objects.new("CompanyOS_Preview_Camera", camera_data)
     scene.collection.objects.link(camera)
     camera.location = center + Vector((radius * 1.45, -radius * 1.75, radius * 1.2))
-    camera_data.lens = 55
+    camera_data.type = "ORTHO"
+    camera_data.ortho_scale = max(size.length * 1.15, 1.0)
     camera_data.clip_start = max(radius / 10000.0, 0.001)
     camera_data.clip_end = max(radius * 20.0, 1000.0)
     point_at(camera, center)
@@ -117,31 +119,63 @@ def install_neutral_stage(minimum, maximum):
 
 
 def collect_metrics(objects):
+    vertices = 0
     polygons = 0
     triangles = 0
     material_names = set()
-    texture_names = set()
+    textures = []
+    missing_assets = []
     for obj in objects:
         mesh = obj.data
+        vertices += len(mesh.vertices)
         polygons += len(mesh.polygons)
         mesh.calc_loop_triangles()
         triangles += len(mesh.loop_triangles)
         material_names.update(slot.material.name for slot in obj.material_slots if slot.material)
     for image in bpy.data.images:
-        if image.source != "VIEWER" and (image.filepath or image.packed_file):
-            texture_names.add(image.name)
+        if image.source == "VIEWER" or not (image.filepath or image.packed_file):
+            continue
+        width, height = image.size[:]
+        byte_size = 0
+        if image.packed_file:
+            byte_size = image.packed_file.size
+        elif image.filepath:
+            resolved = bpy.path.abspath(image.filepath)
+            if os.path.isfile(resolved):
+                byte_size = os.path.getsize(resolved)
+            else:
+                missing_assets.append(image.filepath)
+        textures.append(
+            {
+                "name": image.name,
+                "width": width,
+                "height": height,
+                "bytes": byte_size,
+            }
+        )
+    actions = list(bpy.data.actions)
     return {
         "objects": len(bpy.context.scene.objects),
         "renderableObjects": len(objects),
         "meshes": len({obj.data.name for obj in objects}),
+        "vertices": vertices,
         "polygons": polygons,
         "triangles": triangles,
         "materials": len(material_names),
-        "textures": len(texture_names),
+        "textures": len(textures),
+        "textureBytes": sum(texture["bytes"] for texture in textures),
+        "maxTextureDimension": max(
+            (max(texture["width"], texture["height"]) for texture in textures),
+            default=0,
+        ),
+        "animations": len(actions),
+        "animationFrameStart": int(bpy.context.scene.frame_start),
+        "animationFrameEnd": int(bpy.context.scene.frame_end),
+        "missingAssets": sorted(set(missing_assets)),
     }
 
 
-def configure_render(output_path):
+def configure_render():
     scene = bpy.context.scene
     engines = {
         item.identifier
@@ -159,8 +193,77 @@ def configure_render(output_path):
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
     scene.render.film_transparent = False
-    scene.render.filepath = output_path
     scene.render.use_file_extension = True
+
+
+def render_angles(output_directory, camera, center, radius):
+    artifacts = []
+    angles = (
+        ("front", (1.45, -1.75, 1.2)),
+        ("side", (1.9, 0.25, 1.05)),
+        ("rear", (-1.45, 1.75, 1.2)),
+    )
+    for label, offset in angles:
+        camera.location = center + Vector(offset) * radius
+        point_at(camera, center)
+        filename = "preview-" + label + ".png"
+        bpy.context.scene.render.filepath = os.path.join(output_directory, filename)
+        bpy.ops.render.render(write_still=True)
+        artifacts.append(filename)
+    return artifacts
+
+
+def render_animation_preview(output_directory, metrics):
+    if metrics["animations"] == 0:
+        return None
+    scene = bpy.context.scene
+    original = (
+        scene.render.resolution_x,
+        scene.render.resolution_y,
+        scene.frame_step,
+    )
+    span = max(scene.frame_end - scene.frame_start + 1, 1)
+    scene.frame_step = max(math.ceil(span / 24), 1)
+    scene.render.resolution_x = 480
+    scene.render.resolution_y = 480
+    scene.render.image_settings.file_format = "FFMPEG"
+    scene.render.ffmpeg.format = "MPEG4"
+    scene.render.ffmpeg.codec = "H264"
+    scene.render.ffmpeg.constant_rate_factor = "MEDIUM"
+    scene.render.ffmpeg.audio_codec = "NONE"
+    scene.render.filepath = os.path.join(output_directory, "animation-preview.mp4")
+    try:
+        bpy.ops.render.render(animation=True)
+    finally:
+        (
+            scene.render.resolution_x,
+            scene.render.resolution_y,
+            scene.frame_step,
+        ) = original
+        scene.render.image_settings.file_format = "PNG"
+    return "animation-preview.mp4"
+
+
+def runtime_assessment(metrics, profile):
+    limits = {
+        "triangles": 250000,
+        "materials": 64,
+        "textures": 64,
+        "maxTextureDimension": 4096,
+    }
+    failures = []
+    if metrics["missingAssets"]:
+        failures.append("missing external assets")
+    if profile == "runtime":
+        for name, maximum in limits.items():
+            if metrics[name] > maximum:
+                failures.append("{} exceeds {}".format(name, maximum))
+    return {
+        "profile": profile,
+        "suitable": not failures,
+        "failures": failures,
+        "limits": limits if profile == "runtime" else None,
+    }
 
 
 def main():
@@ -168,25 +271,44 @@ def main():
     input_path = os.path.realpath(args.input)
     output_directory = os.path.realpath(args.output)
     os.makedirs(output_directory, exist_ok=True)
-    preview_path = os.path.join(output_directory, "preview.png")
-    metrics_path = os.path.join(output_directory, "metrics.json")
+    report_path = os.path.join(output_directory, "technical-report.json")
+    validated_glb_path = os.path.join(output_directory, "validated.glb")
 
     load_input(input_path)
     meshes = renderable_meshes()
     minimum, maximum = scene_bounds(meshes)
-    install_neutral_stage(minimum, maximum)
     metrics = collect_metrics(meshes)
-    configure_render(preview_path)
-    bpy.ops.render.render(write_still=True)
-    with open(metrics_path, "w", encoding="utf-8") as handle:
-        json.dump(metrics, handle, indent=2, sort_keys=True)
+    normalized_input = input_path.replace("\\", "/").lower()
+    profile = "cinematic" if "/cinematic/" in normalized_input else "runtime"
+    assessment = runtime_assessment(metrics, profile)
+    bpy.ops.export_scene.gltf(
+        filepath=validated_glb_path,
+        export_format="GLB",
+        use_visible=True,
+    )
+    center = (minimum + maximum) * 0.5
+    radius = max((maximum - minimum).length * 0.5, 0.5)
+    install_neutral_stage(minimum, maximum)
+    camera = bpy.context.scene.camera
+    configure_render()
+    preview_artifacts = render_angles(output_directory, camera, center, radius)
+    animation_artifact = render_animation_preview(output_directory, metrics)
+    if animation_artifact:
+        preview_artifacts.append(animation_artifact)
+    report = {"metrics": metrics, "assessment": assessment}
+    with open(report_path, "w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=2, sort_keys=True)
         handle.write("\n")
     emit(
         {
-            "passed": True,
-            "message": "Rendered neutral Blender preview.",
-            "artifacts": ["preview.png", "metrics.json"],
-            "metrics": metrics,
+            "passed": assessment["suitable"],
+            "message": (
+                "Rendered and validated isolated Blender candidate."
+                if assessment["suitable"]
+                else "Candidate failed its Blender suitability assessment."
+            ),
+            "artifacts": preview_artifacts + ["technical-report.json", "validated.glb"],
+            "metrics": report,
         }
     )
 

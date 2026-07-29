@@ -121,7 +121,14 @@ test("discovers Blender safely, scrubs secrets, and parses artifacts", async () 
         JSON.stringify({
           passed: true,
           message: "Rendered neutral preview.",
-          artifacts: ["preview.png", "metrics.json", "../escape.txt"],
+          artifacts: [
+            "preview-front.png",
+            "preview-side.png",
+            "preview-rear.png",
+            "technical-report.json",
+            "validated.glb",
+            "../escape.txt",
+          ],
           metrics: { objects: 4, meshes: 2, triangles: 12 },
         }),
       stderr: "",
@@ -149,8 +156,11 @@ test("discovers Blender safely, scrubs secrets, and parses artifacts", async () 
   assert.equal(result.passed, true);
   assert.match(result.output, /"triangles":12/);
   assert.deepEqual(result.artifactFiles, [
-    ".company-os/evidence/run-safe/blender/acd0d3439811/preview.png",
-    ".company-os/evidence/run-safe/blender/acd0d3439811/metrics.json",
+    ".company-os/evidence/run-safe/blender/acd0d3439811/preview-front.png",
+    ".company-os/evidence/run-safe/blender/acd0d3439811/preview-side.png",
+    ".company-os/evidence/run-safe/blender/acd0d3439811/preview-rear.png",
+    ".company-os/evidence/run-safe/blender/acd0d3439811/technical-report.json",
+    ".company-os/evidence/run-safe/blender/acd0d3439811/validated.glb",
   ]);
   assert.equal(commands.length, 2);
   const render = commands[1];
