@@ -52,10 +52,13 @@ export function claudeExecutableCandidates(
 }
 
 export function claudeInvocationArgs(
-  request: Pick<ProviderRequest, "prompt" | "resumeSessionId">,
+  request: Pick<ProviderRequest, "prompt" | "resumeSessionId" | "accessMode">,
   model?: string,
 ): string[] {
   const args = ["-p", request.prompt, "--output-format", "json"];
+  if (request.accessMode === "read-only") {
+    args.push("--allowedTools", "Read");
+  }
   if (request.resumeSessionId !== undefined) {
     args.push("--resume", request.resumeSessionId, "--fork-session");
   }

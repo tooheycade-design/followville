@@ -21,6 +21,7 @@ import {
   GitHubAppInstallationAuth,
   GitHubRestPullRequestClient,
   HeadlessBlenderPreviewRunner,
+  ModelVisualReviewer,
   RepositoryReportExecutor,
   RepositoryVerificationRunner,
   ORGANIZATION_ID,
@@ -54,11 +55,18 @@ import {
   recordRun,
   reviewAuditEvent,
   reviewReworkBriefing,
+  taskRequiresVisualReview,
+  visualReviewAuditEvent,
   type ScheduleState,
+  type VisualReviewResult,
 } from "@followville/company-os-core";
 import type { CompletedWorkRecord } from "../lib/state/types";
 import { OWNER_REGISTRY } from "../lib/config";
 import { SupabaseArtifactStore } from "../lib/artifact-storage";
+import {
+  runPixelBackedVisualReview,
+  visualReviewArtifacts,
+} from "../lib/visual-review";
 import { runPublicationPass } from "./publication";
 import { createAgentMessage } from "./structured-message";
 import { collectReadOnlyOperations } from "../lib/operations/collector";
@@ -153,6 +161,10 @@ log(
  */
 const provider = ready[0] ?? null;
 const judgeProvider = ready[1] ?? ready[0] ?? null;
+const independentVisualProvider =
+  provider === null
+    ? null
+    : ready.find((candidate) => candidate.name !== provider.name) ?? null;
 const githubPublicationAvailable = [
   process.env.COMPANY_OS_GITHUB_BASE_BRANCH,
   process.env.COMPANY_OS_GITHUB_APP_ID,
@@ -164,6 +176,11 @@ if (ready.length >= 2) {
 } else if (ready.length === 1) {
   log(`roles: ${provider?.name} both implements and judges (only one model signed in)`);
 }
+log(
+  independentVisualProvider === null
+    ? "Design Director: unavailable until a second model provider is signed in"
+    : `Design Director: ${independentVisualProvider.name} ready for independent pixel review`,
+);
 
 const workerCapabilities =
   deterministic || provider === null
@@ -401,6 +418,10 @@ const gate = new CeoGate({
   workingDirectory: repositoryRoot,
   timeoutMs: 3 * 60_000,
 });
+const visualReviewer =
+  independentVisualProvider === null
+    ? null
+    : new ModelVisualReviewer(independentVisualProvider);
 
 /**
  * Reviews work the worker finished.
@@ -442,6 +463,15 @@ async function runReviewPass(): Promise<number> {
     // the Chief Executive rejecting sound work for missing_evidence.
     const report = decodeWorkerReport(completion?.reason ?? "");
     const completedRunId = completion?.runId ?? null;
+    const artifacts = report.artifacts.map((reported) =>
+      artifactFromReport(
+        reported,
+        task,
+        SEED_AGENTS.engineer.id,
+        completion?.createdAt ?? new Date().toISOString(),
+        completedRunId,
+      ),
+    );
 
     const result = await reviewer.review({
       task,
@@ -457,6 +487,8 @@ async function runReviewPass(): Promise<number> {
     // work is good. Both must pass before an owner is asked to look, which is
     // what makes the approval queue finished work rather than a triage pile.
     let verdict = result.verdict;
+    let decisionSummary = result.summary;
+    let visualSummary: string | null = null;
     let completedWork: CompletedWorkRecord | undefined;
     const auditEvents: unknown[] = [
       reviewAuditEvent(
@@ -468,6 +500,99 @@ async function runReviewPass(): Promise<number> {
         completedRunId,
       ),
     ];
+
+    if (verdict === "approved_for_owner") {
+      const selectedVisualEvidence = visualReviewArtifacts(artifacts);
+      const requiresVisualReview = taskRequiresVisualReview(task);
+      const hasVisualEvidence = selectedVisualEvidence.length > 0;
+      let visual: {
+        result: VisualReviewResult;
+        evidenceArtifactIds: string[];
+      } | null = null;
+      if (requiresVisualReview && !hasVisualEvidence) {
+        visual = {
+          result: {
+            accepted: false,
+            findings: [
+              {
+                code: "evidence_unreadable",
+                note: "This task requires visual evidence, but no safe screenshot or render was recorded.",
+              },
+            ],
+            summary:
+              "This task requires visual evidence, but no safe screenshot or render was recorded.",
+          },
+          evidenceArtifactIds: [],
+        };
+      } else if (hasVisualEvidence) {
+        if (visualReviewer === null || artifactStore === null) {
+          visual = {
+            result: {
+              accepted: false,
+              findings: [
+                {
+                  code: "evidence_unreadable",
+                  note: "The pixel-backed visual reviewer or private evidence store was unavailable.",
+                },
+              ],
+              summary:
+                "The pixel-backed visual reviewer or private evidence store was unavailable.",
+            },
+            evidenceArtifactIds: selectedVisualEvidence.map((artifact) => artifact.id),
+          };
+        } else {
+          try {
+            visual = await runPixelBackedVisualReview({
+              task,
+              artifacts,
+              artifactLoader: artifactStore,
+              reviewer: visualReviewer,
+            });
+          } catch (error) {
+            visual = {
+              result: {
+                accepted: false,
+                findings: [
+                  {
+                    code: "evidence_unreadable",
+                    note: `Private visual evidence could not be verified: ${
+                      (error as Error).message
+                    }`,
+                  },
+                ],
+                summary: `Private visual evidence could not be verified: ${
+                  (error as Error).message
+                }`,
+              },
+              evidenceArtifactIds: selectedVisualEvidence.map(
+                (artifact) => artifact.id,
+              ),
+            };
+          }
+        }
+      }
+      if (visual !== null) {
+        auditEvents.push(
+          visualReviewAuditEvent(
+            task,
+            visual.result,
+            SEED_AGENTS.designDirector.id,
+            visual.evidenceArtifactIds,
+            randomUUID,
+            new Date().toISOString(),
+            completedRunId,
+          ),
+        );
+        decisionSummary = visual.result.summary;
+        visualSummary = visual.result.summary;
+        if (!visual.result.accepted) {
+          verdict = "changes_requested";
+          log(
+            `design ${task.id.slice(0, 8)} -> sent back: ${visual.result.summary}`,
+          );
+        }
+      }
+    }
 
     if (verdict === "approved_for_owner") {
       const gateResult = await gate.judge({
@@ -505,15 +630,6 @@ async function runReviewPass(): Promise<number> {
         const commit = report.evidence
           .find((item) => item.startsWith("commit="))
           ?.slice("commit=".length);
-        const artifacts = report.artifacts.map((reported) =>
-          artifactFromReport(
-            reported,
-            task,
-            SEED_AGENTS.engineer.id,
-            completion?.createdAt ?? new Date().toISOString(),
-            completedRunId,
-          ),
-        );
         const request = completedWorkApproval({
           task,
           runId: completedRunId!,
@@ -525,6 +641,7 @@ async function runReviewPass(): Promise<number> {
           commitSha:
             commit === undefined || commit.startsWith("none") ? null : commit,
           gateNotes: gateResult.notes,
+          visualReview: visualSummary,
           idFactory: randomUUID,
         });
         completedWork = { approvalRequest: request, artifacts };
@@ -540,7 +657,7 @@ async function runReviewPass(): Promise<number> {
     });
     log(
       recorded
-        ? `review ${task.id.slice(0, 8)} -> ${verdict}: ${result.summary}`
+        ? `review ${task.id.slice(0, 8)} -> ${verdict}: ${decisionSummary}`
         : `review ${task.id.slice(0, 8)} -> lease lost, verdict discarded`,
     );
     if (recorded && completedWork !== undefined) {
@@ -556,7 +673,7 @@ async function runReviewPass(): Promise<number> {
             ? "changes_requested"
             : "task_complete",
         priority: verdict === "changes_requested" ? "high" : "normal",
-        contextSummary: result.summary,
+        contextSummary: decisionSummary,
         requestedAction:
           verdict === "changes_requested"
             ? "Address the evidence-backed review findings in the next revision."

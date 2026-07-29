@@ -40,7 +40,11 @@ export function reviewReworkBriefing(
 ): string {
   const review = [...events]
     .reverse()
-    .find((event) => event.action === "review.changes_requested");
+    .find(
+      (event) =>
+        event.action === "review.changes_requested" ||
+        event.action === "visual_review.changes_requested",
+    );
   const completion = [...events]
     .reverse()
     .find((event) => event.action === "worker.completed");

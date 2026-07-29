@@ -33,6 +33,9 @@ export default async function ApprovalsPage() {
       {pending.map((request) => {
         const task = tasksById.get(request.taskId);
         const readiness = approvalReadiness(request, task);
+        const visualReview = request.reason
+          .split("\n")
+          .find((line) => line.startsWith("Design Director:"));
         return (
           <article className="approval" key={request.id}>
             <header>
@@ -86,6 +89,12 @@ export default async function ApprovalsPage() {
                 <b>Recommendation</b>
                 <span>{label(request.recommendation)}</span>
               </div>
+              {visualReview !== undefined && (
+                <div>
+                  <b>Design Director review</b>
+                  <span>{visualReview.slice("Design Director:".length).trim()}</span>
+                </div>
+              )}
               <div>
                 <b>Approvals needed</b>
                 <span>

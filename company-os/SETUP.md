@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0034 applied | Done in development; 0017-0034 live-verified |
+| Migrations 0011-0035 applied | Done in development; 0017-0035 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -34,6 +34,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Structured Followville memory | Live; 20 source-backed facts, bounded role retrieval, and owner correction |
 | Read-only operational integrations | Live for public town state and website health; five sources explicitly await setup |
 | Synthetic product observability | Hourly homepage/town journey, private alerts, and owner-requested diagnostics live |
+| Pixel-backed visual review | Design Director inspects verified private screenshots/renders before owner approval |
 
 ## Models
 
@@ -343,6 +344,7 @@ numbered migration.
 | 0023 | Worker health registry and agent/capability-compatible task dispatch |
 | 0024 | Database-normalized agent capability grants for dispatch |
 | 0025 | Require every registered worker to name its provider |
+| 0035 | Register the read-only Design Director for pixel-backed review |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:
@@ -448,5 +450,15 @@ files are accepted only when every URI resolves inside the isolated task
 worktree. Candidate `.blend` files and agent-authored Blender scripts remain
 intentionally unsupported because linked data and arbitrary Python cannot yet
 be confined by the current process boundary.
+
+Safe screenshot and render artifacts receive a separate Design Director pass
+before the Chief Executive gate. The worker downloads at most six owner-only
+PNG images from the private evidence bucket, verifies every byte against its
+durable size and SHA-256 record, rejects invalid signatures or unbounded
+dimensions, and exposes generated filenames in a temporary directory to the
+independent judge. The judge must inspect the actual pixels
+and return only bounded finding codes. Invalid output, missing providers,
+altered evidence, or unreadable files fail closed. The temporary directory is
+removed after every decision, and the audit event pins the exact artifact IDs.
 
 See `VERIFIED_CURRENT_STATE.md` for the evidence-based handoff.

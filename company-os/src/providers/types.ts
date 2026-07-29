@@ -22,6 +22,8 @@ export interface ModelUsage {
 export interface ProviderRequest {
   /** Working directory the provider may operate in. */
   workingDirectory: string;
+  /** Review calls can explicitly remove all write-capable provider tools. */
+  accessMode?: "read-only" | "workspace-write";
   prompt: string;
   /**
    * A prior local provider session for this same task and continuity key.

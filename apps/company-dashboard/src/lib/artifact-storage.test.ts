@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { TaskSchema } from "@followville/company-os-core";
+import {
+  EvidenceArtifactSchema,
+  TaskSchema,
+  type EvidenceArtifact,
+} from "@followville/company-os-core";
 import {
   EVIDENCE_BUCKET,
   SupabaseArtifactStore,
@@ -72,6 +76,45 @@ function input(absolutePath: string, bytes: Buffer) {
   };
 }
 
+function artifact(bytes: Buffer, overrides: Partial<EvidenceArtifact> = {}) {
+  return EvidenceArtifactSchema.parse({
+    id: "91000000-0000-4000-8000-000000000004",
+    organizationId: task.organizationId,
+    projectId: task.projectId,
+    goalId: task.goalId,
+    taskId: task.id,
+    runId: "91000000-0000-4000-8000-000000000005",
+    kind: "screenshot",
+    label: "Desktop preview",
+    mediaType: "image/png",
+    sizeBytes: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    location: {
+      kind: "object",
+      provider: "supabase_storage",
+      bucket: EVIDENCE_BUCKET,
+      objectPath: "organizations/example/evidence",
+    },
+    visibility: "owner_only",
+    containsSensitiveData: false,
+    safeToDisplay: true,
+    retentionPolicy: "approval_record",
+    createdByAgentId: "40000000-0000-4000-8000-000000000003",
+    createdAt: "2026-07-29T12:00:00.000Z",
+    expiresAt: null,
+    ...overrides,
+  });
+}
+
+function boundedPng(width = 100, height = 100): Buffer {
+  const value = Buffer.alloc(24);
+  Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(value);
+  value.write("IHDR", 12, "ascii");
+  value.writeUInt32BE(width, 16);
+  value.writeUInt32BE(height, 20);
+  return value;
+}
+
 test("object paths are scope-derived and ignore the supplied filename", () => {
   const bytes = Buffer.from("bytes");
   const value = evidenceObjectPath(input("C:\\ignored", bytes));
@@ -104,7 +147,7 @@ test("uploads never overwrite and are verified by downloading the stored bytes",
         },
         async download(objectPath) {
           assert.equal(objectPath, uploadedPath);
-          return { data: new Blob([bytes]), error: null };
+          return { data: new Blob([Uint8Array.from(bytes)]), error: null };
         },
         async createSignedUrl() {
           return { data: null, error: { message: "not used" } };
@@ -149,4 +192,54 @@ test("a stored byte mismatch is refused rather than cited as evidence", async ()
     new SupabaseArtifactStore(storage).store(input(file, bytes)),
     /does not match/,
   );
+});
+
+test("visual review downloads and verifies owner-safe image evidence", async () => {
+  const bytes = boundedPng();
+  const storage: ArtifactStorageClient = {
+    from(bucket) {
+      assert.equal(bucket, EVIDENCE_BUCKET);
+      return {
+        async upload() {
+          return { error: null };
+        },
+        async download(objectPath) {
+          assert.equal(objectPath, "organizations/example/evidence");
+          return { data: new Blob([Uint8Array.from(bytes)]), error: null };
+        },
+        async createSignedUrl() {
+          return { data: null, error: { message: "not used" } };
+        },
+      };
+    },
+  };
+  assert.deepEqual(
+    await new SupabaseArtifactStore(storage).loadVerified(artifact(bytes)),
+    bytes,
+  );
+});
+
+test("visual review refuses unsafe or altered evidence", async () => {
+  const bytes = boundedPng();
+  const storage: ArtifactStorageClient = {
+    from() {
+      return {
+        async upload() {
+          return { error: null };
+        },
+        async download() {
+          return { data: new Blob(["altered"]), error: null };
+        },
+        async createSignedUrl() {
+          return { data: null, error: { message: "not used" } };
+        },
+      };
+    },
+  };
+  const store = new SupabaseArtifactStore(storage);
+  await assert.rejects(
+    store.loadVerified(artifact(bytes, { safeToDisplay: false })),
+    /not eligible/,
+  );
+  await assert.rejects(store.loadVerified(artifact(bytes)), /does not match/);
 });

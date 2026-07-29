@@ -64,6 +64,8 @@ export interface CompletedWorkInput {
   commitSha: string | null;
   /** What the Chief Executive said when it accepted. */
   gateNotes: string;
+  /** What the pixel-backed Design Director inspected, when visual review applied. */
+  visualReview?: string | null;
   idFactory: () => string;
   now?: () => string;
 }
@@ -89,6 +91,7 @@ export function completedWorkApproval(
     artifacts: [...input.artifacts].map((artifact) => artifact.sha256).sort(),
     testsCompleted: [...input.testsCompleted].sort(),
     commitSha: input.commitSha,
+    visualReview: input.visualReview ?? null,
   });
 
   const where =
@@ -113,6 +116,9 @@ export function completedWorkApproval(
       input.artifacts.length > 0
         ? `Evidence: ${input.artifacts.map((a) => `${a.kind} "${a.label}"`).join(", ")}.`
         : "Evidence: the recorded diff only.",
+      ...(input.visualReview === undefined || input.visualReview === null
+        ? []
+        : [`Design Director: ${input.visualReview}`]),
       `Chief Executive: ${input.gateNotes}`,
     ].join("\n"),
     scopeDigest,

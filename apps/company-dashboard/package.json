@@ -10,7 +10,7 @@
     "start": "next start --port 4100",
     "typecheck": "tsc --noEmit",
     "worker": "tsx --env-file=.env.local src/worker/main.ts",
-    "test": "tsx --test src/lib/artifact-storage.test.ts src/lib/worker-health.test.ts src/lib/state/file-repository.test.ts src/lib/state/file-repository.readonly.test.ts src/lib/state/supabase-repository.test.ts src/lib/state/supabase-queue.test.ts src/lib/state/retry.test.ts src/lib/commands.test.ts src/lib/auth-policy.test.ts src/worker/*.test.ts"
+    "test": "tsx --test src/lib/artifact-storage.test.ts src/lib/visual-review.test.ts src/lib/worker-health.test.ts src/lib/state/file-repository.test.ts src/lib/state/file-repository.readonly.test.ts src/lib/state/supabase-repository.test.ts src/lib/state/supabase-queue.test.ts src/lib/state/retry.test.ts src/lib/commands.test.ts src/lib/auth-policy.test.ts src/worker/*.test.ts"
   },
   "dependencies": {
     "@followville/company-os-core": "workspace:*",

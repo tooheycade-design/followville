@@ -94,7 +94,10 @@ export class CodexProvider implements ModelProvider {
   }
 
   async invoke(request: ProviderRequest): Promise<ProviderResponse> {
-    const args = codexInvocationArgs(request, this.sandbox);
+    const args = codexInvocationArgs(
+      request,
+      request.accessMode ?? this.sandbox,
+    );
 
     const result = await spawnCollecting(this.executablePath, args, {
       cwd: request.workingDirectory,

@@ -149,6 +149,16 @@ test("the next attempt receives reviewer and failed-check diagnostics", () => {
   assert.match(briefing, /one assertion failed/);
 });
 
+test("the next attempt receives Design Director findings", () => {
+  const briefing = reviewReworkBriefing([
+    {
+      action: "visual_review.changes_requested",
+      reason: "mobile_problem: The primary action is clipped.",
+    },
+  ]);
+  assert.match(briefing, /primary action is clipped/);
+});
+
 test("a task whose worker and reviewer differ passes the independence check", () => {
   assert.doesNotThrow(() => assertIndependentReviewer(makeTask()));
 });

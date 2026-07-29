@@ -5,8 +5,7 @@ import { SEED_AGENTS } from "../config/seed-agents.js";
 import { TaskSchema, WorkerNodeSchema } from "./schemas.js";
 
 test("seed agent profiles satisfy the strict schema", () => {
-  // ceo, manager, engineer, reviewer, costAuditor, reporter
-  assert.equal(Object.keys(SEED_AGENTS).length, 6);
+  assert.equal(Object.keys(SEED_AGENTS).length, 7);
 });
 
 test("no seed agent holds a production capability", () => {

@@ -65,6 +65,23 @@ test("Claude revisions fork the recorded session", () => {
   );
 });
 
+test("Claude visual review receives only its read tool", () => {
+  assert.deepEqual(
+    claudeInvocationArgs({
+      prompt: "Inspect evidence-01.png.",
+      accessMode: "read-only",
+    }),
+    [
+      "-p",
+      "Inspect evidence-01.png.",
+      "--output-format",
+      "json",
+      "--allowedTools",
+      "Read",
+    ],
+  );
+});
+
 test("subscription usage keeps tokens but never reports API-equivalent cost as spend", () => {
   assert.deepEqual(
     claudeSubscriptionUsage({
