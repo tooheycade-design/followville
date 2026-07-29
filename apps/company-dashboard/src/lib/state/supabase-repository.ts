@@ -25,6 +25,8 @@ import {
   type GoalSimulationRecord,
   type HeldTaskDecision,
   HostedControlTickSchema,
+  IntegrationSourceSchema,
+  OperationalSnapshotSchema,
   OwnerNotificationSchema,
 } from "./types";
 
@@ -306,6 +308,45 @@ function notificationFromRow(row: Row) {
   });
 }
 
+export function integrationSourceFromRow(row: Row) {
+  return IntegrationSourceSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    sourceKey: row.source_key,
+    displayName: row.display_name,
+    sourceType: row.source_type,
+    accessMode: row.access_mode,
+    status: row.status,
+    setupRequirement: row.setup_requirement,
+    configuration: row.configuration,
+    lastCheckedAt: row.last_checked_at,
+    lastSuccessAt: row.last_success_at,
+    lastErrorCode: row.last_error_code,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
+export function operationalSnapshotFromRow(row: Row) {
+  return OperationalSnapshotSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    sourceId: row.source_id,
+    capturedAt: row.captured_at,
+    metrics: row.metrics,
+    evidenceReference: row.evidence_reference,
+    sourceDigest: row.source_digest,
+    idempotencyKey: row.idempotency_key,
+    confidence: row.confidence,
+    freshnessUntil: row.freshness_until,
+    createdByType: row.created_by_type,
+    createdById: row.created_by_id,
+    createdAt: row.created_at,
+  });
+}
+
 export function memoryFromRow(row: Row) {
   return MemoryRecordSchema.parse({
     id: row.id,
@@ -371,8 +412,15 @@ export class SupabaseCompanyRepository implements CompanyRepository {
   }
 
   async load(): Promise<CompanyState> {
-    const { data, error } = await this.client.rpc("company_os_load");
+    const [
+      { data, error },
+      { data: operationsData, error: operationsError },
+    ] = await Promise.all([
+      this.client.rpc("company_os_load"),
+      this.client.rpc("company_os_load_operations"),
+    ]);
     failOn("company_os_load", error);
+    failOn("company_os_load_operations", operationsError);
 
     const payload = (data ?? {}) as Record<string, Row[]>;
     const rows = (key: string): Row[] => payload[key] ?? [];
@@ -394,6 +442,13 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.ownerNotifications = rows("owner_notifications").map(
       notificationFromRow,
     );
+    const operations = (operationsData ?? {}) as Record<string, Row[]>;
+    state.integrationSources = (operations.sources ?? []).map(
+      integrationSourceFromRow,
+    );
+    state.operationalSnapshots = (operations.snapshots ?? []).map(
+      operationalSnapshotFromRow,
+    );
     state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),
@@ -402,6 +457,28 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.evidenceArtifacts = rows("evidence_artifacts").map(artifactFromRow);
     state.auditEvents = rows("audit_events").map(auditFromRow);
     return state;
+  }
+
+  async recordOperationalSnapshot(
+    input: Parameters<CompanyRepository["recordOperationalSnapshot"]>[0],
+  ) {
+    const { data, error } = await this.client.rpc(
+      "company_os_record_operational_snapshot",
+      { payload: input },
+    );
+    failOn("company_os_record_operational_snapshot", error);
+    return operationalSnapshotFromRow(data as Row);
+  }
+
+  async recordOperationalFailure(
+    sourceKey: string,
+    errorCode: string,
+  ): Promise<void> {
+    const { error } = await this.client.rpc(
+      "company_os_record_operational_failure",
+      { p_source_key: sourceKey, p_error_code: errorCode },
+    );
+    failOn("company_os_record_operational_failure", error);
   }
 
   async retrieveMemories(

@@ -17,6 +17,7 @@ import {
   companyOsSiteUrl,
   createAuthClient,
 } from "@/lib/supabase/server";
+import { collectReadOnlyOperations } from "@/lib/operations/collector";
 
 export interface ActionState {
   ok: boolean;
@@ -153,6 +154,12 @@ export async function correctMemoryAction(
   }
   revalidatePath("/memory");
   return { ok: true, message: "Correction recorded as a new memory version." };
+}
+
+export async function refreshOperationsAction(): Promise<void> {
+  await requireOwner();
+  await collectReadOnlyOperations(companyRepository());
+  revalidatePath("/operations");
 }
 
 export async function loginAction(formData: FormData): Promise<void> {

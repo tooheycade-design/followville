@@ -61,6 +61,7 @@ import { OWNER_REGISTRY } from "../lib/config";
 import { SupabaseArtifactStore } from "../lib/artifact-storage";
 import { runPublicationPass } from "./publication";
 import { createAgentMessage } from "./structured-message";
+import { collectReadOnlyOperations } from "../lib/operations/collector";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -742,6 +743,14 @@ const JOBS: Record<string, () => Promise<void>> = {
       `cost audit: $${(spent / 1_000_000).toFixed(2)} metered API spend; ` +
         `${subscriptionRuns.length} subscription run(s) ` +
         `across completed, failed, or lease-lost model-backed attempts`,
+    );
+  },
+  "operations-refresh": async () => {
+    const results = await collectReadOnlyOperations(companyRepository());
+    log(
+      `operations refresh: ${results
+        .map((result) => `${result.sourceKey}=${result.outcome}`)
+        .join(", ")}`,
     );
   },
 };

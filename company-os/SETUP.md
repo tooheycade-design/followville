@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0031 applied | Done in development; 0017-0031 live-verified |
+| Migrations 0011-0033 applied | Done in development; 0017-0033 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -32,6 +32,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Structured agent communication | Live; bounded, expiring, deduplicated messages are database-enforced and owner-visible |
 | Always-on hosted control | Live; Supabase Cron records five-minute queue health and daily owner reminders |
 | Structured Followville memory | Live; 20 source-backed facts, bounded role retrieval, and owner correction |
+| Read-only operational integrations | Live for public town state and website health; five sources explicitly await setup |
 
 ## Models
 
@@ -192,6 +193,29 @@ new version and marks the prior version superseded; in-place edits, deletes,
 truncation, stale-version corrections, and a second active fact with the same
 category and subject are rejected by Postgres. For current-state facts, record
 a new version rather than rewriting history.
+
+## Followville operations
+
+Open **Operations** for read-only signals from the product. The worker refreshes
+approved public sources every 15 minutes, and an owner can request an immediate
+refresh from the page. Operational snapshots are immutable, digest-backed,
+freshness-bounded, and separate from project memory and approval state.
+
+Two sources require no credential and are live:
+
+- deployed `world_state.json`: day, population, building count, seed counter;
+- public website health: reachability, HTTP status, response time, content type.
+
+Instagram metrics, website analytics, production application data, payment
+summaries, and moderation reports remain visibly `setup required`. Do not
+replace those states with zeroes. Add only official or explicitly approved
+read-only integrations, and never place provider secrets in the source
+configuration JSON.
+
+The Operations page compares deployed town counters with the active
+`current_state` memory. A difference is source drift requiring a canonical Git
+refresh or a new memory version; it is not permission for an agent to rewrite
+either source.
 
 ## Deciding on finished work
 

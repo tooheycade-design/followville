@@ -3,8 +3,10 @@ import test from "node:test";
 
 import {
   artifactFromRow,
+  integrationSourceFromRow,
   memoryFromRow,
   messageFromRow,
+  operationalSnapshotFromRow,
   runFromRow,
   workerFromRow,
 } from "./supabase-repository";
@@ -178,4 +180,50 @@ test("database memory rows retain provenance and correction links", () => {
   assert.equal(memory.version, 2);
   assert.deepEqual(memory.audienceRoles, ["owner", "engineer"]);
   assert.equal(memory.supersedesId, "31000000-0000-4000-8000-000000000000");
+});
+
+test("database integration rows make missing setup explicit", () => {
+  const source = integrationSourceFromRow({
+    id: "33000000-0000-4000-8000-000000000001",
+    organization_id: ID.organization,
+    project_id: ID.project,
+    source_key: "instagram_metrics",
+    display_name: "Instagram metrics",
+    source_type: "instagram",
+    access_mode: "setup_required",
+    status: "setup_required",
+    setup_requirement: "Official API access is not configured.",
+    configuration: { provider: "meta_graph_api" },
+    last_checked_at: null,
+    last_success_at: null,
+    last_error_code: null,
+    created_at: NOW,
+    updated_at: NOW,
+  });
+
+  assert.equal(source.status, "setup_required");
+  assert.match(source.setupRequirement ?? "", /not configured/);
+});
+
+test("database operational snapshots retain freshness and evidence", () => {
+  const snapshot = operationalSnapshotFromRow({
+    id: "33000000-0000-4000-8000-000000000002",
+    organization_id: ID.organization,
+    project_id: ID.project,
+    source_id: "33000000-0000-4000-8000-000000000001",
+    captured_at: NOW,
+    metrics: { day: 27, population: 500, reachable: true },
+    evidence_reference: "https://followville-kappa.vercel.app/world_state.json",
+    source_digest: "e".repeat(64),
+    idempotency_key: "public_town_state:123:evidence",
+    confidence: "confirmed",
+    freshness_until: "2026-07-29T20:30:00.000Z",
+    created_by_type: "system",
+    created_by_id: ID.agent,
+    created_at: NOW,
+  });
+
+  assert.equal(snapshot.metrics.population, 500);
+  assert.equal(snapshot.confidence, "confirmed");
+  assert.match(snapshot.sourceDigest, /^[0-9a-f]{64}$/);
 });

@@ -549,6 +549,53 @@ button.danger {
   justify-self: start;
 }
 
+.operations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 30px;
+  margin-top: 24px;
+  border-top: 2px solid var(--rule-strong);
+}
+
+.operation-source {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.operation-source header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.operation-source h3 {
+  margin: 3px 0 0;
+  font: 700 17px/1.3 Georgia, serif;
+}
+
+.operation-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin-top: 16px;
+}
+
+.operation-metrics div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 4px;
+}
+
+.operation-metrics dt {
+  color: var(--ink-soft);
+}
+
+.operation-metrics dd {
+  font-weight: 700;
+}
+
 @media (max-width: 720px) {
   .message-entry header,
   .message-entry footer {
@@ -564,6 +611,10 @@ button.danger {
   }
 
   .memory-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-grid {
     grid-template-columns: 1fr;
   }
 }

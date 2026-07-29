@@ -99,7 +99,11 @@ test("due jobs are ordered most overdue first", () => {
     ],
   ]);
   const due = dueJobs(DEFAULT_SCHEDULE, states, T0);
-  assert.equal(due[0]?.name, "daily-report", "never-run jobs sort first");
+  assert.equal(
+    due[0]?.name,
+    "operations-refresh",
+    "never-run jobs sort first in schedule order",
+  );
   assert.ok(
     due.map((job) => job.name).includes("reclaim-leases"),
     "the longest-idle job is included",

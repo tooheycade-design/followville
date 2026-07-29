@@ -72,6 +72,78 @@ export const OwnerNotificationSchema = z
 export type HostedControlTick = z.infer<typeof HostedControlTickSchema>;
 export type OwnerNotification = z.infer<typeof OwnerNotificationSchema>;
 
+const OperationalMetricValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+export const IntegrationSourceSchema = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    sourceKey: z.string().min(3),
+    displayName: z.string().min(1),
+    sourceType: z.enum([
+      "public_town",
+      "website",
+      "instagram",
+      "analytics",
+      "application_database",
+      "payments",
+      "moderation",
+    ]),
+    accessMode: z.enum([
+      "public_read",
+      "configured_read_only",
+      "setup_required",
+    ]),
+    status: z.enum([
+      "active",
+      "setup_required",
+      "degraded",
+      "error",
+      "disabled",
+    ]),
+    setupRequirement: z.string().nullable(),
+    configuration: z.record(z.string(), z.unknown()),
+    lastCheckedAt: z.string().datetime({ offset: true }).nullable(),
+    lastSuccessAt: z.string().datetime({ offset: true }).nullable(),
+    lastErrorCode: z.string().nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const OperationalSnapshotSchema = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    sourceId: z.string().uuid(),
+    capturedAt: z.string().datetime({ offset: true }),
+    metrics: z.record(z.string(), OperationalMetricValueSchema),
+    evidenceReference: z.string().min(1),
+    sourceDigest: z.string().regex(/^[0-9a-f]{64}$/),
+    idempotencyKey: z.string().min(16),
+    confidence: z.enum([
+      "confirmed",
+      "likely",
+      "uncertain",
+      "requires_human_verification",
+    ]),
+    freshnessUntil: z.string().datetime({ offset: true }),
+    createdByType: z.enum(["human", "agent", "service", "system"]),
+    createdById: z.string().uuid(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export type IntegrationSource = z.infer<typeof IntegrationSourceSchema>;
+export type OperationalSnapshot = z.infer<typeof OperationalSnapshotSchema>;
+
 export const CompanyStateSchema = z
   .object({
     goals: z.array(GoalSchema),
@@ -81,6 +153,8 @@ export const CompanyStateSchema = z
     memories: z.array(MemoryRecordSchema).default([]),
     controlTicks: z.array(HostedControlTickSchema).default([]),
     ownerNotifications: z.array(OwnerNotificationSchema).default([]),
+    integrationSources: z.array(IntegrationSourceSchema).default([]),
+    operationalSnapshots: z.array(OperationalSnapshotSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
@@ -99,6 +173,8 @@ export interface CompanyState {
   memories: MemoryRecord[];
   controlTicks: HostedControlTick[];
   ownerNotifications: OwnerNotification[];
+  integrationSources: IntegrationSource[];
+  operationalSnapshots: OperationalSnapshot[];
   workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
@@ -115,6 +191,8 @@ export function emptyState(): CompanyState {
     memories: [],
     controlTicks: [],
     ownerNotifications: [],
+    integrationSources: [],
+    operationalSnapshots: [],
     workers: [],
     approvalRequests: [],
     approvalDecisions: [],
@@ -178,6 +256,17 @@ export interface CompanyRepository {
     tags?: readonly string[],
     limit?: number,
   ): Promise<MemoryRecord[]>;
+  recordOperationalSnapshot(input: {
+    sourceKey: string;
+    capturedAt: string;
+    metrics: OperationalSnapshot["metrics"];
+    evidenceReference: string;
+    sourceDigest: string;
+    idempotencyKey: string;
+    confidence: OperationalSnapshot["confidence"];
+    freshnessMinutes: number;
+  }): Promise<OperationalSnapshot>;
+  recordOperationalFailure(sourceKey: string, errorCode: string): Promise<void>;
   /** Releases or rejects held work. Returns the task's resulting status. */
   decideHeldTask(decision: HeldTaskDecision): Promise<string>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;

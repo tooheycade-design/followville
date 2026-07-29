@@ -1,6 +1,8 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { randomUUID } from "node:crypto";
+
 import type { Goal, MemoryRecord, Task } from "@followville/company-os-core";
 
 import {
@@ -11,6 +13,7 @@ import {
   type CompanyState,
   type GoalSimulationRecord,
   type HeldTaskDecision,
+  type OperationalSnapshot,
 } from "./types";
 
 export function defaultStatePath(): string {
@@ -107,6 +110,65 @@ export class FileCompanyRepository implements CompanyRepository {
       )
       .slice(0, Math.max(1, Math.min(limit, 25)))
       .map(({ memory }) => memory);
+  }
+
+  recordOperationalSnapshot(
+    input: Parameters<CompanyRepository["recordOperationalSnapshot"]>[0],
+  ): Promise<OperationalSnapshot> {
+    return this.#mutate((state) => {
+      const source = state.integrationSources.find(
+        (candidate) => candidate.sourceKey === input.sourceKey,
+      );
+      if (source === undefined) {
+        throw new Error(`Operational source ${input.sourceKey} does not exist.`);
+      }
+      const existing = state.operationalSnapshots.find(
+        (snapshot) => snapshot.idempotencyKey === input.idempotencyKey,
+      );
+      if (existing !== undefined) {
+        return existing;
+      }
+      const snapshot: OperationalSnapshot = {
+        id: randomUUID(),
+        organizationId: source.organizationId,
+        projectId: source.projectId,
+        sourceId: source.id,
+        capturedAt: input.capturedAt,
+        metrics: input.metrics,
+        evidenceReference: input.evidenceReference,
+        sourceDigest: input.sourceDigest,
+        idempotencyKey: input.idempotencyKey,
+        confidence: input.confidence,
+        freshnessUntil: new Date(
+          Date.parse(input.capturedAt) + input.freshnessMinutes * 60_000,
+        ).toISOString(),
+        createdByType: "system",
+        createdById: "00000000-0000-4000-8000-000000000033",
+        createdAt: new Date().toISOString(),
+      };
+      state.operationalSnapshots.push(snapshot);
+      source.status = "active";
+      source.lastCheckedAt = snapshot.createdAt;
+      source.lastSuccessAt = snapshot.createdAt;
+      source.lastErrorCode = null;
+      source.updatedAt = snapshot.createdAt;
+      return snapshot;
+    });
+  }
+
+  recordOperationalFailure(sourceKey: string, errorCode: string): Promise<void> {
+    return this.#mutate((state) => {
+      const source = state.integrationSources.find(
+        (candidate) => candidate.sourceKey === sourceKey,
+      );
+      if (source === undefined || source.status === "setup_required") {
+        throw new Error(`Operational source ${sourceKey} cannot record failure.`);
+      }
+      source.status = "error";
+      source.lastCheckedAt = new Date().toISOString();
+      source.lastErrorCode = errorCode;
+      source.updatedAt = source.lastCheckedAt;
+    });
   }
 
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void> {

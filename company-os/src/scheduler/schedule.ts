@@ -47,6 +47,12 @@ export const DEFAULT_SCHEDULE: readonly ScheduleDefinition[] = [
     description: "Requeue tasks whose worker stopped reporting.",
   },
   {
+    name: "operations-refresh",
+    intervalMs: 15 * MINUTE,
+    catchUp: false,
+    description: "Capture approved read-only Followville operating signals.",
+  },
+  {
     name: "daily-report",
     intervalMs: 24 * HOUR,
     catchUp: true,
