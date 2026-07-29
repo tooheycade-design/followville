@@ -115,6 +115,19 @@ function boundedPng(width = 100, height = 100): Buffer {
   return value;
 }
 
+function boundedJpeg(width = 1080, height = 1920): Buffer {
+  return Buffer.from([
+    0xff, 0xd8,
+    0xff, 0xc0,
+    0x00, 0x0b,
+    0x08,
+    (height >> 8) & 0xff, height & 0xff,
+    (width >> 8) & 0xff, width & 0xff,
+    0x01, 0x01, 0x11, 0x00,
+    0xff, 0xd9,
+  ]);
+}
+
 test("object paths are scope-derived and ignore the supplied filename", () => {
   const bytes = Buffer.from("bytes");
   const value = evidenceObjectPath(input("C:\\ignored", bytes));
@@ -242,4 +255,30 @@ test("visual review refuses unsafe or altered evidence", async () => {
     /not eligible/,
   );
   await assert.rejects(store.loadVerified(artifact(bytes)), /does not match/);
+});
+
+test("visual review verifies bounded portrait JPEG evidence", async () => {
+  const bytes = boundedJpeg();
+  const storage: ArtifactStorageClient = {
+    from() {
+      return {
+        async upload() {
+          return { error: null };
+        },
+        async download() {
+          return { data: new Blob([Uint8Array.from(bytes)]), error: null };
+        },
+        async createSignedUrl() {
+          return { data: null, error: { message: "not used" } };
+        },
+      };
+    },
+  };
+
+  assert.deepEqual(
+    await new SupabaseArtifactStore(storage).loadVerified(
+      artifact(bytes, { mediaType: "image/jpeg" }),
+    ),
+    bytes,
+  );
 });

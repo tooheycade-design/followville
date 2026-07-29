@@ -15,6 +15,54 @@ const MAX_VISUAL_REVIEW_BYTES = 20 * 1024 * 1024;
 const MAX_VISUAL_DIMENSION = 8_192;
 const MAX_VISUAL_PIXELS = 33_554_432;
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const REVIEW_IMAGE_TYPES = new Set(["image/png", "image/jpeg"]);
+
+function jpegDimensions(bytes: Buffer): { width: number; height: number } | null {
+  if (
+    bytes.byteLength < 11 ||
+    bytes[0] !== 0xff ||
+    bytes[1] !== 0xd8 ||
+    bytes[2] !== 0xff
+  ) {
+    return null;
+  }
+  const startOfFrame = new Set([
+    0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7,
+    0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
+  ]);
+  let offset = 2;
+  while (offset + 8 < bytes.byteLength) {
+    while (offset < bytes.byteLength && bytes[offset] === 0xff) {
+      offset += 1;
+    }
+    if (offset >= bytes.byteLength) {
+      return null;
+    }
+    const marker = bytes[offset]!;
+    offset += 1;
+    if (marker === 0xd8 || marker === 0xd9) {
+      continue;
+    }
+    if (offset + 2 > bytes.byteLength) {
+      return null;
+    }
+    const segmentLength = bytes.readUInt16BE(offset);
+    if (segmentLength < 2 || offset + segmentLength > bytes.byteLength) {
+      return null;
+    }
+    if (startOfFrame.has(marker)) {
+      if (segmentLength < 7) {
+        return null;
+      }
+      return {
+        height: bytes.readUInt16BE(offset + 3),
+        width: bytes.readUInt16BE(offset + 5),
+      };
+    }
+    offset += segmentLength;
+  }
+  return null;
+}
 
 interface StorageError {
   message: string;
@@ -135,7 +183,7 @@ export class SupabaseArtifactStore implements ArtifactStore {
       artifact.visibility !== "owner_only" ||
       !artifact.safeToDisplay ||
       artifact.containsSensitiveData ||
-      artifact.mediaType !== "image/png" ||
+      !REVIEW_IMAGE_TYPES.has(artifact.mediaType) ||
       artifact.sizeBytes > MAX_VISUAL_REVIEW_BYTES
     ) {
       throw new Error("Artifact is not eligible for private visual review.");
@@ -155,15 +203,24 @@ export class SupabaseArtifactStore implements ArtifactStore {
     if (bytes.byteLength !== artifact.sizeBytes || hash !== artifact.sha256) {
       throw new Error("Visual evidence does not match its durable record.");
     }
+    let dimensions: { width: number; height: number } | null = null;
     if (
-      bytes.byteLength < 24 ||
-      !bytes.subarray(0, 8).equals(PNG_SIGNATURE) ||
-      bytes.subarray(12, 16).toString("ascii") !== "IHDR"
+      artifact.mediaType === "image/png" &&
+      bytes.byteLength >= 24 &&
+      bytes.subarray(0, 8).equals(PNG_SIGNATURE) &&
+      bytes.subarray(12, 16).toString("ascii") === "IHDR"
     ) {
-      throw new Error("Visual evidence is not a structurally recognizable PNG.");
+      dimensions = {
+        width: bytes.readUInt32BE(16),
+        height: bytes.readUInt32BE(20),
+      };
+    } else if (artifact.mediaType === "image/jpeg") {
+      dimensions = jpegDimensions(bytes);
     }
-    const width = bytes.readUInt32BE(16);
-    const height = bytes.readUInt32BE(20);
+    if (dimensions === null) {
+      throw new Error("Visual evidence is not a structurally recognizable image.");
+    }
+    const { width, height } = dimensions;
     if (
       width === 0 ||
       height === 0 ||
