@@ -261,3 +261,22 @@ test("reviewer outages defer the judge without consuming a worker revision", () 
     /revoke all on function public\.company_os_retry_failed_review\(jsonb\)\s+from public, anon, authenticated;/,
   );
 });
+
+test("visual work gets a larger but still bounded revision budget", () => {
+  const sql = migration("0041_allow_bounded_visual_revision_budget.sql");
+
+  assert.match(sql, /'browser_preview'::company_ops\.capability = any/);
+  assert.match(sql, /'blender_preview'::company_ops\.capability = any/);
+  assert.match(sql, /then 5\s+else 3/);
+  assert.match(sql, /v_task\.review_cycle_count >= 5/);
+  assert.match(sql, /v_latest_visual\.action <> 'visual_review\.changes_requested'/);
+  assert.match(sql, /v_audit->>'action' <> 'review\.visual_revision_requeued'/);
+  assert.doesNotMatch(
+    sql,
+    /set\s+(allowed_capabilities|status)\s*=\s*'approved'|social_publish|published/i,
+  );
+  assert.match(
+    sql,
+    /revoke all on function public\.company_os_resume_bounded_visual_revision\(jsonb\)\s+from public, anon, authenticated;/,
+  );
+});

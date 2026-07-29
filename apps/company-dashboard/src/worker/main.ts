@@ -288,7 +288,7 @@ const executor: TaskExecutor =
         ),
         repository: "followville_repo",
         invocationTimeoutMs: taskInvocationTimeoutMs,
-        maxSubscriptionRunsPerTask: 3,
+        maxSubscriptionRunsPerTask: 5,
         subscriptionRunsForTask: async (task) => {
           const state = await companyRepository().load();
           return state.runs.filter(
@@ -451,7 +451,7 @@ async function runReviewPass(): Promise<number> {
     const task = await reviewQueue.leaseNextReview(
       workerId,
       SEED_AGENTS.reviewer.id,
-      300,
+      20 * 60,
     );
     if (task === null) {
       return count;
