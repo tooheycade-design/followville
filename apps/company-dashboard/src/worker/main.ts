@@ -29,6 +29,7 @@ import {
   SEED_AGENTS,
   WorktreeManager,
   runWorker,
+  taskInvocationTimeoutMs,
   type ModelProvider,
   type TaskExecutor,
 } from "@followville/company-os-core";
@@ -286,7 +287,7 @@ const executor: TaskExecutor =
           path.join(repositoryRoot, ".worktrees", "agents"),
         ),
         repository: "followville_repo",
-        invocationTimeoutMs: 15 * 60_000,
+        invocationTimeoutMs: taskInvocationTimeoutMs,
         maxSubscriptionRunsPerTask: 3,
         subscriptionRunsForTask: async (task) => {
           const state = await companyRepository().load();
@@ -768,7 +769,7 @@ async function runWorkQueueJob(): Promise<void> {
       workerId,
       leaseSeconds: 300,
       heartbeatIntervalMs: 60_000,
-      maxTaskDurationMs: 20 * 60_000,
+      maxTaskDurationMs: 30 * 60_000,
       maxTasks: watch ? 1 : undefined,
     },
     randomUUID,

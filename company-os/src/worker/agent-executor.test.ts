@@ -13,7 +13,11 @@ import type {
   ProviderRequest,
   ProviderResponse,
 } from "../providers/types.js";
-import { AgentTaskExecutor, narrowestScopeDirectory } from "./agent-executor.js";
+import {
+  AgentTaskExecutor,
+  narrowestScopeDirectory,
+  taskInvocationTimeoutMs,
+} from "./agent-executor.js";
 import { WorktreeManager } from "./worktree.js";
 import type { WorkVerifier } from "./verification.js";
 
@@ -86,6 +90,7 @@ class ScriptedProvider implements ModelProvider {
   readonly billingMode = "subscription" as const;
   lastPrompt = "";
   lastResumeSessionId: string | null = null;
+  lastTimeoutMs: number | null = null;
   invokeCount = 0;
 
   constructor(
@@ -105,6 +110,7 @@ class ScriptedProvider implements ModelProvider {
     this.invokeCount += 1;
     this.lastPrompt = request.prompt;
     this.lastResumeSessionId = request.resumeSessionId ?? null;
+    this.lastTimeoutMs = request.timeoutMs;
     for (const relative of this.writes) {
       const target = path.join(request.workingDirectory, relative);
       mkdirSync(path.dirname(target), { recursive: true });
@@ -153,6 +159,36 @@ test("an in-scope edit completes and reports evidence", async () => {
   assert.deepEqual(result.filesChanged, ["company-os/notes.md"]);
   assert.ok(result.evidence.some((line) => line.startsWith("branch=agent/task-")));
   assert.ok(result.evidence.some((line) => line.includes("tokens_in=120")));
+});
+
+test("the provider invocation timeout may be selected from the task", async () => {
+  const repo = makeRepository();
+  const provider = new ScriptedProvider(["notes.md"]);
+  const executor = new AgentTaskExecutor({
+    agent: SEED_AGENTS.engineer,
+    provider,
+    worktrees: new WorktreeManager(repo.root, repo.worktreeRoot),
+    repository: "followville_repo",
+    invocationTimeoutMs: (task) =>
+      task.title === "Scoped change" ? 25_000 : 15_000,
+    maxSubscriptionRunsPerTask: 1,
+  });
+  const task = makeTask();
+
+  await executor.execute(task, new AbortController().signal);
+
+  assert.equal(provider.lastTimeoutMs, 25_000);
+});
+
+test("preview tasks receive a larger bounded provider window", () => {
+  const regular = makeTask();
+  const preview = TaskSchema.parse({
+    ...makeTask(),
+    allowedCapabilities: [...regular.allowedCapabilities, "blender_preview"],
+  });
+
+  assert.equal(taskInvocationTimeoutMs(regular), 15 * 60_000);
+  assert.equal(taskInvocationTimeoutMs(preview), 25 * 60_000);
 });
 
 test("finished work survives on its branch after the worktree is gone", async () => {

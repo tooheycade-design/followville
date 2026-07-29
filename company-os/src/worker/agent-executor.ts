@@ -45,8 +45,8 @@ export interface AgentExecutorOptions {
   provider: ModelProvider;
   worktrees: WorktreeManager;
   repository: string;
-  /** Wall-clock ceiling for one provider invocation. */
-  invocationTimeoutMs: number;
+  /** Wall-clock ceiling for one provider invocation, optionally task-aware. */
+  invocationTimeoutMs: number | ((task: Task) => number);
   /**
    * Subscription providers report zero dollars, so a dollar budget can never
    * bound them. This caps provider calls across every attempt of one task.
@@ -60,6 +60,15 @@ export interface AgentExecutorOptions {
   verifier?: WorkVerifier;
   /** Private shared evidence storage, supplied by the worker host. */
   artifactStore?: ArtifactStore;
+}
+
+export function taskInvocationTimeoutMs(task: Task): number {
+  return task.allowedCapabilities.some(
+    (capability) =>
+      capability === "browser_preview" || capability === "blender_preview",
+  )
+    ? 25 * 60_000
+    : 15 * 60_000;
 }
 
 /**
@@ -257,11 +266,15 @@ export class AgentTaskExecutor implements TaskExecutor {
         typeof this.options.resumeSessionId === "function"
           ? await this.options.resumeSessionId(task)
           : (this.options.resumeSessionId ?? null);
+      const invocationTimeoutMs =
+        typeof this.options.invocationTimeoutMs === "function"
+          ? this.options.invocationTimeoutMs(task)
+          : this.options.invocationTimeoutMs;
       const response = await this.options.provider.invoke({
         workingDirectory,
         prompt: buildPrompt(task, workingDirectory) + reworkBriefing,
         ...(resumeSessionId === null ? {} : { resumeSessionId }),
-        timeoutMs: this.options.invocationTimeoutMs,
+        timeoutMs: invocationTimeoutMs,
         signal,
       });
 
