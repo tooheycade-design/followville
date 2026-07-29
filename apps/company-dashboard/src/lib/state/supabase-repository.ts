@@ -26,6 +26,7 @@ import {
   type HeldTaskDecision,
   HostedControlTickSchema,
   IntegrationSourceSchema,
+  OperationalAlertSchema,
   OperationalSnapshotSchema,
   OwnerNotificationSchema,
 } from "./types";
@@ -347,6 +348,24 @@ export function operationalSnapshotFromRow(row: Row) {
   });
 }
 
+export function operationalAlertFromRow(row: Row) {
+  return OperationalAlertSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    sourceId: row.source_id,
+    snapshotId: row.snapshot_id,
+    alertKind: row.alert_kind,
+    severity: row.severity,
+    title: row.title,
+    detail: row.detail,
+    recommendedAction: row.recommended_action,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
 export function memoryFromRow(row: Row) {
   return MemoryRecordSchema.parse({
     id: row.id,
@@ -448,6 +467,9 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     );
     state.operationalSnapshots = (operations.snapshots ?? []).map(
       operationalSnapshotFromRow,
+    );
+    state.operationalAlerts = (operations.alerts ?? []).map(
+      operationalAlertFromRow,
     );
     state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>

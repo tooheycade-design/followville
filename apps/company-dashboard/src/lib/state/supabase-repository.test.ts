@@ -6,6 +6,7 @@ import {
   integrationSourceFromRow,
   memoryFromRow,
   messageFromRow,
+  operationalAlertFromRow,
   operationalSnapshotFromRow,
   runFromRow,
   workerFromRow,
@@ -24,6 +25,28 @@ const ID = {
 } as const;
 
 const NOW = "2026-07-28T20:00:00.000Z";
+
+test("database operational alert rows preserve diagnostic boundaries", () => {
+  const alert = operationalAlertFromRow({
+    id: ID.artifact,
+    organization_id: ID.organization,
+    project_id: ID.project,
+    source_id: ID.message,
+    snapshot_id: ID.run,
+    alert_kind: "performance",
+    severity: "warning",
+    title: "Town load is slow",
+    detail: "The synthetic journey exceeded its threshold.",
+    recommended_action: "Diagnose before proposing a change.",
+    status: "open",
+    created_at: NOW,
+    updated_at: NOW,
+  });
+
+  assert.equal(alert.alertKind, "performance");
+  assert.equal(alert.recommendedAction, "Diagnose before proposing a change.");
+  assert.equal("capabilities" in alert, false);
+});
 
 test("database run rows do not invent a goal field outside the run contract", () => {
   const run = runFromRow({

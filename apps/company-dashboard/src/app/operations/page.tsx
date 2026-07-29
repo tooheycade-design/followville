@@ -1,4 +1,7 @@
-import { refreshOperationsAction } from "@/app/actions";
+import {
+  createDiagnosticTaskAction,
+  refreshOperationsAction,
+} from "@/app/actions";
 import { formatWhen } from "@/lib/format";
 import { companyRepository } from "@/lib/state";
 
@@ -59,6 +62,9 @@ export default async function OperationsPage() {
       snapshot !== undefined && Date.parse(snapshot.freshnessUntil) > Date.now()
     );
   }).length;
+  const openAlerts = state.operationalAlerts.filter(
+    (alert) => alert.status === "open",
+  );
 
   return (
     <>
@@ -87,6 +93,50 @@ export default async function OperationsPage() {
           source drift until the canonical repository is refreshed and memory
           receives a new version.
         </p>
+      ) : null}
+      {openAlerts.length > 0 ? (
+        <section className="operations-alerts" aria-labelledby="alerts-title">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Needs investigation</span>
+              <h3 id="alerts-title">Product health alerts</h3>
+            </div>
+            <span className="status status--blocked">
+              {openAlerts.length} open
+            </span>
+          </div>
+          {openAlerts.map((alert) => {
+            const marker = `Operational alert ${alert.id}`;
+            const diagnostic = state.tasks.find((task) =>
+              task.objective.includes(marker),
+            );
+            return (
+              <article className="operation-alert" key={alert.id}>
+                <header>
+                  <div>
+                    <span className="eyebrow">
+                      {alert.severity} · {alert.alertKind.replaceAll("_", " ")}
+                    </span>
+                    <h4>{alert.title}</h4>
+                  </div>
+                  <span className="muted">{formatWhen(alert.createdAt)}</span>
+                </header>
+                <p>{alert.detail}</p>
+                <p className="muted">{alert.recommendedAction}</p>
+                {diagnostic === undefined ? (
+                  <form action={createDiagnosticTaskAction}>
+                    <input type="hidden" name="alertId" value={alert.id} />
+                    <button type="submit">Create diagnostic task</button>
+                  </form>
+                ) : (
+                  <p className="status status--active">
+                    Diagnostic task {diagnostic.status.replaceAll("_", " ")}
+                  </p>
+                )}
+              </article>
+            );
+          })}
+        </section>
       ) : null}
       <form action={refreshOperationsAction}>
         <button type="submit">Refresh public signals</button>

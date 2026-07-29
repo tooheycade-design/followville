@@ -29,6 +29,7 @@ test("writing then reading round-trips and validates", () => {
     "integrationSources",
     "memories",
     "messages",
+    "operationalAlerts",
     "operationalSnapshots",
     "ownerNotifications",
     "runs",

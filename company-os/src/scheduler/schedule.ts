@@ -53,6 +53,12 @@ export const DEFAULT_SCHEDULE: readonly ScheduleDefinition[] = [
     description: "Capture approved read-only Followville operating signals.",
   },
   {
+    name: "product-health",
+    intervalMs: HOUR,
+    catchUp: false,
+    description: "Run the public homepage and town browser health journey.",
+  },
+  {
     name: "daily-report",
     intervalMs: 24 * HOUR,
     catchUp: true,

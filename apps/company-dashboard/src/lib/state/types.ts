@@ -141,8 +141,32 @@ export const OperationalSnapshotSchema = z
   })
   .strict();
 
+export const OperationalAlertSchema = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    sourceId: z.string().uuid(),
+    snapshotId: z.string().uuid(),
+    alertKind: z.enum([
+      "availability",
+      "browser_errors",
+      "request_failures",
+      "performance",
+    ]),
+    severity: z.enum(["info", "warning", "urgent"]),
+    title: z.string().min(1).max(200),
+    detail: z.string().min(1).max(4000),
+    recommendedAction: z.string().min(1).max(2000),
+    status: z.enum(["open", "diagnostic_requested", "resolved", "expired"]),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
 export type IntegrationSource = z.infer<typeof IntegrationSourceSchema>;
 export type OperationalSnapshot = z.infer<typeof OperationalSnapshotSchema>;
+export type OperationalAlert = z.infer<typeof OperationalAlertSchema>;
 
 export const CompanyStateSchema = z
   .object({
@@ -155,6 +179,7 @@ export const CompanyStateSchema = z
     ownerNotifications: z.array(OwnerNotificationSchema).default([]),
     integrationSources: z.array(IntegrationSourceSchema).default([]),
     operationalSnapshots: z.array(OperationalSnapshotSchema).default([]),
+    operationalAlerts: z.array(OperationalAlertSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
@@ -175,6 +200,7 @@ export interface CompanyState {
   ownerNotifications: OwnerNotification[];
   integrationSources: IntegrationSource[];
   operationalSnapshots: OperationalSnapshot[];
+  operationalAlerts: OperationalAlert[];
   workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
@@ -193,6 +219,7 @@ export function emptyState(): CompanyState {
     ownerNotifications: [],
     integrationSources: [],
     operationalSnapshots: [],
+    operationalAlerts: [],
     workers: [],
     approvalRequests: [],
     approvalDecisions: [],

@@ -162,6 +162,41 @@ export async function refreshOperationsAction(): Promise<void> {
   revalidatePath("/operations");
 }
 
+export async function createDiagnosticTaskAction(
+  formData: FormData,
+): Promise<void> {
+  const owner = await requireOwner();
+  const repository = companyRepository();
+  const state = await repository.load();
+  const alertId = String(formData.get("alertId") ?? "");
+  const alert = state.operationalAlerts.find(
+    (candidate) => candidate.id === alertId && candidate.status === "open",
+  );
+  if (alert === undefined) {
+    revalidatePath("/operations");
+    return;
+  }
+
+  const marker = `Operational alert ${alert.id}`;
+  const alreadyExists = state.tasks.some((task) =>
+    task.objective.includes(marker),
+  );
+  if (!alreadyExists) {
+    await directCeo(
+      {
+        title: `Diagnose: ${alert.title}`,
+        detail:
+          `${marker}\n\n${alert.detail}\n\n${alert.recommendedAction}\n\n` +
+          "Investigate and collect evidence only. Do not modify, merge, " +
+          "deploy, or otherwise change production.",
+        createdByUserId: owner.id,
+      },
+      repository,
+    );
+  }
+  revalidatePath("/", "layout");
+}
+
 export async function loginAction(formData: FormData): Promise<void> {
   const client = await createAuthClient();
   const destination = safeReturnPath(formData.get("next"));

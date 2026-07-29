@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0033 applied | Done in development; 0017-0033 live-verified |
+| Migrations 0011-0034 applied | Done in development; 0017-0034 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -33,6 +33,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Always-on hosted control | Live; Supabase Cron records five-minute queue health and daily owner reminders |
 | Structured Followville memory | Live; 20 source-backed facts, bounded role retrieval, and owner correction |
 | Read-only operational integrations | Live for public town state and website health; five sources explicitly await setup |
+| Synthetic product observability | Hourly homepage/town journey, private alerts, and owner-requested diagnostics live |
 
 ## Models
 
@@ -216,6 +217,13 @@ The Operations page compares deployed town counters with the active
 `current_state` memory. A difference is source drift requiring a canonical Git
 refresh or a new memory version; it is not permission for an agent to rewrite
 either source.
+
+The worker also runs an hourly browser journey through the public homepage and
+town. It records only response codes, timings, request counts, and error counts.
+Postgres creates private alerts for availability, browser errors, request
+failures, or severe slowness. An owner may create one evidence-only diagnostic
+task from an alert; the alert itself has no capability, and any production
+remediation still follows the normal review and approval path.
 
 ## Deciding on finished work
 

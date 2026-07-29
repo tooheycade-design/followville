@@ -62,6 +62,7 @@ import { SupabaseArtifactStore } from "../lib/artifact-storage";
 import { runPublicationPass } from "./publication";
 import { createAgentMessage } from "./structured-message";
 import { collectReadOnlyOperations } from "../lib/operations/collector";
+import { collectProductHealth } from "../lib/operations/product-health";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -751,6 +752,15 @@ const JOBS: Record<string, () => Promise<void>> = {
       `operations refresh: ${results
         .map((result) => `${result.sourceKey}=${result.outcome}`)
         .join(", ")}`,
+    );
+  },
+  "product-health": async () => {
+    const snapshot = await collectProductHealth(
+      companyRepository(),
+      repositoryRoot,
+    );
+    log(
+      `product health: captured ${snapshot.capturedAt} from ${snapshot.evidenceReference}`,
     );
   },
 };
