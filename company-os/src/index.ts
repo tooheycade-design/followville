@@ -1,5 +1,6 @@
 export * from "./agents/index.js";
 export * from "./config/seed-agents.js";
+export * from "./content/index.js";
 export * from "./domain/index.js";
 export * from "./github/index.js";
 export * from "./orchestration/index.js";

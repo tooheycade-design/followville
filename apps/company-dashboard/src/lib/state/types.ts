@@ -9,6 +9,7 @@ import {
   EvidenceArtifactSchema,
   RunSchema,
   StructuredMessageSchema,
+  SocialContentPacketSchema,
   TaskSchema,
   WorkerNodeSchema,
   type ApprovalDecision,
@@ -19,6 +20,7 @@ import {
   type MemoryRecord,
   type Run,
   type StructuredMessage,
+  type SocialContentPacket,
   type Task,
   type WorkerNode,
 } from "@followville/company-os-core";
@@ -180,6 +182,7 @@ export const CompanyStateSchema = z
     integrationSources: z.array(IntegrationSourceSchema).default([]),
     operationalSnapshots: z.array(OperationalSnapshotSchema).default([]),
     operationalAlerts: z.array(OperationalAlertSchema).default([]),
+    contentPackets: z.array(SocialContentPacketSchema).default([]),
     workers: z.array(WorkerNodeSchema).default([]),
     approvalRequests: z.array(ApprovalRequestSchema),
     approvalDecisions: z.array(ApprovalDecisionSchema),
@@ -201,6 +204,7 @@ export interface CompanyState {
   integrationSources: IntegrationSource[];
   operationalSnapshots: OperationalSnapshot[];
   operationalAlerts: OperationalAlert[];
+  contentPackets: SocialContentPacket[];
   workers: WorkerNode[];
   approvalRequests: ApprovalRequest[];
   approvalDecisions: ApprovalDecision[];
@@ -220,6 +224,7 @@ export function emptyState(): CompanyState {
     integrationSources: [],
     operationalSnapshots: [],
     operationalAlerts: [],
+    contentPackets: [],
     workers: [],
     approvalRequests: [],
     approvalDecisions: [],
@@ -294,6 +299,7 @@ export interface CompanyRepository {
     freshnessMinutes: number;
   }): Promise<OperationalSnapshot>;
   recordOperationalFailure(sourceKey: string, errorCode: string): Promise<void>;
+  recordContentPacket(packet: SocialContentPacket): Promise<SocialContentPacket>;
   /** Releases or rejects held work. Returns the task's resulting status. */
   decideHeldTask(decision: HeldTaskDecision): Promise<string>;
   appendGoalSimulation(record: GoalSimulationRecord): Promise<void>;

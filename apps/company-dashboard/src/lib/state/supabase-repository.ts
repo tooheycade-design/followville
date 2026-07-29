@@ -8,6 +8,7 @@ import {
   MemoryRecordSchema,
   EvidenceArtifactSchema,
   RunSchema,
+  SocialContentPacketSchema,
   StructuredMessageSchema,
   TaskSchema,
   WorkerNodeSchema,
@@ -15,6 +16,7 @@ import {
   type AuditEvent,
   type Goal,
   type Task,
+  type SocialContentPacket,
 } from "@followville/company-os-core";
 
 import {
@@ -256,6 +258,33 @@ export function workerFromRow(row: Row) {
   });
 }
 
+export function contentPacketFromRow(row: Row): SocialContentPacket {
+  return SocialContentPacketSchema.parse({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id,
+    createdByUserId: row.created_by_user_id,
+    createdByAgentId: row.created_by_agent_id,
+    status: row.status,
+    objective: row.objective,
+    recommendation: row.recommendation,
+    milestone: row.milestone,
+    sourceSnapshotIds: row.source_snapshot_ids,
+    sourceDigest: row.source_digest,
+    engagementDataStatus: row.engagement_data_status,
+    dataGaps: row.data_gaps,
+    priorContentNotes: row.prior_content_notes,
+    concepts: row.concepts,
+    selectedConceptId: row.selected_concept_id,
+    productionGoalId: row.production_goal_id,
+    productionTaskId: row.production_task_id,
+    publishApprovalRequestId: row.publish_approval_request_id,
+    version: toNumber(row.version),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
 function auditFromRow(row: Row) {
   return AuditEventSchema.parse({
     id: row.id,
@@ -434,12 +463,15 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     const [
       { data, error },
       { data: operationsData, error: operationsError },
+      { data: contentData, error: contentError },
     ] = await Promise.all([
       this.client.rpc("company_os_load"),
       this.client.rpc("company_os_load_operations"),
+      this.client.rpc("company_os_load_content"),
     ]);
     failOn("company_os_load", error);
     failOn("company_os_load_operations", operationsError);
+    failOn("company_os_load_content", contentError);
 
     const payload = (data ?? {}) as Record<string, Row[]>;
     const rows = (key: string): Row[] => payload[key] ?? [];
@@ -471,6 +503,10 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     state.operationalAlerts = (operations.alerts ?? []).map(
       operationalAlertFromRow,
     );
+    const content = (contentData ?? {}) as Record<string, Row[]>;
+    state.contentPackets = (content.content_packets ?? []).map(
+      contentPacketFromRow,
+    );
     state.workers = rows("worker_nodes").map(workerFromRow);
     state.approvalRequests = rows("approval_requests").map((row) =>
       approvalRequestFromRow(row, derived.get(String(row.id)) ?? "pending"),
@@ -501,6 +537,17 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       { p_source_key: sourceKey, p_error_code: errorCode },
     );
     failOn("company_os_record_operational_failure", error);
+  }
+
+  async recordContentPacket(
+    packet: SocialContentPacket,
+  ): Promise<SocialContentPacket> {
+    const { data, error } = await this.client.rpc(
+      "company_os_record_content_packet",
+      { payload: packet },
+    );
+    failOn("company_os_record_content_packet", error);
+    return contentPacketFromRow(data as Row);
   }
 
   async retrieveMemories(

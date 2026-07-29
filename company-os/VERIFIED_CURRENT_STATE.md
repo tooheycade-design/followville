@@ -1,13 +1,13 @@
 # Verified Current State
 
-Last verified: 2026-07-28, development project
+Last verified: 2026-07-29, development project
 `yutscolndfhscxfoavdp`.
 
 ## Live and proven
 
 - Supabase is the shared authority for goals, tasks, runs, approvals, evidence,
   audit events, release grants, and owner identity.
-- Migrations 0011-0025 are applied. The owner revision flow, reviewer revision
+- Migrations 0011-0037 are applied. The owner revision flow, reviewer revision
   flow, and worker run
   lifecycle both passed rollback-only live database transactions.
 - A request-changes decision preserves the authenticated owner's comment,
@@ -32,6 +32,10 @@ Last verified: 2026-07-28, development project
   implemented.
 - The private dashboard is live at
   `https://followville-company-os.vercel.app`.
+- The Content Studio pins draft concepts to confirmed town snapshots, records
+  owner concept selection as an append-only digest-pinned decision, and queues
+  only private, review-gated production work. It has no publisher or Instagram
+  credential and does not claim to render the canonical town automatically.
 - Eleven packet-less legacy tasks were canceled with eleven immutable audit
   events; none remain in the owner queue.
 - Owner-approved write tasks can be published only as exact-checkpoint
@@ -111,12 +115,12 @@ Last verified: 2026-07-28, development project
 
 ## Verification
 
-- Company OS core: 226 tests pass; one Windows symlink-escape fixture is
+- Company OS core: 246 tests pass; one Windows symlink-escape fixture is
   skipped because this account cannot create symlinks. The same escape is
   enforced by canonical-path checks and covered where symlinks are permitted.
-- Dashboard: 41 tests pass.
+- Dashboard: 59 tests pass.
 - Strict TypeScript passes in both packages.
-- The optimized Next.js production build passes with all 15 routes.
+- The optimized Next.js production build passes with the Content Studio route.
 - `git diff --check` passes.
 - Migration 0018 live test: task lease, run start, atomic run/task finish, and
   rollback all passed. The source task and database counts were unchanged.

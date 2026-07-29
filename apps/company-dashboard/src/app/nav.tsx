@@ -10,6 +10,7 @@ const LINKS = [
   ["/messages", "Messages"],
   ["/memory", "Memory"],
   ["/operations", "Operations"],
+  ["/content", "Content"],
   ["/control", "Control"],
   ["/ceo", "CEO"],
   ["/goals", "Goals"],

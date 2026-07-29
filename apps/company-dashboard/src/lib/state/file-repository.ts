@@ -3,7 +3,12 @@ import path from "node:path";
 
 import { randomUUID } from "node:crypto";
 
-import type { Goal, MemoryRecord, Task } from "@followville/company-os-core";
+import type {
+  Goal,
+  MemoryRecord,
+  SocialContentPacket,
+  Task,
+} from "@followville/company-os-core";
 
 import {
   CompanyStateSchema,
@@ -168,6 +173,16 @@ export class FileCompanyRepository implements CompanyRepository {
       source.lastCheckedAt = new Date().toISOString();
       source.lastErrorCode = errorCode;
       source.updatedAt = source.lastCheckedAt;
+    });
+  }
+
+  recordContentPacket(packet: SocialContentPacket): Promise<SocialContentPacket> {
+    return this.#mutate((state) => {
+      if (state.contentPackets.some((candidate) => candidate.id === packet.id)) {
+        throw new Error(`Content packet ${packet.id} already exists.`);
+      }
+      state.contentPackets.push(packet);
+      return packet;
     });
   }
 

@@ -19,7 +19,8 @@ const ROWS: readonly (readonly [string, string, string])[] = [
   ["Cost controls", "implemented", "Subscription runs are capped per task and never mislabeled as API spend"],
   ["Blender preview runtime", "implemented", "Isolated GLB/glTF renders and geometry metrics; Cade's Blender 5.1 is live"],
   ["Operating reports", "implemented", "Live daily and seven-day owner report from authoritative control-plane state"],
-  ["Followville specialists", "planned", "World QA, social drafting, and town planning; see docs/ROADMAP.md"],
+  ["Social content studio", "implemented", "Snapshot-pinned concepts, owner selection, complete packet, and private preview task; no publisher"],
+  ["Followville specialists", "planned", "World QA and town planning; see docs/ROADMAP.md"],
   ["Production merge / deploy / publish", "blocked", "By constitution, owner approval only"],
 ];
 

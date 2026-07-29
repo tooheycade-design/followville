@@ -12,7 +12,7 @@ export default async function AgentsPage() {
     <>
       <h2>Agent directory</h2>
       <p className="deck">
-        Seven least-privilege profiles coordinate planning, implementation,
+        Eight least-privilege profiles coordinate planning, implementation,
         technical review, visual review, cost oversight, and reporting. Every profile is
         least-privilege: all budgets are $0 in Phase 1, no profile can write to
         the canonical town files, and production-class capabilities always

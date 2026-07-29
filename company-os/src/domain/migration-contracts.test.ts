@@ -193,3 +193,24 @@ test("hosted control history is retained without unbounded dashboard reads", () 
   assert.match(sql, /created_at < clock_timestamp\(\) - interval '30 days'/);
   assert.match(sql, /followville-company-os-control-retention/);
 });
+
+test("social content remains source-pinned, owner-selected, and unpublished", () => {
+  const sql = migration("0036_social_content_studio.sql");
+
+  assert.match(sql, /jsonb_array_length\(concepts\) = 3/);
+  assert.match(sql, /content concept decisions are append-only/);
+  assert.match(sql, /packet\.version <> \(payload->>'expectedVersion'\)::integer/);
+  assert.match(sql, /active owner required/);
+  assert.match(sql, /concept digest mismatch/);
+  assert.match(sql, /unsafe content production task/);
+  assert.match(sql, /enable row level security/);
+  assert.match(sql, /grant execute on function public\.company_os_select_content_concept\(jsonb\)\s+to authenticated/);
+  assert.doesNotMatch(sql, /grant execute on function .*publish/i);
+});
+
+test("social content decision history rejects truncate", () => {
+  const sql = migration("0037_harden_social_content_history.sql");
+
+  assert.match(sql, /before truncate on company_ops\.content_concept_decisions/);
+  assert.match(sql, /content_packets_project_created_idx/);
+});

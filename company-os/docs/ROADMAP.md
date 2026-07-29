@@ -151,6 +151,13 @@ Instagram is the weakest link and should be planned honestly: the platform's
 API is restrictive and scraping violates its terms. Start with owner-entered
 metrics and screenshots; pursue official API access separately.
 
+The first Social agent workflow shipped on 2026-07-29. The Content Studio reads
+confirmed town snapshots, exposes missing Instagram data, drafts three complete
+concepts, records digest-pinned owner selection, and queues private,
+review-gated production work. Publishing remains unimplemented. A guarded
+render-only adapter for the authoritative town is still future work; isolated
+cinematic candidates must not be described as a finished canonical-town Reel.
+
 ## Phase 6 — Scale and resilience
 
 Worker pools, stronger file-area ownership, Temporal if workflows outgrow

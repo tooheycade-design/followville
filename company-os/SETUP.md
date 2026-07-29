@@ -19,7 +19,7 @@ Development Supabase project: `followville-company-os-dev`, ref
 | Scheduled wake-ups verified live | Done |
 | Real model execution (Codex) | Done, running |
 | Real model execution (Claude) | Adapter ready; this machine needs Claude sign-in |
-| Migrations 0011-0035 applied | Done in development; 0017-0035 live-verified |
+| Migrations 0011-0037 applied | Done in development; 0017-0037 live-verified |
 | Owner revision loop | Done; feedback queues a new revision and reaches the worker |
 | Truthful worker run ledger | Done; real attempts, usage, audit, and owner packets share a run ID |
 | Runtime-owned test evidence | Done for Company OS, dashboard, and public-town browser changes |
@@ -345,6 +345,8 @@ numbered migration.
 | 0024 | Database-normalized agent capability grants for dispatch |
 | 0025 | Require every registered worker to name its provider |
 | 0035 | Register the read-only Design Director for pixel-backed review |
+| 0036 | Source-backed social packets, append-only owner concept selection, and no publisher |
+| 0037 | Index content history and reject truncation of owner concept decisions |
 
 To apply a new one, copy it to the clipboard and paste into the SQL editor at
 `https://supabase.com/dashboard/project/yutscolndfhscxfoavdp/sql/new`:

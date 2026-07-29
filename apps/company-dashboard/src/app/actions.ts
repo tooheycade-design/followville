@@ -18,6 +18,10 @@ import {
   createAuthClient,
 } from "@/lib/supabase/server";
 import { collectReadOnlyOperations } from "@/lib/operations/collector";
+import {
+  createContentPacket,
+  prepareContentSelection,
+} from "@/lib/content-studio";
 
 export interface ActionState {
   ok: boolean;
@@ -160,6 +164,64 @@ export async function refreshOperationsAction(): Promise<void> {
   await requireOwner();
   await collectReadOnlyOperations(companyRepository());
   revalidatePath("/operations");
+}
+
+export async function createContentPacketAction(
+  _previous: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const owner = await requireOwner();
+  try {
+    await createContentPacket({
+      ownerUserId: owner.id,
+      objective: String(formData.get("objective") ?? ""),
+      repository: companyRepository(),
+    });
+    revalidatePath("/content");
+    return { ok: true, message: "Three source-backed concepts are ready." };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Content planning failed.",
+    };
+  }
+}
+
+export async function selectContentConceptAction(
+  _previous: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const owner = await requireOwner();
+  try {
+    const repository = companyRepository();
+    if (repository.backend !== "supabase") {
+      throw new Error("Concept selection requires the shared database.");
+    }
+    const payload = prepareContentSelection({
+      state: await repository.load(),
+      packetId: String(formData.get("packetId") ?? ""),
+      conceptId: String(formData.get("conceptId") ?? ""),
+      expectedVersion: Number(formData.get("expectedVersion") ?? 0),
+      ownerUserId: owner.id,
+    });
+    const client = await createAuthClient();
+    const { error } = await client.rpc("company_os_select_content_concept", {
+      payload,
+    });
+    if (error !== null) {
+      throw new Error(error.message);
+    }
+    revalidatePath("/", "layout");
+    return {
+      ok: true,
+      message: "Concept selected. Its private production task is now queued.",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Selection failed.",
+    };
+  }
 }
 
 export async function createDiagnosticTaskAction(

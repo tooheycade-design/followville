@@ -32,6 +32,11 @@ Run inside the development project's SQL editor immediately after applying
 The development project was additionally created with **Automatically expose
 new tables** disabled.
 
+Migrations through `0037_harden_social_content_history.sql` are applied in
+development as of 2026-07-29. The content tables have RLS enabled and no direct
+client grants; live verification confirmed owner-only concept selection,
+blocked anonymous access, blocked direct reads, and no social publisher.
+
 ## Connecting the dashboard (owner steps)
 
 1. In the development project, open **Project Settings → API** and copy the
