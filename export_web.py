@@ -330,9 +330,27 @@ def export_web_glb():
         grouped.setdefault(_chunk_id_for_building(building), []).append(building)
 
     chunk_records = []
-    # Followville is small enough to keep every detailed district resident.
-    # This preserves the chunked deployment/validation boundary without
-    # replacing distant landmarks with silhouettes as the player walks.
+    # Which districts are resident from the first frame.
+    #
+    # Every district was briefly marked resident, to stop distant landmarks
+    # degrading to silhouettes as the player walked. That was the right problem
+    # to care about and the wrong lever: by day 28 it meant 10.7 MB of detailed
+    # geometry at boot, none of it ever released, and the town became heavy to
+    # walk around.
+    #
+    # So the landmarks are protected directly instead. Creekside borders the
+    # spawn and Kaleidoscope carries runtime geometry audits; beyond those,
+    # only the blocks holding the tall founder homes stay resident, because
+    # those are the silhouettes that read from across the map. Everything else
+    # streams in within `detail_load_distance` and is released beyond
+    # `detail_unload_distance`.
+    landmark_types = {"burjhouse", "eiffelhouse", "castlehouse",
+                      "mushroomhouse", "casinohouse", "toilethouse"}
+    initial_ids = {"creekside-bend", "kaleidoscope-crest"}
+    for chunk_id, chunk_buildings in grouped.items():
+        if any(str(building.get("type", "")) in landmark_types
+               for building in chunk_buildings):
+            initial_ids.add(chunk_id)
     for chunk_id in sorted(grouped):
         chunk_buildings = grouped[chunk_id]
         chunk_objects = []
@@ -361,7 +379,7 @@ def export_web_glb():
         chunk_records.append({
             "id": chunk_id,
             "label": label,
-            "initial": True,
+            "initial": chunk_id in initial_ids,
             "bounds": _chunk_bounds(chunk_buildings),
             "building_ids": building_ids,
             "house_ids": house_ids,
@@ -389,9 +407,16 @@ def export_web_glb():
         "base": _asset_record(base, base_path, compression="draco"),
         "chunks": chunk_records,
         "streaming": {
-            "preload_all": True,
-            "detail_load_distance": 52,
-            "detail_unload_distance": 84,
+            # Deliberately absent: `preload_all` remains understood by the
+            # browser as a maintainer escape hatch, but the public site streams.
+            #
+            # Wider than the 52/84 the chunk sweep used alone, because the
+            # browser now culls per building on a radius around the player.
+            # A district has to arrive before its houses come into view, or the
+            # radius would reveal geometry that has not been fetched yet; these
+            # sit outside the browser's default visible radius so it never can.
+            "detail_load_distance": 110,
+            "detail_unload_distance": 170,
             "lod": "simple-houses",
         },
         "walk_surfaces": walk_surface_manifest(state),

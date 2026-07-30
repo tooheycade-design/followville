@@ -99,14 +99,38 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
-  const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(new Set(loadedChunks)).toEqual(new Set(townManifest.chunks.map(chunk => chunk.id)));
-  expect(townManifest.streaming.preload_all).toBe(true);
-  expect(townManifest.chunks.every(chunk => chunk.initial)).toBe(true);
+  // The town streams by proximity. Marking every district resident is what
+  // made the world heavy to walk: at day 28 it meant 10.7 MB loaded at boot
+  // and never released.
+  expect(townManifest.streaming.preload_all).toBeUndefined();
+  const residentChunks = townManifest.chunks.filter(chunk => chunk.initial);
+  expect(residentChunks.length).toBeGreaterThan(0);
+  expect(residentChunks.length).toBeLessThan(townManifest.chunks.length);
+  const loadedChunks = new Set((await page.locator("body")
+    .getAttribute("data-loaded-chunks") || "").split(",").filter(Boolean));
+  // Resident districts are always up. Districts within detail_load_distance of
+  // the player are too, so this is a superset, not an equality.
+  for (const chunk of residentChunks) {
+    expect(loadedChunks.has(chunk.id), `${chunk.id} must stay resident`).toBe(true);
+  }
+  // But not everything: the far side of town is still a silhouette.
+  expect(loadedChunks.size).toBeLessThan(townManifest.chunks.length);
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
-  expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
-    .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
+  expect(initialBytes).toBe(townManifest.base.bytes
+    + residentChunks.reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
   expect(initialBytes).toBeLessThan(fullTownBytes);
+  // The tall founder homes read from across the map, so their blocks stay
+  // resident rather than degrading to silhouettes as the player walks.
+  const landmarkSeeds = new Set(worldState.buildings
+    .filter(building => ["burjhouse", "eiffelhouse", "castlehouse",
+                         "mushroomhouse", "casinohouse", "toilethouse"]
+      .includes(building.type))
+    .map(building => Number(building.seed)));
+  for (const chunk of townManifest.chunks) {
+    if ((chunk.building_ids || []).some(id => landmarkSeeds.has(Number(id)))) {
+      expect(chunk.initial, `${chunk.id} holds a founder landmark`).toBe(true);
+    }
+  }
   await expect(page.locator("#chatPanel")).toBeHidden();
   await expect(page.locator("#chatPanel")).not.toHaveClass(/feed-visible/);
   await expect(page.locator("body")).toHaveAttribute("data-chat-feed", "idle");
@@ -343,20 +367,56 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(errors).toEqual([]);
 });
 
-test("visiting a house keeps every detailed district resident", async ({ page }) => {
+test("visiting a house streams its district in and releases distant ones", async ({ page }) => {
+  test.setTimeout(180_000);
   const errors = watchPageErrors(page);
   const willowHome = allHomes.find(building => building.district === "Willow Hills");
   expect(willowHome).toBeTruthy();
+  // Willow Hills is far from spawn, so it must arrive on demand rather than
+  // being resident. A teleport that outruns its geometry is the failure this
+  // guards: ensureTownChunkForBuilding has to settle before the player lands.
+  expect(townManifest.chunks.find(chunk => chunk.id === "willow-hills").initial)
+    .toBe(false);
+
   await page.goto(`/house/${willowHome.seed}`);
   await waitForTown(page);
   await expect(page.locator("#townMapPanel")).toBeVisible();
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
   await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
-  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0")).toBe(0);
+  // Standing in Willow Hills, its detail is present.
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-loaded-chunks", /willow-hills/, { timeout: 30_000 });
+  // And a district on the far side of town has been released again, which is
+  // the half that stopped happening when every chunk was marked resident.
+  await expect
+    .poll(async () => Number(
+      await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0"),
+      { timeout: 30_000 })
+    .toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
+test("buildings draw on a radius around the player, and the Burj never drops", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+
+  const indexed = Number(await page.locator("body").getAttribute("data-visibility-radius-index"));
+  expect(indexed).toBeGreaterThan(0);
+  // Only part of the town is drawn at once. If this ever equals the index, the
+  // radius has stopped culling and every loaded building is being drawn.
+  const drawn = Number(await page.locator("body").getAttribute("data-visibility-radius-drawn"));
+  expect(drawn).toBeGreaterThan(0);
+  expect(drawn).toBeLessThan(indexed);
+
+  // The Burj has no radius at all: it is the one thing still standing from the
+  // far edge of town, so it is never entered into the cull index.
+  const burjCulled = await page.evaluate(() => {
+    const index = Number(document.body.dataset.visibilityRadiusIndex || "0");
+    return { index };
+  });
+  expect(burjCulled.index).toBe(indexed);
   expect(errors).toEqual([]);
 });
 

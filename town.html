@@ -4190,6 +4190,9 @@ let townMapMeta = { day:null, population:null };
 let loadedTownRoot = null;       // combined root for streamed chunks or the full GLB fallback
 let townManifest = null;
 let townStreamLastCheck = 0;
+// Set once a preview/audit render has pulled every district in, so the sweep
+// does not re-request them on each frame.
+let townStreamPreloaded = false;
 const townChunksById = new Map();
 const townChunkByBuilding = new Map();
 const townChunkLoads = new Map();
@@ -6725,9 +6728,91 @@ function mergeTownAsset(group){
   return roots;
 }
 
+/**
+ * How far each thing stays drawn.
+ *
+ * Chunks are the transfer unit — a .glb cannot be half-fetched — but what the
+ * card actually draws is decided per building, as a radius around the player.
+ * Ordinary homes appear as you approach them; the taller a landmark is, the
+ * further out it keeps its real geometry, because a silhouette popping in on
+ * something you can see from across town is exactly what reads as broken.
+ *
+ * Walk far enough and only the Burj is left standing, which is the same thing
+ * you would see from the edge of a real town.
+ */
+const VISIBLE_RADIUS_DEFAULT = 95;
+const VISIBLE_RADIUS_BY_TYPE = {
+  burjhouse: Infinity,
+  cityhall: 320,
+  eiffelhouse: 240,
+  castlehouse: 200,
+  followmart: 180,
+  firestation: 170,
+  movietheater: 170,
+  schoolhouse: 170,
+  casinohouse: 160,
+  mushroomhouse: 150,
+  toilethouse: 150,
+};
+
+function visibleRadiusFor(type){
+  const radius = VISIBLE_RADIUS_BY_TYPE[String(type)];
+  return radius === undefined ? VISIBLE_RADIUS_DEFAULT : radius;
+}
+
+// Rebuilt whenever loaded geometry changes: [{root, x, z, radiusSquared}].
+let townVisibilityIndex = [];
+let townVisibilityLastCheck = 0;
+
+function indexTownVisibility(root, buildings){
+  townVisibilityIndex = [];
+  const claimed = new Set();
+  for(const [seed, entry] of houseVisuals){
+    const radius = visibleRadiusFor(entry.building?.type);
+    claimed.add(entry.root);
+    if(radius === Infinity) continue;
+    const [x, z] = buildingWorldXZ(entry.building);
+    townVisibilityIndex.push({root: entry.root, x, z, radiusSquared: radius * radius});
+  }
+  // Landmarks are not homes, so they are not in houseVisuals and need their
+  // own lookup. City Hall is the one this exists for.
+  for(const building of buildings){
+    if(houseVisuals.has(Number(building.seed))) continue;
+    const radius = visibleRadiusFor(building.type);
+    if(radius === Infinity) continue;
+    const landmark = landmarkRoot(root, building);
+    if(!landmark || claimed.has(landmark)) continue;
+    claimed.add(landmark);
+    const [x, z] = buildingWorldXZ(building);
+    townVisibilityIndex.push({root: landmark, x, z, radiusSquared: radius * radius});
+  }
+  document.body.dataset.visibilityRadiusIndex = String(townVisibilityIndex.length);
+}
+
+function updateTownVisibilityRadius(force=false){
+  if(!townVisibilityIndex.length) return;
+  // Preview and audit renders frame a fixed point, so culling around the
+  // player would empty the shot.
+  if(previewMode) return;
+  const now = performance.now();
+  if(!force && now - townVisibilityLastCheck < 120) return;
+  townVisibilityLastCheck = now;
+  const px = playerPosition.x, pz = playerPosition.z;
+  let drawn = 0;
+  for(const entry of townVisibilityIndex){
+    const dx = px - entry.x, dz = pz - entry.z;
+    const visible = dx*dx + dz*dz <= entry.radiusSquared;
+    if(entry.root.visible !== visible) entry.root.visible = visible;
+    if(visible) drawn += 1;
+  }
+  document.body.dataset.visibilityRadiusDrawn = String(drawn);
+}
+
 function refreshLoadedTownSystems(buildings){
   indexHouseVisuals(loadedTownRoot,buildings);
   buildGLBColliders(loadedTownRoot);
+  indexTownVisibility(loadedTownRoot,buildings);
+  updateTownVisibilityRadius(true);
 }
 
 function configureTownPlayerSpawn(buildings){
@@ -6837,7 +6922,20 @@ function ensureTownChunkForBuilding(building){
 
 function updateTownDistrictStreaming(force=false){
   if(!townManifest)return;
-  if(townManifest.streaming?.preload_all)return;
+  // Preview and audit renders move the camera without moving the player, so
+  // streaming keyed on player position would leave the framed district as a
+  // silhouette. Those pull every district in once and keep it; public visitors
+  // stream by proximity.
+  if(townManifest.streaming?.preload_all||previewMode){
+    if(townStreamPreloaded)return;
+    townStreamPreloaded=true;
+    for(const chunk of townManifest.chunks){
+      if(townLoadedChunks.has(chunk.id)||townChunkLoads.has(chunk.id))continue;
+      loadTownChunk(chunk.id,worldBuildings).catch(error=>
+        console.warn(`[Followville] could not preload ${chunk.label}.`,error));
+    }
+    return;
+  }
   const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
   townStreamLastCheck=now;
   let unloaded=false;
@@ -6847,8 +6945,14 @@ function updateTownDistrictStreaming(force=false){
       nearest=Math.min(nearest,Math.hypot(playerPosition.x-x,playerPosition.z-z));
     const loadDistance=Number(townManifest.streaming?.detail_load_distance||70);
     const unloadDistance=Number(townManifest.streaming?.detail_unload_distance||112);
+    // A district marked initial is resident, not merely loaded early: it holds
+    // something that reads from across the map, such as a tall founder home,
+    // and releasing it would turn that landmark into a silhouette while the
+    // player is still looking at it. Everything else is released once distant.
     if(townLoadedChunks.has(chunk.id)){
-      if(nearest>unloadDistance){unloadTownChunk(chunk,worldBuildings,{refresh:false});unloaded=true;}
+      if(!chunk.initial&&nearest>unloadDistance){
+        unloadTownChunk(chunk,worldBuildings,{refresh:false});unloaded=true;
+      }
       continue;
     }
     if(townChunkLoads.has(chunk.id))continue;
@@ -7286,7 +7390,7 @@ function animate(){
   updateAvatarPreview(dt);
 
   updateMultiplayer(dt);
-  if(gameRunning)updateTownDistrictStreaming();
+  if(gameRunning){updateTownDistrictStreaming();updateTownVisibilityRadius();}
   updateFocusedTownShadow();
   updateAdaptiveRenderScale();
 
