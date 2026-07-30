@@ -410,13 +410,19 @@ test("buildings draw on a radius around the player, and the Burj never drops", a
   expect(drawn).toBeGreaterThan(0);
   expect(drawn).toBeLessThan(indexed);
 
-  // The Burj has no radius at all: it is the one thing still standing from the
-  // far edge of town, so it is never entered into the cull index.
-  const burjCulled = await page.evaluate(() => {
-    const index = Number(document.body.dataset.visibilityRadiusIndex || "0");
-    return { index };
-  });
-  expect(burjCulled.index).toBe(indexed);
+  // A culled home is replaced by a silhouette, never simply removed. Leaving
+  // a bare lot where a building obviously stands reads as the town failing to
+  // load rather than as distance, which is what a resident district such as
+  // downtown showed: it never unloads, so the chunk LOD never covered it.
+  const proxies = Number(await page.locator("body").getAttribute("data-visibility-proxies"));
+  expect(proxies).toBe(indexed - drawn);
+  expect(proxies).toBeGreaterThan(0);
+
+  // The page reads its own instance matrices back and reports whether a
+  // silhouette is standing on every culled lot.
+  await expect(page.locator("body")).toHaveAttribute("data-radius-lod", "pass");
+  expect(Number(await page.locator("body").getAttribute("data-radius-lod-standing")))
+    .toBe(proxies);
   expect(errors).toEqual([]);
 });
 

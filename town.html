@@ -6760,32 +6760,109 @@ function visibleRadiusFor(type){
   return radius === undefined ? VISIBLE_RADIUS_DEFAULT : radius;
 }
 
-// Rebuilt whenever loaded geometry changes: [{root, x, z, radiusSquared}].
+// Rebuilt whenever loaded geometry changes: [{root, x, z, radiusSquared, ...}].
 let townVisibilityIndex = [];
 let townVisibilityLastCheck = 0;
+// Stand-ins drawn where a home is too far for its real geometry.
+let townDistantProxy = null;
 
+const DISTANT_PROXY_PALETTES = [
+  [0xd8c9a8,0x76594c],[0xc6d4bd,0x596b61],[0xc6ccd9,0x596779],
+  [0xd8c0b5,0x7a5752],[0xd9d1b9,0x6d6254],[0xc8d5d2,0x5d6d73]
+];
+
+function disposeTownDistantProxy(){
+  if(!townDistantProxy) return;
+  scene.remove(townDistantProxy.group);
+  disposeObject(townDistantProxy.group);
+  townDistantProxy = null;
+}
+
+/**
+ * Indexes what the radius culls, and builds the silhouette that replaces it.
+ *
+ * Hiding a home outright leaves a bare lot where a building obviously stands,
+ * which reads as the town failing to load rather than as distance. The chunk
+ * LOD already draws silhouettes, but only for districts that unloaded — a
+ * resident district such as downtown never unloads, so its homes had nothing
+ * standing in for them at all.
+ *
+ * So the same instanced silhouette is built here and swapped in per building:
+ * two draw calls for the whole town, with each instance scaled to nothing
+ * while its real geometry is the thing being drawn.
+ */
 function indexTownVisibility(root, buildings){
   townVisibilityIndex = [];
-  const claimed = new Set();
-  for(const [seed, entry] of houseVisuals){
+  disposeTownDistantProxy();
+
+  const homes = [];
+  for(const [, entry] of houseVisuals){
     const radius = visibleRadiusFor(entry.building?.type);
-    claimed.add(entry.root);
-    if(radius === Infinity) continue;
+    if(radius === Infinity || !entry.building) continue;
     const [x, z] = buildingWorldXZ(entry.building);
-    townVisibilityIndex.push({root: entry.root, x, z, radiusSquared: radius * radius});
+    homes.push({root: entry.root, building: entry.building, x, z,
+                radiusSquared: radius * radius});
   }
-  // Landmarks are not homes, so they are not in houseVisuals and need their
-  // own lookup. City Hall is the one this exists for.
-  for(const building of buildings){
-    if(houseVisuals.has(Number(building.seed))) continue;
-    const radius = visibleRadiusFor(building.type);
-    if(radius === Infinity) continue;
-    const landmark = landmarkRoot(root, building);
-    if(!landmark || claimed.has(landmark)) continue;
-    claimed.add(landmark);
-    const [x, z] = buildingWorldXZ(building);
-    townVisibilityIndex.push({root: landmark, x, z, radiusSquared: radius * radius});
+  // Landmarks are deliberately not culled. There are a dozen of them, so
+  // keeping them drawn costs little, and a vanishing City Hall would be the
+  // same empty-lot problem in a more conspicuous place. They still leave the
+  // scene when their district unloads.
+
+  if(homes.length){
+    const wallMaterial = new THREE.MeshStandardMaterial(
+      {name:"FV_radius_lod_wall", color:0xffffff, roughness:.92});
+    const roofMaterial = new THREE.MeshStandardMaterial(
+      {name:"FV_radius_lod_roof", color:0xffffff, roughness:.9});
+    const walls = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1,1,1), wallMaterial, homes.length);
+    const roofs = new THREE.InstancedMesh(
+      new THREE.ConeGeometry(1,1,4), roofMaterial, homes.length);
+    const quaternion = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const up = new THREE.Vector3(0,1,0);
+    // An instanced matrix defaults to the identity, which would stack every
+    // silhouette at full size on the world origin until its first swap.
+    const hidden = new THREE.Matrix4().makeScale(0,0,0);
+
+    homes.forEach((entry, index) => {
+      walls.setMatrixAt(index, hidden);
+      roofs.setMatrixAt(index, hidden);
+      // Both halves start from a known state: real geometry shown, silhouette
+      // scaled away. Otherwise a rebuild that inherits an already-hidden root
+      // sees no change to make, and leaves the lot with neither on it.
+      entry.root.visible = true;
+      const ground = walkSurfaceHeight(entry.x, entry.z);
+      const front = frontDirsFor(entry.building)[0] || [0,1];
+      quaternion.setFromAxisAngle(up, Math.atan2(front[0], front[1]));
+      const seed = Number(entry.building.seed) || index;
+      const width = entry.building.type === "ringhouse" ? 5.4 : 5.6 + (seed%4)*.35;
+      const depth = 4.25 + (seed%3)*.32, height = [3.45,4.25,5.05][seed%3];
+      const colors = DISTANT_PROXY_PALETTES[seed % DISTANT_PROXY_PALETTES.length];
+      // Precomputed so the per-frame swap is a matrix copy, not a rebuild.
+      entry.proxyIndex = index;
+      entry.wallMatrix = new THREE.Matrix4().compose(
+        new THREE.Vector3(entry.x, ground + height/2, entry.z), quaternion,
+        scale.clone().set(width, height, depth));
+      entry.roofMatrix = new THREE.Matrix4().compose(
+        new THREE.Vector3(entry.x, ground + height + .72, entry.z), quaternion,
+        scale.clone().set(width*.72, 1.45, depth*.72));
+      walls.setColorAt(index, new THREE.Color(colors[0]));
+      roofs.setColorAt(index, new THREE.Color(colors[1]));
+    });
+    walls.instanceColor.needsUpdate = true;
+    roofs.instanceColor.needsUpdate = true;
+    walls.instanceMatrix.needsUpdate = true;
+    roofs.instanceMatrix.needsUpdate = true;
+    walls.name = "FV_radius_lod_walls"; roofs.name = "FV_radius_lod_roofs";
+    walls.castShadow = roofs.castShadow = false;
+    walls.receiveShadow = roofs.receiveShadow = false;
+    walls.frustumCulled = roofs.frustumCulled = false;
+    const group = new THREE.Group();
+    group.name = "FV_radius_lod"; group.add(walls, roofs);
+    scene.add(group);
+    townDistantProxy = {group, walls, roofs, hidden: new THREE.Matrix4().makeScale(0,0,0)};
   }
+
+  townVisibilityIndex = homes;
   document.body.dataset.visibilityRadiusIndex = String(townVisibilityIndex.length);
 }
 
@@ -6798,14 +6875,58 @@ function updateTownVisibilityRadius(force=false){
   if(!force && now - townVisibilityLastCheck < 120) return;
   townVisibilityLastCheck = now;
   const px = playerPosition.x, pz = playerPosition.z;
-  let drawn = 0;
+  let drawn = 0, swapped = false;
   for(const entry of townVisibilityIndex){
     const dx = px - entry.x, dz = pz - entry.z;
     const visible = dx*dx + dz*dz <= entry.radiusSquared;
-    if(entry.root.visible !== visible) entry.root.visible = visible;
     if(visible) drawn += 1;
+    if(entry.root.visible === visible) continue;
+    entry.root.visible = visible;
+    // The silhouette is the inverse of the real geometry: exactly one of the
+    // two stands on the lot at any moment, so a home is never simply absent.
+    if(townDistantProxy && entry.proxyIndex !== undefined){
+      townDistantProxy.walls.setMatrixAt(entry.proxyIndex,
+        visible ? townDistantProxy.hidden : entry.wallMatrix);
+      townDistantProxy.roofs.setMatrixAt(entry.proxyIndex,
+        visible ? townDistantProxy.hidden : entry.roofMatrix);
+      swapped = true;
+    }
+  }
+  if(swapped && townDistantProxy){
+    townDistantProxy.walls.instanceMatrix.needsUpdate = true;
+    townDistantProxy.roofs.instanceMatrix.needsUpdate = true;
   }
   document.body.dataset.visibilityRadiusDrawn = String(drawn);
+  document.body.dataset.visibilityProxies = String(
+    townVisibilityIndex.length - drawn);
+  // Re-audited whenever the pairing actually changed, not only on a forced
+  // pass: otherwise the reported figure lags the scene and reads as a mismatch
+  // that is really just staleness.
+  if(force || swapped) auditRadiusLod(townVisibilityIndex.length - drawn);
+}
+
+/**
+ * Checks that every culled home really does have a silhouette standing.
+ *
+ * Reading the instance matrices back rather than trusting the bookkeeping,
+ * because the failure being guarded against is a lot with nothing on it, and
+ * a counter that agrees with itself would not have caught the first one.
+ */
+function auditRadiusLod(expected){
+  if(!townDistantProxy){
+    document.body.dataset.radiusLod = expected === 0 ? "pass" : "fail";
+    return;
+  }
+  const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion(), scale = new THREE.Vector3();
+  let standing = 0;
+  for(let index = 0; index < townDistantProxy.walls.count; index += 1){
+    townDistantProxy.walls.getMatrixAt(index, matrix);
+    matrix.decompose(position, quaternion, scale);
+    if(scale.x > 0.001) standing += 1;
+  }
+  document.body.dataset.radiusLodStanding = String(standing);
+  document.body.dataset.radiusLod = standing === expected ? "pass" : "fail";
 }
 
 function refreshLoadedTownSystems(buildings){
