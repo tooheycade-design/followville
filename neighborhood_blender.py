@@ -4305,6 +4305,10 @@ def build_suburban_roads(world_col, buildings, m):
     if not active:
         return []
     river_reveal_objects = []
+    river_districts = {
+        house["district"] for house in SUBURBAN_PLAN["houses"]
+        if int(house.get("plan_id", 0)) > 366
+    }
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_house_points = [build_pos(b) for b in buildings
                            if b.get("type") == "house" and b.get("plan_id")]
@@ -4326,7 +4330,7 @@ def build_suburban_roads(world_col, buildings, m):
             world_col, "district_connector_" + district.lower().replace(" ", "_"),
             points, m["road"], bottom_offset=.015,
             top_offset=.085, terrain_conform=True)
-        if district in RIVER_HOUSE_DISTRICTS:
+        if district in river_districts:
             river_reveal_objects.extend((connector_shoulder, connector_road))
         for side in (-1, 1):
             path = _offset_terrain_path(points, side*4.45)
@@ -4334,7 +4338,7 @@ def build_suburban_roads(world_col, buildings, m):
                 world_col, "district_path_" + district.lower().replace(" ", "_") + str(side),
                 path, path_mat, width=1.25, bottom_offset=.005,
                 top_offset=.035, terrain_conform=True)
-            if district in RIVER_HOUSE_DISTRICTS:
+            if district in river_districts:
                 river_reveal_objects.append(connector_path)
     by_street = {}
     for segment in SUBURBAN_PLAN["roads"]:
