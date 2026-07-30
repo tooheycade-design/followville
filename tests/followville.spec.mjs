@@ -257,7 +257,13 @@ test("Avatar Studio only offers the animated character library and persists it",
 });
 
 test("player camera follows, right-drag orbits, wheel reaches first person, and A/D are correct", async ({ page }) => {
-  test.setTimeout(420_000);
+  // The longest story here by a distance: walking, orbiting, pitching to both
+  // clamps, zooming into first person and back, and checking A/D are
+  // camera-relative. It runs about three minutes locally, and CI is slower
+  // enough that 420s left no margin -- every failure of this test so far has
+  // been the budget expiring mid-call, never an assertion. Worth splitting
+  // one day; four behaviours in one test is why it is this long.
+  test.setTimeout(600_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?admin=1#walk");
   await waitForTown(page);
@@ -353,8 +359,6 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
     await page.mouse.down({button:"right"});
     for(const y of [110,190,270,350,430,510,590,650]){
       await page.mouse.move(640,y);
-      // Reading back paces the loop to what the page can actually consume.
-      await page.locator("body").getAttribute("data-camera-pitch");
     }
     await page.mouse.up({button:"right"});
   }
