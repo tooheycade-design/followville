@@ -6854,20 +6854,24 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         tr.track_axis = "TRACK_NEGATIVE_Z"
         tr.up_axis = "UP_Y"
         beats = (
-            # 0-3.8s: finish the established 500-home plan on Summit Court.
-            (1, (205.0, -356.0, 142.0), (sx-12.0, sy+8.0, 8.0)),
-            (114, (238.0, -330.0, 105.0), (sx+8.0, sy, 6.0)),
-            # 3.8-8.8s: pull east and let the river valley and viaduct rise.
-            (142, (318.0, -354.0, 126.0), (360.0, -212.0, 5.0)),
-            (217, (402.0, -344.0, 112.0), (365.0, -205.0, 7.0)),
-            (263, (448.0, -316.0, 88.0), (372.0, -205.0, 8.0)),
-            # 8.8-12.5s: Crossing Way forms as the drone crosses the bridge.
-            (313, (405.0, -276.0, 60.0), (407.0, -214.0, 7.5)),
-            (374, (472.0, -269.0, 54.0), (rx-15.0, ry, 6.0)),
-            # 12.5-20s: the eighteen timber homes rise beyond the water, ending
+            # 0-2.5s: establish the entire completed Day 27 city from a high
+            # portrait drone, then descend decisively toward Summit Court.
+            (1, (635.0, -402.0, 1206.0), (129.0, -7.0, 0.0)),
+            (30, (590.0, -438.0, 990.0), (145.0, -35.0, 2.0)),
+            (70, (205.0, -356.0, 142.0), (sx-12.0, sy+8.0, 8.0)),
+            (130, (238.0, -330.0, 105.0), (sx+8.0, sy, 6.0)),
+            # 2.3-9.0s: the ten Summit Court homes finish the original plan,
+            # then the drone pulls east as the river and viaduct rise.
+            (160, (318.0, -354.0, 126.0), (360.0, -212.0, 5.0)),
+            (225, (402.0, -344.0, 112.0), (365.0, -205.0, 7.0)),
+            (270, (448.0, -316.0, 88.0), (372.0, -205.0, 8.0)),
+            # 9.0-12.0s: Crossing Way forms as the drone crosses the bridge.
+            (310, (405.0, -276.0, 60.0), (407.0, -214.0, 7.5)),
+            (360, (472.0, -269.0, 54.0), (rx-15.0, ry, 6.0)),
+            # 12-20s: the eighteen timber homes rise beyond the water, ending
             # wide enough to hold river, bridge, old ridge, and new chapter.
-            (450, (552.0, -294.0, 72.0), (rx, ry, 6.5)),
-            (533, (527.0, -326.0, 105.0), (rx-25.0, ry+8.0, 7.0)),
+            (420, (552.0, -294.0, 72.0), (rx, ry, 6.5)),
+            (520, (527.0, -326.0, 105.0), (rx-25.0, ry+8.0, 7.0)),
             (frame_end, (512.0, -372.0, 150.0), (430.0, -196.0, 8.5)),
         )
         for frame, position, target in beats:
@@ -7915,15 +7919,15 @@ def main(cfg=None):
         river_roots = [e for e in home_roots
                        if int(e.get("nb_world_plan_id", 0)) >= 367]
         for index, e in enumerate(summit_roots):
-            animate_rise(e, 45+index*4, dur=25)
+            animate_rise(e, 75+index*3, dur=25)
         for index, obj in enumerate(river_objects):
             # Water/banks arrive first, then bridge furniture and planting.
-            animate_rise(obj, 142+min(index, 18)*3, dur=30)
+            animate_rise(obj, 165+min(index, 18)*3, dur=30)
         for index, obj in enumerate(river_road_objects):
             # Crossing Way visibly forms after the river and before its homes.
-            animate_rise(obj, 258+min(index, 14)*2, dur=28)
+            animate_rise(obj, 260+min(index, 14)*2, dur=28)
         for index, e in enumerate(river_roots):
-            animate_rise(e, 322+index*6, dur=27)
+            animate_rise(e, 325+index*6, dur=27)
         for e in rise:
             if e not in home_roots:
                 animate_rise(e, 170)
