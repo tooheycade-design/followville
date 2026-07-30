@@ -2,8 +2,9 @@
 
 import math
 
+from neighborhood_plan import RIVER_CENTERLINE, RIVER_HALF_WIDTH
 
-TERRAIN_BOUNDS = (-520.0, 520.0, -330.0, 520.0)
+TERRAIN_BOUNDS = (-520.0, 800.0, -360.0, 540.0)
 FACADE_ATTACHMENT_EMBED = 0.01
 MIN_VISIBLE_SURFACE_CLEARANCE = 0.05
 
@@ -41,6 +42,30 @@ def _gaussian(x, y, cx, cy, sx, sy, height):
     return height*math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2)*0.5)
 
 
+def river_center_x(y):
+    """Interpolated river center at one north/south coordinate."""
+    y = float(y)
+    ordered = sorted(RIVER_CENTERLINE, key=lambda point: point[1])
+    if y <= ordered[0][1]:
+        return ordered[0][0]
+    if y >= ordered[-1][1]:
+        return ordered[-1][0]
+    for a, b in zip(ordered, ordered[1:]):
+        if a[1] <= y <= b[1]:
+            t = (y-a[1])/max(.001, b[1]-a[1])
+            return a[0]+(b[0]-a[0])*t
+    raise AssertionError("river interpolation failed")
+
+
+def river_water_height(y):
+    """A gentle downstream fall from the northern headwaters."""
+    return 1.10+3.15*_smoothstep(-340.0, 525.0, float(y))
+
+
+def river_distance(x, y):
+    return abs(float(x)-river_center_x(y))
+
+
 def terrain_height(x, y):
     """Continuous walk surface shared by Blender, roads, houses, and browser.
 
@@ -65,13 +90,20 @@ def terrain_height(x, y):
     height *= .62
     # Strong distant landforms frame the city in aerial views without forcing
     # steep grades through any current or reserved neighborhood street.
+    # The original eastern skyline peaks are preserved byte-for-byte beneath
+    # the completed city (x <= 320), then feather away before the new river.
+    # Replacement peaks farther east frame the expanded chapter without
+    # forcing houses or the crossing onto a 20-metre mountain.
+    preserve_old_east = 1.0-_smoothstep(320.0, 392.0, x)
     height += (
         _gaussian(x, y, -445, 330, 105, 120, 24.0)
-        + _gaussian(x, y, 455, 345, 115, 125, 26.0)
         + _gaussian(x, y, -455, -245, 120, 110, 21.0)
-        + _gaussian(x, y, 455, -255, 125, 115, 23.0)
         + _gaussian(x, y, -235, -155, 88, 82, 17.0)
         + _gaussian(x, y, 250, -175, 92, 86, 15.0)
+        + preserve_old_east*_gaussian(x, y, 455, 345, 115, 125, 26.0)
+        + preserve_old_east*_gaussian(x, y, 455, -255, 125, 115, 23.0)
+        + _gaussian(x, y, 748, 350, 125, 135, 25.0)
+        + _gaussian(x, y, 735, -285, 135, 120, 22.0)
     )
 
     # Flat engineered downtown platform with a broad feathered transition.
@@ -96,6 +128,14 @@ def terrain_height(x, y):
     # Kaleidoscope Crest already owns a precise 2.82 m plateau/collider.
     story_distance = math.hypot((x-305.0)/1.15, (y-60.0)/.9)
     height *= _smoothstep(75.0, 112.0, story_distance)
+
+    # Carve one continuous riverbed into the shared walk surface. The inner
+    # channel sits below the water mesh; a twenty-metre feather creates broad,
+    # walkable banks instead of vertical terrain walls.
+    distance = river_distance(x, y)
+    channel = river_water_height(y)-.72
+    bank_blend = _smoothstep(RIVER_HALF_WIDTH, RIVER_HALF_WIDTH+20.0, distance)
+    height = channel+(height-channel)*bank_blend
     return max(0.0, height)
 
 

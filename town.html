@@ -3505,6 +3505,25 @@ function redesignGaussian(x,z,cx,cz,sx,sz,height){
   return height*Math.exp(-.5*(Math.pow((x-cx)/sx,2)+Math.pow((z-cz)/sz,2)));
 }
 
+const RIVER_CENTERLINE_WORLD=[
+  [352,520],[365,430],[350,340],[368,250],[356,160],
+  [372,70],[360,-20],[378,-110],[362,-200],[374,-285],[388,-330]
+];
+function riverCenterX(y){
+  const points=[...RIVER_CENTERLINE_WORLD].sort((a,b)=>a[1]-b[1]);
+  if(y<=points[0][1])return points[0][0];
+  if(y>=points.at(-1)[1])return points.at(-1)[0];
+  for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i];
+    if(y>b[1])continue;
+    return THREE.MathUtils.lerp(a[0],b[0],(y-a[1])/(b[1]-a[1]));
+  }
+  return points.at(-1)[0];
+}
+function riverWaterHeight(y){
+  return 1.10+3.15*redesignSmoothstep(-340,525,y);
+}
+
 function regionalTerrainHeight(x,z){
   // Blender is x/y/z-up while Three.js is x/y-up/-z. Terrain previously used
   // Three's z as though it were Blender y, mirroring every hill north/south
@@ -3519,12 +3538,15 @@ function regionalTerrainHeight(x,z){
   height+=redesignGaussian(x,y,-360,-150,150,125,4.2);
   height+=redesignGaussian(x,y,345,-180,155,135,4.8);
   height*=.62;
+  const preserveOldEast=1-redesignSmoothstep(320,392,x);
   height+=redesignGaussian(x,y,-445,330,105,120,24.0);
-  height+=redesignGaussian(x,y,455,345,115,125,26.0);
   height+=redesignGaussian(x,y,-455,-245,120,110,21.0);
-  height+=redesignGaussian(x,y,455,-255,125,115,23.0);
   height+=redesignGaussian(x,y,-235,-155,88,82,17.0);
   height+=redesignGaussian(x,y,250,-175,92,86,15.0);
+  height+=preserveOldEast*redesignGaussian(x,y,455,345,115,125,26.0);
+  height+=preserveOldEast*redesignGaussian(x,y,455,-255,125,115,23.0);
+  height+=redesignGaussian(x,y,748,350,125,135,25.0);
+  height+=redesignGaussian(x,y,735,-285,135,120,22.0);
   const downtownDx=Math.max(0,Math.abs(x+3)-108);
   const downtownDy=Math.max(0,Math.abs(y+5)-108);
   const downtownDistance=Math.hypot((x+3)/1.05,(y+5));
@@ -3534,6 +3556,10 @@ function regionalTerrainHeight(x,z){
   height*=redesignSmoothstep(78,112,ringDistance);
   const storyDistance=Math.hypot((x-305)/1.15,(y-60)/.9);
   height*=redesignSmoothstep(75,112,storyDistance);
+  const riverDistance=Math.abs(x-riverCenterX(y));
+  const channel=riverWaterHeight(y)-.72;
+  const bankBlend=redesignSmoothstep(14,34,riverDistance);
+  height=channel+(height-channel)*bankBlend;
   return Math.max(0,height);
 }
 
@@ -3554,7 +3580,7 @@ function downtownBuiltSurfaceHeight(x,z){
   return onWalk ? .28 : 0;
 }
 
-let localWalkSurfaces={segments:[],bulbs:[],pads:[]};
+let localWalkSurfaces={segments:[],bulbs:[],pads:[],river:null};
 function suburbanRoadSurfaceHeight(x,z){
   let height=0;
   for(const segment of localWalkSurfaces.segments||[]){
@@ -3568,7 +3594,8 @@ function suburbanRoadSurfaceHeight(x,z){
       // The exported road ribbon follows terrain at both edges.  Matching the
       // player surface to the terrain at the player's exact position avoids
       // walking through a banked road or hovering over its downhill edge.
-      height=Math.max(height,regionalTerrainHeight(x,z)+.085);
+      height=Math.max(height,regionalTerrainHeight(x,z)+.085,
+                      THREE.MathUtils.lerp(ah,bh,t));
   }
   for(const bulb of localWalkSurfaces.bulbs||[]){
     const [cx,cz,ch,radius]=bulb;
@@ -3664,6 +3691,9 @@ const SUBURBAN_FOOTPRINTS = [
   [7.0,5.9], [8.4,5.8], [8.2,5.9], [6.7,5.3], [8.6,5.9]
 ];
 const SUBURBAN_GARAGE_SIDES = [1,-1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1];
+const RIVER_HOME_DISTRICTS = new Set([
+  "Rivergate","Cedarbank","Timber Bend","Eastbank Village","River Meadows"
+]);
 
 function suburbanStructureSetback(entry){
   return Number(entry.building.seed) === 29 ? 1.30 : 0;
@@ -3754,6 +3784,12 @@ function suburbanFootprint(entry){
     const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
     return boxCollider(center.x,center.z,u.x,u.z,v.x,v.z,4.25,4.35,
                        `urban-home-${entry.building.seed}`);
+  }
+  if(RIVER_HOME_DISTRICTS.has(entry.building.district)){
+    const structure=localBoundsForMaterials(entry.root,material=>
+      /^NB_sub_(?:wall|stone)_river(?:_|$)/i.test(material?.name||""),.18,2.35);
+    if(!structure.isEmpty())
+      return colliderFromLocalBounds(entry.root,structure,`river-home-${entry.building.seed}`);
   }
   const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
   const style = SUBURBAN_FOOTPRINTS[styleIndex];
@@ -3926,6 +3962,23 @@ function buildGLBColliders(root){
     // players can stand and cast without walking through the pond.
     colliders.push(circleCollider(pondX,pondZ,10.5,"fishing-pond-water"));
   }
+  const river=localWalkSurfaces.river;
+  let riverColliderCount=0;
+  if(Array.isArray(river?.centerline)){
+    const halfWidth=Math.max(1,Number(river.halfWidth)||14)-.35;
+    for(let i=1;i<river.centerline.length;i++){
+      const a=river.centerline[i-1],b=river.centerline[i];
+      const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+      if(length<.01)continue;
+      colliders.push(boxCollider(
+        (a[0]+b[0])/2,(a[1]+b[1])/2,
+        dx/length,dz/length,-dz/length,dx/length,
+        length/2,halfWidth,"river-water"));
+      riverColliderCount++;
+    }
+  }
+  document.body.dataset.riverWaterHitboxes=
+    riverColliderCount===Math.max(0,(river?.centerline?.length||0)-1) ? "pass" : "missing";
   root.traverse(obj => {
     const name = obj.name || "";
     if (obj.isMesh && /^trunk(?:\d|[._]|$)/i.test(name)) addTrunkColliderFromMesh(obj);
@@ -3962,6 +4015,9 @@ function buildGLBColliders(root){
 }
 
 function resolvePlayerCollision(position, collider){
+  if(collider.label==="river-water" &&
+     suburbanRoadSurfaceHeight(position.x,position.z)-
+       regionalTerrainHeight(position.x,position.z)>1.25)return;
   if (collider.kind === "circle"){
     let dx = position.x-collider.x, dz = position.z-collider.z;
     let distance = Math.hypot(dx,dz);
@@ -4897,6 +4953,17 @@ function rebuildTownMap3D(){
   ground.rotation.x=-Math.PI/2;ground.position.set(centerX,-.13,centerZ);
   ground.receiveShadow=true;townMapRoot.add(ground);
 
+  const riverChapterBuilt=worldBuildings.some(building=>Number(building.plan_id)>=367);
+  if(riverChapterBuilt){
+    const riverPoints=RIVER_CENTERLINE_WORLD.map(([x,y])=>[x,-y]);
+    for(let i=1;i<riverPoints.length;i++){
+      const a=riverPoints[i-1],b=riverPoints[i];
+      addTownMapRoad(a[0],a[1],b[0],b[1],28,0x3f8fb4);
+    }
+    for(const point of riverPoints)addTownMapRoadCap(point[0],point[1],28,0x3f8fb4);
+    addTownMapRoad(276,217,410,214,8.2,0x59666d);
+  }
+
   const districts=new Map();
   for(const item of mapState.items){
     const district=item.building.district;if(!district)continue;
@@ -5182,6 +5249,25 @@ function drawTownMap(){
     ctx.font="800 11px -apple-system,'Segoe UI',sans-serif";
     ctx.textAlign="center"; ctx.fillStyle="rgba(35,67,62,.55)";
     ctx.fillText(name,lx,ly-12);
+  }
+
+  const riverChapterBuilt=worldBuildings.some(building=>Number(building.plan_id)>=367);
+  if(riverChapterBuilt){
+    ctx.strokeStyle="rgba(49,137,177,.88)";
+    ctx.lineCap="round";
+    ctx.lineJoin="round";
+    ctx.lineWidth=Math.max(4,28*scale);
+    ctx.beginPath();
+    RIVER_CENTERLINE_WORLD.forEach(([x,y],index)=>{
+      const [px,py]=worldToTownMap(x,-y);
+      if(index)ctx.lineTo(px,py);else ctx.moveTo(px,py);
+    });
+    ctx.stroke();
+    ctx.strokeStyle="rgba(76,90,98,.92)";
+    ctx.lineWidth=Math.max(3,8.2*scale);
+    const [bridgeX1,bridgeY1]=worldToTownMap(276,217);
+    const [bridgeX2,bridgeY2]=worldToTownMap(410,214);
+    ctx.beginPath();ctx.moveTo(bridgeX1,bridgeY1);ctx.lineTo(bridgeX2,bridgeY2);ctx.stroke();
   }
 
   // Established grid roads grow from the extent of current grid buildings.
@@ -7011,6 +7097,22 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.fov=64;
           camera.position.set(132,2.25,-83);
           camera.lookAt(165,1.10,-71);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "river-bridge"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=62;
+          camera.position.set(342,14.2,220);
+          camera.lookAt(402,8.0,214);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "river-homes"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=58;
+          camera.position.set(442,12.5,252);
+          camera.lookAt(456,7.0,207);
           camera.updateProjectionMatrix();
         }
         if(localAuditView === "school"){

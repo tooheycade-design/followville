@@ -24,7 +24,7 @@ import random
 import sys
 from mathutils import Matrix, Vector
 
-# Pure-data reserve for populations 135..500.  Importing this module creates
+# Pure-data reserve for populations 135..750. Importing this module creates
 # nothing; future houses/roads remain invisible until main() consumes them.
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else ""
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
@@ -32,6 +32,7 @@ if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
 from downtown_visual_plan import mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
+from downtown_visual_plan import river_center_x, river_distance, river_water_height
 from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           transform_building_point, transform_point)
 
@@ -131,6 +132,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day25reveal  18-second skyline-to-homes-to-fishing-pond flight
 #   --cam day26reveal  18-second city-to-homes-to-construction-zone flight
 #   --cam day27reveal  20-second city-to-36-homes-to-movie-theater flight
+#   --cam day28reveal  20-second old-plan finish, river/road, river-home reveal
+#   --cam riverdrone    reusable finished river/bridge aerial
+#   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
 #   --civicsquare    add the permanent terrain-following square beside City Hall
 #   --fishingpond    add the permanent off-grid fishing pond beside Fire Station 1
@@ -907,7 +911,7 @@ SUBURBAN_STYLES = [
 # Lots at branch merges and adjacent cul-de-sac arcs are intentionally tighter
 # than the main road frontage. These plan IDs use the compact lot footprint;
 # every other planned address uses the standard .78 footprint. The set was
-# audited against all 366 reserved addresses with oriented bounding boxes.
+# audited against the original 366 reserved addresses with oriented boxes.
 SUBURBAN_TIGHT_PLAN_IDS = {
     7, 19, 39, 40, 61, 62, 63, 93, 94, 95, 115, 116, 124, 125, 126, 128,
     134, 135, 136, 158, 160, 162, 163, 164, 165, 180, 182, 193, 194, 195,
@@ -1224,6 +1228,155 @@ def build_suburban_house(col, variant):
                 obj.location.y += structure_setback
 
     _merge_asset_meshes(col, "suburban_%02d_%s" % (variant, name))
+
+
+RIVER_HOUSE_PALETTES = [
+    ((.40, .23, .12), (.13, .20, .17), (.68, .27, .12)),
+    ((.53, .34, .17), (.18, .23, .22), (.17, .33, .27)),
+    ((.34, .29, .23), (.12, .18, .20), (.56, .22, .14)),
+    ((.47, .39, .25), (.17, .24, .18), (.23, .38, .42)),
+]
+
+
+def build_river_house(col, variant):
+    """Distinctive timber-and-stone homes for the population 501-750 chapter.
+
+    The eight silhouettes share the existing safe suburban lot envelope and
+    customization material roles, but read immediately as cabins/lodges from
+    street and drone height: steep roofs, exposed timber bands, stone bases,
+    broad river-facing glass, and deep covered porches.
+    """
+    style = variant % 8
+    wall_c, roof_c, door_c = RIVER_HOUSE_PALETTES[variant % len(RIVER_HOUSE_PALETTES)]
+    m = std_mats()
+    wall = mat("NB_sub_wall_river_%d" % (variant % 4), wall_c, .90)
+    roof = mat("NB_sub_roof_river_%d" % (variant % 4), roof_c, .92)
+    door = mat("NB_sub_door_river_%d" % (variant % 4), door_c, .78)
+    trim = mat("NB_sub_trim_river", (.76, .67, .51), .88)
+    glass = mat("NB_sub_glass_river", (.08, .20, .24), .10, .12, 1.0, 0.0, .68)
+    stone = mat("NB_sub_stone_river", (.31, .32, .29), .97)
+    timber = mat("NB_sub_timber_river", (.24, .14, .075), .94)
+    metal = mat("NB_sub_metal_river", (.10, .13, .13), .82)
+    green = mat("NB_sub_green_river", (.18, .34, .19), .97)
+
+    widths = (7.4, 7.8, 8.3, 7.9, 7.1, 8.5, 7.6, 8.2)
+    depths = (5.8, 6.0, 5.9, 6.2, 5.7, 6.1, 6.0, 5.8)
+    width, depth = widths[style], depths[style]
+    two_story = style in (2, 3, 5, 7)
+    body_h = 5.45 if two_story else 3.45
+    base_z = .34 if style in (3, 4, 7) else .18
+
+    add_box(col, "river_stone_foundation", width + .22, depth + .18, base_z + .34,
+            0, 0, 0, stone)
+    if style == 1:
+        # A-frame center with short side shoulders.
+        add_box(col, "river_wall_main", width, depth, 3.25, 0, 0, base_z, wall)
+        add_prism_roof(col, "river_roof_aframe", width + .66, depth + .72, 4.15,
+                       0, 0, base_z + 2.70, roof)
+    elif style == 3:
+        add_box(col, "river_wall_main", width * .68, depth, body_h,
+                -width * .15, 0, base_z, wall)
+        add_box(col, "river_wall_wing", width * .38, depth * .78, 3.25,
+                width * .31, -.25, base_z, wall)
+        add_prism_roof(col, "river_roof_main", width * .75, depth + .62, 2.05,
+                       -width * .15, 0, base_z + body_h, roof)
+        wing_roof = add_prism_roof(col, "river_roof_wing", depth * .86,
+                                   width * .43, 1.55, width * .31, -.25,
+                                   base_z + 3.25, roof)
+        wing_roof.rotation_euler.z = math.pi / 2
+    elif style == 5:
+        # Broad modern lodge: traditional timber massing with a glass center.
+        add_box(col, "river_wall_left", width * .39, depth, body_h,
+                -width * .305, 0, base_z, wall)
+        add_box(col, "river_wall_right", width * .39, depth, body_h,
+                width * .305, 0, base_z, wall)
+        add_box(col, "river_wall_center", width * .22, depth, body_h,
+                0, 0, base_z, wall)
+        add_prism_roof(col, "river_roof_lodge", width + .72, depth + .72, 2.35,
+                       0, 0, base_z + body_h, roof)
+    else:
+        add_box(col, "river_wall_main", width, depth, body_h, 0, 0, base_z, wall)
+        roof_height = 2.65 if style in (0, 6) else (2.15 if two_story else 2.35)
+        add_prism_roof(col, "river_roof_main", width + .68, depth + .70,
+                       roof_height, 0, 0, base_z + body_h, roof)
+
+    front_y = -depth / 2
+    # Real projecting log bands. Each band overlaps the wall by 3 cm and owns
+    # its visible face by 7 cm, satisfying the project's depth rule.
+    band_levels = [base_z + .48 + index * .46
+                   for index in range(6 if not two_story else 11)]
+    for index, z in enumerate(band_levels):
+        add_box(col, "river_log_band_%02d" % index, width + .08, .10, .105,
+                0, front_y - .02, z, timber)
+        add_box(col, "river_rear_log_band_%02d" % index, width + .08, .10, .105,
+                0, -front_y + .02, z, timber)
+    for side in (-1, 1):
+        add_box(col, "river_corner_post", .12, depth + .08,
+                body_h + .08, side*(width/2+.02), 0, base_z, timber)
+
+    door_x = -width * .22 if style % 2 else width * .20
+    _sub_door(col, "river_entry", door_x, front_y - .08, base_z + .04,
+              trim, door, glass, m)
+    window_x = -door_x * .95
+    _sub_window(col, "river_picture_window", window_x, front_y - .10,
+                base_z + 1.32, trim, glass, None, 1.72, 1.45)
+    if two_story:
+        for index, x in enumerate((-width * .27, width * .27)):
+            _sub_window(col, "river_upper_%d" % index, x, front_y - .10,
+                        base_z + 3.82, trim, glass, None, 1.20, 1.15)
+    elif style == 1:
+        _sub_window(col, "river_loft", 0, front_y - .13,
+                    base_z + 3.25, trim, glass, None, 1.15, 1.05)
+    # Rear glazing keeps the homes recognizable in drone views from the river.
+    rear_y = depth/2
+    for index, x in enumerate((-width*.22, width*.22)):
+        add_box(col, "river_rear_window_frame_%d" % index, 1.42, .12, 1.28,
+                x, rear_y+.02, base_z+1.30, trim)
+        add_box(col, "river_rear_window_glass_%d" % index, 1.18, .055, 1.04,
+                x, rear_y+.055, base_z+1.42, glass)
+
+    # Deep porch/deck and timber frame are the river-district signature.
+    porch_width = min(width - .45, 5.8 if style in (2, 5, 7) else 4.8)
+    porch_depth = 1.38
+    add_box(col, "river_deck", porch_width, porch_depth, .24,
+            0, front_y - porch_depth / 2, base_z - .06, timber)
+    for px in (-porch_width / 2 + .22, porch_width / 2 - .22):
+        add_box(col, "river_porch_post", .20, .20, 2.35,
+                px, front_y - porch_depth + .18, base_z + .16, timber)
+        add_box(col, "river_porch_brace", .58, .18, .16,
+                px * .92, front_y - porch_depth + .18, base_z + 2.22, timber)
+    add_box(col, "river_porch_beam", porch_width, .22, .24,
+            0, front_y - porch_depth + .18, base_z + 2.43, timber)
+    add_prism_roof(col, "river_porch_roof", porch_width + .35,
+                   porch_depth + .38, .72, 0, front_y - porch_depth / 2,
+                   base_z + 2.62, roof)
+
+    # Stone chimney gives the cabins a clear silhouette in distant drone shots.
+    chimney_x = -width * .34 if style % 2 else width * .34
+    add_box(col, "river_stone_chimney", .72, .78, body_h + 1.25,
+            chimney_x, .55, base_z, stone)
+    add_box(col, "river_chimney_cap", .92, .98, .18,
+            chimney_x, .55, base_z + body_h + 1.22, metal)
+
+    # Curb-connected gravel drive/walk stay inside the audited suburban lot.
+    drive_x = -door_x
+    add_box(col, "river_driveway", 2.65, 2.15, .09,
+            drive_x, -4.02, .03, m["cap"])
+    add_box(col, "river_front_walk", 1.00, max(.80, 3.75 + front_y), .10,
+            door_x, (front_y - 3.75) / 2, .04, m["cap"])
+    for side in (-1, 1):
+        sx = side * (width / 2 - .45)
+        add_ngon_cone(col, "river_evergreen_trunk", .11, .13, .62, 7,
+                      sx, front_y - .52, .04, timber)
+        add_ngon_cone(col, "river_evergreen", .64, .12, 1.45, 8,
+                      sx, front_y - .52, .48, green)
+    mailbox_x = width / 2 - .45
+    add_box(col, "river_mailpost", .14, .14, 1.02,
+            mailbox_x, -4.66, .02, timber)
+    add_box(col, "river_mailbox", .44, .66, .34,
+            mailbox_x, -4.66, .98, metal)
+
+    _merge_asset_meshes(col, "river_house_%02d" % variant)
 
 
 STORYBOOK_PALETTES = [
@@ -3440,6 +3593,11 @@ SUBURBAN_ASSET_VARIANTS = [
     for i in range(len(SUBURBAN_STYLES) * len(SUBURBAN_PALETTES))
 ]
 
+RIVER_ASSET_VARIANTS = [
+    ("AST_river_house_%02d" % i, lambda c, i=i: build_river_house(c, i))
+    for i in range(8)
+]
+
 STORYBOOK_ASSET_VARIANTS = [
     ("AST_storybook_%02d" % i, lambda c, i=i: build_storybook_house(c, i))
     for i in range(10)
@@ -3663,9 +3821,14 @@ def find_free_lots(count, size, occupied, blocked_blocks=None, fill_mode="block"
     raise RuntimeError("Ran out of space")
 
 def place_instance(world_col, b, name):
-    variants = (URBAN_ASSET_VARIANTS
-                if b["type"] == "house" and not b.get("plan_id") and "px" not in b
-                else ASSET_VARIANTS[b["type"]])
+    if b["type"] == "house" and b.get("district") in {
+            "Rivergate", "Cedarbank", "Timber Bend",
+            "Eastbank Village", "River Meadows"}:
+        variants = RIVER_ASSET_VARIANTS
+    elif b["type"] == "house" and not b.get("plan_id") and "px" not in b:
+        variants = URBAN_ASSET_VARIANTS
+    else:
+        variants = ASSET_VARIANTS[b["type"]]
     vname, builder = variants[b["seed"] % len(variants)]
     asset = get_asset(vname, builder)
     empty = bpy.data.objects.new(name, None)
@@ -4137,10 +4300,11 @@ def _add_road_surface_dash(col, name, points, center_distance, length,
 def build_suburban_roads(world_col, buildings, m):
     """Reveal only the road pieces needed by houses already constructed."""
     if not SUBURBAN_PLAN:
-        return
+        return []
     active = max([b.get("plan_id", 0) for b in buildings] or [0])
     if not active:
-        return
+        return []
+    river_reveal_objects = []
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_house_points = [build_pos(b) for b in buildings
                            if b.get("type") == "house" and b.get("plan_id")]
@@ -4154,17 +4318,24 @@ def build_suburban_roads(world_col, buildings, m):
             continue
         points = [(x, y, terrain_height(x, y)) for x, y in connector]
         junction_points.extend((x, y) for x, y, _z in points)
-        _add_road_strip(world_col, "district_connector_shoulder_" + district.lower().replace(" ", "_"),
-                        points, shoulder_mat, width=7.35, bottom_offset=.005,
-                        top_offset=.045, terrain_conform=True)
-        _add_road_strip(world_col, "district_connector_" + district.lower().replace(" ", "_"),
-                        points, m["road"], bottom_offset=.015,
-                        top_offset=.085, terrain_conform=True)
+        connector_shoulder = _add_road_strip(
+            world_col, "district_connector_shoulder_" + district.lower().replace(" ", "_"),
+            points, shoulder_mat, width=7.35, bottom_offset=.005,
+            top_offset=.045, terrain_conform=True)
+        connector_road = _add_road_strip(
+            world_col, "district_connector_" + district.lower().replace(" ", "_"),
+            points, m["road"], bottom_offset=.015,
+            top_offset=.085, terrain_conform=True)
+        if district in RIVER_HOUSE_DISTRICTS:
+            river_reveal_objects.extend((connector_shoulder, connector_road))
         for side in (-1, 1):
             path = _offset_terrain_path(points, side*4.45)
-            _add_road_strip(world_col, "district_path_" + district.lower().replace(" ", "_") + str(side),
-                            path, path_mat, width=1.25, bottom_offset=.005,
-                            top_offset=.035, terrain_conform=True)
+            connector_path = _add_road_strip(
+                world_col, "district_path_" + district.lower().replace(" ", "_") + str(side),
+                path, path_mat, width=1.25, bottom_offset=.005,
+                top_offset=.035, terrain_conform=True)
+            if district in RIVER_HOUSE_DISTRICTS:
+                river_reveal_objects.append(connector_path)
     by_street = {}
     for segment in SUBURBAN_PLAN["roads"]:
         if segment["reveal_at"] <= active:
@@ -4176,17 +4347,28 @@ def build_suburban_roads(world_col, buildings, m):
                        for point in source_points]
         points = [(point[0], point[1], terrain_height(point[0], point[1]))
                   for point in flat_points]
-        junction_points.extend(flat_points)
-        _add_road_strip(world_col, "suburban_shoulder_%02d" % street_index, points,
-                        shoulder_mat, width=7.35, bottom_offset=.005,
-                        top_offset=.045, terrain_conform=True)
-        _add_road_strip(world_col, "suburban_road_%02d" % street_index, points,
-                        m["road"], bottom_offset=.015,
-                        top_offset=.085, terrain_conform=True)
+        # The continuous shared-vertex ribbon already seals every bend. The
+        # old reserve keeps its historical cover discs; river streets use one
+        # cover only at the true street junction so repeated raised circles do
+        # not create visible scallops across otherwise clean new asphalt.
+        if street_index >= 18:
+            junction_points.append(flat_points[0])
+        else:
+            junction_points.extend(flat_points)
+        street_objects = []
+        street_objects.append(_add_road_strip(
+            world_col, "suburban_shoulder_%02d" % street_index, points,
+            shoulder_mat, width=7.35, bottom_offset=.005,
+            top_offset=.045, terrain_conform=True))
+        street_objects.append(_add_road_strip(
+            world_col, "suburban_road_%02d" % street_index, points,
+            m["road"], bottom_offset=.015,
+            top_offset=.085, terrain_conform=True))
         path = _offset_terrain_path(points, 4.35 if street_index%2==0 else -4.35)
-        _add_road_strip(world_col, "suburban_path_%02d" % street_index, path,
-                        path_mat, width=1.18, bottom_offset=.005,
-                        top_offset=.035, terrain_conform=True)
+        street_objects.append(_add_road_strip(
+            world_col, "suburban_path_%02d" % street_index, path,
+            path_mat, width=1.18, bottom_offset=.005,
+            top_offset=.035, terrain_conform=True))
         # Match the established grid/ring roads: centered pale lane dashes at
         # the same eight-metre rhythm, following the curve tangent.
         total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
@@ -4197,6 +4379,7 @@ def build_suburban_roads(world_col, buildings, m):
             dash = add_box(world_col, "suburban_dash", 1.65, .16, .018,
                            x, y, terrain_height(x, y)+.095, lane_mat)
             dash.rotation_euler.z = angle
+            street_objects.append(dash)
             distance += 10.0
         light_distance = 18.0
         light_index = 0
@@ -4214,8 +4397,11 @@ def build_suburban_roads(world_col, buildings, m):
             lamp = place_instance(world_col, lamp_data, "suburban_light")
             lamp.location = (lx, ly, terrain_height(lx, ly))
             lamp.rotation_euler = (0, 0, angle)
+            street_objects.append(lamp)
             light_distance += 34.0
             light_index += 1
+        if street_index >= 18:
+            river_reveal_objects.extend(street_objects)
     # Rounded, terrain-following covers turn independent road ribbons into one
     # visually continuous network at bends and junctions. The one-centimetre
     # lift over each ribbon prevents depth fighting without a visible step.
@@ -4232,6 +4418,142 @@ def build_suburban_roads(world_col, buildings, m):
             bulb_obj = _add_ellipse_pad(world_col, "culdesac", bulb_x, bulb_y,
                                         8.2, 8.2, .012, .083, m["road"], 32)
             bulb_obj.location.z = terrain_height(bulb_x, bulb_y)
+            if int(bulb.get("street_index", -1)) >= 18:
+                river_reveal_objects.append(bulb_obj)
+    return [obj for obj in river_reveal_objects if obj is not None]
+
+
+def build_river_chapter(world_col, buildings, m):
+    """Build the permanent river valley, riparian belt, and first crossing.
+
+    The feature stays completely absent through plan 366 and appears with the
+    first Rivergate address. It is world geometry, not a fake population or
+    claimable building record.
+    """
+    river = SUBURBAN_PLAN.get("river") or {}
+    active = max((b.get("plan_id", 0) for b in buildings), default=0)
+    bridge = river.get("bridge") or {}
+    if active < int(bridge.get("reveal_at", 10**9)):
+        return []
+
+    created = []
+    centerline = [tuple(point) for point in river["centerline"]]
+    water_points = [(x, y, river_water_height(y)) for x, y in centerline]
+    water = _add_road_strip(
+        world_col, "followville_river_water", water_points, m["water"],
+        width=float(river.get("half_width", 14.0))*2.0,
+        bottom_offset=-.58, top_offset=.025, terrain_conform=False)
+    water["nb_feature_role"] = "river-water"
+    created.append(water)
+
+    gravel = mat("FV_riverbank_gravel", (.36, .38, .34), .98)
+    trail_mat = mat("FV_riverwalk", (.47, .43, .35), .99)
+    for side in (-1, 1):
+        edge = _offset_terrain_path(water_points, side*16.2)
+        gravel_strip = _add_road_strip(
+            world_col, "riverbank_gravel_%s" % ("east" if side < 0 else "west"),
+            edge, gravel, width=3.2, bottom_offset=.008, top_offset=.045,
+            terrain_conform=True)
+        created.append(gravel_strip)
+        trail = _offset_terrain_path(water_points, side*21.5)
+        trail_strip = _add_road_strip(
+            world_col, "riverwalk_%s" % ("east" if side < 0 else "west"),
+            trail, trail_mat, width=1.65, bottom_offset=.008, top_offset=.042,
+            terrain_conform=True)
+        created.append(trail_strip)
+
+    # A deterministic tree/boulder belt frames the water in aerial shots while
+    # keeping the bridge sightline and protected future lots open.
+    stone = mat("FV_river_boulder", (.30, .32, .31), .98)
+    bank_trees = []
+    for index in range(120):
+        y = -322.0+index*(832.0/119.0)
+        if abs(y+215.0) < 42.0:
+            continue
+        side = -1 if index % 2 else 1
+        rng = random.Random(88000+index*131)
+        x = river_center_x(y)+side*(24.0+rng.uniform(1.0, 5.5))
+        tree_data = {"type": "tree", "gx": 0, "gy": 0,
+                     "px": x, "py": y, "seed": 88000+index}
+        tree = place_instance(world_col, tree_data, "riverbank_tree")
+        bank_trees.append(tree)
+        created.append(tree)
+        if index % 5 == 0:
+            rock = add_ngon_cone(
+                world_col, "riverbank_boulder", .62+rng.random()*.45,
+                .42+rng.random()*.28, .65+rng.random()*.55, 7,
+                x+side*rng.uniform(1.2, 2.8), y+rng.uniform(-2.4, 2.4),
+                terrain_height(x, y)+.02, stone)
+            rock.rotation_euler.z = rng.random()*math.tau
+            created.append(rock)
+
+    # Founders Crossing: one gently descending viaduct from the completed
+    # North Ridge road to Crossing Way. It clears the river by roughly eleven
+    # metres at midspan and has continuous guard rails for first-person use.
+    start = tuple(bridge["approach"][0])
+    end = (410.0, -214.0)
+    start_z = terrain_height(*start)+.18
+    end_z = terrain_height(*end)+.22
+    deck_points = []
+    for index in range(9):
+        t = index/8.0
+        x = start[0]+(end[0]-start[0])*t
+        y = start[1]+(end[1]-start[1])*t
+        z = start_z+(end_z-start_z)*t
+        deck_points.append((x, y, z))
+    concrete = mat("FV_bridge_concrete", (.46, .47, .45), .98)
+    rail_mat = mat("FV_bridge_rail", (.18, .22, .21), .82)
+    timber = mat("FV_rivergate_timber", (.25, .15, .08), .93)
+    deck_base = _add_road_strip(
+        world_col, "founders_crossing_structure", deck_points, concrete,
+        width=8.8, bottom_offset=-.72, top_offset=.02)
+    deck = _add_road_strip(
+        world_col, "founders_crossing_road", deck_points, m["road"],
+        width=7.7, bottom_offset=.025, top_offset=.14)
+    created.extend((deck_base, deck))
+    for side in (-1, 1):
+        rail_points = []
+        lower_points = []
+        for x, y, z in deck_points:
+            rail_points.append((x, y+side*4.12, z+1.25))
+            lower_points.append((x, y+side*4.12, z+.68))
+        created.append(_add_connected_tube(
+            world_col, "founders_crossing_top_rail", rail_points,
+            .105, rail_mat, sides=8))
+        created.append(_add_connected_tube(
+            world_col, "founders_crossing_mid_rail", lower_points,
+            .075, rail_mat, sides=8))
+        for index in range(17):
+            t = index/16.0
+            x = start[0]+(end[0]-start[0])*t
+            y = start[1]+(end[1]-start[1])*t+side*4.12
+            z = start_z+(end_z-start_z)*t
+            created.append(_add_connected_tube(
+                world_col, "founders_crossing_post",
+                ((x, y, z+.12), (x, y, z+1.28)), .075,
+                rail_mat, sides=7))
+
+    for x in (319.0, 350.0, 381.0):
+        t = (x-start[0])/(end[0]-start[0])
+        y = start[1]+(end[1]-start[1])*t
+        deck_z = start_z+(end_z-start_z)*t
+        ground_z = terrain_height(x, y)
+        height = max(.5, deck_z-ground_z-.68)
+        pier = add_box(world_col, "founders_crossing_pier", 1.45, 5.4,
+                       height, x, y, ground_z, concrete)
+        created.append(pier)
+
+    sign_z = terrain_height(405.5, -209.0)
+    for sy in (-209.0, -219.0):
+        created.append(add_box(world_col, "rivergate_sign_post", .22, .22, 4.05,
+                               405.5, sy, sign_z, timber))
+    created.append(add_box(world_col, "rivergate_sign_board", .20, 8.6, 1.05,
+                           405.5, -214.0, sign_z+2.86, timber))
+    created.append(add_text(
+        world_col, "rivergate_sign_text", "RIVERGATE", .58, .045,
+        405.36, -214.0, sign_z+3.36, m["dash"],
+        rotation=(math.pi/2, 0, -math.pi/2)))
+    return [obj for obj in created if obj is not None]
 
 
 def build_hillside_foundations(world_col, buildings):
@@ -6201,6 +6523,79 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
+    elif cam == "riverdrone":
+        if max((b.get("plan_id", 0) for b in buildings), default=0) < 367:
+            raise RuntimeError("riverdrone camera needs the river chapter")
+        aim = bpy.data.objects.new("RiverDroneAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("RiverDroneCamera")
+        cam_data.lens = 37
+        cam_data.clip_start = 8.0
+        cam_data.clip_end = 6000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("RiverDroneCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        for frame, position, target in (
+                (1, (286.0, -354.0, 138.0), (358.0, -205.0, 7.0)),
+                (frame_end//2, (418.0, -340.0, 105.0), (377.0, -198.0, 7.0)),
+                (frame_end, (520.0, -322.0, 116.0), (421.0, -194.0, 7.0))):
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "riverbridge":
+        if max((b.get("plan_id", 0) for b in buildings), default=0) < 367:
+            raise RuntimeError("riverbridge camera needs the river chapter")
+        start = (286.0, -216.8)
+        # Stop before the Rivergate gateway so the finished frame shows the
+        # sign and neighborhood instead of parking the lens underneath it.
+        end = (390.0, -214.4)
+        full_start = (276.0, -217.0)
+        full_end = (410.0, -214.0)
+        z0 = terrain_height(*full_start)+.18
+        z1 = terrain_height(*full_end)+.22
+        aim = bpy.data.objects.new("RiverBridgeAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("RiverBridgeCamera")
+        cam_data.lens = 27
+        cam_data.clip_start = .12
+        cam_data.clip_end = 2500.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("RiverBridgeCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        for index in range(9):
+            fraction = index/8.0
+            x = start[0]+(end[0]-start[0])*fraction
+            y = start[1]+(end[1]-start[1])*fraction
+            deck_t = (x-full_start[0])/(full_end[0]-full_start[0])
+            z = z0+(z1-z0)*deck_t
+            look_t = min(1.0, fraction+.10)
+            ax = start[0]+(end[0]-start[0])*look_t
+            ay = start[1]+(end[1]-start[1])*look_t
+            az_t = (ax-full_start[0])/(full_end[0]-full_start[0])
+            frame = 1+int(round((frame_end-1)*fraction))
+            cam_obj.location = (x, y, z+1.72)
+            aim.location = (ax, ay, z0+(z1-z0)*az_t+1.60)
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
     elif cam == "newstreet":
         # Finished street-level showcase of the newest ordinary homes. Pick
         # the latest day's busiest planned street, then animate both camera
@@ -6346,7 +6741,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         aim = bpy.data.objects.new("Day22RevealAim", None)
         world_col.objects.link(aim)
         cam_data = bpy.data.cameras.new("Day22RevealCamera")
-        cam_data.lens = 43
+        cam_data.lens = 36
         cam_data.clip_start = 5.0
         cam_data.clip_end = 4000.0
         cam_data.dof.use_dof = False
@@ -6418,6 +6813,58 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # 14.1-18.0s: settled descending push across pond and dock.
             (frame_end, (144.0, -96.0, 39.0),
              (FISHING_POND_X - 3.0, FISHING_POND_Y, 2.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day28reveal":
+        newest = [b for b in buildings
+                  if b["type"] == "house" and b.get("day") == max(
+                      (item.get("day", 0) for item in buildings), default=0)]
+        summit = [b for b in newest if int(b.get("plan_id", 0)) <= 366]
+        river_homes = [b for b in newest if int(b.get("plan_id", 0)) >= 367]
+        sx = sum(build_pos(b)[0] for b in summit)/len(summit) if summit else 260.0
+        sy = sum(build_pos(b)[1] for b in summit)/len(summit) if summit else -240.0
+        rx = (sum(build_pos(b)[0] for b in river_homes)/len(river_homes)
+              if river_homes else 455.0)
+        ry = (sum(build_pos(b)[1] for b in river_homes)/len(river_homes)
+              if river_homes else -208.0)
+        aim = bpy.data.objects.new("Day28RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day28RevealCamera")
+        cam_data.lens = 43
+        cam_data.clip_start = 8.0
+        cam_data.clip_end = 6000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day28RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.8s: finish the established 500-home plan on Summit Court.
+            (1, (205.0, -356.0, 142.0), (sx-12.0, sy+8.0, 8.0)),
+            (114, (238.0, -330.0, 105.0), (sx+8.0, sy, 6.0)),
+            # 3.8-8.8s: pull east and let the river valley and viaduct rise.
+            (142, (318.0, -354.0, 126.0), (360.0, -212.0, 5.0)),
+            (217, (402.0, -344.0, 112.0), (365.0, -205.0, 7.0)),
+            (263, (448.0, -316.0, 88.0), (372.0, -205.0, 8.0)),
+            # 8.8-12.5s: Crossing Way forms as the drone crosses the bridge.
+            (313, (405.0, -276.0, 60.0), (407.0, -214.0, 7.5)),
+            (374, (472.0, -269.0, 54.0), (rx-15.0, ry, 6.0)),
+            # 12.5-20s: the eighteen timber homes rise beyond the water, ending
+            # wide enough to hold river, bridge, old ridge, and new chapter.
+            (450, (552.0, -294.0, 72.0), (rx, ry, 6.5)),
+            (533, (527.0, -326.0, 105.0), (rx-25.0, ry+8.0, 7.0)),
+            (frame_end, (512.0, -372.0, 150.0), (430.0, -196.0, 8.5)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -7188,7 +7635,7 @@ def main(cfg=None):
                 if state["pop"] >= thr and thr not in done:
                     done.append(thr)
                     # Cade's approved 135..500 reserve is ordinary houses
-                    # only. Reaching 500 completes that neighborhood plan;
+                    # only. Reaching 500 completes that first neighborhood plan;
                     # it must not silently insert the legacy plaza.
                     if thr == 500 and planned_before < SUBURBAN_CAPACITY and house_gained > 0:
                         unlocked.append("500-house suburban reserve complete")
@@ -7287,8 +7734,8 @@ def main(cfg=None):
                     raise RuntimeError("Lot %s is already taken" % (target,))
                 lots = [target]
             elif btype == "house":
-                # Consume exact addresses from the hidden 366-house suburban
-                # reserve before falling back to the legacy grid.  The plan
+                # Consume exact addresses from the hidden 616-address
+                # neighborhood reserve before falling back to the legacy grid. The plan
                 # lives outside world_state and creates no future objects.
                 already = len([b for b in state["buildings"] if b.get("plan_id")])
                 take = min(n, max(0, SUBURBAN_CAPACITY - already))
@@ -7397,6 +7844,8 @@ def main(cfg=None):
         e["nb_web_chunk"] = web_chunk_id(b)
         if b.get("district"):
             e["nb_world_district"] = str(b["district"])
+        if b.get("plan_id"):
+            e["nb_world_plan_id"] = int(b["plan_id"])
         if id(b) in new_ids:
             rise.append(e)
         elif id(b) in rem_ids:
@@ -7407,7 +7856,9 @@ def main(cfg=None):
     # The redesign supplies one continuous walkable terrain mesh. The older
     # decorative mound pass is intentionally omitted to avoid intersecting
     # houses and roads with scenery that has no shared elevation model.
-    build_suburban_roads(world_col, keep or state["buildings"], m)
+    river_road_objects = build_suburban_roads(
+        world_col, keep or state["buildings"], m)
+    river_objects = build_river_chapter(world_col, keep or state["buildings"], m)
     build_hillside_foundations(world_col, keep or state["buildings"])
     build_storybook_street(world_col, keep or state["buildings"])
     # Isolated, state-free public-realm layer. The module owns no houses,
@@ -7426,7 +7877,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day27reveal":
+    if cfg.get("cam") == "day28reveal":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day27reveal":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") in ("day25reveal", "day26reveal"):
         frame_end = max(frame_end, FPS * 18)
@@ -7438,7 +7891,10 @@ def main(cfg=None):
         frame_end = max(frame_end, FPS * 14)
     elif cfg.get("cam") in ("day21growth", "day21drone", "day21skyline"):
         frame_end = max(frame_end, FPS * 8)
-    elif cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront", "park", "overhead", "wholeoverhead", "downtown", "downtownstreet", "cinematic", "dronezoom", "dronehover"):
+    elif cfg.get("cam") in ("street", "newstreet", "storybookstreet", "housefront",
+                           "park", "overhead", "wholeoverhead", "downtown",
+                           "downtownstreet", "cinematic", "dronezoom", "dronehover",
+                           "riverdrone", "riverbridge"):
         frame_end = max(frame_end, FPS * 12)  # give slow showcase cams time to breathe
     elif cfg.get("cam") == "football":
         frame_end = max(frame_end, FPS * 10)
@@ -7448,7 +7904,26 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day27reveal":
+    if cfg.get("cam") == "day28reveal":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        summit_roots = [e for e in home_roots
+                        if int(e.get("nb_world_plan_id", 0)) <= 366]
+        river_roots = [e for e in home_roots
+                       if int(e.get("nb_world_plan_id", 0)) >= 367]
+        for index, e in enumerate(summit_roots):
+            animate_rise(e, 45+index*4, dur=25)
+        for index, obj in enumerate(river_objects):
+            # Water/banks arrive first, then bridge furniture and planting.
+            animate_rise(obj, 142+min(index, 18)*3, dur=30)
+        for index, obj in enumerate(river_road_objects):
+            # Crossing Way visibly forms after the river and before its homes.
+            animate_rise(obj, 258+min(index, 14)*2, dur=28)
+        for index, e in enumerate(river_roots):
+            animate_rise(e, 322+index*6, dur=27)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 170)
+    elif cfg.get("cam") == "day27reveal":
         theater_roots = [e for e in rise if e.name.startswith("movietheater_d")]
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         ridgeview = [e for e in home_roots

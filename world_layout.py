@@ -61,7 +61,7 @@ def walk_surface_manifest(state):
     """Exact revealed suburban road decks for browser walking/collision QA."""
     import math
 
-    from downtown_visual_plan import terrain_height
+    from downtown_visual_plan import terrain_height, river_water_height
     from neighborhood_plan import PLAN
 
     active = max((building.get("plan_id", 0)
@@ -89,6 +89,14 @@ def walk_surface_manifest(state):
                              stable_height(-b[1]), stable_height(b[2]),
                              half_width])
 
+    def append_graded_road(points, half_width):
+        for a, b in zip(points, points[1:]):
+            segments.append([
+                stable_height(a[0]), stable_height(-a[1]), stable_height(a[2]),
+                stable_height(b[0]), stable_height(-b[1]), stable_height(b[2]),
+                half_width,
+            ])
+
     active_districts = {building.get("district")
                         for building in state.get("buildings", [])
                         if building.get("plan_id")}
@@ -96,6 +104,21 @@ def walk_surface_manifest(state):
         connector = DISTRICT_CONNECTORS.get(district, ())
         for (ax, ay), (bx, by) in zip(connector, connector[1:]):
             append_road(ax, ay, bx, by)
+    river = PLAN.get("river") or {}
+    bridge = river.get("bridge") or {}
+    river_active = active >= int(bridge.get("reveal_at", 10**9))
+    if river_active:
+        start = tuple(bridge["approach"][0])
+        end = (410.0, -214.0)
+        start_z = terrain_height(*start)+.18
+        end_z = terrain_height(*end)+.22
+        deck = []
+        for index in range(9):
+            t = index/8.0
+            deck.append((start[0]+(end[0]-start[0])*t,
+                         start[1]+(end[1]-start[1])*t,
+                         start_z+(end_z-start_z)*t+.14))
+        append_graded_road(deck, 3.95)
     for segment in PLAN["roads"]:
         if segment["reveal_at"] > active:
             continue
@@ -126,5 +149,14 @@ def walk_surface_manifest(state):
             stable_height(x - 10.8), stable_height(-y + 2.7),
             stable_height(water_height + .28), 5.6, 3.5, "fishing-dock",
         ])
+    river_manifest = None
+    if river_active:
+        river_manifest = {
+            "centerline": [[stable_height(x), stable_height(-y),
+                            stable_height(river_water_height(y))]
+                           for x, y in river["centerline"]],
+            "halfWidth": stable_height(river.get("half_width", 14.0)),
+            "bridgeName": bridge.get("name"),
+        }
     return {"activePlanId": active, "segments": segments,
-            "bulbs": bulbs, "pads": pads}
+            "bulbs": bulbs, "pads": pads, "river": river_manifest}

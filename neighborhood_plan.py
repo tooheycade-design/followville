@@ -1,4 +1,4 @@
-"""Deterministic suburban reserve for Followville populations 135..500.
+"""Deterministic neighborhood reserve for Followville populations 135..750.
 
 This module contains geometry only; importing it creates no Blender objects and
 never edits world_state.json.  The generator consumes the next address(es) when
@@ -9,11 +9,32 @@ that portion of road exists.
 import math
 
 BASE_POPULATION = 134
-HOUSE_CAPACITY = 366
+LEGACY_RESERVE_CAPACITY = 366
+HOUSE_CAPACITY = 616
 ROAD_HALF_WIDTH = 3.0
 HOUSE_SETBACK = 8.5
 HOUSE_ROAD_CLEARANCE = 6.75
 CULDESAC_CLEARANCE = 12.0
+
+# Permanent river-chapter geography. The centerline runs north-to-south beyond
+# the Day-27 city edge. Water is 24-30 m wide; a broader riparian reserve keeps
+# houses, roads, and tree belts from crowding the banks. The first crossing is
+# deliberately aligned with completed Summit Court and Day 28 Crossing Way.
+RIVER_CENTERLINE = (
+    (352.0, 520.0), (365.0, 430.0), (350.0, 340.0),
+    (368.0, 250.0), (356.0, 160.0), (372.0, 70.0),
+    (360.0, -20.0), (378.0, -110.0), (362.0, -200.0),
+    (374.0, -285.0), (388.0, -330.0),
+)
+RIVER_HALF_WIDTH = 14.0
+RIVER_RIPARIAN_CLEARANCE = 30.0
+RIVER_BRIDGE = {
+    "name": "Founders Crossing",
+    "approach": ((276.0, -217.0), (312.0, -216.0), (332.0, -214.0)),
+    "deck": ((332.0, -214.0), (396.0, -215.0)),
+    "landing": ((396.0, -215.0), (400.0, -215.0)),
+    "reveal_at": LEGACY_RESERVE_CAPACITY + 1,
+}
 
 DISTRICTS = (
     ("Creekside Bend", 54),
@@ -22,11 +43,16 @@ DISTRICTS = (
     ("Meadow Run", 76),
     ("Pine Hollow", 58),
     ("North Ridge", 48),
+    ("Rivergate", 48),
+    ("Cedarbank", 58),
+    ("Timber Bend", 54),
+    ("Eastbank Village", 58),
+    ("River Meadows", 32),
 )
 
 # Each street is intentionally independent and develops from its first point
-# toward a cul-de-sac at its last point.  Counts total 366.  The broad regions
-# sit outside the existing Day-9 grid and east-side circular park.
+# toward a cul-de-sac at its last point. Counts total 616. The original 366
+# addresses remain unchanged; addresses 367-616 form the river chapter.
 STREETS = (
     # Creekside Bend -- north of the current town
     dict(district="Creekside Bend", name="Creekside Lane", count=18,
@@ -75,6 +101,40 @@ STREETS = (
          points=[(136, -119), (164, -111), (192, -116), (215, -135), (226, -160), (222, -184)]),
     dict(district="North Ridge", name="Summit Court", count=16,
          points=[(128, -191), (151, -211), (181, -221), (210, -214), (228, -194), (228, -169)]),
+
+    # River chapter -- east of the permanent river. Crossing Way's first
+    # eighteen lots are Day 28 addresses 367-384. The bridge is a district
+    # connector, keeping every home safely beyond the water rather than
+    # placing frontage on the crossing itself.
+    dict(district="Rivergate", name="Crossing Way", count=18,
+         points=[(400, -215), (425, -218), (455, -210), (485, -195), (510, -175)]),
+    dict(district="Rivergate", name="Rivergate Drive", count=30,
+         points=[(455, -210), (450, -175), (442, -140), (448, -100), (465, -65), (490, -40)]),
+
+    # Cedarbank rises gradually north from Rivergate behind a wooded bank.
+    dict(district="Cedarbank", name="Cedarbank Lane", count=30,
+         points=[(490, -40), (515, -20), (535, 15), (540, 55), (528, 92), (506, 120)]),
+    dict(district="Cedarbank", name="Alder Court", count=28,
+         points=[(535, 15), (565, 2), (595, 8), (618, 32), (625, 65), (615, 92)]),
+
+    # Timber Bend is the cabin-forward woodland neighborhood closest to the
+    # East Woods creek and riparian tree belt.
+    dict(district="Timber Bend", name="Timber Bend Road", count=28,
+         points=[(506, 120), (490, 150), (488, 185), (505, 216), (530, 238), (560, 248)]),
+    dict(district="Timber Bend", name="Lodgepole Loop", count=26,
+         points=[(505, 216), (535, 205), (566, 215), (586, 242), (588, 275), (570, 302)]),
+
+    # Eastbank Village gives the chapter a denser, walkable northern center.
+    dict(district="Eastbank Village", name="Millstone Way", count=30,
+         points=[(488, 185), (458, 202), (435, 226), (428, 260), (440, 292), (465, 315)]),
+    dict(district="Eastbank Village", name="Ferry Street", count=28,
+         points=[(440, 292), (415, 312), (404, 344), (414, 375), (440, 395), (470, 400)]),
+
+    # Lower-density southern edge with long views back toward the bridge.
+    dict(district="River Meadows", name="Marshlight Lane", count=16,
+         points=[(485, -195), (510, -225), (535, -252), (565, -263), (595, -255)]),
+    dict(district="River Meadows", name="Heron Reach", count=16,
+         points=[(535, -252), (545, -285), (568, -310), (600, -318), (630, -305)]),
 )
 
 TERRAIN = (
@@ -84,6 +144,9 @@ TERRAIN = (
     dict(kind="hill", name="North Ridge", x=182, y=-177, sx=25, sy=18, height=8.0),
     dict(kind="hill", name="Pine Knoll", x=54, y=-188, sx=15, sy=13, height=4.8),
     dict(kind="meadow", name="Meadow Run Green", x=-157, y=-169, sx=39, sy=32, height=0.20),
+    dict(kind="meadow", name="River Meadows Green", x=565, y=-270, sx=58, sy=42, height=0.16),
+    dict(kind="hill", name="Cedarbank Rise", x=585, y=74, sx=34, sy=28, height=4.2),
+    dict(kind="hill", name="Timber Bend Rise", x=545, y=250, sx=38, sy=30, height=5.0),
 )
 
 
@@ -193,7 +256,9 @@ def build_plan():
                 for side in (preferred_side, -preferred_side):
                     hx, hy = cx + nx * HOUSE_SETBACK * side, cy + ny * HOUSE_SETBACK * side
                     point = (hx, hy)
-                    if any(math.hypot(hx - h["x"], hy - h["y"]) < 5.5 for h in houses):
+                    spacing = 7.35 if sequence > LEGACY_RESERVE_CAPACITY else 5.5
+                    if any(math.hypot(hx - h["x"], hy - h["y"]) < spacing
+                           for h in houses):
                         continue
                     if any(other != street_index and
                            _distance_to_segment(point, a, b) < HOUSE_ROAD_CLEARANCE
@@ -237,7 +302,11 @@ def build_plan():
                                 street_index=street_index))
     assert len(houses) == HOUSE_CAPACITY
     return dict(houses=houses, roads=roads, turnarounds=turnarounds,
-                terrain=list(TERRAIN), districts=list(DISTRICTS))
+                terrain=list(TERRAIN), districts=list(DISTRICTS),
+                river={"centerline": list(RIVER_CENTERLINE),
+                       "half_width": RIVER_HALF_WIDTH,
+                       "riparian_clearance": RIVER_RIPARIAN_CLEARANCE,
+                       "bridge": dict(RIVER_BRIDGE)})
 
 
 PLAN = build_plan()
@@ -248,12 +317,15 @@ def validate_plan(min_house_spacing=5.5):
     houses = PLAN["houses"]
     ids = [h["plan_id"] for h in houses]
     if ids != list(range(1, HOUSE_CAPACITY + 1)):
-        errors.append("plan ids are not continuous 1..366")
+        errors.append("plan ids are not continuous 1..%d" % HOUSE_CAPACITY)
     if sum(c for _, c in DISTRICTS) != HOUSE_CAPACITY:
-        errors.append("district counts do not total 366")
+        errors.append("district counts do not total %d" % HOUSE_CAPACITY)
     for i, a in enumerate(houses):
         for b in houses[i + 1:]:
-            if math.hypot(a["x"] - b["x"], a["y"] - b["y"]) < min_house_spacing:
+            required_spacing = (7.35 if
+                                max(a["plan_id"], b["plan_id"]) >
+                                LEGACY_RESERVE_CAPACITY else min_house_spacing)
+            if math.hypot(a["x"] - b["x"], a["y"] - b["y"]) < required_spacing:
                 errors.append("house spacing collision: %d and %d" % (a["plan_id"], b["plan_id"]))
                 if len(errors) > 20:
                     return errors
@@ -281,6 +353,14 @@ def validate_plan(min_house_spacing=5.5):
         for bulb in PLAN["turnarounds"]:
             if math.hypot(a["x"] - bulb["center"][0], a["y"] - bulb["center"][1]) < CULDESAC_CLEARANCE:
                 errors.append("house %d overlaps cul-de-sac %s" % (a["plan_id"], bulb["street"]))
+        if a["plan_id"] > LEGACY_RESERVE_CAPACITY:
+            river_distance = min(
+                _distance_to_segment((a["x"], a["y"]), p0, p1)
+                for p0, p1 in zip(RIVER_CENTERLINE, RIVER_CENTERLINE[1:])
+            )
+            if river_distance < RIVER_RIPARIAN_CLEARANCE:
+                errors.append("river house %d enters the protected riparian corridor" %
+                              a["plan_id"])
     return errors
 
 

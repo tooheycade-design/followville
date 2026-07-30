@@ -3,6 +3,16 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## River chapter preparation (2026-07-29, unreleased)
+- Added the population-501-750 river reserve, permanent river/bridge base
+  geometry, and eight river-house designs without changing canonical Day 27.
+- Mirrored the carved terrain and elevated Founders Crossing walk surface in
+  the browser; deep water blocks players while the bridge remains crossable.
+- Added the river and bridge to both the in-town 3D/flat map and homepage
+  preview as soon as address 367 exists.
+- River homes remain ordinary claimable houses and reuse existing
+  customization, stable-route, search, and ownership behavior.
+
 ## Urban-townhouse side-edge depth correction (2026-07-26)
 - Projected every storefront corner pier 6cm beyond its structural side wall,
   removing the last shared vertical X plane visible around website `(-9,48)`.

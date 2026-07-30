@@ -12,9 +12,12 @@ from downtown_visual_plan import (
     sample_road_points,
     terrain_height,
     terrain_surface_color,
+    river_center_x,
+    river_water_height,
     visible_face_clearance,
 )
-from neighborhood_plan import PLAN, validate_plan
+from neighborhood_plan import (HOUSE_CAPACITY, LEGACY_RESERVE_CAPACITY, PLAN,
+                               RIVER_RIPARIAN_CLEARANCE, validate_plan)
 from world_layout import DISTRICT_CONNECTORS, transform_building_point, transform_point
 
 
@@ -45,6 +48,29 @@ def main():
                       for t in range(5))
     heights = [terrain_height(*point) for _label, point in points]
     errors = validate_plan()+audit_terrain(PLAN)
+    river_houses = [house for house in PLAN["houses"]
+                    if house["plan_id"] > LEGACY_RESERVE_CAPACITY]
+    if HOUSE_CAPACITY != 616 or len(river_houses) != 250:
+        errors.append("river reserve must carry exactly addresses 367-616")
+    for house in river_houses:
+        if house["x"]-river_center_x(house["y"]) < RIVER_RIPARIAN_CLEARANCE:
+            errors.append("river house %d is not safely beyond the east bank" %
+                          house["plan_id"])
+    bridge = PLAN["river"]["bridge"]
+    bridge_start = tuple(bridge["approach"][0])
+    bridge_end = (410.0, -214.0)
+    bridge_grade = abs((terrain_height(*bridge_end)+.22) -
+                       (terrain_height(*bridge_start)+.18)) / math.hypot(
+                           bridge_end[0]-bridge_start[0],
+                           bridge_end[1]-bridge_start[1])
+    if bridge_grade > .10:
+        errors.append("Founders Crossing grade %.1f%% exceeds 10%%" %
+                      (bridge_grade*100))
+    bridge_mid_y = (bridge_start[1]+bridge_end[1])/2
+    bridge_mid_z = ((terrain_height(*bridge_start)+.18+
+                    terrain_height(*bridge_end)+.22)/2)
+    if bridge_mid_z-river_water_height(bridge_mid_y) < 7.5:
+        errors.append("Founders Crossing lacks a legible river clearance")
     # Ground-floor tower glazing and transoms must project beyond their podium
     # wall while retaining only a narrow structural embed. Exact shared planes
     # cause distance-dependent facade shimmer in the browser.

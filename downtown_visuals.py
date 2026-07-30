@@ -133,7 +133,7 @@ def _terrain_mesh(collection):
     x0, x1, y0, y1 = TERRAIN_BOUNDS
     # Dense enough that browser-side analytic height sampling and the visible
     # mesh agree within a few centimetres on neighborhood grades.
-    nx, ny = 129, 107
+    nx, ny = 165, 113
     vertices = []
     for iy in range(ny):
         y = y0+(y1-y0)*iy/(ny-1)

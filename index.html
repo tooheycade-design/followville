@@ -558,6 +558,12 @@
       roadPaths.push(previewCircle(cx,cz,20.5),previewCircle(cx,cz,40.5));
       if(gridRoadEdgeX!==null)roadPaths.push([[gridRoadEdgeX,cz],[cx-10,cz]]);
     }
+    if(buildings.some(building=>Number(building.plan_id)>=367)){
+      const river=[[352,-520],[365,-430],[350,-340],[368,-250],[356,-160],
+        [372,-70],[360,20],[378,110],[362,200],[374,285],[388,330]];
+      river.river=true;river.width=28;roadPaths.push(river);
+      const bridge=[[276,217],[410,214]];bridge.width=8.2;roadPaths.push(bridge);
+    }
 
     const boundsPoints=[...entries.map(entry=>entry.position),...roadPaths.flat()];
     if(founder){const [cx,cz]=previewPosition(founder);boundsPoints.push(...previewCircle(cx,cz,58,24));}
@@ -601,6 +607,11 @@
       if(path.length<2)continue;
       const drawPath=()=>{ctx.beginPath();path.forEach((point,index)=>{const [x,y]=project(point);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);});};
       const roadWidth=path.width||PREVIEW_ROAD;
+      if(path.river){
+        drawPath();ctx.strokeStyle="rgba(54,143,181,.92)";
+        ctx.lineWidth=Math.max(7,roadWidth*scale);ctx.stroke();
+        continue;
+      }
       drawPath();ctx.strokeStyle="rgba(237,224,199,.9)";ctx.lineWidth=Math.max(5,roadWidth*scale*1.32);ctx.stroke();
       drawPath();ctx.strokeStyle=path.color||(path.feature?"#b52f50":"#69797d");ctx.lineWidth=Math.max(3.5,roadWidth*scale);ctx.stroke();
     }

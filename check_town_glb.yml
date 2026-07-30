@@ -28,5 +28,5 @@ jobs:
       - name: Validate town.glb against world_state.json
         run: python check_town_glb.py town.glb world_state.json
 
-      - name: Validate the 366-house suburban reserve
+      - name: Validate the 616-address neighborhood reserve
         run: python neighborhood_plan.py

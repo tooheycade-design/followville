@@ -86,6 +86,20 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- 2026-07-29 Day 28 river chapter preparation (Zach via Mac Codex,
+  unreleased): the deterministic ordinary-house reserve now extends from
+  address 366 through address 616, planning population 501-750 across
+  Rivergate, Cedarbank, Timber Bend, Eastbank Village, and River Meadows.
+  Day 28 is designed as ten final Summit Court homes (357-366) plus eighteen
+  timber/log Rivergate homes (367-384). The first Rivergate address reveals
+  the permanent north/south river valley, Founders Crossing viaduct from
+  North Ridge, riverwalks, and riparian planting. Eight distinct river-house
+  designs preserve ordinary claim/home semantics. `--cam day28reveal`,
+  `riverdrone`, and `riverbridge` are prepared. A temporary-state Blender
+  growth reached Day 28 / population 528 / 588 records successfully; canonical
+  `world_state.json`, both Blend copies, GLBs, claims, Supabase, and the live
+  website remain Day 27 until the guarded release is explicitly run. Read
+  `RIVER_EXPANSION_PLAN.md` before changing this chapter.
 - Day 27, population 500, 560 buildings (grown 2026-07-28 via Zach's Mac
   Codex: +36 ordinary claimable homes). Planned addresses 321-356 complete
   North Ridge: 14 homes on Ridgeview Drive, 16 on Bluebird Court, and six on

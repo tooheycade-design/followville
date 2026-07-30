@@ -377,6 +377,29 @@ test("complete-town fallback remains usable if the stream manifest is unavailabl
   expect(errors).toEqual([]);
 });
 
+test("Day 28 river has a raised crossable bridge and protected deep water", async ({ page }) => {
+  test.skip(Number(worldState.pop) < 528 || !townManifest.walk_surfaces?.river,
+    "river chapter is not built in this state");
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html?local=1&view=river-bridge#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-river-water-hitboxes", "pass");
+  const audit = await page.evaluate(() => {
+    const qa=window.__followvilleTerrainQA;
+    return {
+      bridge:qa.walkSurfaceHeight(362,215),
+      bed:qa.regionalTerrainHeight(362,215),
+      riverPoints:qa.surfaces().river?.centerline?.length||0,
+      bridgeSegments:qa.surfaces().segments.filter(segment=>
+        segment[0]>275&&segment[0]<411&&segment[2]>5).length
+    };
+  });
+  expect(audit.riverPoints).toBe(11);
+  expect(audit.bridgeSegments).toBeGreaterThanOrEqual(8);
+  expect(audit.bridge).toBeGreaterThan(audit.bed+5);
+  expect(errors).toEqual([]);
+});
+
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 
