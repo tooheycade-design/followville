@@ -161,7 +161,17 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page).toHaveURL(/\/town\.html$/);
   await page.keyboard.press("Escape");
   await expect(page.locator("#pauseMenu")).toBeVisible();
-  await page.getByRole("button", { name: "leave town" }).click();
+  const leaveTown = page.getByRole("button", { name: "leave town" });
+  // Checked explicitly rather than left to the click's actionability wait.
+  // That wait also requires the element to be "stable" across two animation
+  // frames, and on a two-core runner still rendering the town behind the
+  // menu's full-screen blur, frames are slow enough that it never settles --
+  // this exact click hung for the full 180s timeout in CI while passing
+  // locally. What the test is for is that leaving town works, so the
+  // conditions that matter are asserted and the heuristic is skipped.
+  await expect(leaveTown).toBeVisible();
+  await expect(leaveTown).toBeEnabled();
+  await leaveTown.click({ force: true });
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
 });
@@ -339,10 +349,19 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   // Pointer-lock ignores out-of-viewport coordinates in headless Chromium.
   // Two ordinary top-to-bottom grabs exercise the same real input path and
   // cover the full pitch range without manufacturing a DOM mouse event.
+  // Stepped one move at a time, each awaited, exactly like the upward drag
+  // above. `mouse.move(...,{steps:n})` dispatches its interpolated moves in a
+  // tight loop with nothing awaited between them, and a loaded two-core runner
+  // does not process them all: in CI the pitch stayed at the upward clamp it
+  // had reached before, because these drags landed as nothing at all.
   for(let drag=0;drag<2;drag++){
     await page.mouse.move(640,30);
     await page.mouse.down({button:"right"});
-    await page.mouse.move(640,650,{steps:8});
+    for(const y of [110,190,270,350,430,510,590,650]){
+      await page.mouse.move(640,y);
+      // Reading back paces the loop to what the page can actually consume.
+      await page.locator("body").getAttribute("data-camera-pitch");
+    }
     await page.mouse.up({button:"right"});
   }
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
@@ -402,27 +421,38 @@ test("buildings draw on a radius around the player, and the Burj never drops", a
   await page.goto("/town.html#walk");
   await waitForTown(page);
 
-  const indexed = Number(await page.locator("body").getAttribute("data-visibility-radius-index"));
-  expect(indexed).toBeGreaterThan(0);
+  // Read together, in one pass over the DOM. These four move as districts
+  // stream in, so reading them one at a time compares numbers taken from
+  // different moments — which is exactly how the first version of this test
+  // failed in CI, expecting 110 and getting 112 on a slower machine.
+  const snapshot = await page.evaluate(() => {
+    const data = document.body.dataset;
+    return {
+      indexed: Number(data.visibilityRadiusIndex || "0"),
+      drawn: Number(data.visibilityRadiusDrawn || "0"),
+      proxies: Number(data.visibilityProxies || "0"),
+      standing: Number(data.radiusLodStanding || "0"),
+      audit: data.radiusLod,
+    };
+  });
+
+  expect(snapshot.indexed).toBeGreaterThan(0);
+  expect(snapshot.drawn).toBeGreaterThan(0);
   // Only part of the town is drawn at once. If this ever equals the index, the
   // radius has stopped culling and every loaded building is being drawn.
-  const drawn = Number(await page.locator("body").getAttribute("data-visibility-radius-drawn"));
-  expect(drawn).toBeGreaterThan(0);
-  expect(drawn).toBeLessThan(indexed);
+  expect(snapshot.drawn).toBeLessThan(snapshot.indexed);
 
   // A culled home is replaced by a silhouette, never simply removed. Leaving
   // a bare lot where a building obviously stands reads as the town failing to
   // load rather than as distance, which is what a resident district such as
   // downtown showed: it never unloads, so the chunk LOD never covered it.
-  const proxies = Number(await page.locator("body").getAttribute("data-visibility-proxies"));
-  expect(proxies).toBe(indexed - drawn);
-  expect(proxies).toBeGreaterThan(0);
+  expect(snapshot.proxies).toBe(snapshot.indexed - snapshot.drawn);
+  expect(snapshot.proxies).toBeGreaterThan(0);
 
   // The page reads its own instance matrices back and reports whether a
   // silhouette is standing on every culled lot.
-  await expect(page.locator("body")).toHaveAttribute("data-radius-lod", "pass");
-  expect(Number(await page.locator("body").getAttribute("data-radius-lod-standing")))
-    .toBe(proxies);
+  expect(snapshot.audit).toBe("pass");
+  expect(snapshot.standing).toBe(snapshot.proxies);
   expect(errors).toEqual([]);
 });
 
