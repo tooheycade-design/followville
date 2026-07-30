@@ -4337,6 +4337,11 @@ function disposeObject(root){
     if (obj.geometry) obj.geometry.dispose();
     const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
     for (const material of materials) if (material?.dispose) material.dispose();
+    // An InstancedMesh also holds its per-instance matrix and colour buffers,
+    // which geometry.dispose() does not release. Districts stream in and out
+    // continuously now, so anything missed here accumulates as the player
+    // walks rather than once at load.
+    if (obj.isInstancedMesh) obj.dispose();
   });
 }
 
@@ -7516,7 +7521,14 @@ function animate(){
   updateAdaptiveRenderScale();
 
   if(townMapOpen()){townMapControls?.update();drawTownMap();}
-  else renderer.render(scene,camera);
+  // A paused town is a still image. Re-rendering the scene behind the pause
+  // menu costs a full frame plus a full-screen backdrop blur of it, every
+  // frame, for a picture that cannot change -- the camera is deliberately
+  // frozen where the player stopped. On a starved machine that saturates the
+  // main thread: clicking "leave town" took 10s at 6x CPU throttle and 15s at
+  // 10x, and timed out entirely on CI. The canvas keeps its last frame, so
+  // the view behind the menu is unchanged.
+  else if(!pauseMenuOpen())renderer.render(scene,camera);
 }
 </script>
 </body>

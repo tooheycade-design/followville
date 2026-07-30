@@ -161,17 +161,11 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page).toHaveURL(/\/town\.html$/);
   await page.keyboard.press("Escape");
   await expect(page.locator("#pauseMenu")).toBeVisible();
-  const leaveTown = page.getByRole("button", { name: "leave town" });
-  // Checked explicitly rather than left to the click's actionability wait.
-  // That wait also requires the element to be "stable" across two animation
-  // frames, and on a two-core runner still rendering the town behind the
-  // menu's full-screen blur, frames are slow enough that it never settles --
-  // this exact click hung for the full 180s timeout in CI while passing
-  // locally. What the test is for is that leaving town works, so the
-  // conditions that matter are asserted and the heuristic is skipped.
-  await expect(leaveTown).toBeVisible();
-  await expect(leaveTown).toBeEnabled();
-  await leaveTown.click({ force: true });
+  // An ordinary click, with its actionability checks intact. This hung for the
+  // full timeout in CI until the render loop stopped redrawing the town behind
+  // the pause menu; forcing the click past the check would only have hidden
+  // the next thing that saturates the page here.
+  await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
 });
