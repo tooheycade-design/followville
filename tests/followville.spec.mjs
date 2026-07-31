@@ -188,7 +188,12 @@ test("the fishing pond offers an easy timing cast and rapid-click catch", async 
       const started=performance.now();
       const releaseWhenReady=()=>{
         if(document.body.dataset.fishingAim==="ready")return resolve();
-        if(performance.now()-started>8_000)return reject(new Error("casting target was never reached"));
+        // A wall-clock cap on a frame-driven sweep. The marker advances by dt,
+        // so a starved renderer does not change how far it travels per second
+        // -- but a throttled one changes how often this checks, and 8s was
+        // tight enough to lose the window on a loaded runner.
+        if(performance.now()-started>30_000)return reject(new Error(
+          "casting target was never reached; aim="+document.body.dataset.fishingAim));
         requestAnimationFrame(releaseWhenReady);
       };
       releaseWhenReady();
@@ -196,10 +201,23 @@ test("the fishing pond offers an easy timing cast and rapid-click catch", async 
     button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","bite",{timeout:5_000});
-  // Dispatch the rapid burst in-page so a software WebGL runner cannot stretch
-  // twelve driver round-trips beyond the game's intentionally short reel timer.
-  await page.locator("#fishAction").evaluate(button=>{
+  // Wait for the bite and reel it in without leaving the page in between.
+  // Waiting for "bite" from the test side and then making a second round trip
+  // to send the clicks leaves a gap the fish can escape through, which is
+  // exactly what CI reported: expected "waiting", received "escaped". Both
+  // halves now happen in one evaluate, so the reel starts on the same frame
+  // the bite is seen.
+  await page.locator("#fishAction").evaluate(async button=>{
+    await new Promise((resolve,reject)=>{
+      const started=performance.now();
+      const reelWhenBiting=()=>{
+        if(document.body.dataset.fishingGame==="bite")return resolve();
+        if(performance.now()-started>30_000)return reject(new Error(
+          "bite never arrived; game="+document.body.dataset.fishingGame));
+        requestAnimationFrame(reelWhenBiting);
+      };
+      reelWhenBiting();
+    });
     for(let click=0;click<12;click++)button.click();
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");

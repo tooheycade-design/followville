@@ -3216,7 +3216,12 @@ CITY_HALL_Y = -134.0
 CITY_HALL_ROAD_Y = -93.0
 CIVIC_SQUARE_X = 43.0
 CIVIC_SQUARE_Y = -134.0
-FISHING_POND_X = 116.0
+# Moved 24m west on 2026-07-31. At (116,-66) the ground fell 0.78m across the
+# pond, and a surface that covers the bed then stands proud of the low side --
+# it read as a bowl of water perched on the meadow. This site is level to
+# within a millimetre across the full 13m radius and 27.9m clear of any
+# building, so the water sits in the ground rather than on it.
+FISHING_POND_X = 92.0
 FISHING_POND_Y = -66.0
 FISHING_POND_RX = 21.5
 FISHING_POND_RY = 15.0

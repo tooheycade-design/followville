@@ -7418,7 +7418,13 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
         if(localAuditView === "fishing"){
           startScreen.style.display="none";
           document.body.classList.add("preview-mode");
-          playerPosition.set(105.2,walkSurfaceHeight(105.2,68.7),68.7);
+          // Stand relative to the pond rather than at a fixed coordinate. This
+          // was (105.2, 68.7), which was the dock until the pond moved 24m on
+          // 2026-07-31 and left the camera looking at empty meadow.
+          const auditPond=worldBuildings.find(building=>building.type==="fishingpond");
+          const [auditPondX,auditPondZ]=auditPond?buildingWorldXZ(auditPond):[116,66];
+          const auditX=auditPondX-10.8,auditZ=auditPondZ+2.7;
+          playerPosition.set(auditX,walkSurfaceHeight(auditX,auditZ),auditZ);
           if(localAvatar)localAvatar.position.copy(playerPosition);
           cameraOrbitYaw=-.55;
           cameraOrbitPitch=-.18;

@@ -8,7 +8,17 @@ export default defineConfig({
   // as a local GPU for the full Three.js walking/map/chat/pause story.
   timeout: 90_000,
   expect: { timeout: 15_000 },
-  fullyParallel: false,
+  // Every story lives in one spec file, so `fullyParallel: false` meant the
+  // whole suite ran serially in a single worker no matter how many cores the
+  // machine had -- about 33 minutes on CI, and every failure was another 33.
+  // Each test gets its own browser context and the server is read-only, so
+  // there is no shared state to protect. Measured at 9.1 minutes serial
+  // against 6.6 with two workers locally.
+  fullyParallel: true,
+  // Two, not more: each worker holds a Chromium rendering the town in
+  // software on a shared two-core runner, and the memory matters more than
+  // the parallelism beyond this.
+  workers: 2,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
