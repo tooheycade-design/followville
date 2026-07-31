@@ -30,7 +30,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in global
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
-from downtown_visual_plan import mounted_face_center
+from downtown_visual_plan import TERRAIN_BOUNDS, mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
 from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
@@ -6453,6 +6453,48 @@ def build_godzilla_attack(world_col, buildings, building_roots, frame_end):
             spark.scale = (1, 1, 1)
             spark.keyframe_insert("scale", frame=min(frame_end, attack_start + 38 + i * 3))
 
+def build_background_ground(world_col, material, center_x, center_y):
+    """Surround the authored terrain without putting another face beneath it.
+
+    The former 4,000m square ground box ended at z=0.  Large areas of the
+    regional terrain also clamp to z=0, so the two grass faces were exactly
+    coplanar under the city.  A moving aerial camera made the depth buffer
+    alternate between them as bright/dark square platforms.  Four perimeter
+    slabs preserve the distant horizon while their horizontal faces only
+    touch the regional terrain at its outer boundary; they never overlap it.
+    """
+    terrain_x0, terrain_x1, terrain_y0, terrain_y1 = TERRAIN_BOUNDS
+    half_extent = 2000.0
+    outer_x0 = min(center_x - half_extent, terrain_x0)
+    outer_x1 = max(center_x + half_extent, terrain_x1)
+    outer_y0 = min(center_y - half_extent, terrain_y0)
+    outer_y1 = max(center_y + half_extent, terrain_y1)
+    slab_bottom = -0.10
+    slab_height = 0.10
+    boundary_gap = 0.05
+
+    rectangles = (
+        ("ground_west", outer_x0, terrain_x0 - boundary_gap, outer_y0, outer_y1),
+        ("ground_east", terrain_x1 + boundary_gap, outer_x1, outer_y0, outer_y1),
+        ("ground_south", terrain_x0, terrain_x1, outer_y0,
+         terrain_y0 - boundary_gap),
+        ("ground_north", terrain_x0, terrain_x1, terrain_y1 + boundary_gap,
+         outer_y1),
+    )
+    for name, x0, x1, y0, y1 in rectangles:
+        if x1 <= x0 or y1 <= y0:
+            raise AssertionError("Invalid background-ground rectangle: %s" % name)
+        overlap_x = min(x1, terrain_x1) - max(x0, terrain_x0)
+        overlap_y = min(y1, terrain_y1) - max(y0, terrain_y0)
+        if overlap_x > 1e-6 and overlap_y > 1e-6:
+            raise AssertionError(
+                "%s overlaps the regional terrain footprint" % name)
+        obj = add_box(
+            world_col, name, x1 - x0, y1 - y0, slab_height,
+            (x0 + x1) / 2, (y0 + y1) / 2, slab_bottom, material)
+        obj["fv_background_ground"] = True
+
+
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
@@ -6507,8 +6549,9 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # lets the orbit uncover the playground behind the classroom wings.
             pol_deg, fstop, orbit_deg = 52, 4.0, 34
 
-    # ground
-    add_box(world_col, "ground", 4000, 4000, 0.1, cx, cy, -0.1, m["grass"])
+    # Distant horizon ground surrounds, but never sits beneath, the continuous
+    # regional walkable terrain.
+    build_background_ground(world_col, m["grass"], cx, cy)
 
     if cam == "downtownstreet":
         # Eye-level audit of the expanded pedestrian realm. This deliberately
@@ -7674,37 +7717,6 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     fill = bpy.data.objects.new("Fill", fill_data)
     fill.rotation_euler = (math.radians(55), 0, math.radians(t["sun_rot"][2] + 170))
     world_col.objects.link(fill)
-
-    if cam == "day29reveal":
-        # The opening camera is roughly 700m from a town that now spans well
-        # over 1km. EEVEE's camera-relative sun shadow map cannot hold stable
-        # texel placement at that scale: shadows from the dense downtown and
-        # park rings swim across the grass as broad bright/dark bands. This is
-        # not geometry z-fighting (the park pad is physically separated from
-        # the terrain). Keep identical directional light and color while the
-        # drone is distant, but source it from a shadow-free twin. Crossfade
-        # into the normal shadow-casting sun during the descent, finishing
-        # before the first Day 29 home rises at frame 150.
-        aerial_data = sun_data.copy()
-        aerial_data.name = "Day29AerialSun"
-        aerial_data.use_shadow = False
-        aerial = bpy.data.objects.new("Day29AerialSun", aerial_data)
-        aerial.rotation_euler = sun.rotation_euler
-        world_col.objects.link(aerial)
-        base_energy = sun_data.energy
-        for frame, shadow_energy, aerial_energy in (
-                (1, 0.0, base_energy),
-                (95, 0.0, base_energy),
-                (145, base_energy, 0.0),
-                (frame_end, base_energy, 0.0)):
-            sun_data.energy = shadow_energy
-            aerial_data.energy = aerial_energy
-            sun_data.keyframe_insert("energy", frame=frame)
-            aerial_data.keyframe_insert("energy", frame=frame)
-        for light_data in (sun_data, aerial_data):
-            for curve in obj_fcurves(light_data):
-                for point in curve.keyframe_points:
-                    point.interpolation = "LINEAR"
 
     # sky
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
