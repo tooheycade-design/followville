@@ -2908,16 +2908,30 @@ def build_rafting_station(col, seed):
 
     # A retained terrace makes the small outfitter sit deliberately on the
     # bank instead of floating above the river-cut slope.
+    #
+    # The wall has to reach whatever the ground actually does. This terrace is
+    # 18m wide across a river-cut bank that falls about 4.5m from its inland
+    # edge to the water, and base_z pins the deck to the high end. A fixed
+    # 2.20m wall left the downhill edge standing in mid-air with daylight under
+    # it. Measured along the wall line instead, with a margin so it beds into
+    # the slope rather than resting exactly on it.
+    wall_ground = min(
+        terrain_height(RAFTING_STATION_X + 8.68, RAFTING_STATION_Y + y)
+        for y in (-7.0, -3.5, 0.0, 3.5, 7.0)
+    )
+    wall_height = max(2.20, base_z - wall_ground + .60)
     add_box(col, "rafting_terrace", 18.0, 14.0, .28,
             0, 0, base_z - .18, gravel)
-    add_box(col, "rafting_retaining_wall", .65, 14.0, 2.20,
-            8.68, 0, base_z - 2.08, stone)
+    add_box(col, "rafting_retaining_wall", .65, 14.0, wall_height,
+            8.68, 0, base_z - .12 - wall_height, stone)
     for y in (-5.2, -2.6, 0, 2.6, 5.2):
-        add_box(col, "rafting_retaining_joint", .70, .08, 1.96,
-                8.70, y, base_z - 1.96, white_dark)
-    for z in (base_z - 1.48, base_z - .82):
+        add_box(col, "rafting_retaining_joint", .70, .08, wall_height - .24,
+                8.70, y, base_z - .24 - (wall_height - .24), white_dark)
+    # Courses read as masonry lifts up the visible face, however tall it is.
+    for course in range(1, max(2, int(wall_height / .66))):
         add_box(col, "rafting_retaining_course", .72, 13.8, .10,
-                8.72, 0, z, timber)
+                8.72, 0, base_z - .12 - course * (wall_height / max(2, int(wall_height / .66))),
+                timber)
 
     # Compact whitewashed lodge with its public face toward the water (+X).
     add_box(col, "rafting_lodge_stone_base", 12.6, 8.6, .72,
@@ -3541,9 +3555,13 @@ def build_fishing_pond(col, seed):
     # Keep the water genuinely level while allowing the surrounding bank to
     # follow the meadow. The inner bank rises just above this datum and masks
     # the untouched terrain below the opaque deep-water layer.
+    # The datum only has to clear the pond bed, not the lip around it. Taking
+    # the inner ring's maximum raised the surface to the highest point of the
+    # rim, which stood the water 66cm proud of the lowest surrounding meadow.
+    # The interior is what the opaque surface must hide, so measure that.
     water_z = max(
-        terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y)
-        for x, y in inner_points) + .14
+        terrain_height(FISHING_POND_X + x * .82, FISHING_POND_Y + y * .82)
+        for x, y in inner_points) + .10
     verts = []
     for x, y in outer_points:
         verts.append((x, y, terrain_height(FISHING_POND_X + x, FISHING_POND_Y + y) + .06))
