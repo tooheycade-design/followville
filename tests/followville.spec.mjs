@@ -354,11 +354,20 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   // tight loop with nothing awaited between them, and a loaded two-core runner
   // does not process them all: in CI the pitch stayed at the upward clamp it
   // had reached before, because these drags landed as nothing at all.
+  // The pitch is read back inside the loop, exactly as the upward drag does a
+  // few lines above. That upward loop has always passed on CI and this one has
+  // always failed, and the read is the only difference between them: it makes
+  // each move settle before the next is dispatched. Removing it while raising
+  // the budget was one change too many in a single commit -- the budget was
+  // the timeout, this is the dropped input.
+  const pitchNow = () =>
+    page.locator("body").evaluate(body => Number(body.dataset.cameraPitch));
   for(let drag=0;drag<2;drag++){
     await page.mouse.move(640,30);
     await page.mouse.down({button:"right"});
     for(const y of [110,190,270,350,430,510,590,650]){
       await page.mouse.move(640,y);
+      await pitchNow();
     }
     await page.mouse.up({button:"right"});
   }
