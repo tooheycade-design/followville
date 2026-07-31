@@ -390,6 +390,22 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
     // but a camera never told to.
     await expect(page.locator("body"))
       .toHaveAttribute("data-camera-grab",/locked|dragging/,{timeout:15_000});
+    // The grab engaging is not the same as the browser granting pointer lock.
+    // Chrome throttles a re-request made straight after an exit, so the app
+    // can believe it is in `locked` mode while no movementX/Y ever arrives --
+    // the orbit is then driven by events that do not exist. That is the shape
+    // of the CI failure: grab present, requested pitch identical to actual,
+    // neither moving. Falling back to the drag path keeps the same user
+    // behaviour under test using events the runner will actually deliver.
+    const grabMode = await page.locator("body").getAttribute("data-camera-grab");
+    if(grabMode === "locked" && !(await page.evaluate(() => document.pointerLockElement !== null))){
+      await page.mouse.up({button:"right"});
+      await page.waitForTimeout(1500);
+      await page.mouse.move(640,220);
+      await page.mouse.down({button:"right"});
+      await expect(page.locator("body"))
+        .toHaveAttribute("data-camera-grab",/locked|dragging/,{timeout:15_000});
+    }
     for(const y of [280,340,400,460,520,580,640,690]){
       await page.mouse.move(640,y);
       await pitchNow();
