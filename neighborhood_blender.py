@@ -35,7 +35,8 @@ from downtown_visuals import build_downtown_visuals, terrain_height
 from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
                                   FISHING_POND_RX, FISHING_POND_RY)
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
-from world_layout import (rafting_access_points,
+from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
+                          STORYBOOK_ACCESS,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           transform_building_point, transform_point)
 
@@ -3291,10 +3292,7 @@ def build_fire_station(col, seed):
 CITY_HALL_X = 10.0
 CITY_HALL_Y = -134.0
 CITY_HALL_ROAD_Y = -93.0
-# The approach still meets the grid at the x=-3 intersection and bends east to
-# the portico, so moving the campus does not leave a T-junction mid-block.
-CITY_HALL_APPROACH = [(-3.0, -93.0), (-3.0, -101.0), (0.5, -108.0),
-                      (6.0, -113.5), (10.0, -118.0), (10.0, -121.0)]
+# CITY_HALL_APPROACH lives in world_layout so the geometry audit can see it.
 CIVIC_SQUARE_X = 56.0
 CIVIC_SQUARE_Y = -134.0
 # FISHING_POND_* now live in downtown_visual_plan beside terrain_height, which
@@ -5476,12 +5474,7 @@ def _build_storybook_street_asset(col):
     # the hill shoulder. The centerline is fully continuous with shared road
     # vertices, so bends cannot open into gaps.
     cx, cy = STORYBOOK_LAYOUT_CENTER
-    absolute_access = [(87, 33, 0.0), (112, 56, .02), (149, 72, .02),
-                       (198, 74, .03), (236, 72, .05), (240, 71, .28),
-                       (243, 70, .80), (246, 69, 1.55), (248, 68, 2.30),
-                       (250, 68, 2.62), (254, 67, 2.74),
-                       (264, 65, 2.74), (274, 60, 2.74)]
-    access = [(x-cx, y-cy, z) for x, y, z in absolute_access]
+    access = [(x-cx, y-cy, z) for x, y, z in STORYBOOK_ACCESS]
     # The access starts as the established asphalt at the existing grid
     # intersection, widens gradually, then transitions into the feature-road
     # color. This avoids laying a bright diagonal slab across the old road.

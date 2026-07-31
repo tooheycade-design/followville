@@ -80,6 +80,43 @@ ownership, `world_state.json`, town GLBs, or `neighborhood.blend`. Read
 This block and the actual current scripts override conflicting historical text
 later in this file.
 
+## Looking at the world, and checking it (read before diagnosing a defect)
+
+**Cade reports defects as coordinates** (three.js world space: x right, y up,
+z depth; `three z = -blender y`). Two tools exist so acting on one is cheap.
+
+**To go and look**, no code changes, no patched copies:
+
+```text
+town.html?local=1&view=free&at=311.7,-7&look=322,1,10       walker's eye at x,z
+town.html?local=1&view=free&eye=300,150,-25&look=305,0,-5   free camera
+```
+
+`at=` stands a walker there (add `&dist=8` for third person); `eye=` parks a
+fixed camera and stops walk mode overwriting it. Both need `?local=1`.
+`window.__followvilleTerrainQA.probe(x, z)` returns what a downward ray
+actually strikes, by exported GLB node name, nearest first — that is how the
+rafting lane was found running *under* the Kaleidoscope Crest plateau, which
+no height query could see. Use Playwright, not the in-app Browser pane (its
+WebGL dies after a few 3D loads).
+
+**`check_world_geometry.py`** (pure data, no Blender/browser/deps) answers
+"is anything off the ground, on a road, or in the street" — the class of
+defect `check_town_glb.py` is blind to. It runs in CI on every push to `main`.
+Run it before committing anything that moves a landmark or a road:
+
+```bash
+python check_world_geometry.py && python check_world_geometry.py --self-test
+```
+
+It audits against declarations in `world_layout.py` — `LANDMARK_FOOTPRINTS`,
+`KEEP_OUT_REGIONS`, `RETAINED_PADS`, `INTENTIONALLY_RAISED_ROADS`,
+`LEVEL_WATER`, `LANDMARK_APPROACHES`, `AUTHORED_ELEVATION_ROADS`. **Adding a
+landmark or an authored road means adding it there**, or the checker cannot
+defend it (an undeclared landmark is reported as unaudited, not failed).
+`--self-test` puts the four 2026-07-31 defects back and requires each to be
+caught, so the checker cannot rot into something that passes everything.
+
 ## Current canon (update this section each day!)
 - 2026-07-31 walked-the-world geometry pass (Cade via Windows Claude): four
   landmark defects found by walking to them, all fixed without changing Day 29,
@@ -118,6 +155,20 @@ later in this file.
     mid-block. Scatter now also clears the approach and the outpost lane.
   Full and streamed assets were regenerated together, `check_town_glb.py`
   passed, and all 17 browser stories passed.
+- 2026-07-31 follow-up, so the next four cost less (Cade via Windows Claude):
+  added `check_world_geometry.py` and the `?view=free` audit camera above.
+  Every one of the four defects was arithmetic on data the repo already had,
+  and none was expressible in any existing check. `CITY_HALL_APPROACH` and
+  `STORYBOOK_ACCESS` moved into `world_layout.py` so the audit can see every
+  road in the town — a checker that knows about only some roads will approve a
+  building standing on one of the others, which is exactly how City Hall came
+  to swallow the Pine Hollow terminus. The audit also caught the outpost lane's
+  walk surface drifting further from the rendered road than either had from
+  the ground, because `walk_surface_manifest` uses control points as given
+  while `_add_road_strip` subdivides internally; the lane's spacing went 6m to
+  3m. Blender python is `"C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe"`
+  (the `python` on PATH is a Store stub), and Playwright from PowerShell needs
+  `$env:PATH = "C:\Program Files\nodejs;$env:PATH"` or its web server dies.
 - Day 26, population 464, 524 records (grown/corrected 2026-07-27 via Zach's Mac
   Codex). Seeds 498-522 are 25 claimable homes at addresses 296-320, finishing
   Juniper Court, filling Hemlock Court, and opening North Ridge/Ridgeview

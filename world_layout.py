@@ -20,6 +20,25 @@ FOUNDER_PARK_OFFSET = (35.0, 0.0)
 STORYBOOK_OFFSET = (35.0, 0.0)
 STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 
+# Authored roads that are not in the suburban plan. They live here so that
+# check_world_geometry.py can see every road in the town; a checker that only
+# knows about half the roads will happily approve a building sitting on one of
+# the others, which is how City Hall came to swallow the Pine Hollow terminus.
+#
+# The City Hall approach keeps its junction on the x=-3 grid intersection and
+# bends east to the portico, because the campus moved 13m east on 2026-07-31
+# and a straight road would have left a T-junction mid-block.
+CITY_HALL_APPROACH = [(-3.0, -93.0), (-3.0, -101.0), (0.5, -108.0),
+                      (6.0, -113.5), (10.0, -118.0), (10.0, -121.0)]
+# The Kaleidoscope Crest approach: established asphalt at the grid, then a
+# climb up the hill shoulder onto the plateau. The z values are authored, not
+# terrain-derived -- that is the whole point, the road is on the hill.
+STORYBOOK_ACCESS = [(87.0, 33.0, 0.0), (112.0, 56.0, .02), (149.0, 72.0, .02),
+                    (198.0, 74.0, .03), (236.0, 72.0, .05), (240.0, 71.0, .28),
+                    (243.0, 70.0, .80), (246.0, 69.0, 1.55), (248.0, 68.0, 2.30),
+                    (250.0, 68.0, 2.62), (254.0, 67.0, 2.74),
+                    (264.0, 65.0, 2.74), (274.0, 60.0, 2.74)]
+
 # The lane from Kaleidoscope Crest down to the rafting outpost. It lives here
 # because the geometry and the browser's walk surface both need it and they
 # used to hold separate copies.
@@ -37,14 +56,91 @@ RAFTING_ACCESS_SPINE = [
 ]
 
 
-def rafting_access_points(step=6.0):
+# --- what check_world_geometry.py audits against -------------------------
+#
+# Every entry below is a claim about the world that a person made on purpose.
+# The checker's job is to notice when the world stops matching them. All four
+# defects Cade found by walking on 2026-07-31 are expressible here, and none
+# of them were expressible anywhere before.
+
+# Off-grid landmarks, as the rectangle their built geometry actually occupies
+# in local coordinates, before the record's px/py is added. "rural" means the
+# landmark belongs outside the paved downtown envelope -- the fishing pond was
+# moved onto the x=87 street precisely because nothing said so.
+#
+# A type missing from here is reported as unaudited rather than failing, so
+# adding a landmark never breaks the build. Adding its footprint is what makes
+# the checker able to defend it.
+#
+# Approach paths are deliberately left out: the pond's sidewalk starts on the
+# town's kerb because that is what it is for, and including it would make the
+# pond look like it was standing in the street again.
+LANDMARK_FOOTPRINTS = {
+    #                     x0      x1      y0      y1   rural
+    "cityhall":        (-22.5,   22.5,  -11.0,   20.0, False),
+    "civicsquare":     (-23.0,   17.0,  -16.0,   16.0, False),
+    "fishingpond":     (-26.0,   23.0,  -17.0,   16.0, True),
+    "raftingstation":   (-9.0,   33.0,   -8.0,   12.0, True),
+}
+
+# Authored ground that stands above the terrain. A road whose deck is taken
+# from the terrain must not pass through one of these, or it runs underneath
+# the hill: 55m of the outpost lane did exactly that, invisible to every
+# height query because the terrain under the plateau really is at zero.
+# Ellipses, as (name, cx, cy, rx, ry).
+KEEP_OUT_REGIONS = [
+    ("Kaleidoscope Crest plateau", 305.0, 60.0, 61.0, 48.0),
+]
+
+# Walk pads whose deck deliberately stands clear of the ground, each with the
+# structure that holds it up. A pad standing proud with nothing named here is
+# a pad hanging in the air -- which is what the rafting terrace was doing on
+# three of its four sides until its plinth was closed all the way round.
+RETAINED_PADS = {
+    "rafting-terrace": "continuous stone plinth, _add_retaining_skirt()",
+    "rafting-dock": "timber piles driven to the riverbed",
+    "rafting-forecourt": "retaining skirt on its three downhill edges",
+    "fishing-dock": "steel piles in the pond",
+}
+
+# Road decks that are meant to be off the ground, and why. Rectangles in world
+# coordinates, as (name, x0, x1, y0, y1).
+INTENTIONALLY_RAISED_ROADS = [
+    ("Founders Crossing bridge deck", 275.0, 415.0, -230.0, -195.0),
+    ("rafting launch boardwalk", 332.0, 360.0, -34.0, -26.0),
+]
+
+# Water surfaces that must be level, with how far their rim may fall across
+# the whole body before the water starts standing proud of its own bank.
+LEVEL_WATER = {"fishingpond": 0.12}
+
+# The road that serves each landmark is allowed to touch it -- that is what a
+# road to somewhere does. Every other road must keep its distance.
+LANDMARK_APPROACHES = {
+    "cityhall": {"City Hall approach"},
+    "civicsquare": {"City Hall approach"},
+    "raftingstation": {"rafting outpost lane"},
+}
+
+# Roads that carry their own authored heights rather than following the
+# terrain. These are allowed inside KEEP_OUT_REGIONS, because climbing onto
+# the raised ground is the whole point of them.
+AUTHORED_ELEVATION_ROADS = {"Kaleidoscope Crest access"}
+
+
+def rafting_access_points(step=3.0):
     """The lane's centreline, sampled closely enough to stay on the ground.
 
     A road strip keeps whichever is higher, its authored height or the terrain
     under it, so control points 26m apart let the straight line between two
     samples ride up to 0.6m above a concave grade -- which is exactly what
-    lifted the last stretch of the old lane off the meadow. Six metres holds
-    that to 15mm.
+    lifted the last stretch of the old lane off the meadow.
+
+    Six metres held the rendered road to 15mm, because _add_road_strip
+    subdivides to two internally. The walk surface does not -- it uses these
+    points as given -- so the surface the player stands on drifted further
+    from the road they can see than either did from the ground. Three metres
+    keeps the two within about a centimetre of each other.
     """
     import math
 

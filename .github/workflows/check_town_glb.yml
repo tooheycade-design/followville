@@ -31,6 +31,18 @@ jobs:
       - name: Validate the 366-house suburban reserve
         run: python neighborhood_plan.py
 
+      # check_town_glb.py proves the export is complete and matches state; it
+      # says nothing about whether anything is anywhere sensible. On
+      # 2026-07-31 Cade walked the town and found four landmarks off the
+      # ground, on roads, or in the street, none of which any check could see.
+      - name: Validate that the world sits on the ground
+        run: python check_world_geometry.py world_state.json
+
+      # And prove the checker still catches those four, so it cannot quietly
+      # rot into something that passes everything.
+      - name: Confirm the geometry checker still catches known regressions
+        run: python check_world_geometry.py --self-test
+
   browser:
     runs-on: ubuntu-latest
     steps:

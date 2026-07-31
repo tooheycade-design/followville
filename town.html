@@ -3725,7 +3725,23 @@ if(localDesignPreview){
   window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
     downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,civicCampusSurfaceHeight,
     fishingDockSurfaceHeight,CIVIC_WALK,civicWalkPads:()=>civicWalkPads,
-    surfaces:()=>localWalkSurfaces};
+    surfaces:()=>localWalkSurfaces,
+    // What is actually on top at (x,z), by exported GLB node name, nearest
+    // first. The walk-surface helpers above answer "how high is the ground
+    // here" from the shared model; this answers "what did Blender put here",
+    // which is a different question and the one that matters when geometry
+    // has gone somewhere it should not be. The rafting lane running under
+    // Kaleidoscope Crest was invisible to every height query and obvious the
+    // moment a ray came back with the plateau's street mesh three metres
+    // above the road. Meshes only -- sprites throw on raycast.
+    probe:(x,z,from=400,limit=6)=>{
+      const meshes=[];
+      scene.traverse(node=>{if(node.isMesh&&node.visible)meshes.push(node);});
+      const caster=new THREE.Raycaster(new THREE.Vector3(x,from,z),
+        new THREE.Vector3(0,-1,0),0,from+80);
+      return caster.intersectObjects(meshes,false).slice(0,limit)
+        .map(hit=>[Number(hit.point.y.toFixed(3)),hit.object.name||"(unnamed)"]);
+    }};
 }
 document.body.dataset.storybookWalkable =
   walkSurfaceHeight(305,-60)>2.7 && walkSurfaceHeight(246,-69)>1.5 ? "pass" : "fail";
@@ -7477,6 +7493,50 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
         if(localAuditView === "street"){
           startScreen.style.display="none";
           document.body.classList.add("preview-mode");
+        }
+        // Look at any coordinate without adding a named view for it. Defects
+        // get reported as coordinates -- the four fixed on 2026-07-31 all
+        // were -- and before this the only way to reach one was to copy this
+        // file, splice a debug hook into the module, and serve the copy,
+        // because a module's top-level bindings are invisible to evaluate().
+        //
+        //   ?local=1&view=free&at=311.7,-7&look=322,1,10     walker's eye
+        //   ?local=1&view=free&eye=300,150,-25&look=305,0,-5  free camera
+        //
+        // Coordinates are three.js world space, the same numbers the admin
+        // readout copies: x right, y up, z depth, and three z = -blender y.
+        if(localAuditView === "free"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          const numbers=name=>(pageParams.get(name)||"").split(",")
+            .map(Number).filter(value=>Number.isFinite(value));
+          const eye=numbers("eye"), at=numbers("at"), look=numbers("look");
+          if(eye.length>=3){
+            // Park the camera. Walk mode re-derives it from the player every
+            // frame, so a fixed audit camera has to stop walking or it lasts
+            // exactly one frame and then snaps back to the spawn.
+            gameRunning=false;
+            camera.position.set(eye[0],eye[1],eye[2]);
+            if(look.length>=3)camera.lookAt(look[0],look[1],look[2]);
+            camera.updateProjectionMatrix();
+          }else if(at.length>=2){
+            const [ax,az]=at;
+            playerPosition.set(ax,walkSurfaceHeight(ax,az),az);
+            if(localAvatar)localAvatar.position.copy(playerPosition);
+            if(look.length>=3){
+              const eyeY=playerPosition.y+1.55;
+              const dx=look[0]-ax, dy=look[1]-eyeY, dz=look[2]-az;
+              const length=Math.hypot(dx,dy,dz)||1;
+              cameraOrbitYaw=Math.atan2(-dx/length,-dz/length);
+              cameraOrbitPitch=Math.asin(dy/length);
+            }
+            // Distance 0 puts the camera at the walker's own eye, which is
+            // what "what does this look like from there" actually means.
+            thirdPersonDistance=Number(pageParams.get("dist")||0);
+            updateThirdPersonCamera(true);
+          }else{
+            console.warn("[Followville] view=free needs at=x,z or eye=x,y,z");
+          }
         }
         animate();
         if (location.hash === "#map" || mapRouteRequested) requestAnimationFrame(openTownMap);
