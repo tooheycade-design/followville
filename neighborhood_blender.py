@@ -7210,9 +7210,11 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # civic plaza in the near foreground, then accelerates east. This
             # opening framing is held deliberately tight per Zach's reference
             # still - do not raise it back to a distant overhead establish.
-            (1, (108.0, -318.0, 196.0), (28.0, -46.0, 10.0)),
-            (60, (176.0, -300.0, 206.0), (64.0, -30.0, 9.0)),
-            (110, (272.0, -274.0, 228.0), (152.0, -22.0, 8.0)),
+            # Shifted +13m east on 2026-07-31 to track City Hall and Civic
+            # Square after the landmark ground-level correction moved them.
+            (1, (121.0, -318.0, 196.0), (41.0, -46.0, 10.0)),
+            (60, (189.0, -300.0, 206.0), (77.0, -30.0, 9.0)),
+            (110, (278.0, -274.0, 228.0), (158.0, -22.0, 8.0)),
             (150, (392.0, -242.0, 256.0), (300.0, -40.0, 7.0)),
             # 5-14s: descend northeast into Cedarbank and travel the new lane as
             # the forty-six homes arrive in overlapping waves.
