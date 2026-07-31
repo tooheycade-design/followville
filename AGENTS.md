@@ -26,9 +26,11 @@ rest, and you are expected to have read it.
   and both Blend copies hash-match. `--no-git`, iCloud-only state and unguarded
   Blender growth are retired, not fallbacks.
 - **Before committing anything that moves a landmark or a road**, run
-  `python check_world_geometry.py && python check_world_geometry.py --self-test`.
-  Declare new landmarks and authored roads in `world_layout.py`, or the audit
-  cannot defend them.
+  `check_world_geometry.py` and then `check_world_geometry.py --self-test`, with
+  the Blender Python — see `CLAUDE.md`'s Environment section for the path, why
+  the `python` on PATH will not work, and why PowerShell 5.1 cannot chain them
+  with `&&`. Declare new landmarks and authored roads in `world_layout.py`, or
+  the audit cannot defend them.
 - **Never place two independently rendered visible faces on the same plane.**
   Fix depth conflicts by physically separating geometry, not with
   `polygonOffset`. Review every new repeated asset head-on *and* from both

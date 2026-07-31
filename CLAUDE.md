@@ -89,8 +89,17 @@ intentional reviewed commit.
 ### Environment (Windows)
 
 - Python: `"C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe"`.
-  The `python` on PATH is a Microsoft Store stub. `check_town_glb.py` needs
-  `pip install pygltflib` into that interpreter.
+  The `python` on PATH is a Microsoft Store stub.
+- **Windows PowerShell 5.1 has no `&&`.** It is a parser error, not a fallback.
+  Run commands on separate lines, or use `;` if you don't need short-circuiting.
+- `check_town_glb.py` needs `pygltflib`. Installing it lands in a per-user
+  directory, because pip cannot write into `Program Files` without admin — so
+  another shell or an elevated one may not see it and will report it missing.
+  If the import fails, just install it again for whatever context you are in:
+
+  ```
+  & "C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe" -m pip install pygltflib
+  ```
 - Playwright from PowerShell needs `$env:PATH = "C:\Program Files\nodejs;$env:PATH"`
   or its web server dies with `'node' is not recognized`.
 - Serve locally with `node tests/serve.mjs` (port 8765); `fetch()` needs
@@ -118,8 +127,11 @@ other geometry.
 
 **Before committing anything that moves a landmark or a road:**
 
-```bash
-python check_world_geometry.py && python check_world_geometry.py --self-test
+Two commands, deliberately not chained — PowerShell 5.1 has no `&&`:
+
+```text
+& "C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe" check_world_geometry.py
+& "C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe" check_world_geometry.py --self-test
 ```
 
 It answers "is anything off the ground, on a road, or in the street" — the
@@ -129,7 +141,8 @@ in `world_layout.py`: `LANDMARK_FOOTPRINTS`, `KEEP_OUT_REGIONS`,
 `LANDMARK_APPROACHES`, `AUTHORED_ELEVATION_ROADS`. **Adding a landmark or an
 authored road means adding it there too** — an undeclared landmark is reported
 as *unaudited*, not failed, so silence is not proof. `--self-test` re-creates
-four known defects and requires each to be caught.
+five known regressions and requires each to be caught; the count is whatever
+`self_test()` declares, so read the output rather than trusting this sentence.
 
 `check_town_glb.py` enforces hashes, state metadata, root integrity and exact
 one-to-one coverage of every building ID. Both run in CI on every push to
