@@ -257,7 +257,7 @@ def state_path():
     # other than "next to the .blend" -- specifically, grow_windows.ps1/grow.sh
     # can point this at a git repo clone instead of the iCloud-synced folder,
     # so the one file that gets read-modified-written every growth day never
-    # sits inside iCloud's sync path (see CLAUDE.md's iCloud race-condition
+    # sits inside iCloud's sync path (see HISTORY.md's iCloud race-condition
     # writeup, 2026-07-08, for why that matters). Unset = old behavior,
     # unchanged, so this is a no-op for anyone who hasn't opted in.
     override = os.environ.get("NEIGHBORHOOD_STATE_DIR")

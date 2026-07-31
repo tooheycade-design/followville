@@ -6,8 +6,8 @@ Standalone, no-Blender-needed check for the full GLB, stream manifest/chunks,
 and the exact regression class behind the
 2026-07-08 "pancaked houses" incident (pond + 3 new houses shipped to the live
 site with every mesh part squashed to scale ~0.001, baked in by a stale
-keyframe animation surviving into duplicates_make_real() -- see CLAUDE.md's
-Web viewer section for the full story).
+keyframe animation surviving into duplicates_make_real() -- CLAUDE.md's "Export
+pitfalls" has the rule, HISTORY.md has the full story).
 
 export_web.py now has its OWN in-Blender copy of this exact check (it raises
 and fails the Blender process if it finds anything squashed), so under the

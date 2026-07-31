@@ -1,8 +1,14 @@
 # Followville
 
 Followville is Cade and Zach's persistent Blender town: one follower equals one
-home. The current operating instructions are in `AGENTS.md`, `CLAUDE.md`, and
-the newest entries in `TEAM_LOG.md`.
+home.
+
+- **`CLAUDE.md`** — the manual. Instructions only; read this first.
+- **`AGENTS.md`** — a pointer to the manual plus the non-negotiables.
+- **`TEAM_LOG.md`** — who changed what, newest first.
+- **`HISTORY.md`** — the full historical record: every day's canon from Day 4
+  on, the incidents, and the reasoning behind the rules. Nothing is loaded from
+  it automatically; go there when a rule looks arbitrary.
 
 ## Authoritative locations
 

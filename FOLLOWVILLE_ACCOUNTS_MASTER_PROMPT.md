@@ -195,9 +195,10 @@ and upserts any missing rows via Supabase's REST API with a service-role key.
 
 ## Where to look first
 
-Read `CLAUDE.md` in this folder in full before writing code — it has the complete history
-of this project's pitfalls (iCloud sync races, the pancaked-houses export bug, the
-git-backed state migration) and current file layout. Don't touch `world_state.json`,
+Read `CLAUDE.md` in this folder in full before writing code — it has every rule and
+pitfall plus the current file layout. `HISTORY.md` has the stories behind them (iCloud
+sync races, the pancaked-houses export bug, the git-backed state migration) if you need
+the reasoning rather than the rule. Don't touch `world_state.json`,
 `neighborhood_blender.py`, or the git-backed grow pipeline destructively — this feature is
 additive (a new backend + frontend changes to `town.html`), not a replacement for how the
 town itself grows.
