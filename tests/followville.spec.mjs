@@ -389,7 +389,21 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
     pitch = await pitchNow();
     // No movement at all means the drag was not received, which is worth
     // failing on plainly rather than looping six times to the same end.
-    expect(pitch, `drag ${drag+1} changed nothing (pitch ${before})`)
+    //
+    // Four attempts at this have been wrong, each guessing at input delivery,
+    // so the message now carries the state that would distinguish the
+    // remaining explanations: whether the orbit engaged at all (camera-grab),
+    // and whether the walk surface is holding the camera up and refusing a
+    // downward pitch (ground-adjusted, clearance, actual vs requested).
+    const why = await page.locator("body").evaluate(body => ({
+      grab: body.dataset.cameraGrab ?? "none",
+      mode: body.dataset.cameraMode,
+      requested: body.dataset.cameraPitch,
+      actual: body.dataset.cameraActualPitch,
+      groundAdjusted: body.dataset.cameraGroundAdjusted,
+      clearance: body.dataset.cameraGroundClearance,
+    }));
+    expect(pitch, `drag ${drag+1} changed nothing (was ${before}) ${JSON.stringify(why)}`)
       .toBeLessThan(before - 0.05);
   }
   expect(pitch, "right-drag must reach a downward camera pitch").toBeLessThan(-1.3);
