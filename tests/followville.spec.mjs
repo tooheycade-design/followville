@@ -360,9 +360,18 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   // each move settle before the next is dispatched. Removing it while raising
   // the budget was one change too many in a single commit -- the budget was
   // the timeout, this is the dropped input.
+  // Drag until the camera is actually looking down, rather than assuming a
+  // fixed number of drags gets there. One full drag moves pitch about 2.2
+  // radians, so two were enough locally -- but a loaded runner can drop
+  // synthetic moves, and then the pitch simply stays where it was and the
+  // assertion reports the old value with no hint that input went missing.
+  // Repeating until it either arrives or stops moving tests the same
+  // behaviour without depending on how many moves the machine delivered.
   const pitchNow = () =>
     page.locator("body").evaluate(body => Number(body.dataset.cameraPitch));
-  for(let drag=0;drag<2;drag++){
+  let pitch = await pitchNow();
+  for(let drag=0; drag<6 && pitch > -1.3; drag+=1){
+    const before = pitch;
     await page.mouse.move(640,30);
     await page.mouse.down({button:"right"});
     for(const y of [110,190,270,350,430,510,590,650]){
@@ -370,8 +379,13 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
       await pitchNow();
     }
     await page.mouse.up({button:"right"});
+    pitch = await pitchNow();
+    // No movement at all means the drag was not received, which is worth
+    // failing on plainly rather than looping six times to the same end.
+    expect(pitch, `drag ${drag+1} changed nothing (pitch ${before})`)
+      .toBeLessThan(before - 0.05);
   }
-  await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
+  expect(pitch, "right-drag must reach a downward camera pitch").toBeLessThan(-1.3);
 
   await page.mouse.wheel(0,-2000);
   await expect(page.locator("body")).toHaveAttribute("data-camera-mode","first-person");
