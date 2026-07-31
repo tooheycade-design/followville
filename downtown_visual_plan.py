@@ -8,6 +8,21 @@ TERRAIN_BOUNDS = (-520.0, 800.0, -360.0, 540.0)
 FACADE_ATTACHMENT_EMBED = 0.01
 MIN_VISIBLE_SURFACE_CLEARANCE = 0.05
 
+# The fishing pond lives here rather than in the generator because the shared
+# walk surface has to know about it: level water needs level ground, and the
+# meadow outside the paved platform climbs at a steady 9%.  Moved north of the
+# grid on 2026-07-31 after (92,-66) put the west bank, dock, sign and approach
+# path on top of the x=87 street, its curb and the townhouse block.  Every
+# metre of the body clears the paved envelope by at least eight, and the shelf
+# below reaches no road or building.
+FISHING_POND_X = 78.0
+FISHING_POND_Y = 114.0
+FISHING_POND_RX = 21.5
+FISHING_POND_RY = 15.0
+# Level out to the core, natural meadow again by the feather.  The x axis is
+# stretched because the pond is wider than it is deep.
+FISHING_POND_SHELF = (27.0, 58.0, 1.4)
+
 
 def mounted_face_center(face, outward, thickness, visible_clearance):
     """Mount a detail across a support plane without sharing its visible face."""
@@ -128,6 +143,15 @@ def terrain_height(x, y):
     # Kaleidoscope Crest already owns a precise 2.82 m plateau/collider.
     story_distance = math.hypot((x-305.0)/1.15, (y-60.0)/.9)
     height *= _smoothstep(75.0, 112.0, story_distance)
+
+    # Carry the platform's datum out to the fishing pond. A pond needs one
+    # level datum for its water, and the meadow beyond the paved grid climbs
+    # at a steady 9% - on that ramp any surface that covers the bed stands
+    # proud of the low bank, whatever the datum. No relocation fixes that,
+    # because the ramp is everywhere; levelling the site does.
+    pond_core, pond_feather, pond_aspect = FISHING_POND_SHELF
+    pond_distance = math.hypot((x-FISHING_POND_X)/pond_aspect, y-FISHING_POND_Y)
+    height *= _smoothstep(pond_core, pond_feather, pond_distance)
 
     # Carve one continuous riverbed into the shared walk surface. The inner
     # channel sits below the water mesh; a twenty-metre feather creates broad,

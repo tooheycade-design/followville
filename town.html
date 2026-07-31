@@ -3501,6 +3501,14 @@ function redesignSmoothstep(edge0,edge1,value){
   return t*t*(3-2*t);
 }
 
+/* Mirrors downtown_visual_plan.py's FISHING_POND_* constants. The pond's own
+   position still comes from world_state, but the level shelf under it is part
+   of the shared terrain model, so the numbers have to exist here too. The
+   fishingpond record and these constants are audited against each other at
+   load (data-fishing-pond-datum) so they cannot drift apart. */
+const FISHING_POND_X = 78, FISHING_POND_Y = 114;
+const FISHING_POND_SHELF = [27, 58, 1.4];
+
 function redesignGaussian(x,z,cx,cz,sx,sz,height){
   return height*Math.exp(-.5*(Math.pow((x-cx)/sx,2)+Math.pow((z-cz)/sz,2)));
 }
@@ -3556,6 +3564,11 @@ function regionalTerrainHeight(x,z){
   height*=redesignSmoothstep(78,112,ringDistance);
   const storyDistance=Math.hypot((x-305)/1.15,(y-60)/.9);
   height*=redesignSmoothstep(75,112,storyDistance);
+  // Level shelf under the fishing pond, mirroring downtown_visual_plan.py.
+  // The meadow past the paved grid climbs at a steady 9%, and level water on
+  // a ramp always stands proud of its own low bank.
+  const pondDistance=Math.hypot((x-FISHING_POND_X)/FISHING_POND_SHELF[2],y-FISHING_POND_Y);
+  height*=redesignSmoothstep(FISHING_POND_SHELF[0],FISHING_POND_SHELF[1],pondDistance);
   const riverDistance=Math.abs(x-riverCenterX(y));
   const channel=riverWaterHeight(y)-.72;
   const bankBlend=redesignSmoothstep(14,34,riverDistance);
@@ -3657,15 +3670,27 @@ function fishingDockSurfaceHeight(x,z){
   let height=0;
   for(const pad of localWalkSurfaces.pads||[]){
     const [cx,cz,top,hx,hz,type]=pad;
-    if(["fishing-dock","rafting-dock","rafting-terrace"].includes(type)&&
+    if(["fishing-dock","rafting-dock","rafting-terrace","rafting-forecourt"].includes(type)&&
        Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
       height=Math.max(height,top);
   }
   return height;
 }
 function auditFishingDockSurface(){
-  document.body.dataset.fishingDockWalkable =
-    fishingDockSurfaceHeight(105.2,68.7)>1.1 ? "pass" : "fail";
+  // Probe the dock relative to the pond rather than at a fixed coordinate.
+  // This was (105.2,68.7), which stopped being the dock the first time the
+  // pond moved and would have passed on empty meadow ever after.
+  const pond=worldBuildings.find(building=>building.type==="fishingpond");
+  const [pondX,pondZ]=pond?buildingWorldXZ(pond):[0,0];
+  document.body.dataset.fishingDockWalkable = !pond ? "missing" :
+    fishingDockSurfaceHeight(pondX-10.8,pondZ+2.7)>regionalTerrainHeight(pondX,pondZ)+.2
+      ? "pass" : "fail";
+  // The level shelf under the pond is authored in the shared terrain model,
+  // so its centre must be the pond's own. Drift here puts the water back on
+  // the meadow's 9% ramp, standing proud of its own bank.
+  document.body.dataset.fishingPondDatum = !pond ? "missing" :
+    Math.abs(pondX-FISHING_POND_X)<.01 && Math.abs(-pondZ-FISHING_POND_Y)<.01
+      ? "pass" : "fail";
   const raftingBuilt=worldBuildings.some(building=>building.type==="raftingstation");
   document.body.dataset.raftingStationWalkable = !raftingBuilt ? "missing" :
     fishingDockSurfaceHeight(357.5,30)>2.2 ? "pass" : "fail";

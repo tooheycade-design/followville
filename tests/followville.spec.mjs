@@ -177,6 +177,10 @@ test("the fishing pond offers an easy timing cast and rapid-click catch", async 
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
+  // The pond's level shelf is authored in the shared terrain model, so its
+  // centre is duplicated in town.html. Drift there puts the water back on the
+  // meadow's 9% ramp, where it stands proud of its own bank.
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-pond-datum","pass");
   await expect(page.locator("#fishPrompt")).toBeVisible();
   await page.locator("#fishPrompt").click();
   await expect(page.locator("#fishingGame")).toBeVisible();

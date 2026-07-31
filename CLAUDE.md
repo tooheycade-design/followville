@@ -81,6 +81,43 @@ This block and the actual current scripts override conflicting historical text
 later in this file.
 
 ## Current canon (update this section each day!)
+- 2026-07-31 walked-the-world geometry pass (Cade via Windows Claude): four
+  landmark defects found by walking to them, all fixed without changing Day 29,
+  population 559, the 620 records, claims, addresses, or Supabase.
+  * The rafting terrace was pinned to the highest corner of its pad but walled
+    only on the river face, so its downhill edges hung up to 4.6m in the air.
+    `_add_retaining_skirt()` now closes any level deck to the ground on every
+    side by sampling terrain at each perimeter vertex; the terrace also gained
+    a timber coping, a stair down the plinth, and a retained forecourt.
+    **Use this helper for any future deck on a slope — a wall on one face only
+    holds up on level ground.**
+  * The outpost lane began at (274,60), a point on the Kaleidoscope Crest
+    plateau, but took its height from the terrain, so 55m ran under the hill;
+    it also floated 0.6m on 26m chords and stopped 11m short. It now lives in
+    `world_layout.RAFTING_ACCESS_SPINE` / `rafting_access_points()`, shared by
+    the generator and the walk-surface manifest instead of being duplicated,
+    leaves the Crest approach where that road is still at grade, stays outside
+    the plateau, holds under 11%, and ends on the forecourt.
+  * The fishing pond's 2026-07-31 move to (92,-66) had put its west bank, dock,
+    sign and path on the x=87 street, its curb and the townhouse block. The
+    real constraint is that the meadow outside the paved grid climbs at a
+    steady 9%, and level water on a ramp stands proud of its own low bank
+    wherever you put it — so `terrain_height()` now carries a feathered level
+    shelf under the pond, the same idiom downtown, the ring district and
+    Kaleidoscope Crest already use. `FISHING_POND_*` moved to
+    `downtown_visual_plan.py` beside it; the pond is at (78,114), 8m clear of
+    the paved envelope, and `data-fishing-pond-datum` fails the browser suite
+    if the record and the shelf constants ever drift apart.
+  * City Hall's 45x20 foundation spanned x[-25.5,19.5] y[-145,-125], which
+    swallowed the Pine Hollow connector's terminus at (-24,-137) and the first
+    three segments of that district's own road — the street drove into the left
+    wing and stopped. The campus moved 13m east (City Hall to (10,-134), Civic
+    Square to (56,-134)) rather than the road, because the road serves houses
+    and the terminus is fixed by the district plan; `CITY_HALL_APPROACH` bends
+    the approach back to the x=-3 grid junction so no T-junction is left
+    mid-block. Scatter now also clears the approach and the outpost lane.
+  Full and streamed assets were regenerated together, `check_town_glb.py`
+  passed, and all 17 browser stories passed.
 - Day 26, population 464, 524 records (grown/corrected 2026-07-27 via Zach's Mac
   Codex). Seeds 498-522 are 25 claimable homes at addresses 296-320, finishing
   Juniper Court, filling Hemlock Court, and opening North Ridge/Ridgeview

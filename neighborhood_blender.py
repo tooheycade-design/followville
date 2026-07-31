@@ -32,8 +32,11 @@ if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
 from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
 from downtown_visual_plan import TERRAIN_BOUNDS, mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
+from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
+                                  FISHING_POND_RX, FISHING_POND_RY)
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
-from world_layout import (DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
+from world_layout import (rafting_access_points,
+                          DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           transform_building_point, transform_point)
 
 
@@ -138,7 +141,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
 #   --civicsquare    add the permanent terrain-following square beside City Hall
-#   --fishingpond    add the permanent off-grid fishing pond beside Fire Station 1
+#   --fishingpond    add the permanent off-grid fishing pond north of the grid
 #   --constructionzone add the cleared downtown vote site at block (-2, 1)
 #   --movietheater  replace the canonical vote site with Followville Cinema
 #   --eastwoods      add the permanent raised East Woods reserve
@@ -2855,6 +2858,47 @@ def build_coffee_truck(col, seed):
                       x, -3.35, .88, wood)
 
 
+def _add_retaining_skirt(col, name, half_x, half_y, top_z, origin, material,
+                         bury=.55, step=1.0):
+    """Close a level deck to the ground it stands on, all the way round.
+
+    A wall across one face only holds up on level ground.  The moment the site
+    falls away, every unwalled edge is left standing in mid-air, which is what
+    happened to the rafting terrace: pinned to the highest corner of its pad,
+    it showed up to 4.6m of daylight under the downhill edges.  Sampling the
+    terrain at every perimeter vertex means the plinth beds into the slope
+    wherever the slope happens to be.
+    """
+    perimeter = []
+
+    def run(x0, y0, x1, y1):
+        length = math.hypot(x1 - x0, y1 - y0)
+        count = max(1, int(math.ceil(length / step)))
+        for index in range(count):
+            t = index / count
+            perimeter.append((x0 + (x1 - x0) * t, y0 + (y1 - y0) * t))
+
+    run(-half_x, -half_y, half_x, -half_y)
+    run(half_x, -half_y, half_x, half_y)
+    run(half_x, half_y, -half_x, half_y)
+    run(-half_x, half_y, -half_x, -half_y)
+    verts = [(x, y, top_z) for x, y in perimeter]
+    verts += [(x, y, min(top_z - .10,
+                         terrain_height(origin[0] + x, origin[1] + y) - bury))
+              for x, y in perimeter]
+    count = len(perimeter)
+    faces = [(index, (index + 1) % count,
+              count + (index + 1) % count, count + index)
+             for index in range(count)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    col.objects.link(obj)
+    return obj
+
+
 def _build_rafting_raft(col, name, cx, cy, z, orange, dark, floor, paddle):
     """Low-poly inflatable raft with a continuous oval tube and fitted gear."""
     points = []
@@ -2909,21 +2953,30 @@ def build_rafting_station(col, seed):
     # A retained terrace makes the small outfitter sit deliberately on the
     # bank instead of floating above the river-cut slope.
     #
-    # The wall has to reach whatever the ground actually does. This terrace is
-    # 18m wide across a river-cut bank that falls about 4.5m from its inland
-    # edge to the water, and base_z pins the deck to the high end. A fixed
-    # 2.20m wall left the downhill edge standing in mid-air with daylight under
-    # it. Measured along the wall line instead, with a margin so it beds into
-    # the slope rather than resting exactly on it.
-    wall_ground = min(
-        terrain_height(RAFTING_STATION_X + 8.68, RAFTING_STATION_Y + y)
-        for y in (-7.0, -3.5, 0.0, 3.5, 7.0)
-    )
-    wall_height = max(2.20, base_z - wall_ground + .60)
+    # The plinth has to reach whatever the ground does on every side, not only
+    # the river face. The deck is pinned to base_z, the highest corner of a pad
+    # on a bank that falls about five metres diagonally, so walling the +X face
+    # alone left the north and west edges cantilevered over the hillside with
+    # up to 4.6m of daylight under them -- the first thing anyone walking up
+    # from the meadow saw. One continuous plinth samples the terrain at every
+    # perimeter vertex and beds into the slope wherever the slope is.
     add_box(col, "rafting_terrace", 18.0, 14.0, .28,
             0, 0, base_z - .18, gravel)
-    add_box(col, "rafting_retaining_wall", .65, 14.0, wall_height,
-            8.68, 0, base_z - .12 - wall_height, stone)
+    _add_retaining_skirt(col, "rafting_retaining_wall", 9.0, 7.0, base_z - .12,
+                         (RAFTING_STATION_X, RAFTING_STATION_Y), stone)
+    # A timber coping round the whole edge. Without it the plinth reads as one
+    # blank slab from below, which is what a five-metre wall of one material
+    # looks like from the meadow.
+    for x, y, width, depth in ((0, -7.09, 18.18, .30), (0, 7.09, 18.18, .30),
+                               (-9.09, 0, .30, 13.88), (9.09, 0, .30, 13.88)):
+        add_box(col, "rafting_terrace_coping", width, depth, .24,
+                x, y, base_z - .20, timber_light)
+    # Joints and courses dress the river face, which is the tall exposed one.
+    wall_ground = min(
+        terrain_height(RAFTING_STATION_X + 9.0, RAFTING_STATION_Y + y)
+        for y in (-7.0, -3.5, 0.0, 3.5, 7.0)
+    )
+    wall_height = max(.80, base_z - .12 - wall_ground)
     for y in (-5.2, -2.6, 0, 2.6, 5.2):
         add_box(col, "rafting_retaining_joint", .70, .08, wall_height - .24,
                 8.70, y, base_z - .24 - (wall_height - .24), white_dark)
@@ -2991,21 +3044,40 @@ def build_rafting_station(col, seed):
                 -6.95, y, base_z + .32, orange if index % 2 else blue)
 
     # Terrain-following access from Kaleidoscope Crest makes the outpost read
-    # as part of the city rather than an isolated prop.
-    access_world = [(274, 60), (289, 42), (306, 20), (319, -3), (324, -18)]
+    # as part of the city rather than an isolated prop. See
+    # world_layout.RAFTING_ACCESS_SPINE for why the line runs where it does.
     access = [(x - RAFTING_STATION_X, y - RAFTING_STATION_Y,
-               terrain_height(x, y)) for x, y in access_world]
+               terrain_height(x, y)) for x, y in rafting_access_points()]
     _add_road_strip(col, "rafting_access_road", access, gravel, width=4.4,
                     bottom_offset=.006, top_offset=.055,
                     terrain_conform=True,
                     terrain_origin=(RAFTING_STATION_X, RAFTING_STATION_Y))
-    for distance in (13, 31, 49, 67, 85):
+    for distance in range(14, 140, 18):
         x, y, angle = _polyline_sample(access, distance)
         dash = add_box(col, "rafting_access_marker", 1.20, .13, .025,
                        x, y, terrain_height(
                            RAFTING_STATION_X + x,
                            RAFTING_STATION_Y + y) + .065, white)
         dash.rotation_euler.z = angle
+
+    # The lane can only reach the terrace's downhill face, which stands about
+    # 3.9m above grade there; a vehicle ramp onto the deck would need a 30%
+    # climb. It ends on a small retained forecourt instead, with a stair up
+    # the plinth.
+    court_grade = terrain_height(RAFTING_STATION_X - 5.0,
+                                 RAFTING_STATION_Y + 7.6)
+    add_box(col, "rafting_forecourt", 8.0, 5.0, .26,
+            -5.0, 9.5, court_grade - .02, gravel)
+    _add_retaining_skirt(col, "rafting_forecourt_wall", 4.0, 2.5,
+                         court_grade + .04,
+                         (RAFTING_STATION_X - 5.0, RAFTING_STATION_Y + 9.5),
+                         stone, bury=.40)
+    risers = 13
+    riser = (base_z - .12 - (court_grade + .24)) / risers
+    for index in range(risers):
+        add_box(col, "rafting_terrace_step", 3.4, .32,
+                (index + 1) * riser + .34, -5.0, 11.05 - index * .32,
+                court_grade - .10, stone)
 
     # The descending launch boardwalk follows the bank to a T-shaped dock.
     launch = [
@@ -3211,20 +3283,22 @@ def build_fire_station(col, seed):
         build_tree(col, rng, .62 + rng.random() * .12, x, 12.8)
 
 
-CITY_HALL_X = -3.0
+# Moved 13m east on 2026-07-31. The 45m foundation spanned x[-25.5,19.5] and
+# swallowed the Pine Hollow connector's terminus at (-24,-137) together with
+# the first three segments of the district's own road: the street drove into
+# the left wing and stopped. The campus moves rather than the road, because
+# the road serves houses and the terminus is fixed by the district plan.
+CITY_HALL_X = 10.0
 CITY_HALL_Y = -134.0
 CITY_HALL_ROAD_Y = -93.0
-CIVIC_SQUARE_X = 43.0
+# The approach still meets the grid at the x=-3 intersection and bends east to
+# the portico, so moving the campus does not leave a T-junction mid-block.
+CITY_HALL_APPROACH = [(-3.0, -93.0), (-3.0, -101.0), (0.5, -108.0),
+                      (6.0, -113.5), (10.0, -118.0), (10.0, -121.0)]
+CIVIC_SQUARE_X = 56.0
 CIVIC_SQUARE_Y = -134.0
-# Moved 24m west on 2026-07-31. At (116,-66) the ground fell 0.78m across the
-# pond, and a surface that covers the bed then stands proud of the low side --
-# it read as a bowl of water perched on the meadow. This site is level to
-# within a millimetre across the full 13m radius and 27.9m clear of any
-# building, so the water sits in the ground rather than on it.
-FISHING_POND_X = 92.0
-FISHING_POND_Y = -66.0
-FISHING_POND_RX = 21.5
-FISHING_POND_RY = 15.0
+# FISHING_POND_* now live in downtown_visual_plan beside terrain_height, which
+# has to carry the pond's level shelf. See the note there for the move.
 
 
 def build_city_hall_road(col, seed):
@@ -3233,8 +3307,10 @@ def build_city_hall_road(col, seed):
     shoulder = mat("NB_cityhall_road_shoulder", (.25, .28, .25), .98)
     walk = mat("NB_cityhall_walk", (.67, .65, .59), .94)
     marking = mat("NB_cityhall_lane_marking", (.88, .82, .58), .80)
+    # The junction stays on the x=-3 grid intersection while the campus itself
+    # sits 13m further east, so the approach bends instead of running straight.
     origin = (CITY_HALL_X, CITY_HALL_ROAD_Y)
-    points = [(0, 0, 0), (0, -10, 0), (0, -21, 0), (0, -27, 0)]
+    points = [(x - origin[0], y - origin[1], 0) for x, y in CITY_HALL_APPROACH]
     _add_road_strip(col, "cityhall_road_shoulder", points, shoulder,
                     width=7.6, bottom_offset=.006, top_offset=.046,
                     terrain_origin=origin)
@@ -3242,15 +3318,23 @@ def build_city_hall_road(col, seed):
                     width=6.1, bottom_offset=.016, top_offset=.091,
                     terrain_origin=origin)
     for side in (-1, 1):
-        side_points = [(side * 4.55, y, z) for _x, y, z in points]
+        side_points = []
+        for index, (x, y, z) in enumerate(points):
+            before = points[max(0, index - 1)]
+            after = points[min(len(points) - 1, index + 1)]
+            dx, dy = after[0] - before[0], after[1] - before[1]
+            length = math.hypot(dx, dy) or 1.0
+            side_points.append((x + side * 4.55 * -dy / length,
+                                y + side * 4.55 * dx / length, z))
         _add_road_strip(col, "cityhall_sidewalk", side_points, walk,
                         width=1.35, bottom_offset=.012, top_offset=.062,
                         terrain_origin=origin)
-    for distance in (5.0, 15.0, 24.0):
-        y = -distance
-        z = terrain_height(CITY_HALL_X, CITY_HALL_ROAD_Y + y)
-        add_box(col, "cityhall_road_dash", .18, 2.4, .018,
-                0, y, z + .094, marking)
+    for distance in (6.0, 15.0, 23.0):
+        x, y, angle = _polyline_sample(points, distance)
+        z = terrain_height(origin[0] + x, origin[1] + y)
+        dash = add_box(col, "cityhall_road_dash", 2.4, .18, .018,
+                       x, y, z + .094, marking)
+        dash.rotation_euler.z = angle
 
 
 def build_city_hall(col, seed):
@@ -3598,10 +3682,11 @@ def build_fishing_pond(col, seed):
         obj = bpy.data.objects.new(name, mesh)
         col.objects.link(obj)
 
-    # Terrain-following public sidewalk from the fire-station block to the
-    # west-bank fishing deck. It is intentionally a path, not a new road.
-    approach = [(-31.8, -14.8, 0), (-27.0, -12.2, 0),
-                (-23.0, -8.0, 0), (-20.0, -3.0, 0)]
+    # Terrain-following public sidewalk from the town's northern kerb to the
+    # west-bank fishing deck. It is intentionally a path, not a new road, and
+    # it starts on the paved edge so the pond reads as somewhere you walk to.
+    approach = [(-26.0, -24.0, 0), (-27.0, -18.0, 0), (-26.0, -12.0, 0),
+                (-23.0, -7.0, 0), (-20.0, -3.0, 0)]
     _add_road_strip(col, "fishing_pond_sidewalk", approach, shore,
                     width=2.65, bottom_offset=.025, top_offset=.09,
                     terrain_origin=(FISHING_POND_X, FISHING_POND_Y))
@@ -5568,8 +5653,14 @@ def scatter_nature(world_col, occupied, buildings):
     civic_square_present = any(b.get("type") == "civicsquare" for b in buildings)
     fishing_pond_present = any(b.get("type") == "fishingpond" for b in buildings)
     if city_hall_present:
-        active_segments.append(((CITY_HALL_X, CITY_HALL_ROAD_Y),
+        active_segments.extend(zip(CITY_HALL_APPROACH, CITY_HALL_APPROACH[1:]))
+        active_segments.append((CITY_HALL_APPROACH[-1],
                                 (CITY_HALL_X, CITY_HALL_Y + 18.0)))
+    # The outpost lane crosses 142m of meadow that scatter would otherwise
+    # plant trees on. It was short enough before this to get away with it.
+    if any(b.get("type") == "raftingstation" for b in buildings):
+        lane = rafting_access_points()
+        active_segments.extend(zip(lane, lane[1:]))
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_segments.extend((a, b) for district in active_districts
                            for a, b in zip(DISTRICT_CONNECTORS.get(district, ()),

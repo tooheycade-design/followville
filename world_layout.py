@@ -20,6 +20,43 @@ FOUNDER_PARK_OFFSET = (35.0, 0.0)
 STORYBOOK_OFFSET = (35.0, 0.0)
 STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 
+# The lane from Kaleidoscope Crest down to the rafting outpost. It lives here
+# because the geometry and the browser's walk surface both need it and they
+# used to hold separate copies.
+#
+# The old line ran (274,60) -> (324,-18) with its first point on top of the
+# Crest plateau but its height taken from the terrain, so 55m of it was buried
+# under the hill, and it stopped 11m short of the outpost. This one leaves the
+# Crest's approach where that road is still at grade, keeps outside the
+# plateau's outer ring the whole way round the south of the hill, climbs the
+# outpost's bank at no more than 11%, and finishes on the terrace forecourt.
+RAFTING_ACCESS_SPINE = [
+    (236.0, 72.0), (238.0, 54.0), (241.0, 36.0), (247.0, 22.0), (256.0, 10.0),
+    (268.0, 0.0), (282.0, -8.0), (296.0, -14.0), (308.0, -19.0),
+    (318.0, -22.5), (323.0, -23.5),
+]
+
+
+def rafting_access_points(step=6.0):
+    """The lane's centreline, sampled closely enough to stay on the ground.
+
+    A road strip keeps whichever is higher, its authored height or the terrain
+    under it, so control points 26m apart let the straight line between two
+    samples ride up to 0.6m above a concave grade -- which is exactly what
+    lifted the last stretch of the old lane off the meadow. Six metres holds
+    that to 15mm.
+    """
+    import math
+
+    points = []
+    for a, b in zip(RAFTING_ACCESS_SPINE, RAFTING_ACCESS_SPINE[1:]):
+        count = max(1, int(math.ceil(math.hypot(b[0]-a[0], b[1]-a[1])/step)))
+        for index in range(count):
+            t = index/count
+            points.append((a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t))
+    points.append(RAFTING_ACCESS_SPINE[-1])
+    return points
+
 # Curved transition roads begin on an outer downtown street and terminate at
 # each shifted district's original entrance. They reveal only when that
 # district has at least one house, preserving staged-road behavior.
@@ -159,10 +196,9 @@ def walk_surface_manifest(state):
             for dy in (-6.0, 0.0, 6.0)
         ) + .12
         water_z = river_water_height(y)
-        access = [(274.0, 60.0), (289.0, 42.0), (306.0, 20.0),
-                  (319.0, -3.0), (324.0, -18.0)]
         append_graded_road(
-            [(ax, ay, terrain_height(ax, ay) + .055) for ax, ay in access],
+            [(ax, ay, terrain_height(ax, ay) + .055)
+             for ax, ay in rafting_access_points()],
             2.2)
         launch = [
             (x + 5.8, y, base_z + .16),
@@ -179,6 +215,12 @@ def walk_surface_manifest(state):
         pads.append([
             stable_height(x + 27.5), stable_height(-y),
             stable_height(water_z + .44), 4.25, 2.8, "rafting-dock",
+        ])
+        # Where the lane ends, below the terrace plinth's stair.
+        pads.append([
+            stable_height(x - 5.0), stable_height(-y - 9.5),
+            stable_height(terrain_height(x - 5.0, y + 7.6) + .24),
+            4.0, 2.5, "rafting-forecourt",
         ])
     river_manifest = None
     if river_active:
