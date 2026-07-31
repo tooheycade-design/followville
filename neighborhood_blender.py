@@ -138,6 +138,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day27reveal  20-second city-to-36-homes-to-movie-theater flight
 #   --cam day28reveal  20-second old-plan finish, river/road, river-home reveal
 #   --cam day29reveal  18-second city arc, 31 river homes, rafting-outpost finale
+#   --cam day30reveal  18-second low downtown angle into 46 Cedarbank home rises
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -7165,6 +7166,75 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day30reveal":
+        # Day 30: one continuous 18-second drone move. Five seconds of a low,
+        # close city angle (~33 degrees, downtown filling frame), then a
+        # decelerating transfer northeast into Cedarbank while all forty-six
+        # river/log homes rise. No second shot and no landmark finale: the new
+        # district itself is the payoff.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        lane = [b for b in newest_homes
+                if 416 <= int(b.get("plan_id", 0)) <= 444]
+        court = [b for b in newest_homes
+                 if 445 <= int(b.get("plan_id", 0)) <= 472]
+
+        def _mid(group, fallback):
+            if not group:
+                return fallback
+            pts = [build_pos(b) for b in group]
+            return (sum(p[0] for p in pts) / len(pts),
+                    sum(p[1] for p in pts) / len(pts))
+
+        lx, ly = _mid(lane, (527.0, 40.0))
+        ax, ay = _mid(court, (581.0, 11.0))
+        hx, hy = _mid(newest_homes, (547.0, 29.0))
+
+        aim = bpy.data.objects.new("Day30RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day30RevealCamera")
+        cam_data.lens = 38
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 7000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day30RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-5s: a low, close, roughly 33-degree drone angle that lets
+            # downtown fill the frame with the spire standing over it and the
+            # civic plaza in the near foreground, then accelerates east. This
+            # opening framing is held deliberately tight per Zach's reference
+            # still - do not raise it back to a distant overhead establish.
+            (1, (108.0, -318.0, 196.0), (28.0, -46.0, 10.0)),
+            (60, (176.0, -300.0, 206.0), (64.0, -30.0, 9.0)),
+            (110, (272.0, -274.0, 228.0), (152.0, -22.0, 8.0)),
+            (150, (392.0, -242.0, 256.0), (300.0, -40.0, 7.0)),
+            # 5-14s: descend northeast into Cedarbank and travel the new lane as
+            # the forty-six homes arrive in overlapping waves.
+            (212, (560.0, -170.0, 208.0), (lx - 11.0, ly - 44.0, 6.0)),
+            (282, (600.0, -70.0, 148.0), (lx, ly - 20.0, 6.0)),
+            (352, (592.0, 14.0, 112.0), (lx, ly + 8.0, 6.0)),
+            (420, (604.0, 74.0, 102.0), (lx + 9.0, ly + 34.0, 6.0)),
+            # 14-18s: swing across Alder Court and settle into a wide hold that
+            # keeps the finished district, the river, and the old city in frame.
+            (472, (656.0, 58.0, 120.0), (ax, ay, 6.0)),
+            (frame_end, (704.0, -34.0, 172.0), (hx + 13.0, hy - 11.0, 8.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day29reveal":
         latest_day = max((item.get("day", 0) for item in buildings), default=0)
         newest_homes = [b for b in buildings
@@ -8289,7 +8359,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day29reveal":
+    if cfg.get("cam") == "day30reveal":
+        frame_end = max(frame_end, FPS * 18)
+    elif cfg.get("cam") == "day29reveal":
         frame_end = max(frame_end, FPS * 18)
     elif cfg.get("cam") == "day28reveal":
         frame_end = max(frame_end, FPS * 20)
@@ -8318,7 +8390,17 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day29reveal":
+    if cfg.get("cam") == "day30reveal":
+        # Streets and terrain settle just before the drone arrives, then the
+        # forty-six homes rise in a nine-second wave that finishes with roughly
+        # two and a half seconds of clean hold left in the shot.
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 165 + index * 6, dur=30)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 132)
+    elif cfg.get("cam") == "day29reveal":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         station_roots = [e for e in rise
                          if e.name.startswith("raftingstation_d")]
