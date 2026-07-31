@@ -218,8 +218,10 @@ assertions read those rather than poking at `THREE`.
 **Preserve these regressions** when touching their systems:
 `data-storybook-walkable`, `data-hill-clearance`, `data-claim-tag-roof-clearance`,
 `data-fishing-pond-datum`, `data-rafting-station-walkable`,
-`data-fishing-dock-walkable`, and the manifest-driven 52m/84m streaming
-hysteresis.
+`data-fishing-dock-walkable`, and the streaming hysteresis — whose distances are
+**manifest-driven**, so read `town_manifest.json`'s `streaming` block for the
+current values rather than any number written in prose. What must be preserved
+is that load and unload distances differ, not what they happen to be.
 
 **Lighting** final numbers: sun 1.0x at 4.5°, fill 0.07x, sky 1.0x. Don't
 re-boost without comparing a frame against `day_007_hero` on the same machine.
