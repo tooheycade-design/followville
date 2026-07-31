@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-30 - Zach (via Mac Codex) - [BOTH] Released Day 29 from 528 to 559 followers with 30 Rivergate Drive homes, one Cedarbank Lane home, and the permanent non-population River Run Outfitters rafting destination; published all full/streamed assets and database rows, validated the live state and 18-second/540-frame portrait video, and emailed the finished MP4 to Cade.
+
 2026-07-30 - Zach (via Mac Codex) - [BOTH] Prepared the exact Day 29 move from 528 to 559 with 31 river-district homes plus the permanent non-population River Run Outfitters rafting lodge, gear terrace, city access, descending launch, dock, rafts, and rapids; built the 18-second city-to-homes-to-outpost drone reveal, validated disposable full/streamed assets and walk surfaces, and passed all 16 browser stories while leaving canonical Day 28 untouched until guarded production.
 
 2026-07-29 - Zach (via Mac Codex) - [BOTH] Released Day 28 at population 528 with ten final Summit Court homes and eighteen timber/log Rivergate homes, permanently revealing the carved river valley, Founders Crossing, riverwalks, and riparian planting; regenerated the complete and streamed town, rendered the reviewed Day 28 reveal, and published the updated website.

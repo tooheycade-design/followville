@@ -86,8 +86,9 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
-- 2026-07-30 Day 29 rafting-outpost preparation (Zach via Mac Codex,
-  unreleased): the exact 31-home growth from population 528 to 559 consumes
+- Day 29, population 559, 620 building records (grown 2026-07-30 via Zach's
+  Mac Codex: +31 ordinary claimable homes plus River Run Outfitters). The
+  exact growth from population 528 to 559 consumed
   Rivergate plan IDs 385-414 on Rivergate Drive and Cedarbank plan ID 415 on
   Cedarbank Lane. The permanent non-population `raftingstation` is a
   whitewashed west-bank River Run Outfitters lodge with a retained terrace,
@@ -97,8 +98,10 @@ later in this file.
   map, and collision behavior. `--cam day29reveal` is an 18-second portrait
   city arc, house-rise flight, and station-last finale. Disposable Day 29
   growth, full/streamed export validation, six-frame camera review, and all
-  16 browser stories pass; canonical state remains Day 28 until guarded
-  production growth runs.
+  16 browser stories passed. Guarded production growth, insert-only database
+  sync, full/streamed asset publication, and live verification succeeded. The
+  approved delivery is one 18.000-second, 1080x1920, 30fps, 540-frame daytime
+  portrait MP4, emailed to Cade.
 - Day 28, population 528, 588 building records (grown 2026-07-29 via Zach's
   Mac Codex: +28 ordinary claimable homes). Ten Summit Court homes completed
   the original population-500 reserve and eighteen timber/log homes opened

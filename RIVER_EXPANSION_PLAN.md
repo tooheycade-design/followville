@@ -1,8 +1,7 @@
 # Followville river chapter: population 501–750
 
-Status: Day 28 released at population 528. The deterministic reserve continues
-through population 750; Day 29 is prepared but remains unreleased until guarded
-production growth.
+Status: Day 29 released at population 559. The deterministic reserve continues
+through population 750.
 
 ## Day 29 boundary and rafting destination
 

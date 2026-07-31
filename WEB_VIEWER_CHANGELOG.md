@@ -3,7 +3,7 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
-## Day 29 rafting outpost preparation (2026-07-30, unreleased)
+## Day 29 rafting outpost release (2026-07-30)
 - Added River Run Outfitters as its own streamed landmark chunk on the
   west-bank city side, with exact terrain-aligned access, terrace, launch, and
   dock walk surfaces.
@@ -12,8 +12,8 @@ Kept here (rather than just in chat) so it survives across sessions.
   landmark approachable.
 - Added the station to the live map and homepage preview and kept it
   non-claimable/non-population in database synchronization.
-- Added a Day 29 browser regression and passed all 16 stories against the
-  disposable population-559 export.
+- Added a Day 29 browser regression, passed all 16 stories, and published the
+  exact population-559 state plus complete and streamed town assets.
 
 ## River chapter release (2026-07-29)
 - Added the population-501-750 river reserve, permanent river/bridge base
