@@ -70,3 +70,13 @@ admin.bat
 node_modules/
 playwright-report/
 test-results/
+
+# Local scratch that has always been untracked but was never ignored, so any
+# `git add -A` run from the repository root sweeps it into a commit. That
+# happened on 2026-07-31: 37 files under work/ landed in a local commit before
+# it was caught and reset. Only grow_day8_*.txt was covered; the rest are here
+# now so the accident cannot repeat.
+work/
+grow_day*.txt
+grow_step*.txt
+grow_street.txt

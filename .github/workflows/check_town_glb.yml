@@ -53,3 +53,18 @@ jobs:
 
       - name: Run public experience regression checks
         run: pnpm test:e2e
+
+      # The config already records a trace and video on failure, but nothing
+      # collected them, so every red run discarded the one artefact that shows
+      # what actually happened. Six attempts were spent guessing at a failure
+      # a trace would have settled in one.
+      - name: Upload Playwright trace and report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: warn
