@@ -88,6 +88,18 @@ intentional reviewed commit.
 
 ### Environment (Windows)
 
+**First thing in a new session, before any work:**
+
+```text
+& "C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe" check_toolchain.py
+```
+
+It probes what this session can actually do — interpreter, repo modules, state,
+pygltflib, git, node, Playwright, Chromium, the preview port, Blender, both
+Blend copies — and prints the exact fix for anything missing, grouped by whether
+it blocks inspecting, verifying or changing the world. It installs nothing and
+writes nothing. Findings below are the ones it cannot probe for you.
+
 - Python: `"C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe"`.
   The `python` on PATH is a Microsoft Store stub.
 - **Windows PowerShell 5.1 has no `&&`.** It is a parser error, not a fallback.

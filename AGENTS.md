@@ -8,8 +8,17 @@ the two drifted apart, so there is now one manual and this pointer.
 incident write-ups, and both files as they stood on 2026-07-31. Nothing was
 deleted, only moved.
 
+**Then run `check_toolchain.py` before doing anything else.** It tells you what
+this session can actually do rather than what the docs claim, and prints the fix
+for anything missing:
+
+```text
+& "C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe" check_toolchain.py
+```
+
 Sign your `TEAM_LOG.md` line with which AI and machine made the change, e.g.
-"Cade (via Windows Codex)".
+"Cade (via Windows Codex)". A session that only read things does not need a log
+entry — the log is who changed what.
 
 ---
 
