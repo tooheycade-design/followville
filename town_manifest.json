@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1792468,
+    "bytes": 1792492,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "fd63b5682912ab90a7fabd209157a27aff061e5fd2b7088b3ac7cc85f2d862c0"
+    "sha256": "2e107d406fe8930381a2556e4d0764bef69ece3c7bd3aef9effcf29fcc58948f"
   },
   "chunks": [
     {
@@ -704,14 +704,14 @@
     },
     {
       "asset": {
-        "bytes": 111320,
+        "bytes": 111304,
         "compression": "draco",
         "file": "town_chunks/fishing-pond.glb",
-        "sha256": "b835fe9b40dceebd2701d46d3c124cd8324ec209444a43a004c3f82dd29d8e48"
+        "sha256": "d271b52a5a22c3cbac3f3d47440559d4ba436df6c599a503346c84dc41ac0afe"
       },
       "bounds": {
         "center": [
-          116.0,
+          92.0,
           66.0
         ],
         "radius": 18.0
@@ -1860,9 +1860,9 @@
     }
   ],
   "fallback": {
-    "bytes": 24234852,
+    "bytes": 24234912,
     "file": "town.glb",
-    "sha256": "53e7834a3ac6564462884404193d0f65a8ecbc02590eca96726f1cff37a81308"
+    "sha256": "e1d074d632136f0c79d8cdd2b0f24ad286ad35b03c5acfbe0e1ba72c26d91edd"
   },
   "state": {
     "building_count": 620,
@@ -2002,9 +2002,9 @@
     ],
     "pads": [
       [
-        105.2,
+        81.2,
         68.7,
-        1.1502,
+        0.5514,
         5.6,
         3.5,
         "fishing-dock"
