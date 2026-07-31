@@ -372,9 +372,16 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   let pitch = await pitchNow();
   for(let drag=0; drag<6 && pitch > -1.3; drag+=1){
     const before = pitch;
-    await page.mouse.move(640,30);
+    // Pressed at y=220 rather than y=30. The upward drag above presses at
+    // y=650, comfortably inside the canvas, and has always worked on CI;
+    // this one pressed two pixels from the top of the viewport, where the
+    // walking HUD sits, and on CI it registered nothing at all -- the
+    // diagnostic below reported "drag 1 changed nothing" with the pitch
+    // unmoved at the upward clamp. Fewer pixels per drag, so the loop may
+    // take more of them, which it is written to do.
+    await page.mouse.move(640,220);
     await page.mouse.down({button:"right"});
-    for(const y of [110,190,270,350,430,510,590,650]){
+    for(const y of [280,340,400,460,520,580,640,690]){
       await page.mouse.move(640,y);
       await pitchNow();
     }
