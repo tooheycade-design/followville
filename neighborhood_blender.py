@@ -7675,6 +7675,37 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     fill.rotation_euler = (math.radians(55), 0, math.radians(t["sun_rot"][2] + 170))
     world_col.objects.link(fill)
 
+    if cam == "day29reveal":
+        # The opening camera is roughly 700m from a town that now spans well
+        # over 1km. EEVEE's camera-relative sun shadow map cannot hold stable
+        # texel placement at that scale: shadows from the dense downtown and
+        # park rings swim across the grass as broad bright/dark bands. This is
+        # not geometry z-fighting (the park pad is physically separated from
+        # the terrain). Keep identical directional light and color while the
+        # drone is distant, but source it from a shadow-free twin. Crossfade
+        # into the normal shadow-casting sun during the descent, finishing
+        # before the first Day 29 home rises at frame 150.
+        aerial_data = sun_data.copy()
+        aerial_data.name = "Day29AerialSun"
+        aerial_data.use_shadow = False
+        aerial = bpy.data.objects.new("Day29AerialSun", aerial_data)
+        aerial.rotation_euler = sun.rotation_euler
+        world_col.objects.link(aerial)
+        base_energy = sun_data.energy
+        for frame, shadow_energy, aerial_energy in (
+                (1, 0.0, base_energy),
+                (95, 0.0, base_energy),
+                (145, base_energy, 0.0),
+                (frame_end, base_energy, 0.0)):
+            sun_data.energy = shadow_energy
+            aerial_data.energy = aerial_energy
+            sun_data.keyframe_insert("energy", frame=frame)
+            aerial_data.keyframe_insert("energy", frame=frame)
+        for light_data in (sun_data, aerial_data):
+            for curve in obj_fcurves(light_data):
+                for point in curve.keyframe_points:
+                    point.interpolation = "LINEAR"
+
     # sky
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
     bpy.context.scene.world = world
