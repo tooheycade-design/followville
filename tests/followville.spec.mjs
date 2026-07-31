@@ -400,6 +400,35 @@ test("Day 28 river has a raised crossable bridge and protected deep water", asyn
   expect(errors).toEqual([]);
 });
 
+test("Day 29 rafting outpost has a walkable launch and protected dock", async ({ page }) => {
+  test.skip(Number(worldState.pop) < 559 ||
+    !worldState.buildings.some(building => building.type === "raftingstation"),
+    "rafting outpost is not built in this state");
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html?local=1&view=rafting-station#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-rafting-station-walkable", "pass");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-landmark-hitboxes-mapped", /raftingstation/);
+  const audit = await page.evaluate(() => {
+    const qa=window.__followvilleTerrainQA;
+    const pads=qa.surfaces().pads||[];
+    return {
+      dock:qa.walkSurfaceHeight(357.5,30),
+      bed:qa.regionalTerrainHeight(357.5,30),
+      padTypes:pads.map(pad=>pad[5]),
+      launchSegments:qa.surfaces().segments.filter(segment=>
+        segment[0]>335&&segment[0]<357&&Math.abs(segment[1]-30)<2).length,
+    };
+  });
+  expect(audit.padTypes).toContain("rafting-dock");
+  expect(audit.padTypes).toContain("rafting-terrace");
+  expect(audit.launchSegments).toBeGreaterThanOrEqual(4);
+  expect(audit.dock).toBeGreaterThan(audit.bed+.5);
+  expect(errors).toEqual([]);
+});
+
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 

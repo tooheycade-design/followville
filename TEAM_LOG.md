@@ -22,6 +22,10 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-30 - Zach (via Mac Codex) - [BOTH] Prepared the exact Day 29 move from 528 to 559 with 31 river-district homes plus the permanent non-population River Run Outfitters rafting lodge, gear terrace, city access, descending launch, dock, rafts, and rapids; built the 18-second city-to-homes-to-outpost drone reveal, validated disposable full/streamed assets and walk surfaces, and passed all 16 browser stories while leaving canonical Day 28 untouched until guarded production.
+
+2026-07-29 - Zach (via Mac Codex) - [BOTH] Released Day 28 at population 528 with ten final Summit Court homes and eighteen timber/log Rivergate homes, permanently revealing the carved river valley, Founders Crossing, riverwalks, and riparian planting; regenerated the complete and streamed town, rendered the reviewed Day 28 reveal, and published the updated website.
+
 2026-07-29 - Zach (via Mac Codex) - [BOTH] Prepared but did not release the population-501-750 river chapter: extended deterministic planning to address 616 across five districts, built the permanent carved river valley and guarded Founders Crossing, added eight timber/log river-house designs and website map/walking/collision support, prepared Day 28/river audit cameras, and successfully simulated the exact +28 against temporary state while leaving canonical Day 27 state, Blend, GLBs, claims, Supabase, and the live website unchanged.
 
 2026-07-28 - Zach (via Mac Codex) - [BOTH] Completed Day 27 from 464 to 500 followers with 36 claimable North Ridge homes at addresses 321-356 and converted seed 524's vote-site record in place into the permanent non-claimable Followville Cinema; regenerated and validated full/streamed assets, preserved all 34 claims across 33 accounts, and delivered one reviewed 20-second portrait drone/home/cinema reveal.

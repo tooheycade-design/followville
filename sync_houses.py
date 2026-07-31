@@ -38,7 +38,8 @@ import urllib.error
 NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "streetlight", "car",
                        "elementaryschool", "followmart", "coffeetruck", "firestation",
                        "cityhallroad", "cityhall",
-                       "civicsquare", "fishingpond", "constructionzone", "movietheater",
+                       "civicsquare", "fishingpond", "raftingstation",
+                       "constructionzone", "movietheater",
                        "forestreserve",
                        "tree", "bush", "rock", "duck"}
 

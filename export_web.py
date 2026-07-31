@@ -53,6 +53,7 @@ def _chunk_id_for_building(building):
         "movietheater": "movie-theater",
         "firestation": "fire-station",
         "fishingpond": "fishing-pond",
+        "raftingstation": "rafting-station",
         "followmart": "follow-mart",
         "forestreserve": "east-woods",
     }
@@ -349,6 +350,7 @@ def export_web_glb():
                  "Follow Mart" if chunk_id == "follow-mart" else
                  "Fire Station" if chunk_id == "fire-station" else
                  "Fishing Pond" if chunk_id == "fishing-pond" else
+                 "River Run Outfitters" if chunk_id == "rafting-station" else
                  "Elementary School" if chunk_id == "elementary-school" else
                  "Construction Vote Site" if chunk_id == "construction-zone" else
                  "Followville Cinema" if chunk_id == "movie-theater" else

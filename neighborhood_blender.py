@@ -133,6 +133,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day26reveal  18-second city-to-homes-to-construction-zone flight
 #   --cam day27reveal  20-second city-to-36-homes-to-movie-theater flight
 #   --cam day28reveal  20-second old-plan finish, river/road, river-home reveal
+#   --cam day29reveal  18-second city arc, 31 river homes, rafting-outpost finale
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -141,6 +142,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --constructionzone add the cleared downtown vote site at block (-2, 1)
 #   --movietheater  replace the canonical vote site with Followville Cinema
 #   --eastwoods      add the permanent raised East Woods reserve
+#   --raftingstation add the permanent west-bank rafting outpost and launch
 #   --godzilla       temporary city-destruction layer for cinematic replays
 #   --scatter        use the old pure-radial lot order instead of the
 #                     default block-fill order (2026-07-10) -- scatters new
@@ -160,7 +162,8 @@ def _cli():
              "--fishingpond": "fishingpond",
              "--constructionzone": "constructionzone",
              "--movietheater": "movietheater",
-             "--eastwoods": "eastwoods"}
+             "--eastwoods": "eastwoods",
+             "--raftingstation": "raftingstation"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -198,6 +201,8 @@ PITCH    = BLOCK_N * LOT + ROAD  # block repeat distance
 EAST_WOODS_X = 170.0
 EAST_WOODS_Y = 180.0
 EAST_WOODS_RADIUS = 58.0
+RAFTING_STATION_X = 330.0
+RAFTING_STATION_Y = -30.0
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -2850,6 +2855,181 @@ def build_coffee_truck(col, seed):
                       x, -3.35, .88, wood)
 
 
+def _build_rafting_raft(col, name, cx, cy, z, orange, dark, floor, paddle):
+    """Low-poly inflatable raft with a continuous oval tube and fitted gear."""
+    points = []
+    for index in range(25):
+        angle = math.tau * index / 24.0
+        points.append((cx + 2.55 * math.cos(angle),
+                       cy + 1.42 * math.sin(angle), z + .34))
+    _add_connected_tube(col, name + "_inflatable_tube", points, .34,
+                        orange, sides=10)
+    add_box(col, name + "_floor", 4.15, 1.62, .13,
+            cx, cy, z + .16, floor)
+    for x in (-1.10, .0, 1.10):
+        add_box(col, name + "_seat", .18, 1.55, .18,
+                cx + x, cy, z + .46, dark)
+    for side in (-1, 1):
+        shaft_start = (cx - 1.72, cy + side * 1.02, z + .58)
+        shaft_end = (cx + 1.75, cy + side * 1.02, z + .58)
+        add_beam_between(col, name + "_paddle_shaft", shaft_start,
+                         shaft_end, .055, paddle)
+        add_box(col, name + "_paddle_blade", .58, .26, .08,
+                cx + 1.94, cy + side * 1.02, z + .54, paddle)
+    for side in (-1, 1):
+        add_ngon_cone(col, name + "_grab_ring", .09, .09, .18, 8,
+                      cx, cy + side * 1.47, z + .48, dark)
+
+
+def build_rafting_station(col, seed):
+    """West-bank outfitter, launch boardwalk, dock, and two complete rafts."""
+    rng = random.Random(seed)
+    m = std_mats()
+    white = mat("NB_rafting_whitewash", (.90, .91, .85), .86)
+    white_dark = mat("NB_rafting_whitewash_shadow", (.70, .74, .69), .92)
+    teal = mat("NB_rafting_roof", (.08, .31, .34), .88)
+    teal_dark = mat("NB_rafting_trim", (.045, .17, .19), .82)
+    orange = mat("NB_rafting_orange", (.94, .27, .055), .70)
+    yellow = mat("NB_rafting_lifejacket_yellow", (.98, .66, .06), .64)
+    blue = mat("NB_rafting_lifejacket_blue", (.08, .34, .68), .72)
+    timber = mat("NB_rafting_timber", (.31, .18, .085), .92)
+    timber_light = mat("NB_rafting_boardwalk", (.54, .36, .17), .90)
+    stone = mat("NB_rafting_stone", (.33, .35, .33), .98)
+    gravel = mat("NB_rafting_gravel", (.43, .41, .34), .99)
+    glass = mat("NB_rafting_glass", (.09, .28, .34), .12, .10, 1.0, 0.0, .64)
+    rope = mat("NB_rafting_rope", (.57, .46, .27), .93)
+    foam = mat("NB_rafting_whitewater", (.86, .95, .96), .38)
+
+    base_z = max(
+        terrain_height(RAFTING_STATION_X + x, RAFTING_STATION_Y + y)
+        for x in (-8.0, 0.0, 8.0) for y in (-6.0, 0.0, 6.0)
+    ) + .12
+    water_z = river_water_height(RAFTING_STATION_Y)
+
+    # A retained terrace makes the small outfitter sit deliberately on the
+    # bank instead of floating above the river-cut slope.
+    add_box(col, "rafting_terrace", 18.0, 14.0, .28,
+            0, 0, base_z - .18, gravel)
+    add_box(col, "rafting_retaining_wall", .65, 14.0, 2.20,
+            8.68, 0, base_z - 2.08, stone)
+    for y in (-5.2, -2.6, 0, 2.6, 5.2):
+        add_box(col, "rafting_retaining_joint", .70, .08, 1.96,
+                8.70, y, base_z - 1.96, white_dark)
+    for z in (base_z - 1.48, base_z - .82):
+        add_box(col, "rafting_retaining_course", .72, 13.8, .10,
+                8.72, 0, z, timber)
+
+    # Compact whitewashed lodge with its public face toward the water (+X).
+    add_box(col, "rafting_lodge_stone_base", 12.6, 8.6, .72,
+            -1.6, 0, base_z, stone)
+    add_box(col, "rafting_lodge_body", 12.0, 8.0, 3.75,
+            -1.6, 0, base_z + .52, white)
+    add_prism_roof(col, "rafting_lodge_roof", 12.8, 8.8, 2.18,
+                   -1.6, 0, base_z + 4.22, teal)
+    for x in (-7.18, 3.98):
+        add_box(col, "rafting_corner_trim", .22, 8.08, 3.82,
+                x, 0, base_z + .50, teal_dark)
+
+    # River-facing ticket window, broad awning, glazed door, and readable sign.
+    add_box(col, "rafting_ticket_recess", .13, 3.55, 1.75,
+            4.43, -.62, base_z + 1.35, teal_dark)
+    add_box(col, "rafting_ticket_glass", .08, 3.18, 1.42,
+            4.51, -.62, base_z + 1.50, glass)
+    add_box(col, "rafting_ticket_counter", .72, 3.85, .20,
+            4.70, -.62, base_z + 1.18, timber_light)
+    awning = add_box(col, "rafting_ticket_awning", 1.40, 4.15, .18,
+                     4.76, -.62, base_z + 3.20, orange)
+    awning.rotation_euler.y = math.radians(-12)
+    add_box(col, "rafting_entry_door", .14, 1.45, 2.55,
+            4.46, 2.65, base_z + .72, teal_dark)
+    add_box(col, "rafting_entry_glass", .08, 1.02, 1.62,
+            4.55, 2.65, base_z + 1.37, glass)
+    for y in (-3.20, 3.20):
+        add_box(col, "rafting_sign_support", .18, .18, 1.65,
+                4.62, y, base_z + 4.28, timber)
+    add_box(col, "rafting_sign_board", .20, 7.50, 1.20,
+            4.68, 0, base_z + 5.28, teal_dark)
+    add_text(col, "rafting_sign_text", "RIVER RUN OUTFITTERS", .32, .055,
+             4.80, 0, base_z + 5.72, white,
+             rotation=(math.pi / 2, 0, math.pi / 2))
+
+    # Visible outfitting gear turns the building into a working destination.
+    add_box(col, "rafting_gear_canopy", 8.1, 3.2, .18,
+            -1.6, -5.35, base_z + 2.88, teal)
+    for x in (-5.25, 2.05):
+        add_box(col, "rafting_gear_post", .18, .18, 2.78,
+                x, -5.35, base_z + .02, timber)
+    add_box(col, "rafting_jacket_rail", 6.9, .12, .12,
+            -1.6, -5.55, base_z + 2.25, timber)
+    for index in range(10):
+        x = -4.65 + index * .68
+        jacket = yellow if index % 3 == 0 else orange if index % 2 else blue
+        add_box(col, "rafting_lifejacket", .48, .22, .72,
+                x, -5.68, base_z + 1.36, jacket)
+        add_box(col, "rafting_jacket_strap", .54, .04, .08,
+                x, -5.82, base_z + 1.67, teal_dark)
+    for index in range(7):
+        y = -3.25 + index * .72
+        add_beam_between(col, "rafting_paddle_rack",
+                         (-6.95, y, base_z + .55),
+                         (-6.95, y, base_z + 2.75), .055, rope)
+        add_box(col, "rafting_paddle_blade", .10, .42, .58,
+                -6.95, y, base_z + .32, orange if index % 2 else blue)
+
+    # Terrain-following access from Kaleidoscope Crest makes the outpost read
+    # as part of the city rather than an isolated prop.
+    access_world = [(274, 60), (289, 42), (306, 20), (319, -3), (324, -18)]
+    access = [(x - RAFTING_STATION_X, y - RAFTING_STATION_Y,
+               terrain_height(x, y)) for x, y in access_world]
+    _add_road_strip(col, "rafting_access_road", access, gravel, width=4.4,
+                    bottom_offset=.006, top_offset=.055,
+                    terrain_conform=True,
+                    terrain_origin=(RAFTING_STATION_X, RAFTING_STATION_Y))
+    for distance in (13, 31, 49, 67, 85):
+        x, y, angle = _polyline_sample(access, distance)
+        dash = add_box(col, "rafting_access_marker", 1.20, .13, .025,
+                       x, y, terrain_height(
+                           RAFTING_STATION_X + x,
+                           RAFTING_STATION_Y + y) + .065, white)
+        dash.rotation_euler.z = angle
+
+    # The descending launch boardwalk follows the bank to a T-shaped dock.
+    launch = [
+        (5.8, 0.0, base_z + .12),
+        (10.0, 0.0, base_z - .68),
+        (14.5, 0.0, base_z - 1.72),
+        (19.0, 0.0, water_z + .34),
+        (26.0, 0.0, water_z + .34),
+    ]
+    _add_road_strip(col, "rafting_launch_boardwalk", launch, timber_light,
+                    width=2.45, bottom_offset=-.15, top_offset=.04)
+    add_box(col, "rafting_launch_dock", 8.5, 5.6, .24,
+            27.5, 0, water_z + .20, timber_light)
+    for x in (23.5, 27.5, 31.5):
+        for y in (-2.55, 2.55):
+            add_ngon_cone(col, "rafting_dock_pile", .13, .16,
+                          max(.6, water_z - .25), 8,
+                          x, y, .35, timber)
+    for x in (24.0, 28.0, 31.0):
+        for y in (-2.45, 2.45):
+            add_ngon_cone(col, "rafting_dock_cleat", .11, .13, .28, 8,
+                          x, y, water_z + .44, teal_dark)
+
+    _build_rafting_raft(col, "rafting_launch_raft", 28.2, 4.25,
+                        water_z + .08, orange, teal_dark, teal, timber_light)
+    _build_rafting_raft(col, "rafting_stored_raft", -1.8, 5.25,
+                        base_z + .18, blue, teal_dark, orange, timber_light)
+
+    # A few authored rapids beside the launch make the river read as moving
+    # water from the drone without blocking the navigable dock opening.
+    for index in range(12):
+        x = 27.0 + index * .72 + rng.uniform(-.25, .25)
+        y = 8.0 + math.sin(index * 1.7) * 2.2
+        splash = add_uv_sphere(col, "rafting_rapid_foam", .48,
+                               x, y, water_z + .05, foam, 5, 7)
+        splash.scale = (1.8 + rng.random(), .22, .10)
+
+
 def build_fire_station(col, seed):
     """Full-block Followville Fire & Rescue campus, front facing local -Y."""
     rng = random.Random(seed)
@@ -3638,6 +3818,7 @@ ASSET_VARIANTS = {
     "cityhall": [("AST_cityhall_0", lambda c: build_city_hall(c, 3000))],
     "civicsquare": [("AST_civicsquare_0", lambda c: build_civic_square(c, 3100))],
     "fishingpond": [("AST_fishingpond_0", lambda c: build_fishing_pond(c, 3200))],
+    "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
@@ -3682,6 +3863,8 @@ def web_chunk_id(b):
         return "founder-park"
     if b.get("type") == "fishingpond":
         return "fishing-pond"
+    if b.get("type") == "raftingstation":
+        return "rafting-station"
     if b.get("type") == "constructionzone":
         return "construction-zone"
     if b.get("type") == "movietheater":
@@ -3711,7 +3894,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
-        "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1}
+        "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
+        "raftingstation": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -3721,7 +3905,7 @@ def footprint(b):
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
     if (b.get("plan_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
-                          "forestreserve")):
+                          "raftingstation", "forestreserve")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -4470,11 +4654,14 @@ def build_river_chapter(world_col, buildings, m):
     # keeping the bridge sightline and protected future lots open.
     stone = mat("FV_river_boulder", (.30, .32, .31), .98)
     bank_trees = []
+    rafting_active = any(b.get("type") == "raftingstation" for b in buildings)
     for index in range(120):
         y = -322.0+index*(832.0/119.0)
         if abs(y+215.0) < 42.0:
             continue
         side = -1 if index % 2 else 1
+        if rafting_active and side < 0 and -78.0 < y < 18.0:
+            continue
         rng = random.Random(88000+index*131)
         x = river_center_x(y)+side*(24.0+rng.uniform(1.0, 5.5))
         tree_data = {"type": "tree", "gx": 0, "gy": 0,
@@ -6828,6 +7015,61 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day29reveal":
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        hx = (sum(build_pos(b)[0] for b in newest_homes) / len(newest_homes)
+              if newest_homes else 458.0)
+        hy = (sum(build_pos(b)[1] for b in newest_homes) / len(newest_homes)
+              if newest_homes else -112.0)
+        station = next((b for b in buildings
+                        if b["type"] == "raftingstation"), None)
+        sx, sy = build_pos(station) if station else (
+            RAFTING_STATION_X, RAFTING_STATION_Y)
+
+        aim = bpy.data.objects.new("Day29RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day29RevealCamera")
+        cam_data.lens = 36
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 6000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day29RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3s: a broad realtor-drone arc holds downtown and the mature
+            # neighborhoods, with the river chapter legible in the distance.
+            (1, (430.0, -520.0, 650.0), (40.0, -10.0, 6.0)),
+            (50, (520.0, -430.0, 580.0), (90.0, -20.0, 6.0)),
+            (90, (585.0, -320.0, 380.0), (180.0, -40.0, 5.0)),
+            # 3-11s: descend into Rivergate and fly the new river-house street
+            # while all thirty-one follower homes arrive in overlapping waves.
+            (120, (600.0, -245.0, 185.0), (hx, hy, 6.0)),
+            (180, (565.0, -205.0, 115.0), (hx, hy + 5.0, 6.0)),
+            (260, (530.0, -135.0, 75.0), (hx + 4.0, hy + 24.0, 6.5)),
+            (330, (500.0, -90.0, 62.0), (455.0, -75.0, 7.0)),
+            # 11-18s: cross the water at low drone height and finish on the
+            # west-bank outfitter as its lodge, gear, dock, and rafts rise.
+            (380, (430.0, -78.0, 52.0), (370.0, -35.0, 5.0)),
+            (430, (430.0, -100.0, 75.0), (sx + 10.0, sy, 5.0)),
+            (500, (400.0, -82.0, 55.0), (sx + 14.0, sy, 4.8)),
+            (frame_end, (390.0, -72.0, 48.0), (sx + 14.0, sy, 4.7)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day28reveal":
         newest = [b for b in buildings
                   if b["type"] == "house" and b.get("day") == max(
@@ -7634,7 +7876,7 @@ def main(cfg=None):
                 specials or cfg.get("cityhall") or cfg.get("civicsquare") or
                 cfg.get("fishingpond") or cfg.get("constructionzone") or
                 cfg.get("movietheater") or
-                cfg.get("eastwoods")):
+                cfg.get("eastwoods") or cfg.get("raftingstation")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -7790,6 +8032,18 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(fishing_pond)
             new_batch.append(fishing_pond)
+        if cfg.get("raftingstation"):
+            if any(b["type"] == "raftingstation" for b in state["buildings"]):
+                raise RuntimeError("Rafting station already exists")
+            rafting_station = {
+                "type": "raftingstation", "gx": 0, "gy": 0,
+                "px": RAFTING_STATION_X, "py": RAFTING_STATION_Y, "pz": 0.0,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(rafting_station)
+            new_batch.append(rafting_station)
         if cfg.get("constructionzone"):
             existing_zone = [b for b in state["buildings"]
                              if b["type"] == "constructionzone"]
@@ -7885,7 +8139,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day28reveal":
+    if cfg.get("cam") == "day29reveal":
+        frame_end = max(frame_end, FPS * 18)
+    elif cfg.get("cam") == "day28reveal":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day27reveal":
         frame_end = max(frame_end, FPS * 20)
@@ -7912,7 +8168,18 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day28reveal":
+    if cfg.get("cam") == "day29reveal":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        station_roots = [e for e in rise
+                         if e.name.startswith("raftingstation_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 150 + index * 4, dur=29)
+        for e in station_roots:
+            animate_rise(e, 420, dur=42)
+        for e in rise:
+            if e not in home_roots and e not in station_roots:
+                animate_rise(e, 205)
+    elif cfg.get("cam") == "day28reveal":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         summit_roots = [e for e in home_roots
                         if int(e.get("nb_world_plan_id", 0)) <= 366]

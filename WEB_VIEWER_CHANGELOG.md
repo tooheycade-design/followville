@@ -3,9 +3,22 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
-## River chapter preparation (2026-07-29, unreleased)
+## Day 29 rafting outpost preparation (2026-07-30, unreleased)
+- Added River Run Outfitters as its own streamed landmark chunk on the
+  west-bank city side, with exact terrain-aligned access, terrace, launch, and
+  dock walk surfaces.
+- Open river water remains collidable; only the raised launch and dock bypass
+  the water barrier. Exact lodge/gear hitboxes keep equipment readable and the
+  landmark approachable.
+- Added the station to the live map and homepage preview and kept it
+  non-claimable/non-population in database synchronization.
+- Added a Day 29 browser regression and passed all 16 stories against the
+  disposable population-559 export.
+
+## River chapter release (2026-07-29)
 - Added the population-501-750 river reserve, permanent river/bridge base
-  geometry, and eight river-house designs without changing canonical Day 27.
+  geometry, and eight river-house designs, then released Day 28 at population
+  528.
 - Mirrored the carved terrain and elevated Founders Crossing walk surface in
   the browser; deep water blocks players while the bridge remains crossable.
 - Added the river and bridge to both the in-town 3D/flat map and homepage

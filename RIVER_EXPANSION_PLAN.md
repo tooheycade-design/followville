@@ -1,8 +1,23 @@
 # Followville river chapter: population 501–750
 
-Status: implemented as a deterministic, unreleased Day 28 plan. The canonical
-Day 27 `world_state.json`, Blend, GLBs, claims, and Supabase rows remain
-unchanged until the guarded Day 28 growth is intentionally run.
+Status: Day 28 released at population 528. The deterministic reserve continues
+through population 750; Day 29 is prepared but remains unreleased until guarded
+production growth.
+
+## Day 29 boundary and rafting destination
+
+- Day 29 target is population 559: exactly 31 new ordinary claimable homes.
+- Plan IDs 385-414 place 30 homes on Rivergate Drive; plan ID 415 opens
+  Cedarbank Lane with one home.
+- The non-population River Run Outfitters landmark sits on the west/city bank
+  at Blender `(330,-30)`, clear of every existing and reserved home.
+- A terrain-following access road joins Kaleidoscope Crest to its retained
+  terrace. A descending boardwalk reaches a T-shaped dock with a launch raft;
+  a stored raft, visible life jackets/paddles, and authored rapids establish
+  the destination from first-person and drone views.
+- `--cam day29reveal` is an 18-second portrait flight: approximately three
+  seconds orbiting the full city/downtown, a transfer to all 31 home rises,
+  then the rafting outpost appears last.
 
 ## Day 28 boundary
 

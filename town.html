@@ -3657,7 +3657,8 @@ function fishingDockSurfaceHeight(x,z){
   let height=0;
   for(const pad of localWalkSurfaces.pads||[]){
     const [cx,cz,top,hx,hz,type]=pad;
-    if(type==="fishing-dock"&&Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
+    if(["fishing-dock","rafting-dock","rafting-terrace"].includes(type)&&
+       Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
       height=Math.max(height,top);
   }
   return height;
@@ -3665,6 +3666,9 @@ function fishingDockSurfaceHeight(x,z){
 function auditFishingDockSurface(){
   document.body.dataset.fishingDockWalkable =
     fishingDockSurfaceHeight(105.2,68.7)>1.1 ? "pass" : "fail";
+  const raftingBuilt=worldBuildings.some(building=>building.type==="raftingstation");
+  document.body.dataset.raftingStationWalkable = !raftingBuilt ? "missing" :
+    fishingDockSurfaceHeight(357.5,30)>2.2 ? "pass" : "fail";
 }
 
 function walkSurfaceHeight(x,z){
@@ -3890,7 +3894,8 @@ function addLandmarkColliders(root){
   const mapped=new Set();
   const configured=new Set();
   for(const building of worldBuildings){
-    if(!["burjhouse","followmart","firestation","cityhall","constructionzone","movietheater"].includes(building.type))continue;
+    if(!["burjhouse","followmart","firestation","cityhall","constructionzone",
+         "movietheater","raftingstation"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -3917,6 +3922,11 @@ function addLandmarkColliders(root){
     }else if(building.type==="constructionzone"){
       colliders.push(rootLocalBoxCollider(visual,0,0,16.2,16.2,
                                           "landmark-construction-zone"));
+    }else if(building.type==="raftingstation"){
+      colliders.push(rootLocalBoxCollider(visual,-1.6,0,6.35,4.35,
+                                          "landmark-rafting-lodge"));
+      colliders.push(rootLocalBoxCollider(visual,-1.6,-5.35,4.15,1.65,
+                                          "landmark-rafting-gear-shelter"));
     }else{
       colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
       colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
@@ -3927,6 +3937,7 @@ function addLandmarkColliders(root){
   const destinationType=worldBuildings.some(b=>b.type==="movietheater")
     ?"movietheater":"constructionzone";
   const expected=["burjhouse","followmart","firestation","cityhall",destinationType];
+  if(worldBuildings.some(b=>b.type==="raftingstation"))expected.push("raftingstation");
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }
@@ -4016,8 +4027,10 @@ function buildGLBColliders(root){
 
 function resolvePlayerCollision(position, collider){
   if(collider.label==="river-water" &&
-     suburbanRoadSurfaceHeight(position.x,position.z)-
-       regionalTerrainHeight(position.x,position.z)>1.25)return;
+     (suburbanRoadSurfaceHeight(position.x,position.z)-
+        regionalTerrainHeight(position.x,position.z)>1.25 ||
+      fishingDockSurfaceHeight(position.x,position.z)>
+        regionalTerrainHeight(position.x,position.z)+.15))return;
   if (collider.kind === "circle"){
     let dx = position.x-collider.x, dz = position.z-collider.z;
     let distance = Math.hypot(dx,dz);
@@ -4645,6 +4658,7 @@ const MAP_LANDMARK_NAMES = {
   forestreserve:"East Woods",
   cityhall:"Followville City Hall", civicsquare:"Civic Square",
   fishingpond:"Followville Fishing Pond",
+  raftingstation:"River Run Outfitters",
   parkdistrict:"Founder Park",
   park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
   stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
@@ -7113,6 +7127,14 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
           camera.fov=58;
           camera.position.set(442,12.5,252);
           camera.lookAt(456,7.0,207);
+          camera.updateProjectionMatrix();
+        }
+        if(localAuditView === "rafting-station"){
+          startScreen.style.display="none";
+          document.body.classList.add("preview-mode");
+          camera.fov=58;
+          camera.position.set(380,18.0,72);
+          camera.lookAt(334,7.0,30);
           camera.updateProjectionMatrix();
         }
         if(localAuditView === "school"){

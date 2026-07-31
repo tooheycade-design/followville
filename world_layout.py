@@ -149,6 +149,37 @@ def walk_surface_manifest(state):
             stable_height(x - 10.8), stable_height(-y + 2.7),
             stable_height(water_height + .28), 5.6, 3.5, "fishing-dock",
         ])
+    rafting = next((building for building in state.get("buildings", [])
+                    if building.get("type") == "raftingstation"), None)
+    if rafting:
+        x, y = transform_building_point(rafting)
+        base_z = max(
+            terrain_height(x + dx, y + dy)
+            for dx in (-8.0, 0.0, 8.0)
+            for dy in (-6.0, 0.0, 6.0)
+        ) + .12
+        water_z = river_water_height(y)
+        access = [(274.0, 60.0), (289.0, 42.0), (306.0, 20.0),
+                  (319.0, -3.0), (324.0, -18.0)]
+        append_graded_road(
+            [(ax, ay, terrain_height(ax, ay) + .055) for ax, ay in access],
+            2.2)
+        launch = [
+            (x + 5.8, y, base_z + .16),
+            (x + 10.0, y, base_z - .64),
+            (x + 14.5, y, base_z - 1.68),
+            (x + 19.0, y, water_z + .38),
+            (x + 26.0, y, water_z + .38),
+        ]
+        append_graded_road(launch, 1.28)
+        pads.append([
+            stable_height(x), stable_height(-y), stable_height(base_z + .10),
+            9.0, 7.0, "rafting-terrace",
+        ])
+        pads.append([
+            stable_height(x + 27.5), stable_height(-y),
+            stable_height(water_z + .44), 4.25, 2.8, "rafting-dock",
+        ])
     river_manifest = None
     if river_active:
         river_manifest = {
