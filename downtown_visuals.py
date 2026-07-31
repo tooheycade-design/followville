@@ -366,8 +366,17 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
     # MUTCD-informed hierarchy: signals are limited to the central civic
     # crossroads; edge approaches use stop control and a clear stop bar.
     # This prevents the toy-like result of signalizing every quiet junction.
+    #
+    # A block spans [b*pitch, b*pitch+block_size] and the roadway runs in the
+    # gap below it, so the crossing is centred half a road-width *outside* the
+    # block corner, not on it. The crosswalks a few lines above already use
+    # `y0-3.0` for exactly this; the signals did not, and anchoring them on the
+    # corner put two of every four poles in the middle of the roadway and the
+    # other two 4.4m into a 3.4m sidewalk, inside the buildings.
+    half_road = road / 2.0
     signal_intersections = {
-        (0.0, 0.0), (-pitch, 0.0), (0.0, -pitch), (-pitch, -pitch)
+        (x - half_road, y - half_road)
+        for x, y in ((0.0, 0.0), (-pitch, 0.0), (0.0, -pitch), (-pitch, -pitch))
     }
     for ix, iy in signal_intersections:
         if not (min_bx*pitch <= ix <= (max_bx+1)*pitch
@@ -414,6 +423,11 @@ def _public_realm(collection, occupied, extent, block_n, lot, road, pitch):
         (-pitch, (max_by+1)*pitch, "y", 0, -1),
     )
     for ix, iy, axis, dx, dy in edge_approaches:
+        # Same correction as the signals: the approach is centred on the
+        # roadway, half a road-width outside the block corner these are named
+        # by. Without it the stop sign stands in the middle of the lane it is
+        # supposed to be controlling.
+        ix, iy = ix - half_road, iy - half_road
         px, py = ix-dy*4.45-dx*4.45, iy-dx*4.45-dy*4.45
         stop_poles.append((px, py, .18, .12, .12, 2.7))
         stop_signs.append((px, py, 2.55, .62, .11, axis))
