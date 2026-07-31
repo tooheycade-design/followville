@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-07-30 - Zach (via Mac Codex) - [WORLD] Corrected the Day 29 reel's distant EEVEE sun-shadow swimming with a camera-scoped equal-energy shadow-free aerial light and pre-growth shadow crossfade; reviewed exact before/after problem frames plus later house/rafting shots, rendered a separate verified 18-second/540-frame portrait replacement to the Desktop, and preserved Day 29 population 559, all 620 records, claims, and Supabase rows.
+2026-07-30 - Zach (via Mac Codex) - [BOTH] Corrected the actual square grass flicker cause after rejecting the initial shadow diagnosis: removed the 4,000m legacy ground face that was coplanar beneath the regional terrain at z=0, replaced it with four horizon-only slabs outside the terrain bounds with 5cm clearance and 0m² overlap, removed the mistaken Day 29 lighting workaround, regenerated and validated all web GLBs without rerendering the already-used video, and preserved population 559, all 620 records, claims, and Supabase rows.
 
 2026-07-30 - Zach (via Mac Codex) - [BOTH] Released Day 29 from 528 to 559 followers with 30 Rivergate Drive homes, one Cedarbank Lane home, and the permanent non-population River Run Outfitters rafting destination; published all full/streamed assets and database rows, validated the live state and 18-second/540-frame portrait video, and emailed the finished MP4 to Cade.
 

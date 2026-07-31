@@ -86,18 +86,19 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
-- 2026-07-30 Day 29 aerial-render correction (Zach via Mac Codex): the
-  `day29reveal` opening no longer lets EEVEE's camera-relative sun shadow map
-  swim across the grass as broad bright/dark bands during the extreme
-  whole-city drone orbit. This was render shadow precision, not coplanar
-  terrain or the older parking-lot z-fighting bug. The camera now uses an
-  equal-energy shadow-free directional twin while distant, then crossfades
-  back to the normal shadow-casting sun during the descent before any Day 29
-  home rises. The corrected replacement is an exact 18.000-second,
-  1080x1920, 30fps, 540-frame MP4 on Zach's Desktop. Before/after opening
-  samples and later house/rafting frames passed visual review. Population
-  559, all 620 records, `world_state.json`, claims, ownership, and Supabase
-  rows are unchanged.
+- 2026-07-30 regional-ground depth correction (Zach via Mac Codex): the
+  square grass flicker seen in the Day 29 aerial was genuine coplanar
+  geometry, not sun-shadow precision. The legacy 4,000m background ground box
+  ended at `z=0` underneath the entire city while broad areas of the
+  authoritative regional terrain also clamp to `z=0`. The competing faces
+  produced the same depth instability as the older parking-lot bug. The
+  under-map slab is removed; four background-only perimeter slabs now stop
+  5cm outside `TERRAIN_BOUNDS`, preserving the distant horizon with exactly
+  `0.0m²` of terrain overlap. The mistaken Day 29 shadow-free-light workaround
+  was removed. Replay-only geometry checks, five diagnostic stills, and full
+  plus streamed GLB validation passed; corrected web assets were pushed
+  without rerendering the already-used video. Population 559, all 620 records,
+  `world_state.json`, claims, ownership, and Supabase rows are unchanged.
 - Day 29, population 559, 620 building records (grown 2026-07-30 via Zach's
   Mac Codex: +31 ordinary claimable homes plus River Run Outfitters). The
   exact growth from population 528 to 559 consumed
