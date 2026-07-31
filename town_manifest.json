@@ -27,7 +27,7 @@
       ],
       "house_ids": [],
       "id": "civic-center",
-      "initial": true,
+      "initial": false,
       "label": "Civic Center"
     },
     {
@@ -195,7 +195,7 @@
         79
       ],
       "id": "downtown-block-m1-m1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -233,7 +233,7 @@
         109
       ],
       "id": "downtown-block-m1-m2",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -309,7 +309,7 @@
         115
       ],
       "id": "downtown-block-m1-p1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -347,7 +347,7 @@
         97
       ],
       "id": "downtown-block-m2-m1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -385,7 +385,7 @@
         103
       ],
       "id": "downtown-block-m2-p0",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -423,7 +423,7 @@
         91
       ],
       "id": "downtown-block-p0-m1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -461,7 +461,7 @@
         122
       ],
       "id": "downtown-block-p0-m2",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -538,7 +538,7 @@
         128
       ],
       "id": "downtown-block-p0-p1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -576,7 +576,7 @@
         134
       ],
       "id": "downtown-block-p1-m1",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -609,7 +609,7 @@
         136
       ],
       "id": "downtown-block-p1-p0",
-      "initial": true,
+      "initial": false,
       "label": "Downtown block"
     },
     {
@@ -631,7 +631,7 @@
       ],
       "house_ids": [],
       "id": "east-woods",
-      "initial": true,
+      "initial": false,
       "label": "East Woods"
     },
     {
@@ -653,7 +653,7 @@
       ],
       "house_ids": [],
       "id": "elementary-school",
-      "initial": true,
+      "initial": false,
       "label": "Elementary School"
     },
     {
@@ -675,7 +675,7 @@
       ],
       "house_ids": [],
       "id": "fire-station",
-      "initial": true,
+      "initial": false,
       "label": "Fire Station"
     },
     {
@@ -697,7 +697,7 @@
       ],
       "house_ids": [],
       "id": "fishing-pond",
-      "initial": true,
+      "initial": false,
       "label": "Fishing Pond"
     },
     {
@@ -719,7 +719,7 @@
       ],
       "house_ids": [],
       "id": "follow-mart",
-      "initial": true,
+      "initial": false,
       "label": "Follow Mart"
     },
     {
@@ -824,7 +824,7 @@
         72
       ],
       "id": "founder-park",
-      "initial": true,
+      "initial": false,
       "label": "Founder Park"
     },
     {
@@ -1040,7 +1040,7 @@
         461
       ],
       "id": "meadow-run",
-      "initial": true,
+      "initial": false,
       "label": "Meadow Run"
     },
     {
@@ -1062,7 +1062,7 @@
       ],
       "house_ids": [],
       "id": "movie-theater",
-      "initial": true,
+      "initial": false,
       "label": "Followville Cinema"
     },
     {
@@ -1180,7 +1180,7 @@
         570
       ],
       "id": "north-ridge",
-      "initial": true,
+      "initial": false,
       "label": "North Ridge"
     },
     {
@@ -1249,7 +1249,7 @@
       ],
       "house_ids": [],
       "id": "north-woods",
-      "initial": true,
+      "initial": false,
       "label": "North Woods"
     },
     {
@@ -1387,7 +1387,7 @@
         520
       ],
       "id": "pine-hollow",
-      "initial": true,
+      "initial": false,
       "label": "Pine Hollow"
     },
     {
@@ -1445,7 +1445,7 @@
         588
       ],
       "id": "rivergate",
-      "initial": true,
+      "initial": false,
       "label": "Rivergate"
     },
     {
@@ -1603,7 +1603,7 @@
         331
       ],
       "id": "twin-oaks",
-      "initial": true,
+      "initial": false,
       "label": "Twin Oaks"
     },
     {
@@ -1749,7 +1749,7 @@
         263
       ],
       "id": "willow-hills",
-      "initial": true,
+      "initial": false,
       "label": "Willow Hills"
     }
   ],
@@ -1765,10 +1765,9 @@
     "seed_counter": 589
   },
   "streaming": {
-    "detail_load_distance": 52,
-    "detail_unload_distance": 84,
-    "lod": "simple-houses",
-    "preload_all": true
+    "detail_load_distance": 110,
+    "detail_unload_distance": 170,
+    "lod": "simple-houses"
   },
   "version": 1,
   "walk_surfaces": {

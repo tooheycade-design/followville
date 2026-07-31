@@ -123,10 +123,15 @@ def check_stream_manifest(root, state, fallback_path):
         problems.append("manifest has no original-town or block-streamed downtown chunks")
     if not any(chunk.get("initial") for chunk in chunks):
         problems.append("manifest has no initial district chunk")
-    if (manifest.get("streaming") or {}).get("preload_all") is not True:
-        problems.append("manifest must preload all detailed chunks")
-    if any(chunk.get("initial") is not True for chunk in chunks):
-        problems.append("every detailed chunk must be marked initial")
+    # Deliberately no rule that every chunk is initial. Requiring that is what
+    # turned district streaming off: the browser loaded every district at boot
+    # and released none, and by day 28 that was 10.7 MB resident. The manifest
+    # is checked for coherent streaming distances below; which districts start
+    # resident is an export decision, not a validity one.
+    if all(chunk.get("initial") for chunk in chunks) and len(chunks) > 6:
+        problems.append(
+            "every district is marked initial, so nothing will stream -- "
+            "see export_web.py initial_ids")
     load_distance = (manifest.get("streaming") or {}).get("detail_load_distance")
     if not isinstance(load_distance, (int, float)) or not 25 <= load_distance <= 250:
         problems.append("manifest streaming.detail_load_distance is missing or unsafe")

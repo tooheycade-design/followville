@@ -99,14 +99,38 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page.locator("body")).toHaveAttribute("data-kaleidoscope-statue", "pass");
   await expect(page.locator("body")).toHaveAttribute("data-asset-mode", "streamed");
   await expect(page.locator("body")).toHaveAttribute("data-stream-manifest", "pass");
-  const loadedChunks = (await page.locator("body").getAttribute("data-loaded-chunks") || "").split(",");
-  expect(new Set(loadedChunks)).toEqual(new Set(townManifest.chunks.map(chunk => chunk.id)));
-  expect(townManifest.streaming.preload_all).toBe(true);
-  expect(townManifest.chunks.every(chunk => chunk.initial)).toBe(true);
+  // The town streams by proximity. Marking every district resident is what
+  // made the world heavy to walk: at day 28 it meant 10.7 MB loaded at boot
+  // and never released.
+  expect(townManifest.streaming.preload_all).toBeUndefined();
+  const residentChunks = townManifest.chunks.filter(chunk => chunk.initial);
+  expect(residentChunks.length).toBeGreaterThan(0);
+  expect(residentChunks.length).toBeLessThan(townManifest.chunks.length);
+  const loadedChunks = new Set((await page.locator("body")
+    .getAttribute("data-loaded-chunks") || "").split(",").filter(Boolean));
+  // Resident districts are always up. Districts within detail_load_distance of
+  // the player are too, so this is a superset, not an equality.
+  for (const chunk of residentChunks) {
+    expect(loadedChunks.has(chunk.id), `${chunk.id} must stay resident`).toBe(true);
+  }
+  // But not everything: the far side of town is still a silhouette.
+  expect(loadedChunks.size).toBeLessThan(townManifest.chunks.length);
   const initialBytes = Number(await page.locator("body").getAttribute("data-stream-initial-bytes"));
-  expect(initialBytes).toBe(townManifest.base.bytes + townManifest.chunks
-    .filter(chunk => chunk.initial).reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
+  expect(initialBytes).toBe(townManifest.base.bytes
+    + residentChunks.reduce((sum, chunk) => sum + chunk.asset.bytes, 0));
   expect(initialBytes).toBeLessThan(fullTownBytes);
+  // The tall founder homes read from across the map, so their blocks stay
+  // resident rather than degrading to silhouettes as the player walks.
+  const landmarkSeeds = new Set(worldState.buildings
+    .filter(building => ["burjhouse", "eiffelhouse", "castlehouse",
+                         "mushroomhouse", "casinohouse", "toilethouse"]
+      .includes(building.type))
+    .map(building => Number(building.seed)));
+  for (const chunk of townManifest.chunks) {
+    if ((chunk.building_ids || []).some(id => landmarkSeeds.has(Number(id)))) {
+      expect(chunk.initial, `${chunk.id} holds a founder landmark`).toBe(true);
+    }
+  }
   await expect(page.locator("#chatPanel")).toBeHidden();
   await expect(page.locator("#chatPanel")).not.toHaveClass(/feed-visible/);
   await expect(page.locator("body")).toHaveAttribute("data-chat-feed", "idle");
@@ -137,6 +161,10 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   await expect(page).toHaveURL(/\/town\.html$/);
   await page.keyboard.press("Escape");
   await expect(page.locator("#pauseMenu")).toBeVisible();
+  // An ordinary click, with its actionability checks intact. This hung for the
+  // full timeout in CI until the render loop stopped redrawing the town behind
+  // the pause menu; forcing the click past the check would only have hidden
+  // the next thing that saturates the page here.
   await page.getByRole("button", { name: "leave town" }).click();
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(errors).toEqual([]);
@@ -229,7 +257,13 @@ test("Avatar Studio only offers the animated character library and persists it",
 });
 
 test("player camera follows, right-drag orbits, wheel reaches first person, and A/D are correct", async ({ page }) => {
-  test.setTimeout(420_000);
+  // The longest story here by a distance: walking, orbiting, pitching to both
+  // clamps, zooming into first person and back, and checking A/D are
+  // camera-relative. It runs about three minutes locally, and CI is slower
+  // enough that 420s left no margin -- every failure of this test so far has
+  // been the budget expiring mid-call, never an assertion. Worth splitting
+  // one day; four behaviours in one test is why it is this long.
+  test.setTimeout(600_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?admin=1#walk");
   await waitForTown(page);
@@ -315,10 +349,17 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   // Pointer-lock ignores out-of-viewport coordinates in headless Chromium.
   // Two ordinary top-to-bottom grabs exercise the same real input path and
   // cover the full pitch range without manufacturing a DOM mouse event.
+  // Stepped one move at a time, each awaited, exactly like the upward drag
+  // above. `mouse.move(...,{steps:n})` dispatches its interpolated moves in a
+  // tight loop with nothing awaited between them, and a loaded two-core runner
+  // does not process them all: in CI the pitch stayed at the upward clamp it
+  // had reached before, because these drags landed as nothing at all.
   for(let drag=0;drag<2;drag++){
     await page.mouse.move(640,30);
     await page.mouse.down({button:"right"});
-    await page.mouse.move(640,650,{steps:8});
+    for(const y of [110,190,270,350,430,510,590,650]){
+      await page.mouse.move(640,y);
+    }
     await page.mouse.up({button:"right"});
   }
   await expect.poll(async()=>Number(await page.locator("body").getAttribute("data-camera-pitch"))).toBeLessThan(-1.3);
@@ -343,20 +384,73 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
   expect(errors).toEqual([]);
 });
 
-test("visiting a house keeps every detailed district resident", async ({ page }) => {
+test("visiting a house streams its district in and releases distant ones", async ({ page }) => {
+  test.setTimeout(180_000);
   const errors = watchPageErrors(page);
   const willowHome = allHomes.find(building => building.district === "Willow Hills");
   expect(willowHome).toBeTruthy();
+  // Willow Hills is far from spawn, so it must arrive on demand rather than
+  // being resident. A teleport that outruns its geometry is the failure this
+  // guards: ensureTownChunkForBuilding has to settle before the player lands.
+  expect(townManifest.chunks.find(chunk => chunk.id === "willow-hills").initial)
+    .toBe(false);
+
   await page.goto(`/house/${willowHome.seed}`);
   await waitForTown(page);
   await expect(page.locator("#townMapPanel")).toBeVisible();
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
   await page.getByRole("button", { name: "go to this house" }).click();
   await expect(page.locator("#townMapPanel")).toBeHidden({ timeout: 30_000 });
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /willow-hills/);
-  await expect(page.locator("body")).toHaveAttribute("data-loaded-chunks", /kaleidoscope-crest/);
-  expect(Number(await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0")).toBe(0);
+  // Standing in Willow Hills, its detail is present.
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-loaded-chunks", /willow-hills/, { timeout: 30_000 });
+  // And a district on the far side of town has been released again, which is
+  // the half that stopped happening when every chunk was marked resident.
+  await expect
+    .poll(async () => Number(
+      await page.locator("body").getAttribute("data-streamed-chunk-unloads") || "0"),
+      { timeout: 30_000 })
+    .toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
+test("buildings draw on a radius around the player, and the Burj never drops", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html#walk");
+  await waitForTown(page);
+
+  // Read together, in one pass over the DOM. These four move as districts
+  // stream in, so reading them one at a time compares numbers taken from
+  // different moments — which is exactly how the first version of this test
+  // failed in CI, expecting 110 and getting 112 on a slower machine.
+  const snapshot = await page.evaluate(() => {
+    const data = document.body.dataset;
+    return {
+      indexed: Number(data.visibilityRadiusIndex || "0"),
+      drawn: Number(data.visibilityRadiusDrawn || "0"),
+      proxies: Number(data.visibilityProxies || "0"),
+      standing: Number(data.radiusLodStanding || "0"),
+      audit: data.radiusLod,
+    };
+  });
+
+  expect(snapshot.indexed).toBeGreaterThan(0);
+  expect(snapshot.drawn).toBeGreaterThan(0);
+  // Only part of the town is drawn at once. If this ever equals the index, the
+  // radius has stopped culling and every loaded building is being drawn.
+  expect(snapshot.drawn).toBeLessThan(snapshot.indexed);
+
+  // A culled home is replaced by a silhouette, never simply removed. Leaving
+  // a bare lot where a building obviously stands reads as the town failing to
+  // load rather than as distance, which is what a resident district such as
+  // downtown showed: it never unloads, so the chunk LOD never covered it.
+  expect(snapshot.proxies).toBe(snapshot.indexed - snapshot.drawn);
+  expect(snapshot.proxies).toBeGreaterThan(0);
+
+  // The page reads its own instance matrices back and reports whether a
+  // silhouette is standing on every culled lot.
+  expect(snapshot.audit).toBe("pass");
+  expect(snapshot.standing).toBe(snapshot.proxies);
   expect(errors).toEqual([]);
 });
 

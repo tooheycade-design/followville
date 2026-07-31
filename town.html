@@ -4203,6 +4203,9 @@ let townMapMeta = { day:null, population:null };
 let loadedTownRoot = null;       // combined root for streamed chunks or the full GLB fallback
 let townManifest = null;
 let townStreamLastCheck = 0;
+// Set once a preview/audit render has pulled every district in, so the sweep
+// does not re-request them on each frame.
+let townStreamPreloaded = false;
 const townChunksById = new Map();
 const townChunkByBuilding = new Map();
 const townChunkLoads = new Map();
@@ -4347,6 +4350,11 @@ function disposeObject(root){
     if (obj.geometry) obj.geometry.dispose();
     const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
     for (const material of materials) if (material?.dispose) material.dispose();
+    // An InstancedMesh also holds its per-instance matrix and colour buffers,
+    // which geometry.dispose() does not release. Districts stream in and out
+    // continuously now, so anything missed here accumulates as the player
+    // walks rather than once at load.
+    if (obj.isInstancedMesh) obj.dispose();
   });
 }
 
@@ -6739,9 +6747,212 @@ function mergeTownAsset(group){
   return roots;
 }
 
+/**
+ * How far each thing stays drawn.
+ *
+ * Chunks are the transfer unit — a .glb cannot be half-fetched — but what the
+ * card actually draws is decided per building, as a radius around the player.
+ * Ordinary homes appear as you approach them; the taller a landmark is, the
+ * further out it keeps its real geometry, because a silhouette popping in on
+ * something you can see from across town is exactly what reads as broken.
+ *
+ * Walk far enough and only the Burj is left standing, which is the same thing
+ * you would see from the edge of a real town.
+ */
+const VISIBLE_RADIUS_DEFAULT = 95;
+const VISIBLE_RADIUS_BY_TYPE = {
+  burjhouse: Infinity,
+  cityhall: 320,
+  eiffelhouse: 240,
+  castlehouse: 200,
+  followmart: 180,
+  firestation: 170,
+  movietheater: 170,
+  schoolhouse: 170,
+  casinohouse: 160,
+  mushroomhouse: 150,
+  toilethouse: 150,
+};
+
+function visibleRadiusFor(type){
+  const radius = VISIBLE_RADIUS_BY_TYPE[String(type)];
+  return radius === undefined ? VISIBLE_RADIUS_DEFAULT : radius;
+}
+
+// Rebuilt whenever loaded geometry changes: [{root, x, z, radiusSquared, ...}].
+let townVisibilityIndex = [];
+let townVisibilityLastCheck = 0;
+// Stand-ins drawn where a home is too far for its real geometry.
+let townDistantProxy = null;
+
+const DISTANT_PROXY_PALETTES = [
+  [0xd8c9a8,0x76594c],[0xc6d4bd,0x596b61],[0xc6ccd9,0x596779],
+  [0xd8c0b5,0x7a5752],[0xd9d1b9,0x6d6254],[0xc8d5d2,0x5d6d73]
+];
+
+function disposeTownDistantProxy(){
+  if(!townDistantProxy) return;
+  scene.remove(townDistantProxy.group);
+  disposeObject(townDistantProxy.group);
+  townDistantProxy = null;
+}
+
+/**
+ * Indexes what the radius culls, and builds the silhouette that replaces it.
+ *
+ * Hiding a home outright leaves a bare lot where a building obviously stands,
+ * which reads as the town failing to load rather than as distance. The chunk
+ * LOD already draws silhouettes, but only for districts that unloaded — a
+ * resident district such as downtown never unloads, so its homes had nothing
+ * standing in for them at all.
+ *
+ * So the same instanced silhouette is built here and swapped in per building:
+ * two draw calls for the whole town, with each instance scaled to nothing
+ * while its real geometry is the thing being drawn.
+ */
+function indexTownVisibility(root, buildings){
+  townVisibilityIndex = [];
+  disposeTownDistantProxy();
+
+  const homes = [];
+  for(const [, entry] of houseVisuals){
+    const radius = visibleRadiusFor(entry.building?.type);
+    if(radius === Infinity || !entry.building) continue;
+    const [x, z] = buildingWorldXZ(entry.building);
+    homes.push({root: entry.root, building: entry.building, x, z,
+                radiusSquared: radius * radius});
+  }
+  // Landmarks are deliberately not culled. There are a dozen of them, so
+  // keeping them drawn costs little, and a vanishing City Hall would be the
+  // same empty-lot problem in a more conspicuous place. They still leave the
+  // scene when their district unloads.
+
+  if(homes.length){
+    const wallMaterial = new THREE.MeshStandardMaterial(
+      {name:"FV_radius_lod_wall", color:0xffffff, roughness:.92});
+    const roofMaterial = new THREE.MeshStandardMaterial(
+      {name:"FV_radius_lod_roof", color:0xffffff, roughness:.9});
+    const walls = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1,1,1), wallMaterial, homes.length);
+    const roofs = new THREE.InstancedMesh(
+      new THREE.ConeGeometry(1,1,4), roofMaterial, homes.length);
+    const quaternion = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const up = new THREE.Vector3(0,1,0);
+    // An instanced matrix defaults to the identity, which would stack every
+    // silhouette at full size on the world origin until its first swap.
+    const hidden = new THREE.Matrix4().makeScale(0,0,0);
+
+    homes.forEach((entry, index) => {
+      walls.setMatrixAt(index, hidden);
+      roofs.setMatrixAt(index, hidden);
+      // Both halves start from a known state: real geometry shown, silhouette
+      // scaled away. Otherwise a rebuild that inherits an already-hidden root
+      // sees no change to make, and leaves the lot with neither on it.
+      entry.root.visible = true;
+      const ground = walkSurfaceHeight(entry.x, entry.z);
+      const front = frontDirsFor(entry.building)[0] || [0,1];
+      quaternion.setFromAxisAngle(up, Math.atan2(front[0], front[1]));
+      const seed = Number(entry.building.seed) || index;
+      const width = entry.building.type === "ringhouse" ? 5.4 : 5.6 + (seed%4)*.35;
+      const depth = 4.25 + (seed%3)*.32, height = [3.45,4.25,5.05][seed%3];
+      const colors = DISTANT_PROXY_PALETTES[seed % DISTANT_PROXY_PALETTES.length];
+      // Precomputed so the per-frame swap is a matrix copy, not a rebuild.
+      entry.proxyIndex = index;
+      entry.wallMatrix = new THREE.Matrix4().compose(
+        new THREE.Vector3(entry.x, ground + height/2, entry.z), quaternion,
+        scale.clone().set(width, height, depth));
+      entry.roofMatrix = new THREE.Matrix4().compose(
+        new THREE.Vector3(entry.x, ground + height + .72, entry.z), quaternion,
+        scale.clone().set(width*.72, 1.45, depth*.72));
+      walls.setColorAt(index, new THREE.Color(colors[0]));
+      roofs.setColorAt(index, new THREE.Color(colors[1]));
+    });
+    walls.instanceColor.needsUpdate = true;
+    roofs.instanceColor.needsUpdate = true;
+    walls.instanceMatrix.needsUpdate = true;
+    roofs.instanceMatrix.needsUpdate = true;
+    walls.name = "FV_radius_lod_walls"; roofs.name = "FV_radius_lod_roofs";
+    walls.castShadow = roofs.castShadow = false;
+    walls.receiveShadow = roofs.receiveShadow = false;
+    walls.frustumCulled = roofs.frustumCulled = false;
+    const group = new THREE.Group();
+    group.name = "FV_radius_lod"; group.add(walls, roofs);
+    scene.add(group);
+    townDistantProxy = {group, walls, roofs, hidden: new THREE.Matrix4().makeScale(0,0,0)};
+  }
+
+  townVisibilityIndex = homes;
+  document.body.dataset.visibilityRadiusIndex = String(townVisibilityIndex.length);
+}
+
+function updateTownVisibilityRadius(force=false){
+  if(!townVisibilityIndex.length) return;
+  // Preview and audit renders frame a fixed point, so culling around the
+  // player would empty the shot.
+  if(previewMode) return;
+  const now = performance.now();
+  if(!force && now - townVisibilityLastCheck < 120) return;
+  townVisibilityLastCheck = now;
+  const px = playerPosition.x, pz = playerPosition.z;
+  let drawn = 0, swapped = false;
+  for(const entry of townVisibilityIndex){
+    const dx = px - entry.x, dz = pz - entry.z;
+    const visible = dx*dx + dz*dz <= entry.radiusSquared;
+    if(visible) drawn += 1;
+    if(entry.root.visible === visible) continue;
+    entry.root.visible = visible;
+    // The silhouette is the inverse of the real geometry: exactly one of the
+    // two stands on the lot at any moment, so a home is never simply absent.
+    if(townDistantProxy && entry.proxyIndex !== undefined){
+      townDistantProxy.walls.setMatrixAt(entry.proxyIndex,
+        visible ? townDistantProxy.hidden : entry.wallMatrix);
+      townDistantProxy.roofs.setMatrixAt(entry.proxyIndex,
+        visible ? townDistantProxy.hidden : entry.roofMatrix);
+      swapped = true;
+    }
+  }
+  if(swapped && townDistantProxy){
+    townDistantProxy.walls.instanceMatrix.needsUpdate = true;
+    townDistantProxy.roofs.instanceMatrix.needsUpdate = true;
+  }
+  document.body.dataset.visibilityRadiusDrawn = String(drawn);
+  document.body.dataset.visibilityProxies = String(
+    townVisibilityIndex.length - drawn);
+  // Re-audited whenever the pairing actually changed, not only on a forced
+  // pass: otherwise the reported figure lags the scene and reads as a mismatch
+  // that is really just staleness.
+  if(force || swapped) auditRadiusLod(townVisibilityIndex.length - drawn);
+}
+
+/**
+ * Checks that every culled home really does have a silhouette standing.
+ *
+ * Reading the instance matrices back rather than trusting the bookkeeping,
+ * because the failure being guarded against is a lot with nothing on it, and
+ * a counter that agrees with itself would not have caught the first one.
+ */
+function auditRadiusLod(expected){
+  if(!townDistantProxy){
+    document.body.dataset.radiusLod = expected === 0 ? "pass" : "fail";
+    return;
+  }
+  const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion(), scale = new THREE.Vector3();
+  let standing = 0;
+  for(let index = 0; index < townDistantProxy.walls.count; index += 1){
+    townDistantProxy.walls.getMatrixAt(index, matrix);
+    matrix.decompose(position, quaternion, scale);
+    if(scale.x > 0.001) standing += 1;
+  }
+  document.body.dataset.radiusLodStanding = String(standing);
+  document.body.dataset.radiusLod = standing === expected ? "pass" : "fail";
+}
+
 function refreshLoadedTownSystems(buildings){
   indexHouseVisuals(loadedTownRoot,buildings);
   buildGLBColliders(loadedTownRoot);
+  indexTownVisibility(loadedTownRoot,buildings);
+  updateTownVisibilityRadius(true);
 }
 
 function configureTownPlayerSpawn(buildings){
@@ -6851,7 +7062,20 @@ function ensureTownChunkForBuilding(building){
 
 function updateTownDistrictStreaming(force=false){
   if(!townManifest)return;
-  if(townManifest.streaming?.preload_all)return;
+  // Preview and audit renders move the camera without moving the player, so
+  // streaming keyed on player position would leave the framed district as a
+  // silhouette. Those pull every district in once and keep it; public visitors
+  // stream by proximity.
+  if(townManifest.streaming?.preload_all||previewMode){
+    if(townStreamPreloaded)return;
+    townStreamPreloaded=true;
+    for(const chunk of townManifest.chunks){
+      if(townLoadedChunks.has(chunk.id)||townChunkLoads.has(chunk.id))continue;
+      loadTownChunk(chunk.id,worldBuildings).catch(error=>
+        console.warn(`[Followville] could not preload ${chunk.label}.`,error));
+    }
+    return;
+  }
   const now=performance.now();if(!force&&now-townStreamLastCheck<800)return;
   townStreamLastCheck=now;
   let unloaded=false;
@@ -6861,8 +7085,14 @@ function updateTownDistrictStreaming(force=false){
       nearest=Math.min(nearest,Math.hypot(playerPosition.x-x,playerPosition.z-z));
     const loadDistance=Number(townManifest.streaming?.detail_load_distance||70);
     const unloadDistance=Number(townManifest.streaming?.detail_unload_distance||112);
+    // A district marked initial is resident, not merely loaded early: it holds
+    // something that reads from across the map, such as a tall founder home,
+    // and releasing it would turn that landmark into a silhouette while the
+    // player is still looking at it. Everything else is released once distant.
     if(townLoadedChunks.has(chunk.id)){
-      if(nearest>unloadDistance){unloadTownChunk(chunk,worldBuildings,{refresh:false});unloaded=true;}
+      if(!chunk.initial&&nearest>unloadDistance){
+        unloadTownChunk(chunk,worldBuildings,{refresh:false});unloaded=true;
+      }
       continue;
     }
     if(townChunkLoads.has(chunk.id))continue;
@@ -7308,12 +7538,19 @@ function animate(){
   updateAvatarPreview(dt);
 
   updateMultiplayer(dt);
-  if(gameRunning)updateTownDistrictStreaming();
+  if(gameRunning){updateTownDistrictStreaming();updateTownVisibilityRadius();}
   updateFocusedTownShadow();
   updateAdaptiveRenderScale();
 
   if(townMapOpen()){townMapControls?.update();drawTownMap();}
-  else renderer.render(scene,camera);
+  // A paused town is a still image. Re-rendering the scene behind the pause
+  // menu costs a full frame plus a full-screen backdrop blur of it, every
+  // frame, for a picture that cannot change -- the camera is deliberately
+  // frozen where the player stopped. On a starved machine that saturates the
+  // main thread: clicking "leave town" took 10s at 6x CPU throttle and 15s at
+  // 10x, and timed out entirely on CI. The canvas keeps its last frame, so
+  // the view behind the menu is unchanged.
+  else if(!pauseMenuOpen())renderer.render(scene,camera);
 }
 </script>
 </body>
