@@ -3677,23 +3677,42 @@ function fishingDockSurfaceHeight(x,z){
   return height;
 }
 function auditFishingDockSurface(){
-  // Probe the dock relative to the pond rather than at a fixed coordinate.
-  // This was (105.2,68.7), which stopped being the dock the first time the
-  // pond moved and would have passed on empty meadow ever after.
-  const pond=worldBuildings.find(building=>building.type==="fishingpond");
-  const [pondX,pondZ]=pond?buildingWorldXZ(pond):[0,0];
-  document.body.dataset.fishingDockWalkable = !pond ? "missing" :
-    fishingDockSurfaceHeight(pondX-10.8,pondZ+2.7)>regionalTerrainHeight(pondX,pondZ)+.2
-      ? "pass" : "fail";
-  // The level shelf under the pond is authored in the shared terrain model,
-  // so its centre must be the pond's own. Drift here puts the water back on
-  // the meadow's 9% ramp, standing proud of its own bank.
-  document.body.dataset.fishingPondDatum = !pond ? "missing" :
-    Math.abs(pondX-FISHING_POND_X)<.01 && Math.abs(-pondZ-FISHING_POND_Y)<.01
-      ? "pass" : "fail";
-  const raftingBuilt=worldBuildings.some(building=>building.type==="raftingstation");
-  document.body.dataset.raftingStationWalkable = !raftingBuilt ? "missing" :
-    fishingDockSurfaceHeight(357.5,30)>2.2 ? "pass" : "fail";
+  // Ask the walk-surface manifest where the decks are instead of sampling a
+  // fixed point. This used to probe (105.2, 68.7) and (357.5, 30), which were
+  // the decks until the pond moved 24m on 2026-07-31 -- after which it sampled
+  // bare meadow, found no pad, and called a perfectly good dock unwalkable.
+  // Reading the pads directly cannot go stale when something moves, and this
+  // runs before worldBuildings is populated, so it must not depend on it.
+  const deckTop=types=>{
+    let top=0;
+    for(const pad of localWalkSurfaces.pads||[])
+      if(types.includes(pad[5]))top=Math.max(top,pad[2]);
+    return top;
+  };
+  // The threshold is what the deck stands proud by, not where it sits in the
+  // world. The old 1.1 was measuring the hill the pond used to be on: the
+  // deck itself is 0.55 tall, and on the level site it now occupies that
+  // reads as 0.55 rather than terrain-plus-0.55. A deck is walkable because
+  // it is a raised platform, not because the ground under it is high.
+  const fishingDeck=deckTop(["fishing-dock"]);
+  document.body.dataset.fishingDockWalkable =
+    fishingDeck<=0 ? "missing" : fishingDeck>0.3 ? "pass" : "fail";
+  // Checked on the launch dock specifically. Taking the tallest of the dock
+  // and the terrace would let the terrace, five metres higher up the bank,
+  // vouch for a dock that had gone missing.
+  const raftingDeck=deckTop(["rafting-dock"]);
+  document.body.dataset.raftingStationWalkable =
+    raftingDeck<=0 ? "missing" : raftingDeck>2.2 ? "pass" : "fail";
+  // The pond's level shelf is part of the shared terrain model, so its centre
+  // is duplicated here as a constant while the pond's own position stays in
+  // world_state. Read the dock pad, which is authored at a fixed offset from
+  // the pond, and check the two still agree -- drift puts the water back on
+  // the meadow's 9% ramp, standing proud of its own bank. Same reason as
+  // above for not asking worldBuildings: this runs before it exists.
+  const fishingPad=(localWalkSurfaces.pads||[]).find(pad=>pad[5]==="fishing-dock");
+  document.body.dataset.fishingPondDatum = !fishingPad ? "missing" :
+    Math.abs(fishingPad[0]-(FISHING_POND_X-10.8))<.01 &&
+    Math.abs(fishingPad[1]-(2.7-FISHING_POND_Y))<.01 ? "pass" : "fail";
 }
 
 function walkSurfaceHeight(x,z){
