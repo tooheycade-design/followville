@@ -381,6 +381,15 @@ test("player camera follows, right-drag orbits, wheel reaches first person, and 
     // take more of them, which it is written to do.
     await page.mouse.move(640,220);
     await page.mouse.down({button:"right"});
+    // Wait for the orbit to actually take hold before moving. The first drag
+    // in this test does exactly this at line ~295 and has never failed; these
+    // ones pressed and immediately started moving, so on a slow runner every
+    // move could be spent before the grab existed, and the camera would never
+    // be asked to turn. That matches what CI reported: requested pitch equal
+    // to actual and both unchanged, which is not a camera refusing to move
+    // but a camera never told to.
+    await expect(page.locator("body"))
+      .toHaveAttribute("data-camera-grab",/locked|dragging/,{timeout:15_000});
     for(const y of [280,340,400,460,520,580,640,690]){
       await page.mouse.move(640,y);
       await pitchNow();
