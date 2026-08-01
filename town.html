@@ -3772,7 +3772,7 @@ function houseInteriorSurfaceHeight(x, z){
 }
 
 function walkSurfaceHeight(x,z){
-  if (typeof window !== "undefined" && window.inHouseInterior && Math.abs(x - 10000) < 4.5 && Math.abs(z - 10000) < 4.5) {
+  if (typeof window !== "undefined" && window.inHouseInterior && Math.abs(x - 10000) <= 9.0 && Math.abs(z - 10000) <= 7.0) {
     return 500.20;
   }
   return Math.max(0,regionalTerrainHeight(x,z),
@@ -4402,8 +4402,9 @@ const INTERIOR_THEMES = {
 let interiorRoomMeshes = {};
 
 function initInteriorRoomInstance() {
-  const roomW = 8.0, roomD = 8.0, roomH = 3.2;
-  // Floor
+  const roomW = 18.0, roomD = 14.0, roomH = 4.2;
+
+  // 1. Floor
   const floorGeo = new THREE.PlaneGeometry(roomW, roomD);
   const floorMat = new THREE.MeshStandardMaterial({ color: 0x7c522d, roughness: 0.45 });
   const floorMesh = new THREE.Mesh(floorGeo, floorMat);
@@ -4413,15 +4414,24 @@ function initInteriorRoomInstance() {
   interiorRoomGroup.add(floorMesh);
   interiorRoomMeshes.floor = floorMat;
 
-  // Baseboards / Trim
+  // 2. Baseboards / Trim
   const trimMat = new THREE.MeshStandardMaterial({ color: 0x422d1b, roughness: 0.6 });
   const trimBack = new THREE.Mesh(new THREE.BoxGeometry(roomW, 0.15, 0.06), trimMat);
-  trimBack.position.set(0, 0.075, -roomD/2 + 0.03);
+  trimBack.position.set(0, 0.075, -roomD / 2 + 0.03);
   interiorRoomGroup.add(trimBack);
 
-  // Walls
+  const trimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, roomD), trimMat);
+  trimLeft.position.set(-roomW / 2 + 0.03, 0.075, 0);
+  interiorRoomGroup.add(trimLeft);
+
+  const trimRight = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, roomD), trimMat);
+  trimRight.position.set(roomW / 2 - 0.03, 0.075, 0);
+  interiorRoomGroup.add(trimRight);
+
+  // 3. Interior Walls
   const wallMat = new THREE.MeshStandardMaterial({ color: 0xf4f0e8, roughness: 0.85 });
   interiorRoomMeshes.wall = wallMat;
+
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
   backWall.position.set(0, roomH / 2, -roomD / 2);
   interiorRoomGroup.add(backWall);
@@ -4436,69 +4446,231 @@ function initInteriorRoomInstance() {
   rightWall.position.set(roomW / 2, roomH / 2, 0);
   interiorRoomGroup.add(rightWall);
 
-  // Front Wall (with door frame opening)
-  const frontWallL = new THREE.Mesh(new THREE.PlaneGeometry(3.3, roomH), wallMat);
+  // Front Wall (with double-door entryway gap)
+  const frontWallL = new THREE.Mesh(new THREE.PlaneGeometry(7.6, roomH), wallMat);
   frontWallL.rotation.y = Math.PI;
-  frontWallL.position.set(-2.35, roomH / 2, roomD / 2);
+  frontWallL.position.set(-5.2, roomH / 2, roomD / 2);
   interiorRoomGroup.add(frontWallL);
 
-  const frontWallR = new THREE.Mesh(new THREE.PlaneGeometry(3.3, roomH), wallMat);
+  const frontWallR = new THREE.Mesh(new THREE.PlaneGeometry(7.6, roomH), wallMat);
   frontWallR.rotation.y = Math.PI;
-  frontWallR.position.set(2.35, roomH / 2, roomD / 2);
+  frontWallR.position.set(5.2, roomH / 2, roomD / 2);
   interiorRoomGroup.add(frontWallR);
 
-  // Door Frame & Door Mesh
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.6 });
+  // Double Entry Door & Frame
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.5 });
   interiorRoomMeshes.door = doorMat;
-  const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.25, 0.12), doorMat);
-  doorMesh.position.set(0, 1.125, roomD / 2);
-  interiorRoomGroup.add(doorMesh);
 
-  // Cozy Interior Furniture
-  // Rug
+  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.7, 0.15), doorMat);
+  doorFrame.position.set(0, 1.35, roomD / 2);
+  interiorRoomGroup.add(doorFrame);
+
+  // Decorative Glass Windows on Front Wall
+  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x88ccff, transmission: 0.6, opacity: 0.7, transparent: true, roughness: 0.1 });
+  const windowL = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 0.08), glassMat);
+  windowL.position.set(-6.2, 2.0, roomD / 2 - 0.02);
+  interiorRoomGroup.add(windowL);
+
+  const windowR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 0.08), glassMat);
+  windowR.position.set(6.2, 2.0, roomD / 2 - 0.02);
+  interiorRoomGroup.add(windowR);
+
+  // ════════════════════ ZONE 1: GRAND LIVING ROOM ════════════════════
   const rugMat = new THREE.MeshStandardMaterial({ color: 0x3b6b88, roughness: 0.9 });
   interiorRoomMeshes.rug = rugMat;
-  const rugMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 2.8), rugMat);
+  const rugMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 4.2), rugMat);
   rugMesh.rotation.x = -Math.PI / 2;
-  rugMesh.position.set(0, 0.02, 0.2);
+  rugMesh.position.set(0, 0.02, -2.5);
   interiorRoomGroup.add(rugMesh);
 
-  // Couch
-  const couchMat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.7 });
-  interiorRoomMeshes.sofa = couchMat;
-  const couchMesh = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.75, 0.95), couchMat);
-  couchMesh.position.set(0, 0.375, -1.8);
-  interiorRoomGroup.add(couchMesh);
+  const sofaMat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.7 });
+  interiorRoomMeshes.sofa = sofaMat;
 
-  // Coffee Table
-  const tableMat = new THREE.MeshStandardMaterial({ color: 0x6e4a27, roughness: 0.5 });
-  const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.45, 0.8), tableMat);
-  tableMesh.position.set(0, 0.225, -0.5);
+  const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.85, 1.1), sofaMat);
+  sofaMain.position.set(0, 0.425, -4.2);
+  interiorRoomGroup.add(sofaMain);
+
+  const sofaChaise = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.85, 2.2), sofaMat);
+  sofaChaise.position.set(-1.8, 0.425, -2.75);
+  interiorRoomGroup.add(sofaChaise);
+
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x6e4a27, roughness: 0.4 });
+  const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.95), tableMat);
+  tableMesh.position.set(0.2, 0.225, -2.5);
   interiorRoomGroup.add(tableMesh);
 
-  // Bookshelf against Left Wall
-  const shelfMat = new THREE.MeshStandardMaterial({ color: 0x503622, roughness: 0.6 });
-  const shelfMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.2, 1.4), shelfMat);
-  shelfMesh.position.set(-3.6, 1.1, -1.5);
-  interiorRoomGroup.add(shelfMesh);
+  const tvConsoleMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.5 });
+  const tvConsole = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.65, 0.55), tvConsoleMat);
+  tvConsole.position.set(0, 0.325, -6.6);
+  interiorRoomGroup.add(tvConsole);
 
-  // Plant / Pot in Corner
+  const tvScreenMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.2 });
+  const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 0.08), tvScreenMat);
+  tvScreen.position.set(0, 1.8, -6.65);
+  interiorRoomGroup.add(tvScreen);
+
+  const speakerMat = new THREE.MeshStandardMaterial({ color: 0x333338, roughness: 0.6 });
+  const speakerL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), speakerMat);
+  speakerL.position.set(-2.2, 0.65, -6.6);
+  interiorRoomGroup.add(speakerL);
+
+  const speakerR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), speakerMat);
+  speakerR.position.set(2.2, 0.65, -6.6);
+  interiorRoomGroup.add(speakerR);
+
+  const fireplaceMat = new THREE.MeshStandardMaterial({ color: 0x5a554e, roughness: 0.8 });
+  const fireplace = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.5, 0.65), fireplaceMat);
+  fireplace.position.set(-6.5, 0.75, -6.6);
+  interiorRoomGroup.add(fireplace);
+
+  const fireGlowLight = new THREE.PointLight(0xff7722, 1.8, 8);
+  fireGlowLight.position.set(-6.5, 0.6, -6.2);
+  interiorRoomGroup.add(fireGlowLight);
+
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xddc8a0, roughness: 0.3 });
+  const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.06), lampMat);
+  lampBase.position.set(2.5, 0.03, -4.5);
+  interiorRoomGroup.add(lampBase);
+
+  const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.4), lampMat);
+  lampPole.position.set(2.5, 1.2, -4.5);
+  interiorRoomGroup.add(lampPole);
+
+  const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.35, 16, 1, true), lampMat);
+  lampShade.position.set(2.5, 2.3, -4.5);
+  interiorRoomGroup.add(lampShade);
+
+  // ════════════════════ ZONE 2: GOURMET KITCHEN & DINING ════════════════════
+  const kitchenTopMat = new THREE.MeshStandardMaterial({ color: 0xf5f3ee, roughness: 0.2 });
+  const kitchenBaseMat = new THREE.MeshStandardMaterial({ color: 0x384150, roughness: 0.6 });
+  interiorRoomMeshes.kitchen = kitchenBaseMat;
+
+  const islandBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.9, 1.3), kitchenBaseMat);
+  islandBase.position.set(5.5, 0.45, -2.5);
+  interiorRoomGroup.add(islandBase);
+
+  const islandTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.08, 1.4), kitchenTopMat);
+  islandTop.position.set(5.5, 0.94, -2.5);
+  interiorRoomGroup.add(islandTop);
+
+  const stoolMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.6 });
+  for (let i = -1; i <= 1; i++) {
+    const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.65, 16), stoolMat);
+    stool.position.set(5.5 + i * 1.1, 0.325, -1.5);
+    interiorRoomGroup.add(stool);
+  }
+
+  const diningTable = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.78, 1.2), tableMat);
+  diningTable.position.set(5.5, 0.39, 2.0);
+  interiorRoomGroup.add(diningTable);
+
+  const chairMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.7 });
+  const chairPos = [
+    [4.6, 2.0], [6.4, 2.0], [5.5, 1.1], [5.5, 2.9]
+  ];
+  for (const [cx, cz] of chairPos) {
+    const chair = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.85, 0.48), chairMat);
+    chair.position.set(cx, 0.425, cz);
+    interiorRoomGroup.add(chair);
+  }
+
+  for (const px of [4.5, 6.5]) {
+    const pendant = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.3, 16), lampMat);
+    pendant.position.set(px, 3.2, -2.5);
+    interiorRoomGroup.add(pendant);
+    const pendantLight = new THREE.PointLight(0xffeedd, 1.2, 6);
+    pendantLight.position.set(px, 3.0, -2.5);
+    interiorRoomGroup.add(pendantLight);
+  }
+
+  // ════════════════════ ZONE 3: MASTER BEDROOM SUITE ════════════════════
+  const bedFrameMat = new THREE.MeshStandardMaterial({ color: 0x422d1b, roughness: 0.6 });
+  const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.4, 2.2), bedFrameMat);
+  bedFrame.position.set(-6.0, 0.2, 1.5);
+  interiorRoomGroup.add(bedFrame);
+
+  const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.4, 0.15), bedFrameMat);
+  headboard.position.set(-6.0, 0.7, 0.35);
+  interiorRoomGroup.add(headboard);
+
+  const quiltMat = new THREE.MeshStandardMaterial({ color: 0xded8cc, roughness: 0.8 });
+  const quilt = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.25, 1.8), quiltMat);
+  quilt.position.set(-6.0, 0.45, 1.6);
+  interiorRoomGroup.add(quilt);
+
+  const pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+  const pillowL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.5), pillowMat);
+  pillowL.position.set(-6.6, 0.6, 0.65);
+  interiorRoomGroup.add(pillowL);
+
+  const pillowR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.5), pillowMat);
+  pillowR.position.set(-5.4, 0.6, 0.65);
+  interiorRoomGroup.add(pillowR);
+
+  const bedRugMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.6), rugMat);
+  bedRugMesh.rotation.x = -Math.PI / 2;
+  bedRugMesh.position.set(-6.0, 0.02, 1.5);
+  interiorRoomGroup.add(bedRugMesh);
+
+  const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.3, 1.6), bedFrameMat);
+  wardrobe.position.set(-8.5, 1.15, 4.5);
+  interiorRoomGroup.add(wardrobe);
+
+  // ════════════════════ ZONE 4: FOYER, PLANTS & ARTWORK ════════════════════
+  const consoleTable = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.85, 0.4), tableMat);
+  consoleTable.position.set(0, 0.425, 5.8);
+  interiorRoomGroup.add(consoleTable);
+
+  const mirrorMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, roughness: 0.1, metalness: 0.9 });
+  const mirror = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.4), mirrorMat);
+  mirror.position.set(0, 1.9, 6.95);
+  interiorRoomGroup.add(mirror);
+
+  const runnerRug = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.2), rugMat);
+  runnerRug.rotation.x = -Math.PI / 2;
+  runnerRug.position.set(0, 0.02, 5.0);
+  interiorRoomGroup.add(runnerRug);
+
   const potMat = new THREE.MeshStandardMaterial({ color: 0xcc6644, roughness: 0.6 });
-  const potMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.5, 16), potMat);
-  potMesh.position.set(3.4, 0.25, -3.2);
-  interiorRoomGroup.add(potMesh);
-
   const plantMat = new THREE.MeshStandardMaterial({ color: 0x2e6f40, roughness: 0.8 });
-  const plantMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45), plantMat);
-  plantMesh.position.set(3.4, 0.75, -3.2);
-  interiorRoomGroup.add(plantMesh);
 
-  // Lighting inside Room Instance
-  const roomLight = new THREE.PointLight(0xffeedd, 2.2, 14);
-  roomLight.position.set(0, 2.9, 0);
-  interiorRoomGroup.add(roomLight);
+  const pot1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.6, 16), potMat);
+  pot1.position.set(-3.2, 0.3, 5.8);
+  interiorRoomGroup.add(pot1);
+  const plant1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65), plantMat);
+  plant1.position.set(-3.2, 0.95, 5.8);
+  interiorRoomGroup.add(plant1);
 
-  const ambientRoomLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const pot2 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.6, 16), potMat);
+  pot2.position.set(3.2, 0.3, 5.8);
+  interiorRoomGroup.add(pot2);
+  const plant2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65), plantMat);
+  plant2.position.set(3.2, 0.95, 5.8);
+  interiorRoomGroup.add(plant2);
+
+  const artMat1 = new THREE.MeshStandardMaterial({ color: 0x2b4c6f, roughness: 0.5 });
+  const art1 = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.1), artMat1);
+  art1.position.set(-4.0, 2.2, -6.95);
+  interiorRoomGroup.add(art1);
+
+  const artMat2 = new THREE.MeshStandardMaterial({ color: 0x8c5e38, roughness: 0.5 });
+  const art2 = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.1), artMat2);
+  art2.position.set(4.0, 2.2, -6.95);
+  interiorRoomGroup.add(art2);
+
+  const mainLight = new THREE.PointLight(0xffeedd, 2.5, 22);
+  mainLight.position.set(0, 3.8, 0);
+  interiorRoomGroup.add(mainLight);
+
+  const foyerLight = new THREE.PointLight(0xffeedd, 1.8, 14);
+  foyerLight.position.set(0, 3.6, 5.0);
+  interiorRoomGroup.add(foyerLight);
+
+  const bedLight = new THREE.PointLight(0xffeedd, 1.8, 14);
+  bedLight.position.set(-6.0, 3.6, 1.5);
+  interiorRoomGroup.add(bedLight);
+
+  const ambientRoomLight = new THREE.AmbientLight(0xffffff, 0.65);
   interiorRoomGroup.add(ambientRoomLight);
 }
 initInteriorRoomInstance();
@@ -4561,7 +4733,7 @@ function enterHouseInterior(doorTarget) {
 
   setTimeout(() => {
     window.inHouseInterior = true;
-    placePlayerAt(10000, 10000 - 2.5, Math.PI); // Facing inward from interior door
+    placePlayerAt(10000, 10005.5, Math.PI); // Facing inward from foyer double doors
     showToast(`Welcome to @${doorTarget.ownerHandle}'s House (${theme.name})!`, 5000);
 
     setTimeout(() => {
@@ -7976,11 +8148,11 @@ function animate(){
     // Dedicated Interior Room door interaction & boundary clamping
     let nearbyDoorTarget = null;
     if (window.inHouseInterior) {
-      p.x = THREE.MathUtils.clamp(p.x, 9996.3, 10003.7);
-      p.z = THREE.MathUtils.clamp(p.z, 9996.3, 10003.7);
+      p.x = THREE.MathUtils.clamp(p.x, 9991.3, 10008.7);
+      p.z = THREE.MathUtils.clamp(p.z, 9993.3, 10006.7);
 
-      const distToExit = Math.hypot(p.x - 10000, p.z - 10003.8);
-      if (distToExit < 2.0) {
+      const distToExit = Math.hypot(p.x - 10000, p.z - 10006.8);
+      if (distToExit < 2.5) {
         nearbyDoorTarget = { type: "exit", label: "hold [E] to exit to Followville" };
       }
     } else if (gameRunning && !modalOpen() && !townMapOpen() && !chatOpen()) {

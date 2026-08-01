@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-08-01 - Cade (via Antigravity) - [WEB] Added dedicated "Meep City" style interior room instance system for claimed homes at (10000, 500, 10000) with 5 themed preset palettes, claimed-only door triggers, hold-E / mobile hold buttons with progress ring, black fade transitions, boundary collision clamping, and house_id multiplayer presence isolation.
+2026-08-01 - Cade (via Antigravity) - [WEB] Expanded house interior room instance to 18m x 14m multi-zone layout (Living Room, Gourmet Kitchen & Dining, Master Bedroom Suite, Foyer) with furniture asset pack, double doors, indoor plants, and house_id multiplayer presence isolation.
 
 2026-07-31 - Cade (via Antigravity) - [BOTH] Implemented V1 walkable house interiors for classic_ranch (variant 0): hollowed interior walls with 0.20m thickness, 1.2m front doorway gap in web colliders, +0.20m interior floor in walkSurfaceHeight, and added automated interior floor walkability and wall clearance checks with 7 passing self-tests.
 
