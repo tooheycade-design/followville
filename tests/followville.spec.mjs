@@ -787,3 +787,32 @@ test("unknown house addresses fail gracefully", async ({ page }) => {
   await expect(page.locator("#townMapEmpty")).toHaveText("No locations match that search.");
   expect(errors).toEqual([]);
 });
+
+test("claimed house door transitions into dedicated preset interior instance and exits cleanly", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html?admin=1#walk");
+  await waitForTown(page);
+
+  await expect.poll(() => page.evaluate(() => (window.worldBuildings || []).length)).toBeGreaterThan(0);
+
+  // Trigger enter transition for claimed house 15
+  await page.evaluate(() => {
+    if (window.claimedBy) window.claimedBy.set(15, "testfollower");
+    const buildings = window.worldBuildings || [];
+    const b = buildings.find(bb => Number(bb.seed) === 15) || buildings[0];
+    if (b) {
+      window.enterHouseInterior({ building: b, houseId: Number(b.seed), ownerHandle: "testfollower" });
+    }
+  });
+
+  // Verify inside interior room
+  await expect.poll(() => page.evaluate(() => window.inHouseInterior)).toBe(true);
+
+  // Verify exit prompt & return
+  await page.evaluate(() => {
+    window.exitHouseInterior();
+  });
+
+  await expect.poll(() => page.evaluate(() => window.inHouseInterior)).toBe(false);
+  expect(errors).toEqual([]);
+});

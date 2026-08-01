@@ -504,17 +504,99 @@ def get_asset(name, builder):
         builder(col)
     return col
 
+def build_birch_tree(col, rng, scale=1.0, px=0.0, py=0.0):
+    s = scale
+    birch_bark = mat("NB_birch_bark", (0.92, 0.92, 0.90), 0.9)
+    birch_leaf = mat("NB_birch_leaf%d" % rng.randrange(3),
+                     [(0.45, 0.72, 0.35), (0.55, 0.78, 0.30), (0.62, 0.82, 0.28)][rng.randrange(3)])
+    add_ngon_cone(col, "birch_trunk", 0.28 * s, 0.20 * s, 3.2 * s, 6, px, py, 0, birch_bark)
+    add_ngon_cone(col, "birch_crown1", 1.4 * s, 0.4 * s, 2.2 * s, 6, px + 0.1 * s, py - 0.1 * s, 2.2 * s, birch_leaf)
+    add_ngon_cone(col, "birch_crown2", 1.1 * s, 0.2 * s, 1.8 * s, 6, px - 0.2 * s, py + 0.1 * s, 3.5 * s, birch_leaf)
+    add_ngon_cone(col, "birch_crown3", 0.6 * s, 0.0, 1.1 * s, 5, px, py, 4.8 * s, birch_leaf)
+
+
+def build_autumn_tree(col, rng, scale=1.0, px=0.0, py=0.0):
+    s = scale
+    m = std_mats()
+    autumn_colors = [(0.92, 0.45, 0.15), (0.95, 0.72, 0.18), (0.78, 0.22, 0.14), (0.88, 0.58, 0.12)]
+    leaf_mat = mat("NB_autumn_leaf%d" % rng.randrange(len(autumn_colors)),
+                   autumn_colors[rng.randrange(len(autumn_colors))])
+    add_ngon_cone(col, "autumn_trunk", 0.35 * s, 0.25 * s, 2.4 * s, 6, px, py, 0, m["trunk"])
+    add_ngon_cone(col, "autumn_crown1", 1.8 * s, 0.6 * s, 2.6 * s, 7, px, py, 1.8 * s, leaf_mat)
+    add_ngon_cone(col, "autumn_crown2", 1.2 * s, 0.2 * s, 2.0 * s, 7, px, py, 3.4 * s, leaf_mat)
+
+
+def build_rock_boulder(col, rng, scale=1.0, px=0.0, py=0.0, pz=0.0):
+    s = scale
+    rock_mat = mat("NB_boulder_stone", (0.42, 0.44, 0.45), 0.92)
+    rot = rng.random() * math.tau
+    add_ngon_cone(col, "boulder_rock", 0.95 * s, 0.65 * s, 0.85 * s, 6, px, py, pz, rock_mat, rot=rot)
+
+
+def build_flower_clump(col, rng, px=0.0, py=0.0, pz=0.0):
+    green_mat = mat("NB_flower_leaf", (0.28, 0.52, 0.24), 0.95)
+    flower_colors = [(0.95, 0.42, 0.65), (0.98, 0.85, 0.25), (0.72, 0.55, 0.92), (0.95, 0.95, 0.95)]
+    f_mat = mat("NB_flower_petals%d" % rng.randrange(len(flower_colors)),
+                flower_colors[rng.randrange(len(flower_colors))])
+    add_ngon_cone(col, "flower_base", 0.45, 0.25, 0.25, 6, px, py, pz, green_mat)
+    for i in range(3):
+        ang = i * (math.tau / 3) + rng.uniform(-0.2, 0.2)
+        r = 0.18
+        fx = px + r * math.cos(ang)
+        fy = py + r * math.sin(ang)
+        add_ngon_cone(col, "flower_head", 0.12, 0.0, 0.18, 5, fx, fy, pz + 0.22, f_mat)
+
+
+def build_lowpoly_car(col, style="sedan", color=(0.25, 0.52, 0.82), px=0.0, py=0.0, pz=0.0, rot=0.0):
+    body_m = mat("NB_car_body_%s" % str(color), color, rough=0.35, metallic=0.15)
+    glass_m = mat("NB_car_glass", (0.75, 0.88, 0.95), rough=0.1, alpha=0.6, transmission=0.4)
+    tire_m = mat("NB_car_tire", (0.12, 0.12, 0.13), rough=0.9)
+    light_m = mat("NB_car_headlight", (1.0, 0.96, 0.75), rough=0.2)
+    tail_m = mat("NB_car_taillight", (0.85, 0.12, 0.12), rough=0.2)
+
+    length, width, height = 4.2, 1.8, 1.4
+    if style == "pickup":
+        length, width, height = 4.8, 1.9, 1.6
+    elif style == "hatchback":
+        length, width, height = 3.6, 1.7, 1.35
+
+    add_box(col, "car_chassis", length, width, height * 0.45, px, py, pz + height * 0.25, body_m)
+    cabin_w = width * 0.88
+    cabin_l = length * 0.50 if style != "pickup" else length * 0.38
+    cabin_x = px - (length * 0.08 if style == "pickup" else 0.0)
+    add_box(col, "car_cabin", cabin_l, cabin_w, height * 0.42, cabin_x, py, pz + height * 0.65, glass_m)
+    add_box(col, "car_roof", cabin_l * 0.9, cabin_w * 0.9, 0.06, cabin_x, py, pz + height * 0.87, body_m)
+
+    r_wheel = 0.32
+    w_width = 0.22
+    for wx_sign in (-1, 1):
+        for wy_sign in (-1, 1):
+            wx = px + wx_sign * (length * 0.32)
+            wy = py + wy_sign * (width * 0.48)
+            add_ngon_cone(col, "car_wheel", r_wheel, r_wheel, w_width, 8, wx, wy, pz + r_wheel * 0.6, tire_m, rot=math.pi/2)
+
+    for y_sign in (-1, 1):
+        add_box(col, "car_headlight", 0.08, 0.3, 0.18, px + length * 0.50, py + y_sign * width * 0.35, pz + height * 0.38, light_m)
+        add_box(col, "car_taillight", 0.08, 0.3, 0.18, px - length * 0.50, py + y_sign * width * 0.35, pz + height * 0.38, tail_m)
+
+
 def build_tree(col, rng, scale=1.0, px=0.0, py=0.0):
     s = scale
     m = std_mats()
-    add_ngon_cone(col, "trunk", 0.4 * s, 0.3 * s, 2.0 * s, 6, px, py, 0, m["trunk"])
-    green = mat("NB_green%d" % rng.randrange(len(GREENS)), GREENS[rng.randrange(len(GREENS))])
-    if rng.random() < 0.5:
-        add_ngon_cone(col, "pine1", 1.8 * s, 0, 3.0 * s, 7, px, py, 1.8 * s, green)
-        add_ngon_cone(col, "pine2", 1.3 * s, 0, 2.3 * s, 7, px, py, 3.6 * s, green)
+    tree_type_roll = rng.random()
+    if tree_type_roll < 0.25:
+        build_birch_tree(col, rng, scale, px, py)
+    elif tree_type_roll < 0.50:
+        build_autumn_tree(col, rng, scale, px, py)
     else:
-        blob = add_ngon_cone(col, "blob", 1.9 * s, 0.7 * s, 2.8 * s, 7, px, py, 1.8 * s, green)
-        add_ngon_cone(col, "blobtop", 0.7 * s, 0, 0.9 * s, 7, px, py, 4.6 * s, green)
+        add_ngon_cone(col, "trunk", 0.4 * s, 0.3 * s, 2.0 * s, 6, px, py, 0, m["trunk"])
+        green = mat("NB_green%d" % rng.randrange(len(GREENS)), GREENS[rng.randrange(len(GREENS))])
+        if rng.random() < 0.5:
+            add_ngon_cone(col, "pine1", 1.8 * s, 0, 3.0 * s, 7, px, py, 1.8 * s, green)
+            add_ngon_cone(col, "pine2", 1.3 * s, 0, 2.3 * s, 7, px, py, 3.6 * s, green)
+        else:
+            blob = add_ngon_cone(col, "blob", 1.9 * s, 0.7 * s, 2.8 * s, 7, px, py, 1.8 * s, green)
+            add_ngon_cone(col, "blobtop", 0.7 * s, 0, 0.9 * s, 7, px, py, 4.6 * s, green)
 
 
 def _forest_floor_mesh(col, material):
