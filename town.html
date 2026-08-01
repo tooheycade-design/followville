@@ -4702,7 +4702,10 @@ function findNearbyClaimedHouseDoor(px, pz) {
   for (const b of buildings) {
     if (!b || !["house", "ringhouse", "lanehouse", "storybookhouse", "mushroomhouse", "casinohouse", "cathouse", "castlehouse", "eiffelhouse", "flowerhouse", "burjhouse", "toilethouse", "beachhouse", "cottagehouse"].includes(b.type)) continue;
     const houseId = Number(b.seed);
-    const ownerHandle = claimedBy.get(houseId) || b.follower || b.owner;
+    const dbOwner = claimedBy.get(houseId);
+    const isMyClaim = Array.isArray(myClaims) && myClaims.includes(houseId);
+    // Only allow entering homes that have actually been claimed by a follower!
+    const ownerHandle = dbOwner || (isMyClaim ? myProfile?.instagram_handle : null) || (claimedBy.size === 0 ? (b.follower || b.owner) : null);
     if (!ownerHandle) continue; // Only claimed homes!
 
     const [hx, hz] = buildingWorldXZ(b);
@@ -6847,6 +6850,7 @@ function createRemotePlayer(presence){
   multiplayerLayer.add(group);
   const player = {
     group,model:null,avatarKey:avatarConfigKey(presence.avatar),label:null,bubble:null,bubbleTimer:null,
+    house_id:presence.house_id,
     target:new THREE.Vector3(presence.x, surfaceHeight+presence.jump, presence.z),
     targetYaw:presence.yaw,handle:"",logged_in:false,lastPosition:group.position.clone()
   };
@@ -6873,6 +6877,7 @@ function upsertRemotePlayer(raw){
   if (player.handle !== presence.handle || player.logged_in !== presence.logged_in)
     setPlayerLabel(player, presence);
 
+  player.house_id = presence.house_id;
   const myHouseId = (window.inHouseInterior && currentInteriorHouse) ? Number(currentInteriorHouse.houseId) : null;
   const sameInstance = presence.house_id === myHouseId;
   player.group.visible = sameInstance;
@@ -7098,6 +7103,7 @@ async function restartMultiplayer(){
       const current = multiplayerPlayers.get(payload.client_id);
       upsertRemotePlayer({
         client_id:payload.client_id, x:payload.x, z:payload.z, yaw:payload.yaw,
+        house_id: (typeof payload.house_id === "number" && payload.house_id >= 0) ? payload.house_id : null,
         logged_in:current?.logged_in, handle:current?.handle,
         avatar:payload.avatar || current?.model?.userData?.avatar?.config
       });
@@ -7114,7 +7120,13 @@ async function restartMultiplayer(){
 }
 
 function updateMultiplayer(dt){
+  const myHouseId = (window.inHouseInterior && currentInteriorHouse) ? Number(currentInteriorHouse.houseId) : null;
   for (const player of multiplayerPlayers.values()){
+    const sameInstance = player.house_id === myHouseId;
+    if (!sameInstance) {
+      player.group.visible = false;
+      continue;
+    }
     const beforeX=player.group.position.x,beforeZ=player.group.position.z;
     player.group.position.lerp(player.target, Math.min(1, dt * 9));
     let delta = player.targetYaw - player.group.rotation.y;
@@ -7126,8 +7138,8 @@ function updateMultiplayer(dt){
     const distance=Math.hypot(
       player.group.position.x-playerPosition.x,
       player.group.position.z-playerPosition.z);
-    if(player.group.visible&&distance<.42)player.group.visible=false;
-    else if(!player.group.visible&&distance>.72)player.group.visible=true;
+    if(distance<.42) player.group.visible=false;
+    else player.group.visible=true;
   }
   const now = performance.now();
   const interval = gameRunning ? 120 : 1500;
@@ -7139,6 +7151,7 @@ function updateMultiplayer(dt){
       client_id:multiplayerClientId,
       x:Number(playerPosition.x.toFixed(3)),
       z:Number(playerPosition.z.toFixed(3)),
+      house_id: (window.inHouseInterior && currentInteriorHouse) ? Number(currentInteriorHouse.houseId) : null,
       jump:Number(playerJumpOffset.toFixed(3)),
       yaw:Number(playerYaw.toFixed(4)),
       avatar:normalizeAvatarConfig(currentAvatarConfig)
