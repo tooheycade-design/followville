@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-08-01 - Cade (via Antigravity) - [WEB] Overhauled interior front double doors with timber panels & brass handles, moved master bed flush against back wall with twin nightstands, added kitchen stainless steel refrigerator, and placed foyer welcome doormat.
+2026-08-01 - Cade (via Antigravity) - [WEB] Re-architected 18m x 14m house interior layout into 4 collision-free quadrants resolving all furniture overlaps, and built high-detail French-door stainless refrigerator with upper doors, freezer drawer, tubular handles, and illuminated ice dispenser.
 
 2026-07-31 - Cade (via Antigravity) - [BOTH] Implemented V1 walkable house interiors for classic_ranch (variant 0): hollowed interior walls with 0.20m thickness, 1.2m front doorway gap in web colliders, +0.20m interior floor in walkSurfaceHeight, and added automated interior floor walkability and wall clearance checks with 7 passing self-tests.
 

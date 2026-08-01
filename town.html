@@ -4492,130 +4492,173 @@ function initInteriorRoomInstance() {
   windowR.position.set(6.2, 2.0, roomD / 2 - 0.02);
   interiorRoomGroup.add(windowR);
 
-  // ════════════════════ ZONE 1: GRAND LIVING ROOM ════════════════════
+  // ════════════════════ ZONE 1: GRAND LIVING ROOM (NORTH-EAST QUADRANT) ════════════════════
   const rugMat = new THREE.MeshStandardMaterial({ color: 0x3b6b88, roughness: 0.9 });
   interiorRoomMeshes.rug = rugMat;
-  const rugMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 4.2), rugMat);
+  const rugMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.0), rugMat);
   rugMesh.rotation.x = -Math.PI / 2;
-  rugMesh.position.set(0, 0.02, -2.5);
+  rugMesh.position.set(4.2, 0.02, -3.8);
   interiorRoomGroup.add(rugMesh);
 
   const sofaMat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.7 });
   interiorRoomMeshes.sofa = sofaMat;
 
-  const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.85, 1.1), sofaMat);
-  sofaMain.position.set(0, 0.425, -4.2);
+  const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.85, 1.1), sofaMat);
+  sofaMain.position.set(4.2, 0.425, -5.2);
   interiorRoomGroup.add(sofaMain);
 
-  const sofaChaise = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.85, 2.2), sofaMat);
-  sofaChaise.position.set(-1.8, 0.425, -2.75);
+  const sofaChaise = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.85, 2.2), sofaMat);
+  sofaChaise.position.set(2.45, 0.425, -3.75);
   interiorRoomGroup.add(sofaChaise);
 
   const cushionMat = new THREE.MeshStandardMaterial({ color: 0xdd9944, roughness: 0.8 });
   const cushion1 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.2), cushionMat);
   cushion1.rotation.y = 0.2;
-  cushion1.position.set(1.2, 0.65, -4.1);
+  cushion1.position.set(5.2, 0.65, -5.1);
   interiorRoomGroup.add(cushion1);
 
   const cushion2 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.2), cushionMat);
   cushion2.rotation.y = -0.3;
-  cushion2.position.set(-1.8, 0.65, -3.4);
+  cushion2.position.set(2.45, 0.65, -4.4);
   interiorRoomGroup.add(cushion2);
 
   const tableMat = new THREE.MeshStandardMaterial({ color: 0x6e4a27, roughness: 0.4 });
   const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.95), tableMat);
-  tableMesh.position.set(0.2, 0.225, -2.5);
+  tableMesh.position.set(4.4, 0.225, -3.2);
   interiorRoomGroup.add(tableMesh);
 
   const bookMat1 = new THREE.MeshStandardMaterial({ color: 0xaa3333, roughness: 0.6 });
   const book1 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.25), bookMat1);
-  book1.position.set(0.4, 0.48, -2.4);
+  book1.position.set(4.6, 0.48, -3.1);
   interiorRoomGroup.add(book1);
 
   const bookMat2 = new THREE.MeshStandardMaterial({ color: 0x3366aa, roughness: 0.6 });
   const book2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.22), bookMat2);
   book2.rotation.y = 0.15;
-  book2.position.set(0.4, 0.535, -2.4);
+  book2.position.set(4.6, 0.535, -3.1);
   interiorRoomGroup.add(book2);
 
   const tvConsoleMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.5 });
   const tvConsole = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.65, 0.55), tvConsoleMat);
-  tvConsole.position.set(0, 0.325, -6.6);
+  tvConsole.position.set(4.2, 0.325, -6.6);
   interiorRoomGroup.add(tvConsole);
 
   const tvScreenMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.2 });
   const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 0.08), tvScreenMat);
-  tvScreen.position.set(0, 1.8, -6.65);
+  tvScreen.position.set(4.2, 1.8, -6.65);
   interiorRoomGroup.add(tvScreen);
 
   const speakerMat = new THREE.MeshStandardMaterial({ color: 0x333338, roughness: 0.6 });
   const speakerL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), speakerMat);
-  speakerL.position.set(-2.2, 0.65, -6.6);
+  speakerL.position.set(2.0, 0.65, -6.6);
   interiorRoomGroup.add(speakerL);
 
   const speakerR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), speakerMat);
-  speakerR.position.set(2.2, 0.65, -6.6);
+  speakerR.position.set(6.4, 0.65, -6.6);
   interiorRoomGroup.add(speakerR);
 
+  // Fireplace mounted flush against East Wall (facing West)
   const fireplaceMat = new THREE.MeshStandardMaterial({ color: 0x5a554e, roughness: 0.8 });
-  const fireplace = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.5, 0.65), fireplaceMat);
-  fireplace.position.set(-6.5, 0.75, -6.6);
+  const fireplace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.6, 2.2), fireplaceMat);
+  fireplace.position.set(8.6, 0.8, -3.5);
   interiorRoomGroup.add(fireplace);
 
+  const fireEmbersMat = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff4400, emissiveIntensity: 0.8 });
+  const fireEmbers = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 1.4), fireEmbersMat);
+  fireEmbers.position.set(8.3, 0.25, -3.5);
+  interiorRoomGroup.add(fireEmbers);
+
   const fireGlowLight = new THREE.PointLight(0xff7722, 1.8, 8);
-  fireGlowLight.position.set(-6.5, 0.6, -6.2);
+  fireGlowLight.position.set(8.1, 0.6, -3.5);
   interiorRoomGroup.add(fireGlowLight);
 
   const lampMat = new THREE.MeshStandardMaterial({ color: 0xddc8a0, roughness: 0.3 });
   const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.06), lampMat);
-  lampBase.position.set(2.5, 0.03, -4.5);
+  lampBase.position.set(7.8, 0.03, -6.2);
   interiorRoomGroup.add(lampBase);
 
   const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.4), lampMat);
-  lampPole.position.set(2.5, 1.2, -4.5);
+  lampPole.position.set(7.8, 1.2, -6.2);
   interiorRoomGroup.add(lampPole);
 
   const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.35, 16, 1, true), lampMat);
-  lampShade.position.set(2.5, 2.3, -4.5);
+  lampShade.position.set(7.8, 2.3, -6.2);
   interiorRoomGroup.add(lampShade);
 
-  // ════════════════════ ZONE 2: GOURMET KITCHEN & DINING ════════════════════
+  // ════════════════════ ZONE 2: GOURMET KITCHEN & DINING (SOUTH-EAST QUADRANT) ════════════════════
   const kitchenTopMat = new THREE.MeshStandardMaterial({ color: 0xf5f3ee, roughness: 0.2 });
   const kitchenBaseMat = new THREE.MeshStandardMaterial({ color: 0x384150, roughness: 0.6 });
   interiorRoomMeshes.kitchen = kitchenBaseMat;
 
   const islandBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.9, 1.3), kitchenBaseMat);
-  islandBase.position.set(5.5, 0.45, -2.5);
+  islandBase.position.set(5.0, 0.45, 5.0);
   interiorRoomGroup.add(islandBase);
 
   const islandTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.08, 1.4), kitchenTopMat);
-  islandTop.position.set(5.5, 0.94, -2.5);
+  islandTop.position.set(5.0, 0.94, 5.0);
   interiorRoomGroup.add(islandTop);
 
-  const fridgeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.25, metalness: 0.8 });
-  const fridge = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.15, 0.85), fridgeMat);
-  fridge.position.set(8.3, 1.075, -5.8);
-  interiorRoomGroup.add(fridge);
+  // Detailed French-Door Stainless Steel Refrigerator
+  const fridgeMat = new THREE.MeshStandardMaterial({ color: 0xd4d8dd, roughness: 0.2, metalness: 0.85 });
+  const fridgeBody = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.15, 0.85), fridgeMat);
+  fridgeBody.position.set(8.3, 1.075, 2.0);
+  interiorRoomGroup.add(fridgeBody);
+
+  const fridgeDoorMat = new THREE.MeshStandardMaterial({ color: 0xe0e4e8, roughness: 0.18, metalness: 0.9 });
+  const doorUpperL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.58), fridgeDoorMat);
+  doorUpperL.position.set(7.73, 1.45, 1.69);
+  interiorRoomGroup.add(doorUpperL);
+
+  const doorUpperR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.58), fridgeDoorMat);
+  doorUpperR.position.set(7.73, 1.45, 2.31);
+  interiorRoomGroup.add(doorUpperR);
+
+  const freezerDrawer = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.75, 1.18), fridgeDoorMat);
+  freezerDrawer.position.set(7.72, 0.42, 2.0);
+  interiorRoomGroup.add(freezerDrawer);
+
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.95 });
+  const handleUpperL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 12), handleMat);
+  handleUpperL.position.set(7.68, 1.45, 1.92);
+  interiorRoomGroup.add(handleUpperL);
+
+  const handleUpperR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 12), handleMat);
+  handleUpperR.position.set(7.68, 1.45, 2.08);
+  interiorRoomGroup.add(handleUpperR);
+
+  const handleLower = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.9, 12), handleMat);
+  handleLower.rotation.x = Math.PI / 2;
+  handleLower.position.set(7.68, 0.65, 2.0);
+  interiorRoomGroup.add(handleLower);
+
+  const dispenserMat = new THREE.MeshStandardMaterial({ color: 0x1f242b, roughness: 0.3 });
+  const dispenser = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.32, 0.22), dispenserMat);
+  dispenser.position.set(7.70, 1.45, 1.65);
+  interiorRoomGroup.add(dispenser);
+
+  const iceDispenserLight = new THREE.PointLight(0x44aaff, 0.8, 1.5);
+  iceDispenserLight.position.set(7.65, 1.45, 1.65);
+  interiorRoomGroup.add(iceDispenserLight);
 
   const sinkMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.3, metalness: 0.8 });
   const sink = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.02, 0.5), sinkMat);
-  sink.position.set(6.4, 0.99, -2.5);
+  sink.position.set(5.8, 0.99, 5.0);
   interiorRoomGroup.add(sink);
 
   const stoolMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.6 });
   for (let i = -1; i <= 1; i++) {
     const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.65, 16), stoolMat);
-    stool.position.set(5.5 + i * 1.1, 0.325, -1.5);
+    stool.position.set(5.0 + i * 1.1, 0.325, 3.9);
     interiorRoomGroup.add(stool);
   }
 
-  const diningTable = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.78, 1.2), tableMat);
-  diningTable.position.set(5.5, 0.39, 2.0);
+  const diningTable = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.78, 1.2), tableMat);
+  diningTable.position.set(2.2, 0.39, 2.0);
   interiorRoomGroup.add(diningTable);
 
   const chairMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.7 });
   const chairPos = [
-    [4.6, 2.0], [6.4, 2.0], [5.5, 1.1], [5.5, 2.9]
+    [1.4, 2.0], [3.0, 2.0], [2.2, 1.1], [2.2, 2.9]
   ];
   for (const [cx, cz] of chairPos) {
     const chair = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.85, 0.48), chairMat);
@@ -4624,66 +4667,87 @@ function initInteriorRoomInstance() {
   }
 
   const plateMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
-  for (const [px, pz] of [[5.0, 2.0], [6.0, 2.0]]) {
+  for (const [px, pz] of [[1.8, 2.0], [2.6, 2.0]]) {
     const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.03, 12), plateMat);
     plate.position.set(px, 0.795, pz);
     interiorRoomGroup.add(plate);
   }
 
-  for (const px of [4.5, 6.5]) {
+  for (const px of [4.0, 6.0]) {
     const pendant = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.3, 16), lampMat);
-    pendant.position.set(px, 3.2, -2.5);
+    pendant.position.set(px, 3.2, 5.0);
     interiorRoomGroup.add(pendant);
     const pendantLight = new THREE.PointLight(0xffeedd, 1.2, 6);
-    pendantLight.position.set(px, 3.0, -2.5);
+    pendantLight.position.set(px, 3.0, 5.0);
     interiorRoomGroup.add(pendantLight);
   }
 
-  // ════════════════════ ZONE 3: MASTER BEDROOM SUITE (BED AT BACK WALL) ════════════════════
+  // ════════════════════ ZONE 3: MASTER BEDROOM SUITE (NORTH-WEST QUADRANT) ════════════════════
   const bedFrameMat = new THREE.MeshStandardMaterial({ color: 0x422d1b, roughness: 0.6 });
-  const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.4, 2.2), bedFrameMat);
-  bedFrame.position.set(-6.2, 0.2, -5.4);
-  interiorRoomGroup.add(bedFrame);
 
-  const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.4, 0.15), bedFrameMat);
-  headboard.position.set(-6.2, 0.7, -6.55);
+  // Bed Headboard against West Wall
+  const headboard = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4, 2.4), bedFrameMat);
+  headboard.position.set(-8.85, 0.7, -3.5);
   interiorRoomGroup.add(headboard);
 
+  // Bed Mattress & Frame (oriented East-West)
+  const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.4, 2.2), bedFrameMat);
+  bedFrame.position.set(-7.5, 0.2, -3.5);
+  interiorRoomGroup.add(bedFrame);
+
   const quiltMat = new THREE.MeshStandardMaterial({ color: 0xded8cc, roughness: 0.8 });
-  const quilt = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.25, 1.8), quiltMat);
-  quilt.position.set(-6.2, 0.45, -5.3);
+  const quilt = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.25, 2.15), quiltMat);
+  quilt.position.set(-7.3, 0.45, -3.5);
   interiorRoomGroup.add(quilt);
 
   const pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
-  const pillowL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.5), pillowMat);
-  pillowL.position.set(-6.8, 0.6, -6.25);
+  const pillowL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.8), pillowMat);
+  pillowL.position.set(-8.35, 0.6, -4.1);
   interiorRoomGroup.add(pillowL);
 
-  const pillowR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.5), pillowMat);
-  pillowR.position.set(-5.6, 0.6, -6.25);
+  const pillowR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.8), pillowMat);
+  pillowR.position.set(-8.35, 0.6, -2.9);
   interiorRoomGroup.add(pillowR);
 
-  // Twin Nightstands beside Bed
-  const nightstandL = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.5), bedFrameMat);
-  nightstandL.position.set(-7.8, 0.275, -6.3);
-  interiorRoomGroup.add(nightstandL);
+  // Twin Nightstands against West Wall
+  const nightstandNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.5), bedFrameMat);
+  nightstandNorth.position.set(-8.6, 0.275, -5.0);
+  interiorRoomGroup.add(nightstandNorth);
 
-  const nightstandR = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.5), bedFrameMat);
-  nightstandR.position.set(-4.6, 0.275, -6.3);
-  interiorRoomGroup.add(nightstandR);
+  const nightstandSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.5), bedFrameMat);
+  nightstandSouth.position.set(-8.6, 0.275, -2.0);
+  interiorRoomGroup.add(nightstandSouth);
 
-  const bedRugMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.0), rugMat);
+  const bedroomLampMat = new THREE.MeshStandardMaterial({ color: 0xffddaa, roughness: 0.3 });
+  const bedLampL = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.3, 12), bedroomLampMat);
+  bedLampL.position.set(-8.6, 0.7, -5.0);
+  interiorRoomGroup.add(bedLampL);
+
+  const bedLampR = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.3, 12), bedroomLampMat);
+  bedLampR.position.set(-8.6, 0.7, -2.0);
+  interiorRoomGroup.add(bedLampR);
+
+  const bedRugMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 3.8), rugMat);
   bedRugMesh.rotation.x = -Math.PI / 2;
-  bedRugMesh.position.set(-6.2, 0.02, -4.8);
+  bedRugMesh.position.set(-6.5, 0.02, -3.5);
   interiorRoomGroup.add(bedRugMesh);
 
-  const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.3, 1.6), bedFrameMat);
-  wardrobe.position.set(-8.5, 1.15, 0.5);
+  // Bedroom Wall TV & Console (on North Wall)
+  const bedTvConsole = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.55, 0.45), tvConsoleMat);
+  bedTvConsole.position.set(-4.5, 0.275, -6.6);
+  interiorRoomGroup.add(bedTvConsole);
+
+  const bedTvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.06), tvScreenMat);
+  bedTvScreen.position.set(-4.5, 1.6, -6.65);
+  interiorRoomGroup.add(bedTvScreen);
+
+  const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.3, 1.4), bedFrameMat);
+  wardrobe.position.set(-8.5, 1.15, -0.2);
   interiorRoomGroup.add(wardrobe);
 
-  // ════════════════════ ZONE 4: FOYER, PLANTS & ARTWORK ════════════════════
+  // ════════════════════ ZONE 4: FOYER & ENTRYWAY (SOUTH-WEST QUADRANT) ════════════════════
   const consoleTable = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.85, 0.4), tableMat);
-  consoleTable.position.set(0, 0.425, 5.8);
+  consoleTable.position.set(-4.5, 0.425, 6.6);
   interiorRoomGroup.add(consoleTable);
 
   const doormatMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.9 });
@@ -4694,29 +4758,29 @@ function initInteriorRoomInstance() {
 
   const mirrorMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, roughness: 0.1, metalness: 0.9 });
   const mirror = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.4), mirrorMat);
-  mirror.position.set(0, 1.9, 6.95);
+  mirror.position.set(-4.5, 1.9, 6.95);
   interiorRoomGroup.add(mirror);
 
-  const runnerRug = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.2), rugMat);
+  const runnerRug = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.6), rugMat);
   runnerRug.rotation.x = -Math.PI / 2;
-  runnerRug.position.set(0, 0.02, 4.8);
+  runnerRug.position.set(0, 0.02, 4.5);
   interiorRoomGroup.add(runnerRug);
 
   const potMat = new THREE.MeshStandardMaterial({ color: 0xcc6644, roughness: 0.6 });
   const plantMat = new THREE.MeshStandardMaterial({ color: 0x2e6f40, roughness: 0.8 });
 
   const pot1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.6, 16), potMat);
-  pot1.position.set(-3.2, 0.3, 5.8);
+  pot1.position.set(-6.5, 0.3, 5.8);
   interiorRoomGroup.add(pot1);
   const plant1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65), plantMat);
-  plant1.position.set(-3.2, 0.95, 5.8);
+  plant1.position.set(-6.5, 0.95, 5.8);
   interiorRoomGroup.add(plant1);
 
   const pot2 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.6, 16), potMat);
-  pot2.position.set(3.2, 0.3, 5.8);
+  pot2.position.set(7.5, 0.3, 5.8);
   interiorRoomGroup.add(pot2);
   const plant2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65), plantMat);
-  plant2.position.set(3.2, 0.95, 5.8);
+  plant2.position.set(7.5, 0.95, 5.8);
   interiorRoomGroup.add(plant2);
 
   const artMat1 = new THREE.MeshStandardMaterial({ color: 0x2b4c6f, roughness: 0.5 });
@@ -4734,11 +4798,11 @@ function initInteriorRoomInstance() {
   interiorRoomGroup.add(mainLight);
 
   const foyerLight = new THREE.PointLight(0xffeedd, 1.8, 14);
-  foyerLight.position.set(0, 3.6, 5.0);
+  foyerLight.position.set(0, 3.6, 4.5);
   interiorRoomGroup.add(foyerLight);
 
   const bedLight = new THREE.PointLight(0xffeedd, 1.8, 14);
-  bedLight.position.set(-6.0, 3.6, 1.5);
+  bedLight.position.set(-6.5, 3.6, -3.5);
   interiorRoomGroup.add(bedLight);
 
   const ambientRoomLight = new THREE.AmbientLight(0xffffff, 0.65);
