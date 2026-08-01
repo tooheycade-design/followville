@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-08-01 - Cade (via Windows Codex) - [WEB] Finished the Company OS trusted private-content camera revision with a real founder-home opening, whole-town pullback, distinct downtown hold, and mobile-safe captions; visually inspected all three Day 27 portrait frames without changing or publishing the canonical town.
+
 2026-07-28 - Zach (via Mac Codex) - [BOTH] Reworked the continuous regional grass from one narrow green family into a smooth elevation/slope-aware lowland, upland, ridge, and exposed-earth palette; regenerated the Day 26 full fallback and all 28 streamed chunks, verified exported vertex color and every manifest hash, reviewed walking-height and gravity-free drone views at 60 FPS, passed all 14 browser stories, and left terrain geometry, walk heights, roads, population 464, all 524 records, claims, and `world_state.json` unchanged.
 
 2026-07-27 - Zach (via Mac Codex) - [BOTH] Corrected Day 26 without changing population or claims: restored canonical seed 172 as Followville Elementary, moved the copied construction vote site to new non-claimable seed 524 on the anonymous downtown block at grid `(-6,3)` / website `(-83,-56)`, expanded East Woods to a 58m radius with 142 trees and a terrain ribbon trail, rebuilt central signals for player-height readability, changed all 28 detailed chunks to preload and remain resident, preserved all 34 claims across 33 accounts exactly, validated the full/chunked town and browser contracts, and replaced the 18-second golden-hour portrait reveal with closer views of all 25 home rises.

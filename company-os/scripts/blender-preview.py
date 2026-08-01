@@ -249,6 +249,80 @@ def add_camera_text(camera, value, position):
     return text
 
 
+def hierarchy_meshes(root):
+    return [
+        obj
+        for obj in (root, *root.children_recursive)
+        if obj.type == "MESH" and not obj.hide_render and len(obj.data.vertices) > 0
+    ]
+
+
+def named_root(prefix):
+    return next(
+        (
+            obj
+            for obj in bpy.context.scene.objects
+            if obj.name.lower().startswith(prefix)
+        ),
+        None,
+    )
+
+
+def frame_story_camera(camera, label, center, radius):
+    if label == "portrait-street":
+        anchor = named_root("mushroomhouse_d1")
+        anchor_meshes = hierarchy_meshes(anchor) if anchor is not None else []
+        if anchor_meshes:
+            minimum, maximum = scene_bounds(anchor_meshes)
+            size = maximum - minimum
+            target = (minimum + maximum) * 0.5
+            target.z = minimum.z + size.z * 0.48
+            distance = max(size.x, size.y, size.z) * 1.8
+            camera.data.lens = 48
+            camera.location = target + Vector(
+                (distance * 0.65, -distance * 1.4, distance * 0.28)
+            )
+            point_at(camera, target)
+            return
+
+    if label == "portrait-downtown":
+        prefixes = (
+            "mushroomhouse_",
+            "burjhouse_",
+            "casinohouse_",
+            "cathouse_",
+            "castlehouse_",
+            "eiffelhouse_",
+            "flowerhouse_",
+            "toilethouse_",
+            "beachhouse_",
+            "cottagehouse_",
+        )
+        downtown_meshes = [
+            mesh
+            for prefix in prefixes
+            for root in [named_root(prefix)]
+            if root is not None
+            for mesh in hierarchy_meshes(root)
+        ]
+        if downtown_meshes:
+            minimum, maximum = scene_bounds(downtown_meshes)
+            size = maximum - minimum
+            horizontal = max(size.x, size.y, 40.0)
+            target = (minimum + maximum) * 0.5
+            target.z = minimum.z + min(size.z * 0.18, 12.0)
+            camera.data.lens = 52
+            camera.location = target + Vector(
+                (horizontal * 0.68, -horizontal * 1.08, horizontal * 0.62)
+            )
+            point_at(camera, target)
+            return
+
+    camera.data.lens = 52
+    camera.location = center + Vector((0.9, -1.12, 1.45)) * radius
+    point_at(camera, center)
+
+
 def render_angles(output_directory, camera, center, radius, profile, overlays):
     artifacts = []
     if profile == "canonical-content":
@@ -256,9 +330,9 @@ def render_angles(output_directory, camera, center, radius, profile, overlays):
         camera.data.lens = 52
         camera.data.sensor_fit = "VERTICAL"
         angles = (
-            ("portrait-street", (0.62, -1.18, 0.52)),
-            ("portrait-town", (0.9, -1.12, 1.45)),
-            ("portrait-overhead", (-0.72, 0.92, 1.85)),
+            ("portrait-street", None),
+            ("portrait-town", None),
+            ("portrait-downtown", None),
         )
     else:
         angles = (
@@ -267,14 +341,17 @@ def render_angles(output_directory, camera, center, radius, profile, overlays):
             ("rear", (-1.45, 1.75, 1.2)),
         )
     for index, (label, offset) in enumerate(angles):
-        camera.location = center + Vector(offset) * radius
-        point_at(camera, center)
+        if profile == "canonical-content":
+            frame_story_camera(camera, label, center, radius)
+        else:
+            camera.location = center + Vector(offset) * radius
+            point_at(camera, center)
         overlay = None
         if profile == "canonical-content" and overlays:
             overlay = add_camera_text(
                 camera,
                 overlays[min(index, len(overlays) - 1)],
-                -0.78 if index < 2 else 0.78,
+                (0.42, 0.5, 0.46)[index],
             )
         filename = "preview-" + label + ".png"
         bpy.context.scene.render.filepath = os.path.join(output_directory, filename)
