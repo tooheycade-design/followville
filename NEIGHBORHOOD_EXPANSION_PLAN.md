@@ -4,7 +4,7 @@ The original 366-address reserve was implemented 2026-07-11. The approved
 river chapter extends the same deterministic system by 250 addresses,
 367-616, carrying population 500 to 750. See `RIVER_EXPANSION_PLAN.md`.
 
-Current progress: addresses 1-356 are built through Day 27 (population 500).
+Current progress: addresses 1-461 are built through Day 30 (population 605).
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills
@@ -12,8 +12,13 @@ and beginning Twin Oaks. Day 17 consumed addresses 129-157, continuing Twin
 Oaks Drive and opening Acorn Court. Day 18 consumed addresses 158-177,
 finishing Acorn Court and opening Lantern Court. Day 19 consumed addresses
 178-187, finishing Lantern Court and Twin Oaks before opening Meadow Run.
-Addresses 357-366 are the final ten North Ridge homes. Address 367 begins
-Rivergate across Founders Crossing.
+Days 20-27 consumed addresses 188-356, completing Meadow Run, Pine Hollow,
+and the first 38 North Ridge homes. Day 28 consumed addresses 357-384,
+finishing North Ridge and opening Rivergate across Founders Crossing. Day 29
+consumed addresses 385-415, finishing Rivergate and opening Cedarbank Lane.
+Day 30 consumed addresses 416-461, finishing Cedarbank Lane and building the
+first 17 Alder Court homes. Address 462 is next; eleven Cedarbank homes remain
+before address 473 opens Timber Bend.
 
 ## Behavior
 
@@ -47,12 +52,12 @@ Rivergate across Founders Crossing.
 | 117-184 | Twin Oaks | 68 (complete) |
 | 185-260 | Meadow Run | 76 (complete) |
 | 261-318 | Pine Hollow | 58 (complete) |
-| 319-366 | North Ridge | 48 (38 built; 10 remain) |
-| 367-414 | Rivergate | 48 |
-| 415-472 | Cedarbank | 58 |
-| 473-526 | Timber Bend | 54 |
-| 527-584 | Eastbank Village | 58 |
-| 585-616 | River Meadows | 32 |
+| 319-366 | North Ridge | 48 (complete) |
+| 367-414 | Rivergate | 48 (complete) |
+| 415-472 | Cedarbank | 58 (47 built; 11 remain) |
+| 473-526 | Timber Bend | 54 (not started) |
+| 527-584 | Eastbank Village | 58 (not started) |
+| 585-616 | River Meadows | 32 (not started) |
 
 ## Safe daily operation
 

@@ -3,6 +3,47 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Claimed-home interior foundation (2026-08-01)
+- Added a walkable interior foundation to `classic_ranch` variant 0, including
+  a real doorway gap, interior floor height, wall clearance, browser colliders,
+  and geometry self-tests.
+- Added claimed-home entry and exit with a short hold prompt, fade transition,
+  return to the same outdoor position, five house-derived palettes, and a
+  dedicated per-house multiplayer instance so visitors in different homes do
+  not see one another.
+- Expanded the browser-built room to 18m x 14m and organized it into four
+  collision-free zones: living room, kitchen/dining, bedroom, and foyer. The
+  current furnishing pass includes double entrance doors, sofa/TV/fireplace,
+  island and dining set, bed/nightstands/wardrobe, plants, artwork, welcome
+  mat, and a detailed French-door refrigerator.
+- The initial interior geometry commit passed CI. The latest expanded interior
+  commit still has an open browser-CI regression: the geometry/state job passes,
+  while the browser job reports 9 passed and 9 failed, mostly long timeouts.
+  Do not describe the current browser suite as green until that run is fixed.
+
+## Day 30 Cedarbank release (2026-07-31)
+- Grew the canonical town from population 559 to 605 with 46 ordinary
+  claimable homes: plan IDs 416-444 completed Cedarbank Lane and 445-461 added
+  the first 17 Alder Court homes. Address 462 is next.
+- Published the exact Day 30 state with 666 world records, the complete GLB,
+  and 31 streamed chunks. The record total consists of 605 homes plus 48
+  standalone trees and 13 non-population landmarks/infrastructure records.
+- Added `--cam day30reveal`, an 18-second low-downtown flight into all 46 new
+  home rises. The Day 30 growth commit passed its release checks.
+
+## Terrain, landmark, and walking stability (2026-07-30 to 2026-07-31)
+- Removed the coplanar 4,000m legacy ground face responsible for distant square
+  grass flicker and replaced it with horizon-only slabs outside the regional
+  terrain bounds.
+- Corrected the rafting terrace and access lane, moved the Fishing Pond onto a
+  level shelf away from the downtown street, and moved City Hall so its campus
+  no longer swallowed the Pine Hollow connector.
+- Added `check_world_geometry.py`, its deliberate-failure self-test, a local
+  free audit camera, and a raycast probe so groundedness, road conflicts, and
+  street intrusions are testable before release.
+- Current streamed presentation uses 31 chunks, simple distant-house LOD, and
+  110m/170m detail load/unload hysteresis.
+
 ## Day 29 rafting outpost release (2026-07-30)
 - Added River Run Outfitters as its own streamed landmark chunk on the
   west-bank city side, with exact terrain-aligned access, terrace, launch, and

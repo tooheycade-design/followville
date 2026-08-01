@@ -1,7 +1,18 @@
 # Followville river chapter: population 501–750
 
-Status: Day 29 released at population 559. The deterministic reserve continues
-through population 750.
+Status: Day 30 released at population 605 through plan ID/address 461. The
+deterministic reserve continues through population 750; address 462 is next.
+
+## Day 30 boundary and Cedarbank progress
+
+- Day 30 grew from population 559 to 605 with exactly 46 ordinary claimable
+  homes, taking total world records from 620 to 666 without adding a landmark.
+- Plan IDs 416-444 added the remaining 29 Cedarbank Lane homes, completing its
+  30-home run when combined with Day 29's plan ID 415.
+- Plan IDs 445-461 opened Alder Court with 17 of its 28 homes. Plan IDs
+  462-472 are the eleven Cedarbank homes still reserved before Timber Bend.
+- Seeds 621-666 belong to the Day 30 homes. `--cam day30reveal` is the prepared
+  18-second low-downtown flight into all 46 Cedarbank home rises.
 
 ## Day 29 boundary and rafting destination
 
@@ -20,7 +31,7 @@ through population 750.
 
 ## Day 28 boundary
 
-- Current population: 500.
+- Starting population: 500.
 - Day 28 target: 528.
 - Existing reserve addresses 357–366 finish Summit Court in North Ridge.
 - New addresses 367–384 are the first eighteen Rivergate homes on Crossing
@@ -59,13 +70,13 @@ record.
 
 ## Planned districts
 
-| Plan IDs | District | Streets | Homes |
-|---|---|---|---:|
-| 367–414 | Rivergate | Crossing Way, Rivergate Drive | 48 |
-| 415–472 | Cedarbank | Cedarbank Lane, Alder Court | 58 |
-| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 |
-| 527–584 | Eastbank Village | Millstone Way, Ferry Street | 58 |
-| 585–616 | River Meadows | Marshlight Lane, Heron Reach | 32 |
+| Plan IDs | District | Streets | Homes | Built through Day 30 |
+|---|---|---|---:|---:|
+| 367–414 | Rivergate | Crossing Way, Rivergate Drive | 48 | 48 |
+| 415–472 | Cedarbank | Cedarbank Lane, Alder Court | 58 | 47 |
+| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 | 0 |
+| 527–584 | Eastbank Village | Millstone Way, Ferry Street | 58 | 0 |
+| 585–616 | River Meadows | Marshlight Lane, Heron Reach | 32 | 0 |
 
 The sequence deliberately moves from the bridge landing north through the
 wooded bank, then into a modest village center, before finishing in the
@@ -108,21 +119,27 @@ Two finished-scene audit/showcase cameras are reusable:
 - `--cam riverdrone` — twelve-second aerial river and crossing showcase.
 - `--cam riverbridge` — twelve-second first-person-height bridge approach.
 
+The current growth-reveal camera is `--cam day30reveal`: an eighteen-second
+low-downtown approach followed by the 46 Cedarbank home rises and an Alder
+Court finishing hold.
+
 `--cam newstreet` automatically selects Crossing Way on Day 28 because it is
 the latest day's largest street group.
 
-## Required release checks
+## Required checks for future river-district growth
 
 Before production growth or deployment:
 
 1. Run `python3 neighborhood_plan.py`.
 2. Run `python3 check_downtown_visuals.py`.
-3. Simulate `+28` against a temporary copy of `world_state.json`.
-4. Render and inspect Day 28 final drone, bridge-height, and `newstreet` views.
+3. Simulate the requested growth against a temporary copy of
+   `world_state.json`.
+4. Render and inspect the requested reveal plus river, bridge-height, and
+   `newstreet` views as applicable.
 5. Run a replay/export against temporary output and validate full/streamed GLBs.
 6. Run the browser suite, including bridge walking, water blocking, maps, home
    hitboxes, claims, and mobile controls.
 7. Refresh the embedded generator in the authoritative Blend only through the
    guarded workflow.
-8. Run the production `+28` from clean, synchronized `main`, then verify the
-   exact 28 insert-only Supabase rows and unchanged pre-existing claims.
+8. Run the production growth from clean, synchronized `main`, then verify the
+   exact insert-only Supabase rows and unchanged pre-existing claims.
