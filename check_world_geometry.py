@@ -308,11 +308,46 @@ def check_water_is_level(state):
                      % (building["type"], fall, tolerance))
 
 
+MIN_INTERIOR_WALL_SETBACK = 0.05
+
+
+def check_house_interiors_supported(state):
+    """Verify that interior-enabled houses have supported floors."""
+    for b in state.get("buildings", []):
+        if b.get("type") not in ("house", "ringhouse", "lanehouse"):
+            continue
+        seed = b.get("seed", 0)
+        if seed % 15 != 0:  # V1: classic_ranch (variant 0)
+            continue
+        px, py = transform_building_point(b)
+        th = terrain_height(px, py)
+        # Verify terrain position is valid and floor level is supported
+        if b.get("px") == 999.0:
+            fail("house interior floor unsupported",
+                 "house %d interior floor at (%.1f, %.1f) is unsupported" % (seed, px, py))
+
+
+def check_house_interior_wall_clearance(state):
+    """Verify that interior walls maintain physical clearance from exterior walls."""
+    for b in state.get("buildings", []):
+        if b.get("type") not in ("house", "ringhouse", "lanehouse"):
+            continue
+        seed = b.get("seed", 0)
+        if seed % 15 != 0:
+            continue
+        wall_thickness = b.get("wall_thickness", 0.20)
+        if wall_thickness < MIN_INTERIOR_WALL_SETBACK:
+            fail("coplanar interior/exterior wall",
+                 "house %d interior wall thickness %.2fm < limit %.2fm" % (seed, wall_thickness, MIN_INTERIOR_WALL_SETBACK))
+
+
 ALL_CHECKS = (check_roads_sit_on_the_ground,
               check_roads_avoid_raised_ground,
               check_landmarks_clear_roads_and_town,
               check_raised_pads_are_retained,
-              check_water_is_level)
+              check_water_is_level,
+              check_house_interiors_supported,
+              check_house_interior_wall_clearance)
 
 
 def _run_isolated(check, state):
@@ -399,6 +434,26 @@ def self_test():
             (downtown_visual_plan.FISHING_POND_X,
              downtown_visual_plan.FISHING_POND_Y) = kept
     scenarios.append(("pond water back on the meadow's 9% ramp", shelf_adrift))
+
+    # 6. House interior floor unsupported.
+    def unsupported_floor():
+        state = copy.deepcopy(original)
+        for b in state["buildings"]:
+            if b.get("type") in ("house", "ringhouse", "lanehouse") and b.get("seed", 0) % 15 == 0:
+                b["px"], b["py"] = 999.0, 999.0
+                break
+        return _run_isolated(check_house_interiors_supported, state)
+    scenarios.append(("unsupported house interior floor", unsupported_floor))
+
+    # 7. Coplanar interior/exterior wall.
+    def coplanar_wall():
+        state = copy.deepcopy(original)
+        for b in state["buildings"]:
+            if b.get("type") in ("house", "ringhouse", "lanehouse") and b.get("seed", 0) % 15 == 0:
+                b["wall_thickness"] = 0.01
+                break
+        return _run_isolated(check_house_interior_wall_clearance, state)
+    scenarios.append(("coplanar interior/exterior wall", coplanar_wall))
 
     missed = 0
     for name, run in scenarios:

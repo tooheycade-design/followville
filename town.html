@@ -3715,11 +3715,31 @@ function auditFishingDockSurface(){
     Math.abs(fishingPad[1]-(2.7-FISHING_POND_Y))<.01 ? "pass" : "fail";
 }
 
+function houseInteriorSurfaceHeight(x, z){
+  const buildings = (typeof window !== "undefined" && Array.isArray(window.worldBuildings)) ? window.worldBuildings : [];
+  if (!buildings.length) return 0;
+  for (const b of buildings){
+    if (!b || !["house", "ringhouse", "lanehouse"].includes(b.type)) continue;
+    const seed = b.seed || 0;
+    if (seed % 15 !== 0) continue; // V1: classic_ranch (variant 0)
+    // House center position in web world space
+    const px = b.px !== undefined ? b.px : (b.gx * 13 + 6.5);
+    const pz = b.pz !== undefined ? b.pz : (b.gy * 13 + 6.5);
+    const w = 7.9, d = 5.7, t = 0.20;
+    if (Math.abs(x - px) < (w / 2 - t) && Math.abs(z - pz) < (d / 2 - t)){
+      const ground = regionalTerrainHeight(px, pz);
+      return ground + 0.20; // Interior floor elevation
+    }
+  }
+  return 0;
+}
+
 function walkSurfaceHeight(x,z){
   return Math.max(0,regionalTerrainHeight(x,z),
                   downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
                   storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z),
-                  civicCampusSurfaceHeight(x,z),fishingDockSurfaceHeight(x,z));
+                  civicCampusSurfaceHeight(x,z),fishingDockSurfaceHeight(x,z),
+                  houseInteriorSurfaceHeight(x,z));
 }
 if(localDesignPreview){
   window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
@@ -3856,6 +3876,40 @@ function suburbanFootprint(entry){
       return colliderFromLocalBounds(entry.root,structure,`river-home-${entry.building.seed}`);
   }
   const styleIndex = Math.abs(Number(entry.building.seed)||0) % SUBURBAN_FOOTPRINTS.length;
+  if (styleIndex === 0){
+    const root = entry.root;
+    root.updateWorldMatrix(true, true);
+    const setback = suburbanStructureSetback(entry);
+    const scale = root.getWorldScale(new THREE.Vector3());
+    const quaternion = root.getWorldQuaternion(new THREE.Quaternion());
+    const u = new THREE.Vector3(1,0,0).applyQuaternion(quaternion);
+    const v = new THREE.Vector3(0,0,1).applyQuaternion(quaternion);
+    
+    function makeWallCollider(localX, localZ, halfX, halfZ, labelSuffix){
+      const pos = new THREE.Vector3(localX, 0, localZ - setback);
+      root.localToWorld(pos);
+      return boxCollider(pos.x, pos.z, u.x, u.z, v.x, v.z, halfX, halfZ, `house-${entry.building.seed}-${labelSuffix}`);
+    }
+    
+    const w = 7.9 * Math.abs(scale.x);
+    const d = 5.7 * Math.abs(scale.z);
+    const t = 0.20;
+    const doorX = -1.50;
+    const doorW = 1.20;
+    
+    const frontL_W = (w / 2 + doorX - doorW / 2);
+    const frontL_CX = -w / 2 + frontL_W / 2;
+    const frontR_W = (w / 2 - doorX - doorW / 2);
+    const frontR_CX = w / 2 - frontR_W / 2;
+    
+    return [
+      makeWallCollider(0, -d/2 + t/2, w/2, t/2, "wall-back"),
+      makeWallCollider(-w/2 + t/2, 0, t/2, d/2 - t, "wall-left"),
+      makeWallCollider(w/2 - t/2, 0, t/2, d/2 - t, "wall-right"),
+      makeWallCollider(frontL_CX, d/2 - t/2, frontL_W/2, t/2, "wall-front-l"),
+      makeWallCollider(frontR_CX, d/2 - t/2, frontR_W/2, t/2, "wall-front-r")
+    ];
+  }
   const style = SUBURBAN_FOOTPRINTS[styleIndex];
   const root = entry.root;
   root.updateWorldMatrix(true, true);
@@ -4006,7 +4060,8 @@ function buildGLBColliders(root){
   colliders.length = 0;
   for (const entry of houseVisuals.values()){
     const collider = houseFootprint(entry);
-    if (collider) colliders.push(collider);
+    if (Array.isArray(collider)) colliders.push(...collider);
+    else if (collider) colliders.push(collider);
   }
   for (const child of root.children){
     const name = (child.name || "").toLowerCase();

@@ -1125,7 +1125,33 @@ def build_suburban_house(col, variant):
         add_prism_roof(col, "wing_roof", w * .38, d * .88, roof_h * .80,
                        garage_side * w * .34, -d * .09, foundation_z + 3.50, roof)
     else:
-        add_box(col, "body", w, d, body_h, 0, 0, foundation_z, wall)
+        if style_index == 0:
+            # V1 Walkable Interior for classic_ranch (variant 0):
+            # Outer walls with physical 0.20m wall thickness and front doorway opening
+            t = 0.20
+            door_w = 1.20
+            door_h = 2.10
+            door_x = -garage_side * (w * .19)
+            # Back wall
+            add_box(col, "wall_back", w, t, body_h, 0, d/2 - t/2, foundation_z, wall)
+            # Left wall
+            add_box(col, "wall_left", t, d - 2*t, body_h, -w/2 + t/2, 0, foundation_z, wall)
+            # Right wall
+            add_box(col, "wall_right", t, d - 2*t, body_h, w/2 - t/2, 0, foundation_z, wall)
+            # Front wall left segment
+            front_left_w = (w / 2 + door_x - door_w / 2)
+            front_left_cx = -w/2 + front_left_w/2
+            add_box(col, "wall_front_l", front_left_w, t, body_h, front_left_cx, -d/2 + t/2, foundation_z, wall)
+            # Front wall right segment
+            front_right_w = (w / 2 - door_x - door_w / 2)
+            front_right_cx = w/2 - front_right_w/2
+            add_box(col, "wall_front_r", front_right_w, t, body_h, front_right_cx, -d/2 + t/2, foundation_z, wall)
+            # Lintel above door
+            add_box(col, "wall_front_lintel", door_w, t, body_h - door_h, door_x, -d/2 + t/2, foundation_z + door_h, wall)
+            # Interior floor slab
+            add_box(col, "interior_floor", w - 2*t, d - 2*t, 0.08, 0, 0, foundation_z, m["cap"])
+        else:
+            add_box(col, "body", w, d, body_h, 0, 0, foundation_z, wall)
         if feature == "frontgable":
             main_roof = add_prism_roof(col, "roof", d + .65, w + .62, roof_h,
                                        0, 0, foundation_z + body_h, roof)

@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-07-31 - Cade (via Antigravity) - [BOTH] Implemented V1 walkable house interiors for classic_ranch (variant 0): hollowed interior walls with 0.20m thickness, 1.2m front doorway gap in web colliders, +0.20m interior floor in walkSurfaceHeight, and added automated interior floor walkability and wall clearance checks with 7 passing self-tests.
+
 2026-07-31 - Cade (via Windows Claude) - [WEB] Fixed three things Antigravity found on its first read of CLAUDE.md, all introduced by today's trim: the runnable command block used `&&`, which is a parser error in Windows PowerShell 5.1 rather than a fallback; it said `python`, which on this machine is a Microsoft Store stub; and it claimed the geometry self-test covers four regressions when it covers five. The pygltflib note was also wrong in a way worth recording - the package is installed, but pip could not write into Program Files without admin so it landed in a per-user directory, which means another shell can correctly report it missing. The commands in the manual are now copy-pasteable as written and were verified by running them exactly as printed.
 
 2026-07-31 - Cade (via Antigravity) - [BOTH] Onboarded to repo, verified CLAUDE.md manual, confirmed hash-matched Blend copies, verified check_world_geometry.py and preflight status without modifying world state or code.

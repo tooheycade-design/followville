@@ -28,6 +28,11 @@ import json
 import math
 import os
 
+import sys
+repo_dir = os.path.dirname(__file__)
+if repo_dir not in sys.path:
+    sys.path.insert(0, repo_dir)
+
 from world_layout import transform_building_point, walk_surface_manifest
 
 LOT = 13
@@ -111,7 +116,7 @@ def _export_glb(path, objects, draco=False):
     if not selected:
         raise RuntimeError("STREAM_EXPORT_FAILED: no objects selected for %s" % path)
     options = dict(
-        filepath=path,
+        filepath=os.path.abspath(path),
         export_format="GLB",
         use_selection=True,
         export_apply=True,
@@ -127,7 +132,15 @@ def _export_glb(path, objects, draco=False):
             export_draco_mesh_compression_enable=True,
             export_draco_mesh_compression_level=6,
         )
-    bpy.ops.export_scene.gltf(**options)
+    for attempt in range(3):
+        try:
+            bpy.ops.export_scene.gltf(**options)
+            break
+        except Exception as err:
+            if attempt == 2:
+                raise
+            import time
+            time.sleep(0.5)
     print("export_web.py: wrote", path)
 
 
