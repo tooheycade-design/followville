@@ -707,6 +707,7 @@ async function runReviewPass(): Promise<number> {
             : null,
         evidenceArtifactIds:
           completedWork?.artifacts.map((artifact) => artifact.id) ?? [],
+        evidenceIsDurable: true,
         now: new Date(),
       }, randomUUID);
       await queue!.sendMessage(message).catch((error) => {

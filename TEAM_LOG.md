@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-08-01 - Cade (via Windows Codex) - [WEB] Finished the Company OS trusted private-content camera revision with a real founder-home opening, whole-town pullback, distinct downtown hold, and mobile-safe captions; visually inspected all three Day 27 portrait frames without changing or publishing the canonical town.
+2026-08-01 - Cade (via Windows Codex) - [WEB] Finished the Company OS trusted private-content camera revision with a real founder-home opening, whole-town pullback, distinct downtown hold, and mobile-safe captions; also made agent messages withhold evidence IDs until their rows are durable, eliminating false handoff errors without changing or publishing the canonical town.
 
 2026-07-28 - Zach (via Mac Codex) - [BOTH] Reworked the continuous regional grass from one narrow green family into a smooth elevation/slope-aware lowland, upland, ridge, and exposed-earth palette; regenerated the Day 26 full fallback and all 28 streamed chunks, verified exported vertex color and every manifest hash, reviewed walking-height and gravity-free drone views at 60 FPS, passed all 14 browser stories, and left terrain geometry, walk heights, roads, population 464, all 524 records, claims, and `world_state.json` unchanged.
 

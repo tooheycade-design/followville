@@ -56,6 +56,7 @@ test("message payloads are bounded before validation and hashing", () => {
         (_, index) =>
           `70000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
       ),
+      evidenceIsDurable: true,
       now: new Date("2026-07-28T20:00:00.000Z"),
     },
     () => MESSAGE_ID,
@@ -63,4 +64,24 @@ test("message payloads are bounded before validation and hashing", () => {
 
   assert.equal(message.contextSummary.length, 8_000);
   assert.equal(message.evidenceArtifactIds.length, 25);
+});
+
+test("messages withhold evidence until its rows are durable", () => {
+  const message = createAgentMessage(
+    {
+      task: TASK,
+      senderId: SEED_AGENTS.engineer.id,
+      recipientId: SEED_AGENTS.reviewer.id,
+      type: "review_request",
+      priority: "normal",
+      contextSummary: "Review the pending evidence.",
+      requestedAction: "Inspect the task run.",
+      expectedOutput: "A verdict.",
+      evidenceArtifactIds: ["70000000-0000-4000-8000-000000000001"],
+      now: new Date("2026-07-28T20:00:00.000Z"),
+    },
+    () => MESSAGE_ID,
+  );
+
+  assert.deepEqual(message.evidenceArtifactIds, []);
 });

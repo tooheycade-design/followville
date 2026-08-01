@@ -19,6 +19,7 @@ export interface AgentMessageInput {
   requestedAction: string | null;
   expectedOutput: string | null;
   evidenceArtifactIds: readonly string[];
+  evidenceIsDurable?: boolean;
   now: Date;
 }
 
@@ -28,7 +29,9 @@ export function createAgentMessage(
 ): StructuredMessage {
   const createdAt = input.now.toISOString();
   const contextSummary = input.contextSummary.slice(0, 8_000);
-  const evidenceArtifactIds = [...input.evidenceArtifactIds].slice(0, 25);
+  const evidenceArtifactIds = input.evidenceIsDurable
+    ? [...input.evidenceArtifactIds].slice(0, 25)
+    : [];
   const fingerprint = digest({
     taskId: input.task.id,
     senderId: input.senderId,
