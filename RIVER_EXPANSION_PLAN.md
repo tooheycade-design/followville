@@ -1,7 +1,19 @@
 # Followville river chapter: population 501–750
 
-Status: Day 30 released at population 605 through plan ID/address 461. The
-deterministic reserve continues through population 750; address 462 is next.
+Status: Day 31 released at population 625 through plan ID/address 481. The
+deterministic reserve continues through population 750; address 482 is next.
+
+## Day 31 boundary and Timber Bend opening
+
+- Day 31 grew from population 605 to 625 with exactly 20 ordinary claimable
+  homes, taking total world records from 666 to 686 without adding a landmark.
+- Plan IDs 462-472 added the final eleven Alder Court homes and completed all
+  58 Cedarbank addresses.
+- Plan IDs 473-481 opened Timber Bend Road with its first nine homes. Plan ID
+  482 is next; 45 Timber Bend homes remain before Eastbank Village.
+- Seeds 667-686 belong to the Day 31 homes. The cross-district growth video
+  uses `--cam newgrowthall`; the separate `--cam wholeoverhead` video shows the
+  completed town with no rise animation.
 
 ## Day 30 boundary and Cedarbank progress
 
@@ -70,11 +82,11 @@ record.
 
 ## Planned districts
 
-| Plan IDs | District | Streets | Homes | Built through Day 30 |
+| Plan IDs | District | Streets | Homes | Built through Day 31 |
 |---|---|---|---:|---:|
 | 367–414 | Rivergate | Crossing Way, Rivergate Drive | 48 | 48 |
-| 415–472 | Cedarbank | Cedarbank Lane, Alder Court | 58 | 47 |
-| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 | 0 |
+| 415–472 | Cedarbank | Cedarbank Lane, Alder Court | 58 | 58 |
+| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 | 9 |
 | 527–584 | Eastbank Village | Millstone Way, Ferry Street | 58 | 0 |
 | 585–616 | River Meadows | Marshlight Lane, Heron Reach | 32 | 0 |
 

@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-08-01 - Cade (via Windows Codex) - [BOTH] Completed Day 31 from 605 to 625 followers with one guarded +20 growth: eleven claimable Alder Court homes finished Cedarbank and nine opened Timber Bend Road at addresses 473-481; published the exact 686-record full/32-chunk town, backfilled the missing Day 30 plus Day 31 house rows without changing claims, visually reviewed the daylight framing, and placed separate all-20-rise and completed whole-town overhead MP4s on Cade's Desktop.
+
 2026-08-01 - Cade (via Windows Codex) - [BOTH] Reconciled the expansion plans and web changelog with canonical Day 30 / population 605 / address 461 progress, documented Zach's previously unlogged 46-home Cedarbank release and the current claimed-home interior foundation, explained the 605-home plus 61 non-population-record count, and recorded the open browser-CI regression without changing state, geometry, claims, database rows, generated assets, or the live site.
 
 2026-08-01 - Cade (via Antigravity) - [WEB] Re-architected 18m x 14m house interior layout into 4 collision-free quadrants resolving all furniture overlaps, and built high-detail French-door stainless refrigerator with upper doors, freezer drawer, tubular handles, and illuminated ice dispenser.

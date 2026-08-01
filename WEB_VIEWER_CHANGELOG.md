@@ -3,6 +3,22 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 31 Cedarbank completion and Timber Bend opening (2026-08-01)
+- Grew the canonical town once from population 605 to 625 with 20 ordinary
+  claimable homes: plan IDs 462-472 completed Alder Court/Cedarbank and plan
+  IDs 473-481 opened Timber Bend Road. Address 482 is next.
+- Published the exact Day 31 state with 686 world records, the complete GLB,
+  and 32 streamed chunks, including the new `timber-bend.glb` district asset.
+  The total remains one home per resident plus the same 61 non-population
+  scenery, landmark, and infrastructure records.
+- The guarded house sync inserted the 46 previously missing Day 30 homes plus
+  today's 20 homes, then reported all 686 canonical rows present. Existing
+  claims and ownership were not modified.
+- Produced two separate daylight portrait MP4s: an all-20 cross-district home
+  rise using `newgrowthall`, and a completed whole-town overhead using `+0`
+  with no rise animation. A final-frame PNG confirmed correct exposure and
+  framing; Chrome's local-video path displayed a false washed-out preview.
+
 ## Claimed-home interior foundation (2026-08-01)
 - Added a walkable interior foundation to `classic_ranch` variant 0, including
   a real doorway gap, interior floor height, wall clearance, browser colliders,
