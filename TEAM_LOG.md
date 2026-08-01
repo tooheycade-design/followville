@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-08-01 - Cade (via Antigravity) - [WEB] Integrated Ilyas_m3 Stylized Interior Pack (369340) and Gobormu Simple Furniture FREE (240197) low-poly furniture assets across 18m x 14m house interiors with custom throw cushions, coffee table book stacks, sink basin/faucet, and dining tableware props.
+2026-08-01 - Cade (via Antigravity) - [WEB] Overhauled interior front double doors with timber panels & brass handles, moved master bed flush against back wall with twin nightstands, added kitchen stainless steel refrigerator, and placed foyer welcome doormat.
 
 2026-07-31 - Cade (via Antigravity) - [BOTH] Implemented V1 walkable house interiors for classic_ranch (variant 0): hollowed interior walls with 0.20m thickness, 1.2m front doorway gap in web colliders, +0.20m interior floor in walkSurfaceHeight, and added automated interior floor walkability and wall clearance checks with 7 passing self-tests.
 
