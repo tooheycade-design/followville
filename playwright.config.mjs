@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const externalBaseURL = process.env.FOLLOWVILLE_BASE_URL;
+const localPort = Number(process.env.FOLLOWVILLE_TEST_PORT || 8765);
+const localBaseURL = `http://127.0.0.1:${localPort}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -13,7 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: externalBaseURL || "http://127.0.0.1:8765",
+    baseURL: externalBaseURL || localBaseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure"
@@ -26,7 +28,7 @@ export default defineConfig({
   ],
   webServer: externalBaseURL ? undefined : {
     command: "node tests/serve.mjs",
-    url: "http://127.0.0.1:8765/index.html",
+    url: `${localBaseURL}/index.html`,
     reuseExistingServer: !process.env.CI,
     timeout: 15_000
   }

@@ -86,6 +86,20 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
+- 2026-08-01 fishing-game redesign (Zach via Mac Codex): the Fishing Pond's
+  former rapid-click reel is replaced by an original session-only vertical
+  catch game. Holding/touching or Space accelerates a glowing catch zone
+  upward, releasing accelerates it downward, and momentum/bottom bounce require
+  anticipatory braking. Common, Uncommon, Rare, Legendary, and Mythical catch
+  names are unchanged; weighted profiles now give them distinct difficulty,
+  bar size, fish color, movement behavior, and legendary crowns. Overlap fills
+  a separate progress meter, separation drains it, and uninterrupted overlap
+  earns a Perfect result. The water-depth presentation and controls fit desktop
+  and landscape phones. Catches remain intentionally unpersisted until an
+  inventory exists. The focused browser playthrough and desktop/mobile visual
+  QA passed. Test previews can use `FOLLOWVILLE_TEST_PORT` to avoid stale local
+  servers. Web-only: Day 27, population 500, all 560 records, claims, Supabase,
+  `world_state.json`, GLBs, and Blender are unchanged.
 - Day 27, population 500, 560 buildings (grown 2026-07-28 via Zach's Mac
   Codex: +36 ordinary claimable homes). Planned addresses 321-356 complete
   North Ridge: 14 homes on Ridgeview Drive, 16 on Bluebird Court, and six on
@@ -139,8 +153,8 @@ later in this file.
   Court; seed 497 added the off-grid pond near Fire Station 1 around website
   x116/z70. The pond has an organic shoreline, connected terrain-following
   sidewalk, walkable fishing dock, reeds, lilies, rocks, ducks, rods, and a
-  simple session-only fishing game: forgiving timing cast, delayed bite,
-  rapid-click reel, and common/uncommon/rare/legendary/mythical catch reveal.
+  session-only fishing game, since upgraded from its initial timing/bite/reel
+  version to the momentum-based catch system documented above.
   There is intentionally no money or persistent inventory yet. Civic Square is
   preserved with a rebuilt visible-water fountain; the temporary Day 24
   election/400/fireworks layer is retired. Exact full/streamed GLB validation,

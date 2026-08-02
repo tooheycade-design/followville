@@ -16,6 +16,8 @@ const mime = {
   ".svg": "image/svg+xml"
 };
 
+const port = Number(process.env.FOLLOWVILLE_TEST_PORT || 8765);
+
 createServer((request, response) => {
   const url = new URL(request.url || "/", "http://127.0.0.1");
   let pathname = decodeURIComponent(url.pathname);
@@ -39,6 +41,6 @@ createServer((request, response) => {
   } catch {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("Not found");
   }
-}).listen(8765, "127.0.0.1", () => {
-  process.stdout.write("Followville test server listening on http://127.0.0.1:8765\n");
+}).listen(port, "127.0.0.1", () => {
+  process.stdout.write(`Followville test server listening on http://127.0.0.1:${port}\n`);
 });

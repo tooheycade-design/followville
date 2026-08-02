@@ -142,12 +142,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("the fishing pond offers an easy timing cast and rapid-click catch", async ({ page }) => {
+test("the fishing pond offers a momentum catch with rarity-scaled fish movement", async ({ page }) => {
   test.setTimeout(180_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?local=1&view=fishing#walk");
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","momentum-v2");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
   await expect(page.locator("#fishPrompt")).toBeVisible();
   await page.locator("#fishPrompt").click();
@@ -169,14 +170,53 @@ test("the fishing pond offers an easy timing cast and rapid-click catch", async 
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","bite",{timeout:5_000});
-  // Dispatch the rapid burst in-page so a software WebGL runner cannot stretch
-  // twelve driver round-trips beyond the game's intentionally short reel timer.
-  await page.locator("#fishAction").evaluate(button=>{
-    for(let click=0;click<12;click++)button.click();
+  // A direct semantic click avoids Playwright's pointer actionability retries
+  // while the same button changes size/style to become the live hold control.
+  const hookState=await page.locator("#fishAction").evaluate(button=>{
+    button.click();
+    return document.body.dataset.fishingGame;
+  });
+  expect(errors).toEqual([]);
+  expect(hookState).toBe("catching");
+  await expect(page.locator("#catchGame")).toBeVisible();
+  await expect(page.locator("#catchRarity")).toHaveText("Common");
+  await expect(page.locator("#catchBehavior")).toContainText("smooth movement");
+
+  // Play through the public binary input: hold while the catch-zone center is
+  // below the fish, release before it overshoots. This validates acceleration,
+  // momentum, overlap progress and success rather than mutating internal state.
+  await page.evaluate(async ()=>{
+    let pressed=false;
+    const setPressed=next=>{
+      if(next===pressed)return;
+      pressed=next;
+      window.dispatchEvent(new KeyboardEvent(next?"keydown":"keyup",{
+        bubbles:true,code:"Space",key:" ",repeat:false
+      }));
+    };
+    const started=performance.now();
+    let previousCenter=null;
+    let previousTime=performance.now();
+    while(document.body.dataset.fishingGame==="catching"){
+      const fish=parseFloat(document.getElementById("catchFish").style.bottom)/100;
+      const barBottom=parseFloat(document.getElementById("catchBar").style.bottom)/100;
+      const barHeight=parseFloat(document.getElementById("catchBar").style.height)/100;
+      const center=barBottom+barHeight/2;
+      const now=performance.now();
+      const velocity=previousCenter===null ? 0 : (center-previousCenter)/Math.max(.001,(now-previousTime)/1000);
+      const predictedCenter=center+velocity*.16;
+      if(predictedCenter<fish-.015)setPressed(true);
+      else if(predictedCenter>fish+.015)setPressed(false);
+      previousCenter=center;
+      previousTime=now;
+      if(performance.now()-started>30_000)throw new Error("momentum catch did not resolve");
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
+    setPressed(false);
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");
   await expect(page.locator("#caughtBadge")).toContainText(
-    /You caught a (Common|Uncommon|Rare|Legendary|Mythical) fish!/);
+    /You caught a Common fish/);
   await page.getByRole("button",{name:"back to the pond"}).click();
   await expect(page.locator("#fishingGame")).toBeHidden();
   await expect(page.locator("#fishPrompt")).toBeVisible();
