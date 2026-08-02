@@ -172,6 +172,17 @@ def export_web_glb():
         print("export_web.py: no WORLD collection found — run neighborhood_blender.py first.")
         return None
 
+    # Exclude explicitly tagged video-only vignettes before the export resets
+    # animation and scale. Campaign vehicles, temporary rally sets, and similar
+    # storytelling props must never become permanent town geometry.
+    render_only_objs = [obj for obj in list(col.objects)
+                        if bool(obj.get("nb_render_only", False))]
+    for obj in render_only_objs:
+        bpy.data.objects.remove(obj, do_unlink=True)
+    if render_only_objs:
+        print("export_web.py: excluded %d render-only object(s) from website export" %
+              len(render_only_objs))
+
     # 2026-07-10: exclude one-off celebration fireworks from the website export.
     # build_fireworks() (neighborhood_blender.py) adds short-lived animated burst
     # particles named "fw"/"fw.001"/... to the WORLD collection for --celebrate

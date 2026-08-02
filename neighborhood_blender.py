@@ -140,6 +140,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day29reveal  18-second city arc, 31 river homes, rafting-outpost finale
 #   --cam day30reveal  18-second low downtown angle into 46 Cedarbank home rises
 #   --cam day31reveal  20-second whole-town, 20-home, and City Hall drone reveal
+#   --cam day32campaign 20-second town, 31-home, billboard, and campaign-semi reveal
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -4721,7 +4722,12 @@ def build_suburban_roads(world_col, buildings, m):
         if not connector:
             continue
         points = [(x, y, terrain_height(x, y)) for x, y in connector]
-        junction_points.extend((x, y) for x, y, _z in points)
+        # Continuous ribbons seal their own bends. Covers belong only where a
+        # connector actually meets another road; putting one at every control
+        # point produced the repeated raised circles that read as overlapping
+        # cul-de-sacs in low-angle Blender footage.
+        junction_points.extend(((points[0][0], points[0][1]),
+                                (points[-1][0], points[-1][1])))
         connector_shoulder = _add_road_strip(
             world_col, "district_connector_shoulder_" + district.lower().replace(" ", "_"),
             points, shoulder_mat, width=7.35, bottom_offset=.005,
@@ -4751,14 +4757,10 @@ def build_suburban_roads(world_col, buildings, m):
                        for point in source_points]
         points = [(point[0], point[1], terrain_height(point[0], point[1]))
                   for point in flat_points]
-        # The continuous shared-vertex ribbon already seals every bend. The
-        # old reserve keeps its historical cover discs; river streets use one
-        # cover only at the true street junction so repeated raised circles do
-        # not create visible scallops across otherwise clean new asphalt.
-        if street_index >= 18:
-            junction_points.append(flat_points[0])
-        else:
-            junction_points.extend(flat_points)
+        # The continuous shared-vertex ribbon already seals every bend. One
+        # cover at the true street junction is enough for every generation of
+        # the reserve; the final turnaround is authored separately below.
+        junction_points.append(flat_points[0])
         street_objects = []
         street_objects.append(_add_road_strip(
             world_col, "suburban_shoulder_%02d" % street_index, points,
@@ -6027,11 +6029,13 @@ def build_day24_election_kickoff(world_col, frame_end):
     root = bpy.data.objects.new("Day24_ElectionKickoff_RenderOnly", None)
     root.location = (CIVIC_SQUARE_X, CIVIC_SQUARE_Y, 0)
     root["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    root["nb_render_only"] = True
     world_col.objects.link(root)
     parts = []
 
     def attach(obj):
         obj.parent = root
+        obj["nb_render_only"] = True
         parts.append(obj)
         return obj
 
@@ -6113,6 +6117,136 @@ def build_day24_election_kickoff(world_col, frame_end):
     build_milestone_fireworks(world_col, CIVIC_SQUARE_X, CIVIC_SQUARE_Y,
                               frame_end)
     return root
+
+
+def build_day32_campaign_vignette(world_col, frame_end):
+    """Video-only mayoral billboard and moving campaign semi for Day 32."""
+    navy = mat("NB_day32_campaign_navy", (.035, .095, .22), .66)
+    red = mat("NB_day32_campaign_red", (.72, .055, .07), .62)
+    gold = mat("NB_day32_campaign_gold", (.95, .64, .10), .48, .16)
+    white = mat("NB_day32_campaign_white", (.97, .96, .91), .60)
+    steel = mat("NB_day32_campaign_steel", (.28, .32, .35), .36, .62)
+    dark = mat("NB_day32_campaign_dark", (.035, .04, .05), .50)
+    glass = mat("NB_day32_campaign_glass", (.20, .42, .53), .16, .12)
+    chrome = mat("NB_day32_campaign_chrome", (.62, .67, .70), .24, .78)
+
+    road_angle = math.atan2(247.28592598205583 - 245.70478715197166,
+                            557.8577779461675 - 553.114361455915)
+    billboard_x, billboard_y = 556.1, 252.5
+    billboard = bpy.data.objects.new("Day32_CampaignBillboard_RenderOnly", None)
+    billboard.location = (billboard_x, billboard_y,
+                          terrain_height(billboard_x, billboard_y))
+    billboard.rotation_euler.z = road_angle
+    billboard["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    billboard["nb_render_only"] = True
+    world_col.objects.link(billboard)
+
+    def attach_billboard(obj):
+        obj.parent = billboard
+        obj["nb_render_only"] = True
+        return obj
+
+    for x in (-5.6, 5.6):
+        attach_billboard(add_ngon_cone(
+            world_col, "day32_billboard_post", .20, .17, 8.8, 8,
+            x, 0, 0, steel))
+        attach_billboard(add_box(
+            world_col, "day32_billboard_foot", 1.0, 1.0, .24,
+            x, 0, 0, chrome))
+    attach_billboard(add_box(
+        world_col, "day32_billboard_board", 16.0, .42, 6.5,
+        0, 0, 2.15, navy))
+    # The red lower panel and gold frame sit a full five centimetres forward
+    # of the navy support face, avoiding the coplanar sign flicker seen in old
+    # campaign props.
+    attach_billboard(add_box(
+        world_col, "day32_billboard_lower_panel", 14.9, .08, 2.35,
+        0, -.30, 2.60, red))
+    for x in (-7.55, 7.55):
+        attach_billboard(add_box(
+            world_col, "day32_billboard_side_trim", .22, .08, 6.1,
+            x, -.30, 2.35, gold))
+    for z in (2.35, 8.23):
+        attach_billboard(add_box(
+            world_col, "day32_billboard_edge_trim", 15.3, .08, .22,
+            0, -.30, z, gold))
+    attach_billboard(add_text(
+        world_col, "day32_vote_mr_mayor", "VOTE MR MAYOR",
+        1.08, .055, 0, -.40, 6.60, white))
+    attach_billboard(add_text(
+        world_col, "day32_vote_bsb_domwillis", "VOTE BSB_DOMWILLIS",
+        .72, .05, 0, -.40, 3.76, white))
+    animate_rise(billboard, 382, dur=28)
+
+    truck = bpy.data.objects.new("Day32_CampaignSemi_RenderOnly", None)
+    truck["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    truck["nb_render_only"] = True
+    truck.rotation_euler.z = road_angle
+    world_col.objects.link(truck)
+
+    def attach_truck(obj):
+        obj.parent = truck
+        obj["nb_render_only"] = True
+        return obj
+
+    # Long trailer, detailed tractor, dual rear axles, and a physically raised
+    # campaign panel make the vehicle read as a semi instead of a stretched box.
+    attach_truck(add_box(world_col, "day32_semi_trailer", 10.8, 2.9, 3.75,
+                         1.8, 0, 1.05, white))
+    attach_truck(add_box(world_col, "day32_semi_trailer_roof", 11.05, 3.06, .20,
+                         1.8, 0, 4.80, chrome))
+    attach_truck(add_box(world_col, "day32_semi_chassis", 16.4, 2.45, .42,
+                         -1.0, 0, .70, dark))
+    attach_truck(add_box(world_col, "day32_semi_cab", 4.3, 2.72, 3.45,
+                         -6.0, 0, .82, red))
+    attach_truck(add_box(world_col, "day32_semi_sleeper", 2.0, 2.76, 3.70,
+                         -3.25, 0, 1.02, navy))
+    attach_truck(add_box(world_col, "day32_semi_hood", 2.0, 2.55, 1.45,
+                         -9.05, 0, .86, red))
+    attach_truck(add_box(world_col, "day32_semi_bumper", .32, 2.72, .46,
+                         -10.15, 0, .60, chrome))
+    attach_truck(add_box(world_col, "day32_semi_windshield", .12, 2.25, 1.22,
+                         -8.12, 0, 2.83, glass))
+    attach_truck(add_box(world_col, "day32_semi_side_window", 1.42, .10, 1.18,
+                         -6.45, -1.43, 2.78, glass))
+    for x in (-8.75, -4.5, .15, 3.5, 5.25):
+        for side in (-1, 1):
+            wheel = attach_truck(add_ngon_cone(
+                world_col, "day32_semi_tire", .62, .62, .34, 12,
+                x, side*1.55, .66, dark))
+            wheel.rotation_euler.x = side*math.pi/2
+            hub = attach_truck(add_ngon_cone(
+                world_col, "day32_semi_hub", .28, .28, .37, 12,
+                x, side*1.57, .66, chrome))
+            hub.rotation_euler.x = side*math.pi/2
+    attach_truck(add_box(
+        world_col, "day32_semi_campaign_panel", 10.1, .10, 2.55,
+        1.8, -1.57, 1.58, navy))
+    attach_truck(add_text(
+        world_col, "day32_vote_xad_insta", "VOTE XAD_INSTA",
+        .88, .055, 1.8, -1.67, 2.86, white))
+    attach_truck(add_box(world_col, "day32_semi_campaign_stripe", 10.1, .10, .20,
+                         1.8, -1.69, 1.80, gold))
+    for y in (-.78, .78):
+        attach_truck(add_box(world_col, "day32_semi_headlight", .16, .56, .38,
+                             -10.34, y, 1.10, white))
+
+    start = (530.0, 236.2, terrain_height(530.0, 236.2))
+    end = (550.2, 244.7, terrain_height(550.2, 244.7))
+    truck.location = start
+    truck.keyframe_insert("location", frame=470)
+    truck.location = end
+    truck.keyframe_insert("location", frame=frame_end)
+    _keyframe_hidden(truck, 1, True)
+    _keyframe_hidden(truck, 469, True)
+    _keyframe_hidden(truck, 470, False)
+    for fc in obj_fcurves(truck):
+        for kp in fc.keyframe_points:
+            if fc.data_path == "location":
+                kp.interpolation = "LINEAR"
+            else:
+                kp.interpolation = "CONSTANT"
+    return billboard, truck
 
 # ═══════════════════════ TIME OF DAY / SEASONS (mood) ═══════════════════════════
 
@@ -7264,6 +7398,96 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # 14.1-18.0s: settled descending push across pond and dock.
             (frame_end, (144.0, -96.0, 39.0),
              (FISHING_POND_X - 3.0, FISHING_POND_Y, 2.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day32campaign":
+        # Day 32: establish the larger town, follow all 31 Timber Bend homes,
+        # then descend to the roadside billboard and moving campaign semi.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        timber_road = [b for b in newest_homes
+                       if int(b.get("plan_id", 0)) <= 500]
+        lodgepole = [b for b in newest_homes
+                     if int(b.get("plan_id", 0)) >= 501]
+
+        def _mid(group, fallback):
+            if not group:
+                return fallback
+            pts = [build_pos(b) for b in group]
+            return (sum(p[0] for p in pts) / len(pts),
+                    sum(p[1] for p in pts) / len(pts))
+
+        tx32, ty32 = _mid(timber_road, (512.2, 216.0))
+        lx32, ly32 = _mid(lodgepole, (546.4, 210.9))
+        billboard = (556.1, 252.5)
+
+        def _above_ground(x, y, clearance):
+            """Return an absolute Z that follows the authored terrain grade."""
+            return terrain_height(x, y) + clearance
+
+        aim = bpy.data.objects.new("Day32CampaignAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day32CampaignCamera")
+        cam_data.lens = 42
+        # The final roadside shots run close to elevated terrain.  A long near
+        # clip plane cuts through the truck and road even when the camera is
+        # correctly above grade, so keep this suitable for a human-scale shot.
+        cam_data.clip_start = 0.25
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day32CampaignCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.7s: whole-town drone establish, including the river chapter.
+            (1, (800.0, -650.0, 950.0), (280.0, 20.0, 8.0)),
+            (70, (760.0, -480.0, 700.0), (330.0, 40.0, 8.0)),
+            (110, (700.0, -300.0, 430.0), (440.0, 110.0, 7.0)),
+            # 3.7-11.3s: descend through Timber Bend Road and Lodgepole Loop
+            # while the 31 follower homes rise in one overlapping wave.
+            (140, (660.0, -90.0, 260.0),
+             (tx32, ty32 - 18.0,
+              _above_ground(tx32, ty32 - 18.0, 6.0))),
+            (210, (625.0, 75.0, 165.0),
+             (tx32, ty32, _above_ground(tx32, ty32, 6.0))),
+            (285, (610.0, 145.0, 118.0),
+             ((tx32 + lx32) / 2, (ty32 + ly32) / 2,
+              _above_ground((tx32 + lx32) / 2,
+                            (ty32 + ly32) / 2, 6.0))),
+            (340, (620.0, 160.0, 96.0),
+             (lx32, ly32, _above_ground(lx32, ly32, 6.0))),
+            # 11.3-15.7s: descend to a readable, front-on billboard view.
+            (390, (590.0, 190.0, 64.0),
+             (billboard[0], billboard[1],
+              _above_ground(*billboard, 5.2))),
+            (425, (568.0, 224.0, _above_ground(568.0, 224.0, 13.0)),
+             (billboard[0], billboard[1],
+              _above_ground(*billboard, 5.2))),
+            (470, (564.0, 228.8, _above_ground(564.0, 228.8, 9.0)),
+             (billboard[0], billboard[1],
+              _above_ground(*billboard, 5.2))),
+            # 15.7-20.0s: track the semi's campaign side as it approaches the
+            # billboard; the camera stays on the readable side of both signs.
+            (495, (540.0, 220.0, _above_ground(540.0, 220.0, 10.0)),
+             (534.0, 238.0, _above_ground(534.0, 238.0, 3.4))),
+            (545, (548.0, 222.5, _above_ground(548.0, 222.5, 8.0)),
+             (542.0, 241.5, _above_ground(542.0, 241.5, 3.4))),
+            (frame_end,
+             (556.5, 225.2, _above_ground(556.5, 225.2, 7.5)),
+             (550.0, 244.5, _above_ground(550.0, 244.5, 3.4))),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -8540,7 +8764,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day31reveal":
+    if cfg.get("cam") == "day32campaign":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day31reveal":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day30reveal":
         frame_end = max(frame_end, FPS * 18)
@@ -8573,7 +8799,14 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day31reveal":
+    if cfg.get("cam") == "day32campaign":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 140 + index * 6, dur=28)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 130)
+    elif cfg.get("cam") == "day31reveal":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         cedarbank_roots = [e for e in home_roots
                            if int(e.get("nb_world_plan_id", 0)) <= 472]
@@ -8769,6 +9002,8 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "day32campaign":
+        build_day32_campaign_vignette(world_col, frame_end)
     if cfg.get("cam") == "football":
         build_football_vignette(world_col, state["buildings"], frame_end)
     if cfg.get("godzilla"):
