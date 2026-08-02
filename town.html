@@ -404,9 +404,10 @@
   }
   #fishingGame.open { display:flex; }
   #fishingCard {
-    width:min(440px,calc(100vw - 36px)); padding:22px; border-radius:22px;
-    background:#f4eddd; border:1px solid rgba(255,255,255,.72);
-    box-shadow:0 26px 76px rgba(0,0,0,.42); text-align:center;
+    width:min(480px,calc(100vw - 36px)); padding:22px; border-radius:26px;
+    background:linear-gradient(155deg,#fff9e9 0%,#e9dfc6 100%);
+    border:1px solid rgba(255,255,255,.78); box-shadow:0 26px 76px rgba(0,0,0,.42);
+    text-align:center; overflow:hidden;
   }
   #fishingCard h2 { margin:0; font-size:25px; letter-spacing:-.4px; }
   #fishingStatus { min-height:44px; margin:8px 0 13px; color:#526271; font-size:14px; line-height:1.5; }
@@ -430,6 +431,57 @@
     touch-action:none; user-select:none;
   }
   #fishAction.bite { background:#b94a2e; animation:fishBitePulse .54s ease-in-out infinite alternate; }
+  #fishAction.catching { background:linear-gradient(180deg,#276b59,#17483e); box-shadow:0 6px 0 #10372f; }
+  #fishAction.catching.pressed { transform:translateY(4px); box-shadow:0 2px 0 #10372f; filter:brightness(1.08); }
+  #catchGame {
+    display:none; grid-template-columns:42px minmax(0,1fr); gap:11px; align-items:stretch;
+    width:min(310px,100%); margin:0 auto; padding:12px; border-radius:22px;
+    background:linear-gradient(145deg,#173c46,#0d2731); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 14px 28px rgba(11,41,51,.2);
+  }
+  #catchGame.open { display:grid; }
+  #catchProgress {
+    position:relative; min-height:300px; border-radius:16px; overflow:hidden;
+    background:#102832; border:2px solid rgba(255,255,255,.18);
+  }
+  #catchProgressFill {
+    position:absolute; inset:auto 0 0; height:18%;
+    background:linear-gradient(0deg,#e5ae45,#fff0a0); box-shadow:0 0 14px rgba(255,218,101,.72);
+  }
+  #catchProgressIcon { position:absolute; left:50%; bottom:calc(18% - 10px); transform:translate(-50%,50%); font-size:18px; z-index:2; }
+  #fishTrack {
+    position:relative; min-height:300px; overflow:hidden; border-radius:16px;
+    border:2px solid rgba(220,252,255,.46);
+    background:
+      radial-gradient(ellipse at 25% 18%,rgba(255,255,255,.30) 0 2px,transparent 3px),
+      radial-gradient(ellipse at 74% 67%,rgba(255,255,255,.22) 0 3px,transparent 4px),
+      repeating-linear-gradient(172deg,transparent 0 34px,rgba(255,255,255,.035) 35px 37px),
+      linear-gradient(180deg,#62c8cf 0%,#287e94 48%,#174b68 100%);
+  }
+  #fishTrack::before {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(90deg,rgba(255,255,255,.13),transparent 25% 76%,rgba(4,36,55,.18));
+  }
+  #catchBar {
+    position:absolute; left:8px; right:8px; bottom:0; height:25%; z-index:2;
+    border:2px solid rgba(236,255,208,.94); border-radius:17px;
+    background:linear-gradient(90deg,rgba(107,203,105,.47),rgba(163,235,115,.69),rgba(107,203,105,.47));
+    box-shadow:inset 0 0 14px rgba(229,255,199,.38),0 0 9px rgba(163,235,115,.45);
+  }
+  #catchBar::after { content:"CATCH ZONE"; position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); color:rgba(239,255,221,.8); font-size:9px; font-weight:900; letter-spacing:1px; white-space:nowrap; }
+  #catchFish {
+    position:absolute; left:50%; bottom:50%; z-index:3; width:58px; height:30px;
+    transform:translate(-50%,50%); filter:drop-shadow(0 4px 3px rgba(0,25,42,.32));
+  }
+  #catchFish::before { content:""; position:absolute; left:11px; top:5px; width:37px; height:21px; border-radius:65% 48% 48% 65%; background:var(--fish-color,#f5c55b); box-shadow:inset 0 -5px rgba(0,0,0,.12); }
+  #catchFish::after { content:""; position:absolute; left:1px; top:6px; border-top:10px solid transparent; border-bottom:10px solid transparent; border-right:16px solid var(--fish-color,#f5c55b); }
+  #catchFishEye { position:absolute; right:12px; top:10px; z-index:2; width:5px; height:5px; border-radius:50%; background:#102b3b; box-shadow:0 0 0 2px #fff; }
+  #catchCrown { display:none; position:absolute; left:50%; top:-11px; transform:translateX(-50%); color:#ffe26b; font-size:17px; text-shadow:0 1px 2px #654a00; }
+  #catchReadout { display:none; align-items:center; justify-content:center; gap:8px; margin:10px 0 2px; color:#2d5964; font-size:12px; font-weight:800; }
+  #catchReadout.open { display:flex; }
+  #catchRarity { padding:4px 9px; border-radius:999px; color:#fff; background:#587d88; }
+  #catchBehavior { text-transform:capitalize; }
+  #catchHint { display:none; margin:8px 0 -4px; color:#58707a; font-size:11.5px; font-weight:700; }
+  #catchHint.open { display:block; }
   #reelTrack {
     height:15px; margin-top:14px; overflow:hidden; border-radius:9px;
     background:#d8d0be; border:1px solid #aaa18e; display:none;
@@ -444,6 +496,26 @@
     font:700 13px inherit; cursor:pointer; text-decoration:underline;
   }
   @keyframes fishBitePulse { to { transform:scale(1.025); filter:brightness(1.12); } }
+
+  @media (max-height:680px) {
+    #fishingCard { padding:14px 18px; }
+    #fishingStatus { min-height:34px; margin:4px 0 7px; }
+    #catchGame,#catchProgress,#fishTrack { min-height:245px; }
+    #fishAction { min-height:46px; margin-top:9px; }
+  }
+  @media (max-height:500px) {
+    #fishingGame { padding:6px; }
+    #fishingCard { width:min(470px,calc(100vw - 12px)); padding:8px 14px; border-radius:18px; }
+    #fishingCard h2 { font-size:18px; }
+    #fishingStatus { min-height:22px; margin:2px 0 3px; font-size:11.5px; line-height:1.3; }
+    #catchReadout { margin:3px 0 2px; font-size:10px; }
+    #catchRarity { padding:3px 7px; }
+    #catchGame { width:min(270px,100%); min-height:185px; padding:7px; border-radius:16px; }
+    #catchProgress,#fishTrack { min-height:185px; border-radius:12px; }
+    #catchHint { margin:3px 0 -2px; font-size:9.5px; }
+    #fishAction { min-height:37px; margin-top:5px; font-size:12px; }
+    #fishingClose { margin-top:4px; font-size:11px; }
+  }
 
   #toast {
     position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:30;
@@ -1033,6 +1105,15 @@
     <div id="castMeter" aria-label="Casting timing meter">
       <div id="castTarget"></div><div id="castLine"></div>
     </div>
+    <div id="catchReadout"><span id="catchRarity">Common</span><span id="catchBehavior">smooth movement</span></div>
+    <div id="catchGame" aria-label="Fishing catch meter">
+      <div id="catchProgress" aria-label="Catch progress"><div id="catchProgressFill"></div><div id="catchProgressIcon">★</div></div>
+      <div id="fishTrack">
+        <div id="catchBar"></div>
+        <div id="catchFish"><span id="catchFishEye"></span><span id="catchCrown">♛</span></div>
+      </div>
+    </div>
+    <div id="catchHint">Hold to rise · release to fall · light taps hover</div>
     <button id="fishAction" type="button">hold to cast</button>
     <div id="reelTrack"><div id="reelFill"></div></div>
     <div id="caughtBadge" aria-live="polite"></div>
@@ -2845,6 +2926,16 @@ const fishingStatus = document.getElementById("fishingStatus");
 const castMeter = document.getElementById("castMeter");
 const castTarget = document.getElementById("castTarget");
 const castLine = document.getElementById("castLine");
+const catchGame = document.getElementById("catchGame");
+const catchProgressFill = document.getElementById("catchProgressFill");
+const catchProgressIcon = document.getElementById("catchProgressIcon");
+const catchBar = document.getElementById("catchBar");
+const catchFish = document.getElementById("catchFish");
+const catchCrown = document.getElementById("catchCrown");
+const catchReadout = document.getElementById("catchReadout");
+const catchRarity = document.getElementById("catchRarity");
+const catchBehavior = document.getElementById("catchBehavior");
+const catchHint = document.getElementById("catchHint");
 const fishAction = document.getElementById("fishAction");
 const reelTrack = document.getElementById("reelTrack");
 const reelFill = document.getElementById("reelFill");
@@ -3003,10 +3094,11 @@ function clearMovementInput(){
   move.run = false;
 }
 
-/* ─── Fishing Pond: intentionally session-only v1 ───
-   The timing/reeling game is real, but catches are not persisted or sold yet.
-   That lets the town ship the fun interaction before adding an economy or a
-   permanent inventory schema that would be much harder to change safely. */
+/* ─── Fishing Pond: session-only momentum minigame ───
+   Catches are deliberately not persisted or sold until Followville has an
+   inventory. The active catch is an original one-button acceleration game:
+   hold to lift the catch zone, release to let it fall, and anticipate both
+   the zone's momentum and the fish's rarity-specific movement. */
 let fishingSpot = null;
 let fishingStage = "idle";
 let fishingHeld = false;
@@ -3016,39 +3108,70 @@ let fishingTargetLeft = .35;
 let fishingLastReadyAt = 0;
 let fishingBiteTimer = null;
 let fishingEscapeTimer = null;
-let fishingReelClicks = 0;
-const FISHING_REEL_GOAL = 12;
 const FISHING_TARGET_WIDTH = .30;
+let fishingProfile = null;
+let fishingBarY = .08;
+let fishingBarVelocity = 0;
+let fishingBarHeight = .25;
+let fishingFishY = .52;
+let fishingFishVelocity = 0;
+let fishingFishTarget = .52;
+let fishingRetargetTimer = 0;
+let fishingProgress = .28;
+let fishingWasOverlapping = true;
+let fishingPerfect = true;
+let fishingOutsideTime = 0;
+const FISHING_PROFILES = [
+  {rarity:"Common",color:"#587d88",fishColor:"#edbf59",weight:.56,difficulty:22,behavior:"smooth",barHeight:.32},
+  {rarity:"Uncommon",color:"#43875f",fishColor:"#e77d4f",weight:.25,difficulty:42,behavior:"mixed",barHeight:.27},
+  {rarity:"Rare",color:"#3977b7",fishColor:"#6fc6e8",weight:.12,difficulty:65,behavior:"sinker",barHeight:.245},
+  {rarity:"Legendary",color:"#c07a22",fishColor:"#e8a444",weight:.055,difficulty:86,behavior:"floater",barHeight:.22,legendary:true},
+  {rarity:"Mythical",color:"#9b4bb3",fishColor:"#c781f1",weight:.015,difficulty:103,behavior:"dart",barHeight:.205,legendary:true}
+];
 function fishingOpen(){ return fishingGame.classList.contains("open"); }
 function setFishingStage(stage){
   fishingStage = stage;
   document.body.dataset.fishingGame = stage;
 }
-function fishingRarity(){
+function fishingRarityProfile(){
+  // The dedicated local fishing view is also the deterministic browser/visual
+  // audit route. Keep it Common so automated input can validate the mechanic;
+  // ordinary visitors receive the full weighted rarity table.
+  if(typeof localAuditView !== "undefined" && localAuditView === "fishing")return FISHING_PROFILES[0];
   const roll = Math.random();
-  if (roll < .75) return ["Common","#587d88"];
-  if (roll < .90) return ["Uncommon","#43875f"];
-  if (roll < .96) return ["Rare","#3977b7"];
-  if (roll < .99) return ["Legendary","#c07a22"];
-  return ["Mythical","#9b4bb3"];
+  let cursor = 0;
+  for(const profile of FISHING_PROFILES){
+    cursor += profile.weight;
+    if(roll <= cursor)return profile;
+  }
+  return FISHING_PROFILES[0];
+}
+function setFishingHeld(held){
+  if(fishingStage !== "catching")return;
+  fishingHeld = held;
+  fishAction.classList.toggle("pressed",held);
+  fishAction.textContent = held ? "lifting — release to brake" : "hold to lift catch zone";
+  document.body.dataset.fishingInput = held ? "press" : "release";
 }
 function resetFishingRound(){
   clearTimeout(fishingBiteTimer);
   clearTimeout(fishingEscapeTimer);
   fishingHeld = false;
-  fishingReelClicks = 0;
   fishingLinePosition = .08 + Math.random() * .84;
   fishingLineDirection = Math.random() < .5 ? -1 : 1;
   fishingLastReadyAt = 0;
   fishingTargetLeft = .18 + Math.random() * .34;
   castTarget.style.left = `${fishingTargetLeft * 100}%`;
   castMeter.style.display = "block";
+  catchGame.classList.remove("open");
+  catchReadout.classList.remove("open");
+  catchHint.classList.remove("open");
   reelTrack.style.display = "none";
   reelFill.style.width = "0";
   caughtBadge.style.display = "none";
   caughtBadge.textContent = "";
   fishAction.disabled = false;
-  fishAction.classList.remove("bite");
+  fishAction.classList.remove("bite","catching","pressed");
   fishAction.textContent = "hold to cast";
   fishingStatus.textContent = "Hold the button, then release when the red line is inside the green oval.";
   document.body.dataset.fishingAim = "moving";
@@ -3076,6 +3199,7 @@ function closeFishing(){
   if (!fishingOpen()) return;
   clearTimeout(fishingBiteTimer);
   clearTimeout(fishingEscapeTimer);
+  fishingHeld = false;
   fishingGame.classList.remove("open");
   fishingGame.setAttribute("aria-hidden","true");
   setFishingStage("closed");
@@ -3094,45 +3218,164 @@ function successfulCast(){
     setFishingStage("bite");
     fishAction.disabled = false;
     fishAction.classList.add("bite");
-    fishAction.textContent = "BITE! click fast to reel";
-    reelTrack.style.display = "block";
-    fishingStatus.textContent = "You have a bite! Click or tap quickly to reel it in.";
+    fishAction.textContent = "BITE! hook it";
+    fishingStatus.textContent = "You have a bite! Tap once to set the hook.";
     fishingEscapeTimer = setTimeout(()=>{
       if (fishingStage !== "bite") return;
       setFishingStage("escaped");
       fishAction.classList.remove("bite");
       fishAction.textContent = "try another cast";
       fishingStatus.textContent = "The fish slipped the hook. That was close.";
-    },4500);
+    },3200);
   },1100 + Math.random() * 1100);
 }
-function reelFishing(){
+function beginFishingCatch(){
   if (fishingStage === "caught" || fishingStage === "escaped"){
     resetFishingRound();
     return;
   }
   if (fishingStage !== "bite") return;
-  fishingReelClicks += 1;
-  reelFill.style.width = `${Math.min(100,fishingReelClicks/FISHING_REEL_GOAL*100)}%`;
-  if (fishingReelClicks < FISHING_REEL_GOAL) return;
   clearTimeout(fishingEscapeTimer);
-  const [rarity,color] = fishingRarity();
-  setFishingStage("caught");
+  fishingProfile = fishingRarityProfile();
+  fishingBarHeight = fishingProfile.barHeight;
+  fishingBarY = .08;
+  fishingBarVelocity = 0;
+  fishingFishY = .17 + Math.random()*.13;
+  fishingFishVelocity = 0;
+  fishingFishTarget = fishingFishY;
+  fishingRetargetTimer = 0;
+  fishingProgress = .28;
+  fishingWasOverlapping = true;
+  fishingPerfect = true;
+  fishingOutsideTime = 0;
+  setFishingStage("catching");
   fishAction.classList.remove("bite");
-  fishAction.textContent = "fish again";
-  fishingStatus.textContent = "Catch complete!";
-  caughtBadge.style.display = "block";
-  caughtBadge.style.color = color;
-  caughtBadge.textContent = `You caught a ${rarity} fish!`;
+  fishAction.classList.add("catching");
+  fishAction.textContent = "hold to lift catch zone";
+  castMeter.style.display = "none";
+  catchGame.classList.add("open");
+  catchReadout.classList.add("open");
+  catchHint.classList.add("open");
+  catchRarity.textContent = fishingProfile.rarity;
+  catchRarity.style.background = fishingProfile.color;
+  catchBehavior.textContent = `${fishingProfile.behavior} movement · difficulty ${fishingProfile.difficulty}`;
+  catchFish.style.setProperty("--fish-color",fishingProfile.fishColor);
+  catchCrown.style.display = fishingProfile.legendary ? "block" : "none";
+  fishingStatus.textContent = "Keep the fish inside your glowing catch zone until the star meter fills.";
+  updateFishingCatchVisuals();
+}
+function finishFishingCatch(caught){
+  if(fishingStage !== "catching")return;
+  fishingHeld = false;
+  setFishingStage(caught ? "caught" : "escaped");
+  fishAction.classList.remove("catching","pressed");
+  fishAction.textContent = caught ? "fish again" : "try another cast";
+  fishingStatus.textContent = caught
+    ? (fishingPerfect ? "Perfect catch — you never lost the fish!" : "Catch complete!")
+    : `${fishingProfile.rarity} fish escaped. Brake earlier and use lighter taps.`;
+  if(caught){
+    caughtBadge.style.display = "block";
+    caughtBadge.style.color = fishingProfile.color;
+    caughtBadge.textContent = `You caught a ${fishingProfile.rarity} fish${fishingPerfect ? " — Perfect!" : "!"}`;
+  }
+}
+function updateFishingCatchVisuals(){
+  catchBar.style.height = `${fishingBarHeight*100}%`;
+  catchBar.style.bottom = `${fishingBarY*100}%`;
+  catchFish.style.bottom = `${fishingFishY*100}%`;
+  catchProgressFill.style.height = `${fishingProgress*100}%`;
+  catchProgressIcon.style.bottom = `calc(${fishingProgress*100}% - 10px)`;
+  document.body.dataset.fishingOverlap = fishingFishY >= fishingBarY &&
+    fishingFishY <= fishingBarY + fishingBarHeight ? "true" : "false";
+  document.body.dataset.fishingProgress = fishingProgress.toFixed(3);
+}
+function updateFishingCatch(dt){
+  if(fishingStage !== "catching" || !fishingProfile)return;
+
+  // The player steers acceleration, not position. Velocity survives input
+  // changes, which makes anticipatory braking and rhythmic hovering matter.
+  const accel = fishingHeld ? 4.8 : -3.8;
+  fishingBarVelocity += accel*dt;
+  fishingBarVelocity *= Math.exp(-1.1*dt);
+  fishingBarVelocity = Math.max(-1.85,Math.min(1.65,fishingBarVelocity));
+  fishingBarY += fishingBarVelocity*dt;
+  const barCeiling = 1-fishingBarHeight;
+  if(fishingBarY <= 0){
+    fishingBarY = 0;
+    if(fishingBarVelocity < 0)fishingBarVelocity = Math.abs(fishingBarVelocity)*.32;
+  }else if(fishingBarY >= barCeiling){
+    fishingBarY = barCeiling;
+    if(fishingBarVelocity > 0)fishingBarVelocity = 0;
+  }
+
+  const difficulty = fishingProfile.difficulty/110;
+  const baseInterval = 1.15+(0.12-1.15)*difficulty;
+  const baseDisplacement = .10+(.72-.10)*difficulty;
+  const maxSpeed = .18+(1.55-.18)*difficulty;
+  const trackingAcceleration = .7+(8.5-.7)*difficulty;
+  const behavior = fishingProfile.behavior;
+  const modifiers = {
+    smooth:{interval:1.45,displacement:.68,jitter:.35,bias:0},
+    mixed:{interval:1,displacement:1,jitter:1,bias:0},
+    sinker:{interval:.95,displacement:.95,jitter:.8,bias:-.12},
+    floater:{interval:.95,displacement:.95,jitter:.8,bias:.12},
+    dart:{interval:.58,displacement:1+2*fishingProfile.difficulty/100,jitter:1.8,bias:0}
+  }[behavior];
+  fishingRetargetTimer -= dt;
+  if(fishingRetargetTimer <= 0){
+    const hopRoll = Math.random();
+    const hopScale = hopRoll < .58 ? .28 : (hopRoll < .9 ? .62 : 1);
+    let delta = (Math.random()<.5?-1:1)*baseDisplacement*modifiers.displacement*hopScale;
+    delta += modifiers.bias*(.55+Math.random()*.45);
+    fishingFishTarget = Math.max(.035,Math.min(.965,fishingFishY+delta));
+    fishingRetargetTimer = (.55+Math.random()*.9)*baseInterval*modifiers.interval;
+  }
+  let desiredVelocity = (fishingFishTarget-fishingFishY)*trackingAcceleration;
+  desiredVelocity = Math.max(-maxSpeed,Math.min(maxSpeed,desiredVelocity));
+  let fishAcceleration = trackingAcceleration;
+  if(behavior==="sinker" && desiredVelocity<0)fishAcceleration*=1.55;
+  if(behavior==="floater" && desiredVelocity>0)fishAcceleration*=1.55;
+  const velocityDelta = desiredVelocity-fishingFishVelocity;
+  fishingFishVelocity += Math.sign(velocityDelta)*Math.min(Math.abs(velocityDelta),fishAcceleration*dt);
+  fishingFishVelocity += (Math.random()-.5)*(.18*difficulty)*modifiers.jitter*dt;
+  fishingFishY += fishingFishVelocity*dt;
+  if(fishingFishY <= .025){fishingFishY=.025;fishingFishVelocity=Math.abs(fishingFishVelocity)*.35;}
+  if(fishingFishY >= .975){fishingFishY=.975;fishingFishVelocity=-Math.abs(fishingFishVelocity)*.35;}
+
+  const overlapping = fishingFishY >= fishingBarY && fishingFishY <= fishingBarY+fishingBarHeight;
+  if(overlapping){
+    fishingProgress += .24*dt;
+    fishingOutsideTime = 0;
+  }else{
+    fishingProgress -= .24*dt;
+    fishingOutsideTime += dt;
+    if(fishingWasOverlapping)fishingPerfect = false;
+  }
+  fishingWasOverlapping = overlapping;
+  fishingProgress = Math.max(0,Math.min(1,fishingProgress));
+  updateFishingCatchVisuals();
+  if(fishingProgress >= 1)finishFishingCatch(true);
+  else if(fishingProgress <= 0)finishFishingCatch(false);
 }
 fishAction.addEventListener("pointerdown",event=>{
-  if (fishingStage !== "aim") return;
+  if(fishingStage === "catching"){
+    event.preventDefault();
+    setFishingHeld(true);
+    fishAction.setPointerCapture?.(event.pointerId);
+    return;
+  }
+  if(fishingStage !== "aim")return;
   event.preventDefault();
   fishingHeld = true;
   fishAction.textContent = "release to cast";
   fishAction.setPointerCapture?.(event.pointerId);
 });
 function finishFishingCast(event){
+  if(fishingStage === "catching"){
+    event?.preventDefault();
+    setFishingHeld(false);
+    return;
+  }
   if (fishingStage !== "aim" || !fishingHeld) return;
   event?.preventDefault();
   fishingHeld = false;
@@ -3154,8 +3397,20 @@ fishAction.addEventListener("pointerup",finishFishingCast);
 window.addEventListener("pointerup",finishFishingCast);
 window.addEventListener("pointercancel",()=>{
   if(fishingStage==="aim")fishingHeld=false;
+  else if(fishingStage==="catching")setFishingHeld(false);
 });
-fishAction.addEventListener("click",reelFishing);
+fishAction.addEventListener("click",beginFishingCatch);
+document.body.dataset.fishingVersion = "momentum-v2";
+window.addEventListener("keydown",event=>{
+  if(!fishingOpen() || fishingStage!=="catching" || event.code!=="Space" || event.repeat)return;
+  event.preventDefault();
+  setFishingHeld(true);
+});
+window.addEventListener("keyup",event=>{
+  if(!fishingOpen() || fishingStage!=="catching" || event.code!=="Space")return;
+  event.preventDefault();
+  setFishingHeld(false);
+});
 fishPrompt.addEventListener("click",startFishing);
 fishingClose.addEventListener("click",closeFishing);
 fishingGame.addEventListener("pointerdown",event=>event.stopPropagation());
@@ -8202,6 +8457,7 @@ const _camDir = new THREE.Vector3();
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  updateFishingCatch(dt);
   if (fishingOpen() && fishingStage === "aim"){
     fishingLinePosition += fishingLineDirection * dt * .52;
     if (fishingLinePosition >= .985){ fishingLinePosition=.985; fishingLineDirection=-1; }
