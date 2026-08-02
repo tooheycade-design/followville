@@ -170,12 +170,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("the fishing pond offers an easy timing cast and rapid-click catch", async ({ page }) => {
+test("the fishing pond offers a momentum catch with rarity-scaled fish movement", async ({ page }) => {
   test.setTimeout(180_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?local=1&view=fishing#walk");
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","momentum-v2");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
   // The pond's level shelf is authored in the shared terrain model, so its
   // centre is duplicated in town.html. Drift there puts the water back on the
@@ -205,28 +206,64 @@ test("the fishing pond offers an easy timing cast and rapid-click catch", async 
     button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
-  // Wait for the bite and reel it in without leaving the page in between.
-  // Waiting for "bite" from the test side and then making a second round trip
-  // to send the clicks leaves a gap the fish can escape through, which is
-  // exactly what CI reported: expected "waiting", received "escaped". Both
-  // halves now happen in one evaluate, so the reel starts on the same frame
-  // the bite is seen.
-  await page.locator("#fishAction").evaluate(async button=>{
+  // Wait for the bite and set the hook in the same page-side operation. On a
+  // loaded software renderer, returning to the driver between those steps can
+  // consume most of the deliberately short hook window.
+  const hookState=await page.locator("#fishAction").evaluate(async button=>{
     await new Promise((resolve,reject)=>{
       const started=performance.now();
-      const reelWhenBiting=()=>{
+      const hookWhenBiting=()=>{
         if(document.body.dataset.fishingGame==="bite")return resolve();
         if(performance.now()-started>30_000)return reject(new Error(
           "bite never arrived; game="+document.body.dataset.fishingGame));
-        requestAnimationFrame(reelWhenBiting);
+        requestAnimationFrame(hookWhenBiting);
       };
-      reelWhenBiting();
+      hookWhenBiting();
     });
-    for(let click=0;click<12;click++)button.click();
+    button.click();
+    return document.body.dataset.fishingGame;
+  });
+  expect(errors).toEqual([]);
+  expect(hookState).toBe("catching");
+  await expect(page.locator("#catchGame")).toBeVisible();
+  await expect(page.locator("#catchRarity")).toHaveText("Common");
+  await expect(page.locator("#catchBehavior")).toContainText("smooth movement");
+
+  // Play through the public binary input: hold while the catch-zone center is
+  // below the fish, release before it overshoots. This validates acceleration,
+  // momentum, overlap progress and success rather than mutating internal state.
+  await page.evaluate(async ()=>{
+    let pressed=false;
+    const setPressed=next=>{
+      if(next===pressed)return;
+      pressed=next;
+      window.dispatchEvent(new KeyboardEvent(next?"keydown":"keyup",{
+        bubbles:true,code:"Space",key:" ",repeat:false
+      }));
+    };
+    const started=performance.now();
+    let previousCenter=null;
+    let previousTime=performance.now();
+    while(document.body.dataset.fishingGame==="catching"){
+      const fish=parseFloat(document.getElementById("catchFish").style.bottom)/100;
+      const barBottom=parseFloat(document.getElementById("catchBar").style.bottom)/100;
+      const barHeight=parseFloat(document.getElementById("catchBar").style.height)/100;
+      const center=barBottom+barHeight/2;
+      const now=performance.now();
+      const velocity=previousCenter===null ? 0 : (center-previousCenter)/Math.max(.001,(now-previousTime)/1000);
+      const predictedCenter=center+velocity*.16;
+      if(predictedCenter<fish-.015)setPressed(true);
+      else if(predictedCenter>fish+.015)setPressed(false);
+      previousCenter=center;
+      previousTime=now;
+      if(performance.now()-started>30_000)throw new Error("momentum catch did not resolve");
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
+    setPressed(false);
   });
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");
   await expect(page.locator("#caughtBadge")).toContainText(
-    /You caught a (Common|Uncommon|Rare|Legendary|Mythical) fish!/);
+    /You caught a Common fish/);
   await page.getByRole("button",{name:"back to the pond"}).click();
   await expect(page.locator("#fishingGame")).toBeHidden();
   await expect(page.locator("#fishPrompt")).toBeVisible();
