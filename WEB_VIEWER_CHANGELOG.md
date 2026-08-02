@@ -3,6 +3,25 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Day 32 Timber Bend growth and campaign reveal (2026-08-02)
+- Grew the canonical town once from population 625 to 656 with 31 ordinary
+  claimable homes: plan IDs 482-500 finished Timber Bend Road and 501-512
+  opened Lodgepole Loop. Address 513 is next.
+- Published the exact 717-record state through the full fallback and 32
+  streamed chunks. Supabase insert-only sync added the 31 new house rows and
+  preserved all existing claims and ownership.
+- Removed repeated raised junction-cover discs from ordinary neighborhood road
+  bends; the continuous road ribbons already seal those bends, while actual
+  junction covers and authored cul-de-sac turnarounds remain.
+- Added a 20-second Day 32 render-only campaign reveal with a two-candidate
+  roadside billboard and moving semi. Both props are explicitly stripped by
+  `export_web.py`, so no campaign geometry enters the live GLBs.
+- Rejected the first campaign render after exact-frame QA found a foreground
+  house blocking the final shot. The corrected replay raised the camera above
+  nearby roofs, delayed the semi until its campaign beat, and passed exact MP4
+  frame review at the whole-town, growth, billboard, and truck beats without
+  changing Day 32 state.
+
 ## Day 31 Cedarbank completion and Timber Bend opening (2026-08-01)
 - Grew the canonical town once from population 605 to 625 with 20 ordinary
   claimable homes: plan IDs 462-472 completed Alder Court/Cedarbank and plan

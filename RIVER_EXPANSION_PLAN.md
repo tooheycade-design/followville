@@ -1,7 +1,23 @@
 # Followville river chapter: population 501–750
 
-Status: Day 31 released at population 625 through plan ID/address 481. The
-deterministic reserve continues through population 750; address 482 is next.
+Status: Day 32 released at population 656 through plan ID/address 512. The
+deterministic reserve continues through population 750; address 513 is next.
+
+## Day 32 Timber Bend continuation
+
+- Day 32 grew from population 625 to 656 with exactly 31 ordinary claimable
+  homes, taking total world records from 686 to 717 without adding a permanent
+  landmark.
+- Plan IDs 482-500 finished Timber Bend Road and plan IDs 501-512 opened
+  Lodgepole Loop. Timber Bend now has 40 of 54 homes; plan ID 513 is next.
+- Seeds 687-717 belong to the Day 32 homes. The 20-second `day32campaign`
+  portrait video combines a whole-town establish, all 31 home rises, a
+  roadside `VOTE MR MAYOR` / `VOTE BSB_DOMWILLIS` billboard, and a moving
+  `VOTE XAD_INSTA` semi. Campaign props are render-only and excluded from web
+  exports.
+- Repeated raised road-cover discs were removed from ordinary bend control
+  points. Continuous road ribbons now cover bends themselves; true junction
+  covers and authored cul-de-sac bulbs remain.
 
 ## Day 31 boundary and Timber Bend opening
 
@@ -82,11 +98,11 @@ record.
 
 ## Planned districts
 
-| Plan IDs | District | Streets | Homes | Built through Day 31 |
+| Plan IDs | District | Streets | Homes | Built through Day 32 |
 |---|---|---|---:|---:|
 | 367–414 | Rivergate | Crossing Way, Rivergate Drive | 48 | 48 |
 | 415–472 | Cedarbank | Cedarbank Lane, Alder Court | 58 | 58 |
-| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 | 9 |
+| 473–526 | Timber Bend | Timber Bend Road, Lodgepole Loop | 54 | 40 |
 | 527–584 | Eastbank Village | Millstone Way, Ferry Street | 58 | 0 |
 | 585–616 | River Meadows | Marshlight Lane, Heron Reach | 32 | 0 |
 
@@ -131,9 +147,9 @@ Two finished-scene audit/showcase cameras are reusable:
 - `--cam riverdrone` — twelve-second aerial river and crossing showcase.
 - `--cam riverbridge` — twelve-second first-person-height bridge approach.
 
-The current growth-reveal camera is `--cam day31reveal`: a twenty-second
-whole-town drone establish followed by all 20 Day 31 Cedarbank/Timber Bend
-home rises and a finished City Hall hero shot.
+The current growth-reveal camera is `--cam day32campaign`: a twenty-second
+whole-town establish followed by all 31 Day 32 Timber Bend home rises, the
+two-name mayoral billboard, and the moving campaign semi.
 
 `--cam newstreet` automatically selects Crossing Way on Day 28 because it is
 the latest day's largest street group.

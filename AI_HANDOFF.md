@@ -40,7 +40,22 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
-## Current town (Day 26, 2026-07-27)
+## Current town (Day 32, 2026-08-02)
+
+Population is 656 with 717 records. Day 32 added 31 ordinary claimable homes:
+plan IDs 482-500 finished Timber Bend Road and 501-512 opened Lodgepole Loop;
+seeds 687-717 are the new records and address 513 is next. Supabase insert-only
+sync added all 31 rows without modifying existing claims or ownership. Full
+fallback and 32 streamed chunks match the canonical state. Road construction
+now relies on continuous ribbons at ordinary bends instead of placing a raised
+cover disc at every control point; actual junction covers and authored
+cul-de-sac bulbs remain. The reviewed delivery is one 20-second 1080x1920
+daytime MP4 using `--cam day32campaign`: whole-town establish, all 31 home
+rises, a `VOTE MR MAYOR` / `VOTE BSB_DOMWILLIS` roadside billboard, and a
+moving `VOTE XAD_INSTA` semi. The campaign objects are render-only and removed
+before every website export.
+
+## Prior town (Day 26, 2026-07-27)
 
 Population is 464 with 524 records. Day 26 added 25 ordinary claimable homes
 (plan IDs 296-320, seeds 498-522), finishing Juniper Court, filling Hemlock

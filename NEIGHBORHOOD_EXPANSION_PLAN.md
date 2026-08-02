@@ -4,7 +4,7 @@ The original 366-address reserve was implemented 2026-07-11. The approved
 river chapter extends the same deterministic system by 250 addresses,
 367-616, carrying population 500 to 750. See `RIVER_EXPANSION_PLAN.md`.
 
-Current progress: addresses 1-481 are built through Day 31 (population 625).
+Current progress: addresses 1-512 are built through Day 32 (population 656).
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills
@@ -19,7 +19,8 @@ consumed addresses 385-415, finishing Rivergate and opening Cedarbank Lane.
 Day 30 consumed addresses 416-461, finishing Cedarbank Lane and building the
 first 17 Alder Court homes. Day 31 consumed addresses 462-481, finishing the
 eleven remaining Alder Court homes and opening Timber Bend Road with nine
-homes. Address 482 is next.
+homes. Day 32 consumed addresses 482-512: nineteen finished Timber Bend Road
+and twelve opened Lodgepole Loop. Address 513 is next.
 
 ## Behavior
 
@@ -56,7 +57,7 @@ homes. Address 482 is next.
 | 319-366 | North Ridge | 48 (complete) |
 | 367-414 | Rivergate | 48 (complete) |
 | 415-472 | Cedarbank | 58 (complete) |
-| 473-526 | Timber Bend | 54 (9 built; 45 remain) |
+| 473-526 | Timber Bend | 54 (40 built; 14 remain) |
 | 527-584 | Eastbank Village | 58 (not started) |
 | 585-616 | River Meadows | 32 (not started) |
 

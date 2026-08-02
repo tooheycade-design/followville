@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-08-02 - Cade (via Windows Codex) - [BOTH] Completed one guarded Day 32 growth from 625 to 656 with 31 claimable Timber Bend homes (plan IDs 482-512 / seeds 687-717), corrected the Blender-only overlapping road-cover discs while preserving true cul-de-sacs, published the exact 717-record full/32-chunk town and insert-only Supabase rows, then produced and exact-frame-reviewed a 20-second render-only mayoral campaign video with the `VOTE MR MAYOR` / `VOTE BSB_DOMWILLIS` billboard and moving `VOTE XAD_INSTA` semi; existing claims and ownership were preserved.
+
 2026-08-01 - Zach (via Mac Codex) - [WEB] Replaced the Fishing Pond's rapid-click reel with a polished vertical momentum game on canonical Day 31: hold/Space accelerates a glowing catch zone upward, release and bottom bounce carry it downward, overlap fills a visible catch meter, and the unchanged Common/Uncommon/Rare/Legendary/Mythical tiers now drive distinct bar sizes, colors, crowns, difficulty, and smooth/mixed/sinker/floater/dart fish motion; the focused browser playthrough and desktop/landscape-phone visual review passed without changing Day 31, population 625, any of the 686 records, GLBs, Blender, claims, or Supabase.
 
 2026-08-01 - Cade (via Windows Codex) - [WORLD] Added and rendered the reusable `day31reveal` camera: one continuous 20-second whole-town drone establish, all 20 existing Day 31 Cedarbank/Timber Bend home rises, and a front City Hall finishing shot; visually checked all three beats and placed the MP4 on Cade's Desktop. The guarded replay refreshed equivalent export hashes but made no growth, Day 31/population 625 state, claims, ownership, or geometry change.

@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 26
+# Codex handoff -- current through Day 32
 
-Updated 2026-07-27 for Cade and Zach's next Claude/Codex session.
+Updated 2026-08-02 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,17 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 32 is population 656 with 717 total records. One guarded +31 growth
+  consumed plan IDs 482-512 / seeds 687-717: nineteen homes finished Timber
+  Bend Road and twelve opened Lodgepole Loop. Address 513 is next. The
+  insert-only houses sync added all 31 new rows without changing existing
+  claims or ownership. Full fallback plus 32 streamed chunks represent the
+  exact state. Suburban road bends no longer receive repeated raised cover
+  discs; true junctions and cul-de-sac bulbs remain. The reviewed delivery is
+  one 20-second daytime portrait MP4 with the whole town, all 31 home rises,
+  the `VOTE MR MAYOR` / `VOTE BSB_DOMWILLIS` billboard, and the moving
+  `VOTE XAD_INSTA` semi. Campaign props are render-only and excluded from GLBs.
 
 - Day 26 is population 464 with 524 total building records. One guarded +25
   growth consumed addresses 296-320 (Juniper Court, Hemlock Court, then the
