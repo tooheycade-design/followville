@@ -6183,10 +6183,12 @@ def build_day32_campaign_vignette(world_col, frame_end):
     truck["nb_render_only"] = True
     truck.rotation_euler.z = road_angle
     world_col.objects.link(truck)
+    truck_parts = []
 
     def attach_truck(obj):
         obj.parent = truck
         obj["nb_render_only"] = True
+        truck_parts.append(obj)
         return obj
 
     # Long trailer, detailed tractor, dual rear axles, and a physically raised
@@ -6237,9 +6239,13 @@ def build_day32_campaign_vignette(world_col, frame_end):
     truck.keyframe_insert("location", frame=470)
     truck.location = end
     truck.keyframe_insert("location", frame=frame_end)
-    _keyframe_hidden(truck, 1, True)
-    _keyframe_hidden(truck, 469, True)
-    _keyframe_hidden(truck, 470, False)
+    # Hiding an Empty does not hide its children in final renders. Keyframe the
+    # complete vehicle so it enters only for the campaign beat rather than
+    # leaking into the earlier house-growth aerial.
+    for obj in (truck, *truck_parts):
+        _keyframe_hidden(obj, 1, True)
+        _keyframe_hidden(obj, 469, True)
+        _keyframe_hidden(obj, 470, False)
     for fc in obj_fcurves(truck):
         for kp in fc.keyframe_points:
             if fc.data_path == "location":
@@ -7473,21 +7479,22 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (390, (590.0, 190.0, 64.0),
              (billboard[0], billboard[1],
               _above_ground(*billboard, 5.2))),
-            (425, (568.0, 224.0, _above_ground(568.0, 224.0, 13.0)),
+            (425, (575.0, 215.0, _above_ground(575.0, 215.0, 35.0)),
              (billboard[0], billboard[1],
               _above_ground(*billboard, 5.2))),
-            (470, (564.0, 228.8, _above_ground(564.0, 228.8, 9.0)),
+            (470, (570.0, 222.0, _above_ground(570.0, 222.0, 25.0)),
              (billboard[0], billboard[1],
               _above_ground(*billboard, 5.2))),
             # 15.7-20.0s: track the semi's campaign side as it approaches the
-            # billboard; the camera stays on the readable side of both signs.
-            (495, (540.0, 220.0, _above_ground(540.0, 220.0, 10.0)),
-             (534.0, 238.0, _above_ground(534.0, 238.0, 3.4))),
-            (545, (548.0, 222.5, _above_ground(548.0, 222.5, 8.0)),
-             (542.0, 241.5, _above_ground(542.0, 241.5, 3.4))),
+            # billboard. The raised southeast-side camera looks over the nearby
+            # house roofs while holding both campaign messages in one frame.
+            (495, (568.0, 223.0, _above_ground(568.0, 223.0, 23.0)),
+             (553.0, 248.0, _above_ground(553.0, 248.0, 4.8))),
+            (545, (570.0, 220.0, _above_ground(570.0, 220.0, 22.0)),
+             (553.0, 248.0, _above_ground(553.0, 248.0, 4.8))),
             (frame_end,
-             (556.5, 225.2, _above_ground(556.5, 225.2, 7.5)),
-             (550.0, 244.5, _above_ground(550.0, 244.5, 3.4))),
+             (570.0, 220.0, _above_ground(570.0, 220.0, 20.0)),
+             (553.0, 248.0, _above_ground(553.0, 248.0, 4.8))),
         )
         for frame, position, target in beats:
             cam_obj.location = position
