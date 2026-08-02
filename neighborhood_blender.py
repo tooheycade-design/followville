@@ -139,6 +139,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day28reveal  20-second old-plan finish, river/road, river-home reveal
 #   --cam day29reveal  18-second city arc, 31 river homes, rafting-outpost finale
 #   --cam day30reveal  18-second low downtown angle into 46 Cedarbank home rises
+#   --cam day31reveal  20-second whole-town, 20-home, and City Hall drone reveal
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -7274,6 +7275,76 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day31reveal":
+        # Day 31: one continuous 20-second drone story. Establish the complete
+        # town, descend into the two newest housing clusters while all twenty
+        # homes rise, then cross back to a settled front view of City Hall.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        cedarbank = [b for b in newest_homes
+                     if int(b.get("plan_id", 0)) <= 472]
+        timber_bend = [b for b in newest_homes
+                       if int(b.get("plan_id", 0)) >= 473]
+
+        def _mid(group, fallback):
+            if not group:
+                return fallback
+            pts = [build_pos(b) for b in group]
+            return (sum(p[0] for p in pts) / len(pts),
+                    sum(p[1] for p in pts) / len(pts))
+
+        cx31, cy31 = _mid(cedarbank, (620.0, 57.0))
+        tx31, ty31 = _mid(timber_bend, (494.0, 151.0))
+
+        aim = bpy.data.objects.new("Day31RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day31RevealCamera")
+        cam_data.lens = 38
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day31RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-4.2s: broad, readable portrait establish of the whole town.
+            (1, (780.0, -650.0, 900.0), (260.0, 10.0, 8.0)),
+            (70, (750.0, -500.0, 700.0), (300.0, 15.0, 8.0)),
+            (125, (720.0, -330.0, 430.0), (410.0, 30.0, 7.0)),
+            # 4.2-9.0s: descend over the final Cedarbank/Alder Court homes.
+            (155, (760.0, -170.0, 260.0), (cx31, cy31, 6.0)),
+            (215, (690.0, -60.0, 155.0), (cx31, cy31, 6.0)),
+            (270, (650.0, 45.0, 125.0), (cx31, cy31 + 8.0, 6.0)),
+            # 9.0-13.0s: sweep northwest along the new Timber Bend run.
+            (325, (605.0, 125.0, 115.0),
+             ((cx31 + tx31) / 2, (cy31 + ty31) / 2, 6.0)),
+            (390, (550.0, 215.0, 98.0), (tx31, ty31, 6.0)),
+            # 13.0-17.4s: climb and cross the town toward its civic center.
+            (425, (570.0, 170.0, 155.0), (450.0, 80.0, 8.0)),
+            (470, (420.0, 10.0, 260.0), (220.0, -30.0, 9.0)),
+            (520, (230.0, -20.0, 180.0), (80.0, -105.0, 10.0)),
+            # 17.4-20.0s: settle into City Hall's front architectural view.
+            (555, (125.0, -45.0, 90.0),
+             (CITY_HALL_X, CITY_HALL_Y, 10.0)),
+            (580, (82.0, -66.0, 56.0),
+             (CITY_HALL_X, CITY_HALL_Y, 10.0)),
+            (frame_end, (65.0, -79.0, 44.0),
+             (CITY_HALL_X, CITY_HALL_Y, 10.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day30reveal":
         # Day 30: one continuous 18-second drone move. Five seconds of a low,
         # close city angle (~33 degrees, downtown filling frame), then a
@@ -8469,7 +8540,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day30reveal":
+    if cfg.get("cam") == "day31reveal":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day30reveal":
         frame_end = max(frame_end, FPS * 18)
     elif cfg.get("cam") == "day29reveal":
         frame_end = max(frame_end, FPS * 18)
@@ -8500,7 +8573,20 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day30reveal":
+    if cfg.get("cam") == "day31reveal":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        cedarbank_roots = [e for e in home_roots
+                           if int(e.get("nb_world_plan_id", 0)) <= 472]
+        timber_roots = [e for e in home_roots
+                        if int(e.get("nb_world_plan_id", 0)) >= 473]
+        for index, e in enumerate(cedarbank_roots):
+            animate_rise(e, 180 + index * 7, dur=28)
+        for index, e in enumerate(timber_roots):
+            animate_rise(e, 270 + index * 8, dur=30)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 165)
+    elif cfg.get("cam") == "day30reveal":
         # Streets and terrain settle just before the drone arrives, then the
         # forty-six homes rise in a nine-second wave that finishes with roughly
         # two and a half seconds of clean hold left in the shot.

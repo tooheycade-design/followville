@@ -131,9 +131,9 @@ Two finished-scene audit/showcase cameras are reusable:
 - `--cam riverdrone` — twelve-second aerial river and crossing showcase.
 - `--cam riverbridge` — twelve-second first-person-height bridge approach.
 
-The current growth-reveal camera is `--cam day30reveal`: an eighteen-second
-low-downtown approach followed by the 46 Cedarbank home rises and an Alder
-Court finishing hold.
+The current growth-reveal camera is `--cam day31reveal`: a twenty-second
+whole-town drone establish followed by all 20 Day 31 Cedarbank/Timber Bend
+home rises and a finished City Hall hero shot.
 
 `--cam newstreet` automatically selects Crossing Way on Day 28 because it is
 the latest day's largest street group.
