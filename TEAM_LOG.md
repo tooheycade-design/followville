@@ -22,7 +22,7 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
-2026-08-01 - Cade (via Windows Codex) - [WORLD] Added the render-only `day31reveal` camera: one continuous 20-second whole-town drone establish, all 20 existing Day 31 Cedarbank/Timber Bend home rises, and a front City Hall finishing shot; no growth, state, population, claims, geometry, or generated web assets changed.
+2026-08-01 - Cade (via Windows Codex) - [WORLD] Added and rendered the reusable `day31reveal` camera: one continuous 20-second whole-town drone establish, all 20 existing Day 31 Cedarbank/Timber Bend home rises, and a front City Hall finishing shot; visually checked all three beats and placed the MP4 on Cade's Desktop. The guarded replay refreshed equivalent export hashes but made no growth, Day 31/population 625 state, claims, ownership, or geometry change.
 
 2026-08-01 - Cade (via Windows Codex) - [BOTH] Completed Day 31 from 605 to 625 followers with one guarded +20 growth: eleven claimable Alder Court homes finished Cedarbank and nine opened Timber Bend Road at addresses 473-481; published the exact 686-record full/32-chunk town, backfilled the missing Day 30 plus Day 31 house rows without changing claims, visually reviewed the daylight framing, and placed separate all-20-rise and completed whole-town overhead MP4s on Cade's Desktop.
 
