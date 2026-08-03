@@ -28,12 +28,14 @@ workflow.
   station is non-claimable, every new home is claimable, none of the new rows is
   claimed, and the current 41 claims across 40 accounts are preserved.
 
-- The reviewed Day 33 delivery is one 20-second 1080x1920 MP4 using
+- The corrected, reviewed Day 33 delivery is
+  `day_033_storm_weather_station_v2_0001-0600.mp4`, a 20-second 1080x1920 MP4 using
   `--cam day33storm --time storm`: full-town establish, Lodgepole and Millstone
-  home-rise waves, a cross-town flight, continuous rain, two lightning beats,
-  and a final weather-station rise. Rain, lightning and the station's repeat
-  rise are render-only and excluded from GLBs. The MP4 is in the shared iCloud
-  `renders` folder and on Cade's Desktop.
+  home-rise waves held together in one wide composition, a cross-town flight,
+  seamless tiled rain, two lightning beats, and a final weather-station rise.
+  Rain, lightning and the station's repeat rise are render-only and excluded
+  from GLBs. This v2 supersedes the original closer render; it is in the shared
+  iCloud `renders` folder and on Cade's Desktop.
 
 - The local project now has a safe CC0 asset intake shelf documented in
   `ASSET_PIPELINE.md`: a provenance registry, deterministic hash/model manifest,

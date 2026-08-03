@@ -99,11 +99,14 @@ Supabase sync added the station plus 33 houses without changing prior rows;
 current verification finds 41 claims across 40 accounts and none on the new
 records. Full fallback and 34 streamed chunks match canonical state.
 
-The reviewed delivery is one 20-second 1080x1920 MP4 using
-`--cam day33storm --time storm`: whole-town establish, both home-rise waves,
-cross-town transfer, continuous rain and lightning, then a render-only station
-rise and close view. The effect objects are tagged `nb_render_only` and removed
-before web export. The video is in shared iCloud renders and Cade's Desktop.
+The corrected reviewed delivery is
+`day_033_storm_weather_station_v2_0001-0600.mp4`, a 20-second 1080x1920 MP4
+using `--cam day33storm --time storm`: whole-town establish, both home-rise
+waves held in one wide composition, cross-town transfer, seamless tiled rain
+and lightning, then a render-only station rise and close view. It supersedes
+the original closer render. The effect objects are tagged `nb_render_only` and
+removed before web export. The v2 video is in shared iCloud renders and Cade's
+Desktop.
 
 ## Prior town (Day 26, 2026-07-27)
 

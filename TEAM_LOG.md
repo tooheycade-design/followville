@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-08-03 - Cade (via Windows Codex) - [WORLD] Rebuilt the Day 33 storm delivery as a guarded replay only: replaced the visibly resetting rain loop with exact seamless camera-space tiles and widened the growth flight so all 33 Lodgepole/Millstone homes remain fully framed across both rise waves; reviewed the corrected 20-second v2 MP4, placed it in shared iCloud renders and on Cade's Desktop, and preserved Day 33, population 689, all 751 records, claims, ownership, and Supabase.
+
 2026-08-03 - Cade (via Windows Codex) - [BOTH] Completed one guarded Day 33 growth from 656 to 689 with 33 claimable homes (plan IDs 513-545 / seeds 719-751), finishing Lodgepole Loop and opening Eastbank Village's Millstone Way; published the permanent non-claimable First Alert Weather station seed 718, exact 751-record full/34-chunk town, and insert-only Supabase metadata, then rendered and seven-frame-reviewed one 20-second storm drone film with continuous rain, two home-rise waves, lightning, and a render-only station rise; the MP4 is in iCloud renders and on Cade's Desktop, while all prior claims and ownership remain untouched.
 
 2026-08-03 - Cade (via Windows Codex) - [WEB] Added a provenance-gated CC0 asset intake pipeline and searchable maintainer gallery, imported and hashed Kenney's complete 140-model Furniture Kit as a review-only shelf, added an isolated Blender normalizer and focused regressions, and repaired and end-to-end verified Blender MCP 1.8.0 with local-only safe defaults; Day 32, population 656, all 718 world records, claims, Blend, town geometry, Supabase, and production remain unchanged.

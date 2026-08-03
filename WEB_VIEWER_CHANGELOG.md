@@ -22,6 +22,11 @@ Kept here (rather than just in chat) so it survives across sessions.
   751 records, and 34 streamed chunks. Geometry/self-tests, exact full/chunk
   coverage, live state/manifest checks, a live browser load, and seven MP4
   checkpoints all passed.
+- Corrected the Day 33 film after review: replaced the visibly snapping random
+  rain cycle with three mathematically seamless camera-space tile layers and
+  widened the growth flight so all 33 finished house lots remain fully framed
+  throughout both rise waves. The reviewed v2 MP4 supersedes the original;
+  this was a guarded replay only and did not add growth or alter canon.
 
 ## Licensed asset intake and Blender tooling (2026-08-03)
 - Added a provenance-gated asset registry, deterministic model/hash manifest,
