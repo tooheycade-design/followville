@@ -40,10 +40,10 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
-## Interior furnishing release candidate (2026-08-03)
+## Interior furnishing release (2026-08-03)
 
-The web-only branch `codex/interior-builder-polish` contains the finished local
-candidate and is not pushed or deployed. `interior-system.js` owns an enclosed,
+The web-only release originated on `codex/interior-builder-polish`.
+`interior-system.js` owns an enclosed,
 warmly lit four-zone house, the lazy-loaded 25-item local CC0 catalog, physical
 furniture/shell collisions, and the verified-owner builder. The builder supports
 desktop and landscape-phone placement, rotate/delete/undo/default/cancel/save,

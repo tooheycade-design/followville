@@ -1,8 +1,7 @@
 # Followville Interior System v1
 
-Status: polished local release candidate on `codex/interior-builder-polish` as
-of 2026-08-03. The backward-compatible database migration is applied; the web
-branch is not pushed or deployed.
+Status: released to production from `codex/interior-builder-polish` on
+2026-08-03. The backward-compatible database migration is applied.
 
 ## Player experience
 

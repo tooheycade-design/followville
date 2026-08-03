@@ -3,7 +3,7 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
-## Home interior furnishing release candidate (2026-08-03)
+## Home interior furnishing release (2026-08-03)
 - Replaced the visible primitive furniture prototype with a complete enclosed
   four-room home: warm house-derived materials, wood-plank floors, ceiling,
   framed windows, baseboards, doorway trim, practical lighting, and 34
@@ -23,7 +23,7 @@ Kept here (rather than just in chat) so it survives across sessions.
   the exact ownership/customization digest; no claim row changed.
 - Desktop and landscape-phone visual interaction passes succeeded, including
   real home entry/exit and add/rotate/delete/cancel flows. This web release
-  candidate changes no world state, population, Blender geometry, or GLB.
+  changes no world state, population, Blender geometry, or GLB.
 
 ## Day 32 Timber Bend growth and campaign reveal (2026-08-02)
 - Grew the canonical town once from population 625 to 656 with 31 ordinary

@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 32 and the interior release candidate
+# Codex handoff -- current through Day 32 and the interior furnishing release
 
 Updated 2026-08-03 for Cade and Zach's next Claude/Codex session.
 
@@ -18,16 +18,16 @@ workflow.
 
 ## Current canon
 
-- A web-only high-quality interior and homeowner furnishing release candidate
-  is on `codex/interior-builder-polish`. It replaces the visible primitive room
+- The web-only high-quality interior and homeowner furnishing release shipped
+  from `codex/interior-builder-polish`. It replaces the visible primitive room
   with an enclosed, warmly lit four-zone home and a lazy-loaded 25-item local
   CC0 catalog. Verified owners can place, rotate, delete, undo, reset, and save
   up to 48 bounded quarter-grid pieces on desktop or landscape phone; visitors
   receive the saved layout through the existing claim Realtime path. The
   hardened version-2 `update_my_customization` migration is applied live and
   preserved the exact 40-claim / 39-account snapshot and digest
-  `754ed801b3514af5f546255efc54f53a`; no claim row changed. The website branch
-  is not pushed or deployed yet. Read `INTERIOR_SYSTEM.md` before changing it.
+  `754ed801b3514af5f546255efc54f53a`; no claim row changed. Read
+  `INTERIOR_SYSTEM.md` before changing it.
 
 - Day 32 is population 656 with 717 total records. One guarded +31 growth
   consumed plan IDs 482-512 / seeds 687-717: nineteen homes finished Timber
