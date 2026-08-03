@@ -3,6 +3,7 @@ renders/
 *.mp4
 *.png
 !logo.png
+!assets/library/kenney-furniture/*.png
 
 # Blender backup file + old test states — not needed for the live site
 *.blend1

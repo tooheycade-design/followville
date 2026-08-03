@@ -1,0 +1,7401 @@
+{
+  "version": 1,
+  "policy": "Only locally hosted, provenance-recorded CC0-1.0 assets are admitted to this browser-safe library.",
+  "sources": [
+    {
+      "id": "quaternius-house-interior",
+      "title": "Ultimate House Interior Pack",
+      "creator": "Quaternius",
+      "source_urls": [
+        "https://quaternius.com/packs/ultimatehomeinterior.html"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-03",
+      "web_safe": true
+    },
+    {
+      "id": "quaternius-followville-avatars",
+      "title": "Universal Base Characters, Modular Character Outfits - Fantasy, and Ultimate Animated Character Pack",
+      "creator": "Quaternius",
+      "source_urls": [
+        "https://quaternius.com/packs/universalbasecharacters.html",
+        "https://quaternius.com/packs/modularcharacteroutfitsfantasy.html",
+        "https://quaternius.com/packs/ultimateanimatedcharacterpack.html"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-07-17",
+      "web_safe": true
+    },
+    {
+      "id": "kenney-furniture-kit",
+      "title": "Furniture Kit 2.0",
+      "creator": "Kenney",
+      "source_urls": [
+        "https://kenney.nl/assets/furniture-kit"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-03",
+      "web_safe": true
+    }
+  ],
+  "totals": {
+    "files": 440,
+    "bytes": 9893995,
+    "models": 215
+  },
+  "assets": [
+    {
+      "path": "assets/interiors/quaternius/bathroom_sink.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 12708,
+      "sha256": "e7ab87e3f6941b8893fc70b88a3ae5e778b47fc8e7851738ca789de074471323",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 328,
+        "triangles": 350,
+        "accessor_bounds": {
+          "min": [
+            -0.00695,
+            -0.00512,
+            0.00151
+          ],
+          "max": [
+            0.00695,
+            0.00304,
+            0.01597
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/bathroom_sink.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 17124,
+      "sha256": "59359dab5e8ee1ec751705ac5b9a8b85ab5303d9d77d9b67ef423cd5f9f4750d"
+    },
+    {
+      "path": "assets/interiors/quaternius/bathtub.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 10900,
+      "sha256": "13e504cacacbd003bc71615fa07212fcf87dfdf7ef8ff1be7ea7be0a1a810945",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 278,
+        "triangles": 248,
+        "accessor_bounds": {
+          "min": [
+            -0.00804,
+            -0.01776,
+            -8e-05
+          ],
+          "max": [
+            0.00804,
+            0.02124,
+            0.01253
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/bathtub.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 16764,
+      "sha256": "dbab9c0c3887dbd6d05ba0bf0f696f25f765340d2cf8af4f68a471c295d0431c"
+    },
+    {
+      "path": "assets/interiors/quaternius/bed_king.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 25676,
+      "sha256": "5ccbdf0b5aedd744bc28d2cce025052e029533bae4f486c7cc049cc308c81990",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 657,
+        "triangles": 676,
+        "accessor_bounds": {
+          "min": [
+            -0.01532,
+            -0.01976,
+            -0.0
+          ],
+          "max": [
+            0.01532,
+            0.01976,
+            0.01215
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/bed_king.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 22176,
+      "sha256": "0d29ad706d173089bd9ec3c6516f2d7563140e7cd650e37f328455f64c135d72"
+    },
+    {
+      "path": "assets/interiors/quaternius/bed_single.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 23080,
+      "sha256": "7ffe6eaa695b1f3517c734eda4dc1bdb53dc38ab27a97be508ac8ee8b06e3952",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 584,
+        "triangles": 536,
+        "accessor_bounds": {
+          "min": [
+            -0.00967,
+            -0.0197,
+            0.0
+          ],
+          "max": [
+            0.01013,
+            0.0197,
+            0.01355
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/bed_single.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 20358,
+      "sha256": "ae7f3437f18f70b853a01fb9769b691b74f5f46dd4918640c8a9dff4be77209e"
+    },
+    {
+      "path": "assets/interiors/quaternius/chair.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 13360,
+      "sha256": "bdc6aeeb64524bbdccba2f079e6485e2a372aed1c428d976d5da67aadcf18b7a",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 432,
+        "triangles": 216,
+        "accessor_bounds": {
+          "min": [
+            -0.00381,
+            -0.00381,
+            -3e-05
+          ],
+          "max": [
+            0.00381,
+            0.00445,
+            0.01764
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/chair.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 23858,
+      "sha256": "fcfb8b8f43208db75add7d7f0c76dc662e17613d0ace753b1b29389c9510b512"
+    },
+    {
+      "path": "assets/interiors/quaternius/couch_l.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 30700,
+      "sha256": "f3b338973f1710c9d7458c8a0dd4fe53eb2ba3adffed417cb2ca8bc9a4d9deeb",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 809,
+        "triangles": 1423,
+        "accessor_bounds": {
+          "min": [
+            -0.03299,
+            -0.02947,
+            -0.00015
+          ],
+          "max": [
+            0.02315,
+            0.0138,
+            0.02246
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/couch_l.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 17642,
+      "sha256": "a9076f706a83d7631f7701ad406a0189ed264853db2eb1831e71fc3affbffd07"
+    },
+    {
+      "path": "assets/interiors/quaternius/couch_large.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 30800,
+      "sha256": "c75418e4e222e1dfe7cddb42e98f44017cfc051071a81a4072fa153b8fbe7e76",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 804,
+        "triangles": 1460,
+        "accessor_bounds": {
+          "min": [
+            -0.02738,
+            -0.01317,
+            0.0
+          ],
+          "max": [
+            0.02738,
+            0.00675,
+            0.02106
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/couch_large.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 19732,
+      "sha256": "603b3ae29a2adf9174686588067516e7f56d2f74e4fc66222af46b0cc7669f96"
+    },
+    {
+      "path": "assets/interiors/quaternius/curtains_double.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 13312,
+      "sha256": "3e1c17ee803414382470f1316825005ba4808f5c665602f8223880b1578f76b9",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 360,
+        "triangles": 320,
+        "accessor_bounds": {
+          "min": [
+            -0.01694,
+            -0.00114,
+            -6e-05
+          ],
+          "max": [
+            0.01775,
+            0.00362,
+            0.04339
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/curtains_double.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 16106,
+      "sha256": "a70401f561e59d74f262898a2d22fc294a7c888078c2109eedea12b0871b0331"
+    },
+    {
+      "path": "assets/interiors/quaternius/door_double.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 63624,
+      "sha256": "400a2e1fae60e13fc10ec378b5ff2db061756db32639fc14535fcdc5d6107e0e",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 2032,
+        "triangles": 1720,
+        "accessor_bounds": {
+          "min": [
+            -0.01736,
+            -0.00215,
+            0.0
+          ],
+          "max": [
+            0.01736,
+            0.00215,
+            0.04188
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/door_double.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 14850,
+      "sha256": "e357e690f8b319045b1fe38acaf08485b6ea8e6ab319b09c77db4292fed76ce5"
+    },
+    {
+      "path": "assets/interiors/quaternius/drawer.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 14944,
+      "sha256": "908c4725488ff8191be605be7e3f927c257ec1f6830ab1c0edcd3ea885cc3bbe",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 364,
+        "triangles": 404,
+        "accessor_bounds": {
+          "min": [
+            -0.01397,
+            -0.0056,
+            -9e-05
+          ],
+          "max": [
+            0.01397,
+            0.00559,
+            0.01343
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/drawer.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 17426,
+      "sha256": "e8481879c599ba6a14ee03b9cf1b23d476a7cd725b73a4c04e52167b9b26d3f9"
+    },
+    {
+      "path": "assets/interiors/quaternius/fireplace.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 17728,
+      "sha256": "b9c8d82cf1a64ca15cc5a28bb64e7a4b379fc89a02de523f3b45674183176477",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 578,
+        "triangles": 360,
+        "accessor_bounds": {
+          "min": [
+            -0.01625,
+            -0.00665,
+            -0.0
+          ],
+          "max": [
+            0.01625,
+            0.00492,
+            0.02561
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/fireplace.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 18850,
+      "sha256": "2dc833df29e292dd7649d1313bc21d0657a833214696e83cb17769865c0c89fc"
+    },
+    {
+      "path": "assets/interiors/quaternius/fridge.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 17360,
+      "sha256": "65437d539065381839fdfdff5ea10b7133d28e762e38ff1b6d7e3723f798e408",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 508,
+        "triangles": 404,
+        "accessor_bounds": {
+          "min": [
+            -0.00649,
+            -0.00718,
+            7e-05
+          ],
+          "max": [
+            0.00649,
+            0.00584,
+            0.03316
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/fridge.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 14090,
+      "sha256": "fdb6143fd00fd8e3a65baa524e28eaf92806e1d65543067584e64b456f6b23b0"
+    },
+    {
+      "path": "assets/interiors/quaternius/houseplant.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 17960,
+      "sha256": "f45d6fe813f0273ce0d080d87b5bf203ce9ff8079caeba8a1860fd7233746883",
+      "model": {
+        "meshes": 1,
+        "primitives": 4,
+        "vertices": 466,
+        "triangles": 324,
+        "accessor_bounds": {
+          "min": [
+            -0.00125,
+            -0.00125,
+            1e-05
+          ],
+          "max": [
+            0.00125,
+            0.00125,
+            0.00386
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/houseplant.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 19904,
+      "sha256": "e5e0fdc744b2d4fc8c69e214c2ea09e8c68422addcbf62c1c7c7cf355a7e5ddd"
+    },
+    {
+      "path": "assets/interiors/quaternius/kitchen_sink.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 27220,
+      "sha256": "7111ce2dba2eb97d1fdd1c815b970d427b259bd41c73072bb9a2a73707adf8d3",
+      "model": {
+        "meshes": 1,
+        "primitives": 4,
+        "vertices": 822,
+        "triangles": 444,
+        "accessor_bounds": {
+          "min": [
+            -0.00505,
+            -0.00615,
+            0.0
+          ],
+          "max": [
+            0.00505,
+            0.00505,
+            0.01924
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/kitchen_sink.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 15886,
+      "sha256": "42fb7edc709b84c60d2caee97446d0c09f55e471705a1265e9c3ca2c132b982b"
+    },
+    {
+      "path": "assets/interiors/quaternius/light_ceiling.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 26540,
+      "sha256": "64c9a0071766981db2603260bc316e841355db076d81e60c6e83fe11ef181aff",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 744,
+        "triangles": 820,
+        "accessor_bounds": {
+          "min": [
+            -0.00388,
+            -0.00388,
+            -0.01297
+          ],
+          "max": [
+            0.00388,
+            0.00388,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/light_ceiling.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 16726,
+      "sha256": "06e5332c34863c911a64d138b0e445d5f1405df4d7dd2ec59c80f07314459483"
+    },
+    {
+      "path": "assets/interiors/quaternius/light_floor.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 9964,
+      "sha256": "56ce5ee3b36bc6d3715d65a6a1149682dcf8a891be31f6a4e5646aedd0497154",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 240,
+        "triangles": 244,
+        "accessor_bounds": {
+          "min": [
+            -0.002,
+            -0.0021,
+            -0.0
+          ],
+          "max": [
+            0.002,
+            0.0021,
+            0.00894
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/light_floor.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 15268,
+      "sha256": "ffe950c8787c4544c3d41436faa374554f104ddded043b841da1d9c7db5a187c"
+    },
+    {
+      "path": "assets/interiors/quaternius/nightstand.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 11148,
+      "sha256": "1c08a98905ea18850fc91932fae9976a556aa30a564f7c45845c2f4f1bc5289a",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 304,
+        "triangles": 184,
+        "accessor_bounds": {
+          "min": [
+            -0.00476,
+            -0.00476,
+            4e-05
+          ],
+          "max": [
+            0.00476,
+            0.00476,
+            0.00949
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/nightstand.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 19474,
+      "sha256": "fc52b782b15c6e12e713fd36e2a9bb08fbdf44ae95e07551e18ed7725ba742dd"
+    },
+    {
+      "path": "assets/interiors/quaternius/oven.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 22896,
+      "sha256": "be6d232fd72e4b4177b86717a8fd638c627a122ab0aa1e5dade1132443c60b06",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 578,
+        "triangles": 528,
+        "accessor_bounds": {
+          "min": [
+            -0.00586,
+            -0.00557,
+            0.0
+          ],
+          "max": [
+            0.00586,
+            0.00513,
+            0.01593
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/oven.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 20464,
+      "sha256": "a6c6c09da9753b2a9b3ed048a05e841580168996ac0dbac4aedee9851dec0ca6"
+    },
+    {
+      "path": "assets/interiors/quaternius/rug.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 6020,
+      "sha256": "cda873c6fd6769727687002e8f04c449d3002671a4d4587fd3f842e3f47b4ae6",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 110,
+        "triangles": 108,
+        "accessor_bounds": {
+          "min": [
+            -0.01058,
+            -0.01537,
+            -1e-05
+          ],
+          "max": [
+            0.01073,
+            0.01556,
+            0.00036
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/rug.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 17738,
+      "sha256": "b56b73f2672de38d593c2b1eeae66b58172bd0b2de9e797d4df5a42bf9bd24c5"
+    },
+    {
+      "path": "assets/interiors/quaternius/shelf_large.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 13436,
+      "sha256": "9bf0585a55c907a2449d0d068abb801ee250ae625618f2b0da563432c2ad5145",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 434,
+        "triangles": 220,
+        "accessor_bounds": {
+          "min": [
+            -0.02222,
+            -0.00378,
+            -0.00024
+          ],
+          "max": [
+            0.01159,
+            0.00378,
+            0.04415
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/shelf_large.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 23056,
+      "sha256": "176e5bf47b935f6b0585990bb747c475235971380ae61c912351f3b1af799627"
+    },
+    {
+      "path": "assets/interiors/quaternius/stool.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 18068,
+      "sha256": "f17ca68ee52a5c5f8dcb2b919ac580483ecbb53da26c2d1dcde4f97c7c409c6d",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 514,
+        "triangles": 500,
+        "accessor_bounds": {
+          "min": [
+            -0.00338,
+            -0.00355,
+            -9e-05
+          ],
+          "max": [
+            0.00338,
+            0.00355,
+            0.01363
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/stool.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 18428,
+      "sha256": "bdd2096766c26bffee072def8232043cb2a10091d1b69601e12ab1fc032aef4b"
+    },
+    {
+      "path": "assets/interiors/quaternius/table_lamp.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 10152,
+      "sha256": "53f6037d1fa45ab2c45bec09e88fffbc1915eb0dd984aae5f7b6a5ce679b58a9",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 248,
+        "triangles": 244,
+        "accessor_bounds": {
+          "min": [
+            -0.00175,
+            -0.00175,
+            -0.0
+          ],
+          "max": [
+            0.00175,
+            0.00175,
+            0.00763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/table_lamp.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 14484,
+      "sha256": "0d28e86373308c2123f429dd23dc2cd080cfa222435083a249beb8c877e6b359"
+    },
+    {
+      "path": "assets/interiors/quaternius/table_round_large.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 23024,
+      "sha256": "863966591cae25d9b7afacd3b60ba999c0c097c2cdffddfa50d1bb176be50eed",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 740,
+        "triangles": 592,
+        "accessor_bounds": {
+          "min": [
+            -0.01857,
+            -0.0097,
+            5e-05
+          ],
+          "max": [
+            0.01857,
+            0.0097,
+            0.01126
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/table_round_large.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 17910,
+      "sha256": "80a7f35894fd043d4a76a1b06db23a7e80d2b5a86164bc492946a222b89f4ec6"
+    },
+    {
+      "path": "assets/interiors/quaternius/toilet.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 14344,
+      "sha256": "c81348cadc00f84f8cd5df3db31e872280a6b969feb993f45b385ff491ead29b",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 426,
+        "triangles": 402,
+        "accessor_bounds": {
+          "min": [
+            -0.00598,
+            -0.00792,
+            -0.00013
+          ],
+          "max": [
+            0.00598,
+            0.009,
+            0.01888
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/toilet.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 16542,
+      "sha256": "e7a38dbbf37dda5122a7e01e5a09e4c4ebc74ee78188d07304fc64e098c2d2c4"
+    },
+    {
+      "path": "assets/interiors/quaternius/washing_machine.glb",
+      "source": "quaternius-house-interior",
+      "bytes": 16584,
+      "sha256": "2fe7f503be82369606da54e2428c57244c8690f3d03592403ad7a60d4610d13a",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 458,
+        "triangles": 304,
+        "accessor_bounds": {
+          "min": [
+            -0.00646,
+            -0.00706,
+            0.0
+          ],
+          "max": [
+            0.00646,
+            0.00618,
+            0.0147
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/interiors/quaternius/washing_machine.webp",
+      "source": "quaternius-house-interior",
+      "bytes": 18976,
+      "sha256": "296929961363966a8e2073a8b01ec3bd3fc7388b7661109749ada50f7eef120e"
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_cabinet.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 7216,
+      "sha256": "9db540227acaaedbbadc6a085f4a00460b73944e608afaad4770e53238a3b7f8",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 156,
+        "triangles": 64,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.43,
+            0.39,
+            0.01
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_cabinet.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 415,
+      "sha256": "848a0e819e89e1b7c55234150df09283841dd31843738cbffee607fa3e607a1d",
+      "image": {
+        "dimensions": [
+          37,
+          58
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_cabinet_drawer.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 34744,
+      "sha256": "f32d09c6dab20fe823d238310f75ce81f24e893a91c2078b12efd3f7fe6c6b10",
+      "model": {
+        "meshes": 3,
+        "primitives": 10,
+        "vertices": 2496,
+        "triangles": 508,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.53,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_cabinet_drawer.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2137,
+      "sha256": "e76ae68da41ecfba576533bfd822b7180e65ae5ece2147cdf75707e8dc6d6d23",
+      "image": {
+        "dimensions": [
+          76,
+          70
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_mirror.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6792,
+      "sha256": "940b986894101ea59b50541554b6dc608a22b133057975849259009012984175",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 339,
+        "triangles": 72,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.0488
+          ],
+          "max": [
+            0.30134,
+            0.43463,
+            0.0956
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_mirror.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1754,
+      "sha256": "a29cb7fbc6ba20b09a6505d21075621236e7f7af0c8b373fc3ab6cd9ebded63f",
+      "image": {
+        "dimensions": [
+          46,
+          65
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_sink.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 22536,
+      "sha256": "39d4f19608cab7e0fed52303b2c689f5f51fae1bad9b6913cb53d838875e797e",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 1545,
+        "triangles": 316,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.4,
+            -0.29
+          ],
+          "max": [
+            0.34,
+            0.16,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_sink.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2261,
+      "sha256": "2fae12cf7be3e1e2899d1bc56853d3e47ed386a25ec3b896b513477fc56fb4cf",
+      "image": {
+        "dimensions": [
+          58,
+          83
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_sink_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15108,
+      "sha256": "360853c822f268e7267c62ef20cf646f170a13d76254cc0804a1d397a4a3ea67",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 936,
+        "triangles": 234,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.05681,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.63681,
+            -0.15
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathroom_sink_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1953,
+      "sha256": "d013cec246ff8f3c9355c804caad5666bb8520ab6bda4964b4570659bd0ff4f7",
+      "image": {
+        "dimensions": [
+          76,
+          86
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathtub.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 35500,
+      "sha256": "54c405c7035aab63dc41e709dc3c50fc5bcfbc4cddc91ffc54188075a6d25d01",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 2436,
+        "triangles": 602,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.56
+          ],
+          "max": [
+            1.19,
+            0.42,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bathtub.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1286,
+      "sha256": "dc217c65762366a693e93d587843d7d173c96f7610bcd8eabaf99da7e7800020",
+      "image": {
+        "dimensions": [
+          177,
+          62
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bear.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 11884,
+      "sha256": "fd87c08f81dcd652b1f7f61afae9d1f040fa1322ac4ddda6f543ed423b954aed",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 750,
+        "triangles": 134,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2475
+          ],
+          "max": [
+            0.38971,
+            0.45,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bear.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2725,
+      "sha256": "940552a85a5e116b0e908e8b08f85b9725911298d89e5bf5d44df3d138bcf45a",
+      "image": {
+        "dimensions": [
+          51,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_bunk.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 40784,
+      "sha256": "a3eccbc4a04340dd84878d959e15eede76f517fb8d4de6862ca46877c88d764e",
+      "model": {
+        "meshes": 5,
+        "primitives": 8,
+        "vertices": 1512,
+        "triangles": 580,
+        "accessor_bounds": {
+          "min": [
+            -0.05855,
+            -0.13,
+            -1.892
+          ],
+          "max": [
+            1.56469,
+            0.85,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_bunk.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 4140,
+      "sha256": "5242da528a02ae81a49ccf43eb36ca06053f04235f54e3d1f27810c577aa191c",
+      "image": {
+        "dimensions": [
+          172,
+          126
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_double.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 23368,
+      "sha256": "c49b33e7d797d2ba1111895587dba7ff63b17a712eb9b4ceeb40a598f73e476c",
+      "model": {
+        "meshes": 4,
+        "primitives": 7,
+        "vertices": 866,
+        "triangles": 264,
+        "accessor_bounds": {
+          "min": [
+            -0.05855,
+            -0.13,
+            -1.892
+          ],
+          "max": [
+            1.56469,
+            0.375,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_double.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2744,
+      "sha256": "ed1c68667272a83422503c1779e9861713bf5a394801c9104d54acb372eb0e36",
+      "image": {
+        "dimensions": [
+          215,
+          56
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_single.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18636,
+      "sha256": "ca00c63f9a12da3138d902b2f5f18e0360fb6e8a5ac42ccb4bc3f185724b65d1",
+      "model": {
+        "meshes": 3,
+        "primitives": 6,
+        "vertices": 768,
+        "triangles": 214,
+        "accessor_bounds": {
+          "min": [
+            -0.05855,
+            -0.13,
+            -1.892
+          ],
+          "max": [
+            1.56469,
+            0.375,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bed_single.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2547,
+      "sha256": "6c38bd4b77f4bf079a33dfeaecc9dd99fb6d7e8e0c9325e790318cd69d90407d",
+      "image": {
+        "dimensions": [
+          175,
+          56
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10756,
+      "sha256": "ba05a6d23a5a5a44da016757632070e47ff7587ce10e2f6d6d52328b4cf5489b",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 230,
+        "triangles": 170,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "max": [
+            0.4,
+            0.47,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2302,
+      "sha256": "6635afa50f292f975a18b036c02212bcb253a5013c4106eb413128e730cfbc88",
+      "image": {
+        "dimensions": [
+          62,
+          70
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench_cushion.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12500,
+      "sha256": "5186ad938f8b9eff255361fd1fdc48a81f08c318161cde27c93753ab95a2d354",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 520,
+        "triangles": 196,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "max": [
+            0.4,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench_cushion.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2303,
+      "sha256": "5665a099b17ccc7018ceebd9d33aa51fa6f26dc98317f3956385774acf47922c",
+      "image": {
+        "dimensions": [
+          62,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench_cushion_low.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10268,
+      "sha256": "d1fac209eae2ea7393beefa4932dacb54d500e8f9932a1b17d2a842527df1b2c",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 594,
+        "triangles": 138,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.41,
+            0.2,
+            0.01
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bench_cushion_low.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1922,
+      "sha256": "a6fe58a46c9a72217980f15c19be608ca50f1e84377f134669fac42aa245da0e",
+      "image": {
+        "dimensions": [
+          66,
+          30
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 23132,
+      "sha256": "9d210448de5e1179541da895450bbc7a39f4cd673d677654cd6b134e4ea0e047",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 540,
+        "triangles": 372,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.4,
+            0.85,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 4562,
+      "sha256": "8a97317c91d7be94521634b33319a10279dd47277f1f8e8b13d18f4291c92366",
+      "image": {
+        "dimensions": [
+          67,
+          126
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed_doors.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 22644,
+      "sha256": "ff33f535acdb1825c0e958a293642b39665adcae0b1317b650e83d2bb687f4e2",
+      "model": {
+        "meshes": 3,
+        "primitives": 5,
+        "vertices": 568,
+        "triangles": 296,
+        "accessor_bounds": {
+          "min": [
+            -0.16,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.4,
+            0.85,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed_doors.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2419,
+      "sha256": "f40be7707ea030631673891e4176f24b4a6e07150aa67a57acbaa3b016e89c97",
+      "image": {
+        "dimensions": [
+          67,
+          126
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed_wide.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 23140,
+      "sha256": "55b9903e9646dc407ed5237a1c41c1f0a14f9edc22e3392bdb9a4804d846af6a",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 540,
+        "triangles": 372,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.8,
+            0.79,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_closed_wide.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 4791,
+      "sha256": "c3956cba9b3e54e7a9483114f408358fb34c477d133f520d3ec8e6f39cf357eb",
+      "image": {
+        "dimensions": [
+          109,
+          117
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_open.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18020,
+      "sha256": "750702218d68c062b15dfef6ab06a4014d1cfa8bd05f02e57c53b7e13bec157c",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 400,
+        "triangles": 320,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.4,
+            0.88,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_open.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2802,
+      "sha256": "5ca87be1fe92f07eebb29d34c568c9bd6315a740b8824be7c3daa0005fd8d217",
+      "image": {
+        "dimensions": [
+          67,
+          130
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_open_low.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 11520,
+      "sha256": "6d4d625faf977a2dbf155f1313cd32c6310e463114a1cd4c08cb9f80a5fb1d75",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 248,
+        "triangles": 184,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.4,
+            0.4,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/bookcase_open_low.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2167,
+      "sha256": "40ce094e3f2ec5b18c558e4cfe1c22401cd0dbb305d9e290c8312dba30019ea9",
+      "image": {
+        "dimensions": [
+          67,
+          60
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/books.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6864,
+      "sha256": "b8dc56e5d29f6fc1f4727fccb1b9642627fee9942c48060a00034e98df02701c",
+      "model": {
+        "meshes": 1,
+        "primitives": 4,
+        "vertices": 424,
+        "triangles": 62,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.0945
+          ],
+          "max": [
+            0.15045,
+            0.1039,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/books.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1261,
+      "sha256": "c511fa97297f3054df2adfdafb88ff63c9c9a08f321659f12a98d0068f7f4ab5",
+      "image": {
+        "dimensions": [
+          26,
+          16
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 7496,
+      "sha256": "b651fafb9e2c8e4adcb8cad3d10dc94404b46fe039b26e66b2c9020df4e5301d",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 168,
+        "triangles": 72,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            -0.0,
+            -0.205
+          ],
+          "max": [
+            0.256,
+            0.2332,
+            0.0123
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1777,
+      "sha256": "740a7181d9bcab49b271c5bd203079d50854ae1acd2847359f29bdfc00f90d19",
+      "image": {
+        "dimensions": [
+          50,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed_drawer.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 16088,
+      "sha256": "e3dfd2e120af3d4d29b66509e317452cd15bd3f57ac8945575462c582adc6de8",
+      "model": {
+        "meshes": 3,
+        "primitives": 6,
+        "vertices": 588,
+        "triangles": 182,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            -0.0,
+            -0.205
+          ],
+          "max": [
+            0.256,
+            0.2632,
+            0.1763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed_drawer.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1906,
+      "sha256": "ef88304e7253373a585f2cf21208b32c23b38111eef01374bb62a73764b5eace",
+      "image": {
+        "dimensions": [
+          50,
+          40
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed_drawer_table.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12200,
+      "sha256": "fec6271639df5aff9f8ac75d6679385eab2abb7c8d2f51abeba3ed689ddb6f0d",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 452,
+        "triangles": 140,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            0.0,
+            -0.205
+          ],
+          "max": [
+            0.256,
+            0.2632,
+            0.1763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_bed_drawer_table.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1678,
+      "sha256": "6c88fb046371f8a2116bc68ccddafcc66d4fdb86eb3767adf1aa421d6a8f14b1",
+      "image": {
+        "dimensions": [
+          50,
+          40
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_television.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10524,
+      "sha256": "811719593d676ff76f7b5904d52c845ce0396af2bc9a6a2636c4818ead320b99",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 228,
+        "triangles": 154,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.8,
+            0.31,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_television.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2508,
+      "sha256": "a81d5d08b2479698bf45faf9c99367d0e5bc7108a31328d2ff5216a01b25463f",
+      "image": {
+        "dimensions": [
+          109,
+          46
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_television_doors.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 16876,
+      "sha256": "8959347bfe26b1ac7e44c476f05789466bb84bcd2ad8b0fb40286005399bfcfc",
+      "model": {
+        "meshes": 3,
+        "primitives": 5,
+        "vertices": 420,
+        "triangles": 210,
+        "accessor_bounds": {
+          "min": [
+            -0.36,
+            0.0,
+            -0.25
+          ],
+          "max": [
+            0.8,
+            0.31,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cabinet_television_doors.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2312,
+      "sha256": "676dc0f04aa263e1df141e3c01ae7df6b51dc8532ac6bf254ed9af8cffdf4192",
+      "image": {
+        "dimensions": [
+          109,
+          46
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cardboard_box_closed.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5400,
+      "sha256": "4af079dca52960912764574950f0549ff2ae1224b3db1528718629473a2d5d81",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 176,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2125
+          ],
+          "max": [
+            0.2125,
+            0.281,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cardboard_box_closed.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 898,
+      "sha256": "dd7877bb0cd2787467f4c5b4d46733dc8ff5e2b916a8b0c313ce6e9f61571926",
+      "image": {
+        "dimensions": [
+          44,
+          42
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cardboard_box_open.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5404,
+      "sha256": "960da412564774c75e7b32f9af0100895e1edb877fc1e70dd34ee2422a2196d4",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 176,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            -0.07969,
+            0.0,
+            -0.2125
+          ],
+          "max": [
+            0.29219,
+            0.281,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/cardboard_box_open.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1487,
+      "sha256": "7c774a540b40b0fb8fed324f993eaacb55adcfa05ec5ecfb109acbd94c1e8753",
+      "image": {
+        "dimensions": [
+          60,
+          42
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/ceiling_fan.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15284,
+      "sha256": "5fdf7b3c4328875462c9887c6b1f2fad08126ea42e758cf86534639b9ea72044",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 975,
+        "triangles": 214,
+        "accessor_bounds": {
+          "min": [
+            -0.17191,
+            -0.13372,
+            -0.26374
+          ],
+          "max": [
+            0.28283,
+            0.0,
+            0.26135
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/ceiling_fan.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1422,
+      "sha256": "1c0ce0f6199c745e64a0d515d910af819e20b447d46a33275b598ebf0ab2b821",
+      "image": {
+        "dimensions": [
+          74,
+          21
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10756,
+      "sha256": "c8a11eec93e89e31250ba91afc1b8d56c3bec7ae86640fd1239f595ff4180883",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 230,
+        "triangles": 170,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "max": [
+            0.2,
+            0.47,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2016,
+      "sha256": "ac5c5bf1aaea99616058042664ba2ab2b2362c12874e4568adec8de443131e10",
+      "image": {
+        "dimensions": [
+          42,
+          70
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_cushion.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12588,
+      "sha256": "33544228984857f2cb502b58452fed72157335f9b1caf29e96da5c9094c53fdc",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 524,
+        "triangles": 198,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "max": [
+            0.2,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_cushion.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1999,
+      "sha256": "861cb87b5a70d677dd0847dd1678c3e64f5778aa18179f981f8525b54a60b952",
+      "image": {
+        "dimensions": [
+          42,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_desk.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 39016,
+      "sha256": "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 1698,
+        "triangles": 588,
+        "accessor_bounds": {
+          "min": [
+            -0.16748,
+            0.0,
+            -0.28324
+          ],
+          "max": [
+            0.31127,
+            0.4176,
+            0.16
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_desk.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2650,
+      "sha256": "e580a6549e80b0e67e72323acbaa3c41c5d04a3659ebd536224dc7429ada7c2a",
+      "image": {
+        "dimensions": [
+          60,
+          90
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_modern_cushion.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 7376,
+      "sha256": "245132697e633e907e2b48c86d56f6c8543604a3440a055d1c71c06ce11d2858",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 276,
+        "triangles": 92,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.2
+          ],
+          "max": [
+            0.2,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_modern_cushion.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1758,
+      "sha256": "ec2a0d2a35dfada8e80f7f760e7841ae8469e5f51af748d7fcf1fd6a6a07c5e3",
+      "image": {
+        "dimensions": [
+          42,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_modern_frame_cushion.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18592,
+      "sha256": "fd3351b077cafbd54224e20fa7a3a1b4a4304019cf44c25a6e7709ad71b852b8",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 832,
+        "triangles": 284,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.2
+          ],
+          "max": [
+            0.2,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_modern_frame_cushion.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1607,
+      "sha256": "dc4640c0bf95fd44c42c1744429a76253044e313ae9bbb49bcb166b48850971f",
+      "image": {
+        "dimensions": [
+          42,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_rounded.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 17156,
+      "sha256": "53f4933ec547179c499f04dbda1231cf44b83ec82c7f4ab981cdf680aee5c973",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 388,
+        "triangles": 280,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "max": [
+            0.2,
+            0.455,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/chair_rounded.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2114,
+      "sha256": "92821cc1bd1c495bfe525f539eda23987efd69c45acfd2776827e01a8da74ef0",
+      "image": {
+        "dimensions": [
+          42,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/coat_rack.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9948,
+      "sha256": "0f56540d57367ea6fea6b9aedf305d4fc58abeec8ff3b039dbff44360d819c76",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 408,
+        "triangles": 132,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.1344
+          ],
+          "max": [
+            0.448,
+            0.28,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/coat_rack.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2402,
+      "sha256": "fa27ad3f889efa62330f573f1d953831f17f1bd74d2dda3b353916601eb96d12",
+      "image": {
+        "dimensions": [
+          60,
+          42
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/coat_rack_standing.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13288,
+      "sha256": "d8231c22dab63ceb9fc8678f6c8ceafc62afa8726b51a73b4ce349043d3cdc91",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 300,
+        "triangles": 190,
+        "accessor_bounds": {
+          "min": [
+            -0.1364,
+            0.0,
+            -0.1364
+          ],
+          "max": [
+            0.1364,
+            0.77,
+            0.1364
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/coat_rack_standing.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2006,
+      "sha256": "606f164e087bbf4846b928110e89d7fb169e32426d6ed04fa9744b2f05b9ed13",
+      "image": {
+        "dimensions": [
+          32,
+          114
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_keyboard.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3476,
+      "sha256": "9d9135789de2120e9f41ce3f0a56dd1b15f40adcc7888739bb842a2d820da322",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 76,
+        "triangles": 32,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.11819
+          ],
+          "max": [
+            0.2822,
+            0.02756,
+            -0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_keyboard.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 452,
+      "sha256": "1b556cda0d4cac37a8509dc3d2b6f8aea75e4e7b312b13fd87bd7c19f16a5496",
+      "image": {
+        "dimensions": [
+          41,
+          5
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_mouse.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5868,
+      "sha256": "d3ad1a923f0f7707ef367bb969eb94c9076e211c98c830ba52e133fadc5cdfc0",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 113,
+        "triangles": 71,
+        "accessor_bounds": {
+          "min": [
+            -0.02485,
+            0.0,
+            -0.0851
+          ],
+          "max": [
+            0.02485,
+            0.02357,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_mouse.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 265,
+      "sha256": "9209afe394622e7f366a5549a0433b28bd27897b7ae9aa55b32589f7103cbaa8",
+      "image": {
+        "dimensions": [
+          11,
+          4
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_screen.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6404,
+      "sha256": "5942cbad29a2d2b956619569926e81d50a4174403d592fece6556e57632dc643",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 228,
+        "triangles": 72,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            -0.0,
+            -0.104
+          ],
+          "max": [
+            0.39269,
+            0.29429,
+            -0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/computer_screen.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1712,
+      "sha256": "611380a2050ea8b6ede392758741b43eee46d78dd285fa9814abe5c18fdab4b1",
+      "image": {
+        "dimensions": [
+          46,
+          44
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/desk.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15048,
+      "sha256": "0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 380,
+        "triangles": 198,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            0.0,
+            -0.38
+          ],
+          "max": [
+            0.72448,
+            0.38441,
+            0.1763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/desk.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2770,
+      "sha256": "d55354ce277cb010e1af510cc8832559c004d24f9670acfeba64177b62cf1c80",
+      "image": {
+        "dimensions": [
+          116,
+          57
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/desk_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 17984,
+      "sha256": "a6a77ba0083d5ecd34ad50f738867b03ed7b7f469429bb1acc78f423bcc3f034",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 452,
+        "triangles": 250,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.97448
+          ],
+          "max": [
+            0.97448,
+            0.38441,
+            0.1763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/desk_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3338,
+      "sha256": "02162397db5524208d3ec5192362f0562369ac972ffcb549c2ba17a1a1a6e8ff",
+      "image": {
+        "dimensions": [
+          202,
+          57
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 14532,
+      "sha256": "08983e299822140d580eb55d4b4e4e4552c37bb6e88571e41d2b7b5d2eef987e",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 544,
+        "triangles": 188,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            0.0,
+            -0.0891
+          ],
+          "max": [
+            0.486,
+            1.00953,
+            0.0567
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3260,
+      "sha256": "a5cf066e5b2efeb6a3a195e16e46bbbe983d5e5732a9b4c543b03ec6cdb2e4a4",
+      "image": {
+        "dimensions": [
+          59,
+          149
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway_front.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13016,
+      "sha256": "b5b8e4c14ee1f2ffa10ef5c69badc995ae6fbcc868abac240221c61b8c593b0e",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 624,
+        "triangles": 156,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            0.0,
+            -0.0891
+          ],
+          "max": [
+            0.486,
+            1.00953,
+            0.0567
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway_front.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2412,
+      "sha256": "1c987dca2e5d0fad9c40bf854d8de73ec5320eb7dded91d672b2603830a125f2",
+      "image": {
+        "dimensions": [
+          59,
+          149
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway_open.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3256,
+      "sha256": "cf05e165ea26dbbeaab4dc6296c143ef5f5a001e2ab5af9cd4fd65739408317e",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 48,
+        "triangles": 28,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.0891
+          ],
+          "max": [
+            0.486,
+            1.00953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/doorway_open.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 907,
+      "sha256": "0a420204a983816f345c291dbbf15d55b766339f5b8f3848261792db4ff69a7f",
+      "image": {
+        "dimensions": [
+          59,
+          149
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/dryer.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 17760,
+      "sha256": "d8b727612fdfc141c0b56360f75b897f1b71d3420c8c0942b5ec626bd3c8303c",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 817,
+        "triangles": 262,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.13,
+            -0.35
+          ],
+          "max": [
+            0.39,
+            0.47,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/dryer.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2319,
+      "sha256": "7a28e858e032faf15d94227472c3ebc1725d9e76772ce369d630bd11e33de704",
+      "image": {
+        "dimensions": [
+          76,
+          70
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 2524,
+      "sha256": "7a3ed4473bd7dc71a7fac74a77c548412ed01caf9fd21be605bc8bbda824f8ff",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 30,
+        "triangles": 16,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.55
+          ],
+          "max": [
+            0.55,
+            0.05,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 215,
+      "sha256": "103b1d2b7722e8eca93c2460c7212ef7a6779991679ac0306f77fc82965b1022",
+      "image": {
+        "dimensions": [
+          104,
+          8
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_corner_round.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5168,
+      "sha256": "d9d5392ecff520a263dd7e5b77e733da125f866002311ea65572731d90fb8990",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 96,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.55
+          ],
+          "max": [
+            0.55,
+            0.05,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_corner_round.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 280,
+      "sha256": "b213e066505eba2432ddf0111a5746f095ca53c3c97835621fdc93631bed45ed",
+      "image": {
+        "dimensions": [
+          108,
+          8
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_full.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 2260,
+      "sha256": "99fc5df646d8dc605d6fe35001fe5b15bb7b269cc5c65f4f7793fbc76ff3d822",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 24,
+        "triangles": 12,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "max": [
+            1.0,
+            0.05,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_full.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 206,
+      "sha256": "f9a64102b9fa6ae5a64aa8da78e899771d044645e1575981f22100389dfb8b1f",
+      "image": {
+        "dimensions": [
+          207,
+          8
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_half.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 2264,
+      "sha256": "8cf16d67b8185f6c28f957458da92a337f0949d2e127df9a50b53ea5e8894673",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 24,
+        "triangles": 12,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "max": [
+            0.5,
+            0.05,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/floor_half.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 204,
+      "sha256": "0a4770c504e39ecc2dfb3e9d1b48c70ea2aae32c8cee5e985da6346ce27fca11",
+      "image": {
+        "dimensions": [
+          155,
+          8
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/hood_large.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 4652,
+      "sha256": "e9b60fa02bba74d99103e8ba9d7ca99fbd99299bc57c4f5f84b2add2a6a3afcc",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 150,
+        "triangles": 36,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            0.0,
+            -0.2849
+          ],
+          "max": [
+            0.43,
+            0.36953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/hood_large.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1095,
+      "sha256": "6302ddc0627168788dea14b8d68052741d7582f8a2acb219b517c036533afd90",
+      "image": {
+        "dimensions": [
+          75,
+          55
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/hood_modern.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3968,
+      "sha256": "f5ac7dbadd1d98813c48315e56fa6ab2e8783870b1fb7be30825177bbf2b2afe",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 112,
+        "triangles": 28,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            -0.03,
+            -0.2849
+          ],
+          "max": [
+            0.43,
+            0.36953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/hood_modern.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1520,
+      "sha256": "ea0adc06ee939a90104d109bb388c01e2db8eb257be46a787da154cf78d16c67",
+      "image": {
+        "dimensions": [
+          75,
+          59
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_bar.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6004,
+      "sha256": "792c3d31e60c8a8d8c7a28cf7d1efe004c5a601adc1b163a8799dde32c1b559d",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 264,
+        "triangles": 76,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.43,
+            0.42,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_bar.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1479,
+      "sha256": "79c92b21a2b92c7a510f242b92fdf449ec3d00553f4e0821425b280f681c945c",
+      "image": {
+        "dimensions": [
+          67,
+          63
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_bar_end.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 11084,
+      "sha256": "410c6d83defe4ed248a8ec32f81553b56c8b610372d02ecf0e547e3f52cdc0a1",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 464,
+        "triangles": 152,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.10156,
+            0.42,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_bar_end.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1524,
+      "sha256": "9bfc1afae0248e9951c9b4ecb126cf30887ae8a1a1ed5064e63c1eb0507eef2c",
+      "image": {
+        "dimensions": [
+          26,
+          63
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_blender.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18728,
+      "sha256": "f471defb5b2b1cf3b949a1a8aaef0a8b727afe662b0815068cf4e963325a3c1f",
+      "model": {
+        "meshes": 3,
+        "primitives": 4,
+        "vertices": 418,
+        "triangles": 246,
+        "accessor_bounds": {
+          "min": [
+            -0.02,
+            0.0,
+            -0.13225
+          ],
+          "max": [
+            0.15193,
+            0.16,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_blender.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1471,
+      "sha256": "a3baa2b5af8d33683bde94de0461f1740a2f7dcda5fef8d4a12be2a4564727cd",
+      "image": {
+        "dimensions": [
+          16,
+          34
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10444,
+      "sha256": "7238c57778935ae25db5e57e9f7af3ba7068c71b005ff7cfbff3b6f3b1a13200",
+      "model": {
+        "meshes": 2,
+        "primitives": 5,
+        "vertices": 406,
+        "triangles": 114,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.45,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2031,
+      "sha256": "016c31de750a82912f46d639e8f37380d176e0476ced511f6d4c5b19f04841fb",
+      "image": {
+        "dimensions": [
+          92,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_corner_inner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5184,
+      "sha256": "8d1b69e63048424a0559d1e5c77427fab9021def7dea74cf1c4d3d8ce16e6e69",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 168,
+        "triangles": 54,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.46
+          ],
+          "max": [
+            0.46,
+            0.45,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_corner_inner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1650,
+      "sha256": "bdbeec4ad8011e3f053eb34070b008c7edf293d249dab523824aea226b81a64c",
+      "image": {
+        "dimensions": [
+          96,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_corner_round.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13656,
+      "sha256": "333ab73202cb87b76d4ff94939038dcaf315eda55285bdbeba20d255da488e97",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 592,
+        "triangles": 194,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.45,
+            0.45,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_corner_round.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2247,
+      "sha256": "8476dfe2325a547ce97b899ba895626ee42e850abd14f13a61a3595e043d1d0d",
+      "image": {
+        "dimensions": [
+          94,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_drawer.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15384,
+      "sha256": "6f784807e3cadb15b4d2d3db726d93357ea5e6c4f2b6e4c9c064048a2d1d9cfc",
+      "model": {
+        "meshes": 3,
+        "primitives": 8,
+        "vertices": 660,
+        "triangles": 174,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.45,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_drawer.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2303,
+      "sha256": "9c53813a8d20f83fe64dccaad43b2d5ff8cc6e2c7560597f7e85f27b32820d45",
+      "image": {
+        "dimensions": [
+          92,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8168,
+      "sha256": "8f2496feed85a745ffb6e554075b8450d647f8f68b01d6a010fcac1510fc173a",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 228,
+        "triangles": 80,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.43,
+            0.39,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1007,
+      "sha256": "1a175b804bef1168e52e17e7b196db3042a572a89242028d641609eacf9dbec5",
+      "image": {
+        "dimensions": [
+          67,
+          58
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13712,
+      "sha256": "b23551ff585b5b804cf3ec0fe046b7bc1e84a387021e3cdb01c93add56444e8d",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 308,
+        "triangles": 204,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.215,
+            0.39,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2656,
+      "sha256": "7131b7a45499a81eaf366fc13b5e7204a8a2ca20613d49fa52eebe5fc2457b4a",
+      "image": {
+        "dimensions": [
+          44,
+          58
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_double.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18184,
+      "sha256": "7b2abd976f2e8f1727d6ba23490aaf5fe18db9c5ac66e729ef6fe8de835c039e",
+      "model": {
+        "meshes": 3,
+        "primitives": 7,
+        "vertices": 540,
+        "triangles": 234,
+        "accessor_bounds": {
+          "min": [
+            -0.18816,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.43,
+            0.39,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_double.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1631,
+      "sha256": "0cdcdb1fc51dc80e29fe0cee0fc83612c27c4950cd05d4e527626e0f5093fdcc",
+      "image": {
+        "dimensions": [
+          67,
+          58
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_low.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 7216,
+      "sha256": "c25293d38ad3d4338142f5bfb6832a2f7e8a069a552fc4a6730231b1b382d33e",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 204,
+        "triangles": 64,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.14131,
+            -0.21
+          ],
+          "max": [
+            0.43,
+            0.195,
+            0.02
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_cabinet_upper_low.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 989,
+      "sha256": "d9f5056660043123d735c49dced3443122d92eb28073d837d3058b9837420c3c",
+      "image": {
+        "dimensions": [
+          67,
+          30
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_coffee_machine.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13332,
+      "sha256": "063f582c6fa0f00a9f24e3393dac2295491c4becdaf5513c893ab1a2826b6ec3",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 420,
+        "triangles": 166,
+        "accessor_bounds": {
+          "min": [
+            -0.03383,
+            0.0,
+            -0.30411
+          ],
+          "max": [
+            0.24,
+            0.3034,
+            0.02598
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_coffee_machine.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1490,
+      "sha256": "164dafbaed2a1354fa3bf38dd0ddb09579b73f00d66c510f2ba32c4119bf5dea",
+      "image": {
+        "dimensions": [
+          35,
+          27
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 20116,
+      "sha256": "8af4f4bbb1b5525ad8226e97926a5af60fa8fb20a3cb74dbda5328a9d320dbab",
+      "model": {
+        "meshes": 3,
+        "primitives": 7,
+        "vertices": 976,
+        "triangles": 250,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.28193
+          ],
+          "max": [
+            0.43,
+            0.92,
+            0.035
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1737,
+      "sha256": "9ae57b8d01b473c8fb21435ab530ad3753bea9733386edd145c7a91badc45bac",
+      "image": {
+        "dimensions": [
+          71,
+          136
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_built_in.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 22616,
+      "sha256": "eedcfbca0a9e565424d941b8cf82ddc0c3c4dfc63911a420bfae058e9a18044c",
+      "model": {
+        "meshes": 3,
+        "primitives": 10,
+        "vertices": 1476,
+        "triangles": 268,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.86875,
+            0.035
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_built_in.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2277,
+      "sha256": "84c03890a0cef37a021c2ca81a55e72c019c2dfc232273dec853bb3ceea1c70b",
+      "image": {
+        "dimensions": [
+          89,
+          128
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_large.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 30632,
+      "sha256": "5851cc59c7e12f6f34a01a2ea93d5b9540be4078c1b703f517239fcede98fb32",
+      "model": {
+        "meshes": 3,
+        "primitives": 5,
+        "vertices": 1104,
+        "triangles": 436,
+        "accessor_bounds": {
+          "min": [
+            -0.27316,
+            -0.40317,
+            -0.34193
+          ],
+          "max": [
+            0.52,
+            0.92,
+            0.04362
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_large.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2938,
+      "sha256": "02db993fb1dbfdd12c2aa82c94964122ecde73ec5dedbb0ee17e66390f3dc135",
+      "image": {
+        "dimensions": [
+          91,
+          136
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_small.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12988,
+      "sha256": "35dab7f63711623be321bfd82072f4ab29fe8006aac9371c6e6b78df2e02f5ed",
+      "model": {
+        "meshes": 2,
+        "primitives": 5,
+        "vertices": 632,
+        "triangles": 152,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.28193
+          ],
+          "max": [
+            0.43,
+            0.60025,
+            0.035
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_fridge_small.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1576,
+      "sha256": "03b62447b7429d7fcf30cd501b64021562b4a5905b63438b1b72150d702b0239",
+      "image": {
+        "dimensions": [
+          71,
+          89
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_microwave.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 11248,
+      "sha256": "dd6a6c919f4bebc6e2080fe419262cf97a0d6461ead3f3998aa3c9edf4d2bd27",
+      "model": {
+        "meshes": 2,
+        "primitives": 6,
+        "vertices": 510,
+        "triangles": 152,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.22
+          ],
+          "max": [
+            0.29,
+            0.18,
+            0.01
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_microwave.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1359,
+      "sha256": "49c6d54f196cb32d942e6dc83e96c48426ab4a8995d39b58bdfbd598116aad6e",
+      "image": {
+        "dimensions": [
+          50,
+          27
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_sink.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 23480,
+      "sha256": "7b9610277d71f00dcf1bba49cf4d98d77ce5177e84bf76c7da2f8893e542f743",
+      "model": {
+        "meshes": 2,
+        "primitives": 8,
+        "vertices": 2194,
+        "triangles": 318,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.49,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_sink.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2139,
+      "sha256": "6c492c040eee8cf532190aab77366b79c2cebd85d4550542f6890038006bd7da",
+      "image": {
+        "dimensions": [
+          92,
+          73
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_stove.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 54324,
+      "sha256": "3239edb36295dfca9530a9b9a6ad0aff98ce62e7cf8d13ca2a5a1a6b2a904656",
+      "model": {
+        "meshes": 2,
+        "primitives": 6,
+        "vertices": 4860,
+        "triangles": 830,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.45,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_stove.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2388,
+      "sha256": "7688a2684bfdc4c892429a769ea0cc991e400ee424f11e676c59d325110da900",
+      "image": {
+        "dimensions": [
+          92,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_stove_electric.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18604,
+      "sha256": "cf646b960d7dfed1fac27898ff6de1f0671cfa33beecbed06ead7d0684517392",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 2040,
+        "triangles": 338,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.45
+          ],
+          "max": [
+            0.43,
+            0.45,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/kitchen_stove_electric.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2340,
+      "sha256": "944e2ea460dd11bf56d2b81a37123634015fdadec60b03bfc42c8a35a2aea955",
+      "image": {
+        "dimensions": [
+          92,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_round_floor.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6600,
+      "sha256": "50fe1b5b588edf15bfa9cc880f71a02a4fda6036350b24733d0ef4de5cc5e908",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 240,
+        "triangles": 76,
+        "accessor_bounds": {
+          "min": [
+            -0.01602,
+            0.0,
+            -0.14778
+          ],
+          "max": [
+            0.13602,
+            0.86,
+            0.02778
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_round_floor.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1625,
+      "sha256": "da552fc2f2e33cef000d17ec93f7bb518cccfaa6cfc1fef3d847e847c94d8c3f",
+      "image": {
+        "dimensions": [
+          24,
+          127
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_round_table.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6604,
+      "sha256": "75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 240,
+        "triangles": 76,
+        "accessor_bounds": {
+          "min": [
+            -0.01602,
+            0.0,
+            -0.14778
+          ],
+          "max": [
+            0.13602,
+            0.31425,
+            0.02778
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_round_table.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1481,
+      "sha256": "175f9f5d64cca3994da9b69a93baadc86d2a8784a09dd1da7ade7708c21a8ea4",
+      "image": {
+        "dimensions": [
+          24,
+          47
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_ceiling.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5628,
+      "sha256": "57066be51583d83ae60071e8179af275189cb2911ecb9fc24953bb930c8bf118",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 192,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.12
+          ],
+          "max": [
+            0.12,
+            0.23,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_ceiling.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 693,
+      "sha256": "86c0809e57814899f10aaec13d27050b467eb6a674e4622bccc1c58c501a0951",
+      "image": {
+        "dimensions": [
+          24,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_floor.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5624,
+      "sha256": "6466993748d8e184de9ec5b6b0af613867c50c0ce320d1898b1db9e4c27c2561",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 192,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.12
+          ],
+          "max": [
+            0.12,
+            0.86,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_floor.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 808,
+      "sha256": "17af83f19cf4fc99858093a7bc6e754fbd7ffbb362390d7f8409c3c93c8659f3",
+      "image": {
+        "dimensions": [
+          24,
+          127
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_table.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5624,
+      "sha256": "70ec9211af336b1ef3b4da32590b8737b4facf219348c22e6533a1e898cdb13d",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 192,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.12
+          ],
+          "max": [
+            0.12,
+            0.29,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_square_table.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 847,
+      "sha256": "225ec7459e78d2b9c5e2fd6d902f0aeb9978768d8ab78e972de5af0525433c1f",
+      "image": {
+        "dimensions": [
+          24,
+          44
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_wall.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 4828,
+      "sha256": "a9679ecd3be05731846f22ade97c37069598ca7a06dd9319f50230e63a1ea83c",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 156,
+        "triangles": 42,
+        "accessor_bounds": {
+          "min": [
+            -0.19538,
+            0.0,
+            0.0
+          ],
+          "max": [
+            0.19538,
+            0.16,
+            0.2592
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lamp_wall.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 592,
+      "sha256": "4ed46865d5393b4cfe192dc51a9309b680085d2e979321ed0096826b3af9bae7",
+      "image": {
+        "dimensions": [
+          31,
+          15
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/laptop.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5540,
+      "sha256": "5fa8a1f4a71ab8d82ef64da77a6973ffd350c6d4557516069a4ffd4bb8d808af",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 228,
+        "triangles": 68,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.5456
+          ],
+          "max": [
+            0.6,
+            0.36775,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/laptop.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1353,
+      "sha256": "6a869cc04b6ec029b90505f650f10bba58e855561c5ee14effddada4ff91a698",
+      "image": {
+        "dimensions": [
+          50,
+          25
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_chair.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9648,
+      "sha256": "ddfe6bc4b3451bca61666d7b614552d6ed2a03d82fc76244b72ae3155874dc6c",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 392,
+        "triangles": 128,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.41
+          ],
+          "max": [
+            0.49,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_chair.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2530,
+      "sha256": "1f601d544c67beb48805b250e8f43921b81a5c3b1b724ee51bd28f69c77a0237",
+      "image": {
+        "dimensions": [
+          91,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_chair_relax.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13904,
+      "sha256": "def698179e44de6cd17f4cfc2730273da54dd25458a29b079fbf4468abe5d98e",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 876,
+        "triangles": 188,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.67469
+          ],
+          "max": [
+            0.49,
+            0.63,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_chair_relax.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2937,
+      "sha256": "a42b38dfd9c5394c73bce0b4a4a68eb6c1358932a3dabc9ea23eefec076adb12",
+      "image": {
+        "dimensions": [
+          105,
+          93
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_chair.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9136,
+      "sha256": "f0766a7d5698974b711adac18a2108f0e74e3a036fa4e4e0ccf91195b0ee5abf",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 368,
+        "triangles": 116,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.41
+          ],
+          "max": [
+            0.7296,
+            0.4,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_chair.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2743,
+      "sha256": "c8d0b61dac80a951da5d9c1a215281811fe1ea32962d761125a1096735704b9b",
+      "image": {
+        "dimensions": [
+          115,
+          60
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_sofa.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9128,
+      "sha256": "b4f4e6850118e409da301df678228c703b6ac02e94fbb9dbde61543af817fa53",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 368,
+        "triangles": 116,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.41
+          ],
+          "max": [
+            1.12,
+            0.4,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_sofa.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2606,
+      "sha256": "d91613da85c1f51e875ff964839d8386ab9837fd48df2d751a257fc791674ab7",
+      "image": {
+        "dimensions": [
+          156,
+          60
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_sofa_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13744,
+      "sha256": "fe665d07d53fdc6bc96e9fed453874ba4202b008194e1e24100b067081c62be1",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 528,
+        "triangles": 176,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -1.34983
+          ],
+          "max": [
+            1.34983,
+            0.4,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_design_sofa_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3034,
+      "sha256": "b037866c54b28c538f6b7a984e250079eefd333693e1a265dce5d21568155aec",
+      "image": {
+        "dimensions": [
+          280,
+          59
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9644,
+      "sha256": "1886b811c0d3ad0d8525a4fd43adf4112c497c8e0ed906f06877ca3517f4c7dd",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 392,
+        "triangles": 128,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.41
+          ],
+          "max": [
+            0.98,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2718,
+      "sha256": "f214fd6fd575841122e4d11296d66c59dd2c7cb3104a0a32fbe32db1a918b77b",
+      "image": {
+        "dimensions": [
+          141,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13412,
+      "sha256": "bbdd91791e621ac71321eaf38a2432c53279792ef946707f23b216123bd52655",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 580,
+        "triangles": 190,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.98
+          ],
+          "max": [
+            0.98,
+            0.46,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3219,
+      "sha256": "3ecf1ffc68da44fa44c9c13ee3901f5427b507d15b1003e0d518f38bde11e8d4",
+      "image": {
+        "dimensions": [
+          202,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_long.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13112,
+      "sha256": "452df1c862f97781615e2c1c832913b48cf6c6f011d3260dc023ff3f117cc9d1",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 564,
+        "triangles": 186,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.41
+          ],
+          "max": [
+            0.98,
+            0.46,
+            0.41
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_long.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3031,
+      "sha256": "e6ba758a6f597530486c4b8cb829aba5db42c7e7affed8fa1cfadbe4d0d22ebe",
+      "image": {
+        "dimensions": [
+          179,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_ottoman.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6960,
+      "sha256": "79087654136d7d69653fdc3b52a02d7833fe13e6a0a56b8dcdf652c611dbd959",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 256,
+        "triangles": 84,
+        "accessor_bounds": {
+          "min": [
+            0.47,
+            0.0,
+            -0.04
+          ],
+          "max": [
+            0.90983,
+            0.23,
+            0.41
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/lounge_sofa_ottoman.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1682,
+      "sha256": "a2368388fb46fa91a2771a4de2ee0db4edc58a81bb6ff0994720f326f9b60c14",
+      "image": {
+        "dimensions": [
+          92,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/paneling.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3960,
+      "sha256": "69234bb71f54b0241ef6b78c3c7aa8aa855aae745475645f9adec4895296a96c",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 66,
+        "triangles": 40,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            0.5,
+            0.59477,
+            0.03
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/paneling.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1772,
+      "sha256": "c7df490fc8949b7b1dfdf08d963e2c26d3de0ccdea92eb69c2e98f2f9f61a4df",
+      "image": {
+        "dimensions": [
+          55,
+          88
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5044,
+      "sha256": "6fae7c190d0b676ef3efd35e5178cef21dffb5c80e1257d8b537ad424da0e5f6",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 96,
+        "triangles": 50,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.08848
+          ],
+          "max": [
+            0.23,
+            0.22216,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1176,
+      "sha256": "b704ce9293f8facbb1e0153f4569c967a728eea9edda15baf5fbc35126b82107",
+      "image": {
+        "dimensions": [
+          29,
+          34
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_blue.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5056,
+      "sha256": "8326e018c09cb00c19c2c9b745f521cd7eba1169b755322b04f88440dbfef319",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 96,
+        "triangles": 50,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.06339
+          ],
+          "max": [
+            0.23,
+            0.12851,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_blue.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 769,
+      "sha256": "6d96cba3b5fa580c47f70ea97f996c215dec3c02d8322e95d32481424d79c7f7",
+      "image": {
+        "dimensions": [
+          25,
+          20
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_blue_long.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5088,
+      "sha256": "b643f81a863595071b7907d3d0dcf5b1b0e3bb6ad8521db37778b2242ba46bbc",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 96,
+        "triangles": 50,
+        "accessor_bounds": {
+          "min": [
+            -0.13,
+            -0.0,
+            -0.08848
+          ],
+          "max": [
+            0.38658,
+            0.22216,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_blue_long.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1170,
+      "sha256": "27f9037a709e0af7afee6570c6163540e7f7104b607d6039ff691e9d017b49ff",
+      "image": {
+        "dimensions": [
+          58,
+          34
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_long.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 5072,
+      "sha256": "d8490ae920413fd04c85a2164ef384d67a1ca257f761dec1cc7f06fa2c027283",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 96,
+        "triangles": 50,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.08848
+          ],
+          "max": [
+            0.38658,
+            0.22216,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/pillow_long.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1193,
+      "sha256": "08c5e9674bd03a34c35ae0e72035edb2818876091d829fd4f27cde7009703c84",
+      "image": {
+        "dimensions": [
+          45,
+          34
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small1.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8224,
+      "sha256": "2b9c022feb47be857b2c4fdc29f36522766ba9b70c578c31d7c05d71b4377d15",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 320,
+        "triangles": 102,
+        "accessor_bounds": {
+          "min": [
+            -0.09466,
+            0.0,
+            -0.09466
+          ],
+          "max": [
+            0.09466,
+            0.28,
+            0.09466
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small1.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 922,
+      "sha256": "0f4319b0e1a25cc71ed9af055f8af7f533a03a00ff8d3c61019437117f7bee8c",
+      "image": {
+        "dimensions": [
+          14,
+          21
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small2.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12996,
+      "sha256": "d7c8ff42c66dd4f9238a73570549813d1ca6c5f6f661d7af9cb764c4fce314b9",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 576,
+        "triangles": 158,
+        "accessor_bounds": {
+          "min": [
+            -0.09466,
+            0.0,
+            -0.09466
+          ],
+          "max": [
+            0.09466,
+            0.28,
+            0.09466
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small2.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 936,
+      "sha256": "9a51e04270312c39d254b253641b9177527b394a11d1dea45b3563c787211eea",
+      "image": {
+        "dimensions": [
+          14,
+          21
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small3.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8424,
+      "sha256": "1aa38b1b22bd19fa4f9f3abd8c4cbf50da2d6fa721cf1f9aa4d80bb89b1bef94",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 336,
+        "triangles": 98,
+        "accessor_bounds": {
+          "min": [
+            -0.08487,
+            0.0,
+            -0.098
+          ],
+          "max": [
+            0.08487,
+            0.29,
+            0.098
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/plant_small3.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 928,
+      "sha256": "b4e343be77e33551b55ab4ce02028b12278e939749b230b6dd57c225f4ad0ee6",
+      "image": {
+        "dimensions": [
+          14,
+          22
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/potted_plant.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 7576,
+      "sha256": "5b760eda2766f75fda36b2c5df652a1662f82981ef64cd8fa7fe7bcd386b3a15",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 192,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            -0.04289,
+            0.0,
+            -0.24146
+          ],
+          "max": [
+            0.21206,
+            0.53578,
+            0.04953
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/potted_plant.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2485,
+      "sha256": "9b11ee7c6ec92d9829d01b84f9dce0257dfe38eaf930bfee9c348fb6b9e81d99",
+      "image": {
+        "dimensions": [
+          28,
+          97
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/radio.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 25020,
+      "sha256": "1ba93d6ba6f049750853b4652b92f286f2898e527695a0705b75cc7615897fed",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 1644,
+        "triangles": 432,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.0975
+          ],
+          "max": [
+            0.315,
+            0.22819,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/radio.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1598,
+      "sha256": "bb9ab5bca09552a86299507c76a0c78d889cf09d3dcd7c7c981ce92e1fd3d0b3",
+      "image": {
+        "dimensions": [
+          41,
+          34
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_doormat.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13812,
+      "sha256": "bd888e41853342cdc0d34d3f09b99cedc50a144f47b514943b65cdb9a2cfd802",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 312,
+        "triangles": 204,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.23701
+          ],
+          "max": [
+            0.4293,
+            0.01,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_doormat.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 205,
+      "sha256": "9070adc911cdfbe3e91726d85b8141fe936f72d4a4d152d4ae595018290c0e90",
+      "image": {
+        "dimensions": [
+          64,
+          2
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_rectangle.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3188,
+      "sha256": "a989d2d59c04e3071e0c90388b113a9a8f339ce1814ef984c51cb6dcd7c8e0eb",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 64,
+        "triangles": 28,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.92
+          ],
+          "max": [
+            1.57,
+            0.01,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_rectangle.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 151,
+      "sha256": "5c1756ce6245d7a2add724ef9065965dd33e1fc062036946e9b7c828bfb9cf27",
+      "image": {
+        "dimensions": [
+          257,
+          2
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_round.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10164,
+      "sha256": "c4cdc8f51ed2dbfb853b147521ed40e995307392fd3b19045b2203ea50f376db",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 380,
+        "triangles": 188,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.92
+          ],
+          "max": [
+            0.92,
+            0.01,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_round.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 855,
+      "sha256": "3dd1e921b5e56e81b4ad7472cfe97412e7cd92d10b2007f792d160283a926635",
+      "image": {
+        "dimensions": [
+          134,
+          2
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_rounded.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10876,
+      "sha256": "2ef5cc634bb1060a1a5774cfcaf6e11c235791c99d6b59da5fdbc09edfb95a68",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 412,
+        "triangles": 204,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.92
+          ],
+          "max": [
+            1.57,
+            0.01,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_rounded.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 868,
+      "sha256": "454db0bef0ade6fde198e019cdd793ef8ea74d37fc376787474bcb9fb17f4211",
+      "image": {
+        "dimensions": [
+          201,
+          2
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3180,
+      "sha256": "18a63634e9bbdde0b309c008f4cd41df8455f7f2ffdb8fe8985fdf8c2cd06b3d",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 64,
+        "triangles": 28,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.92
+          ],
+          "max": [
+            0.90433,
+            0.01,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/rug_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 151,
+      "sha256": "30ed6affa406d63bf5b476c71a73e5b5f5b37fb7024879bba96228f5e71123b9",
+      "image": {
+        "dimensions": [
+          189,
+          2
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/shower.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 52020,
+      "sha256": "25c1cebad681fe369dc04839a8f08f5da2ccbd99b3a70aa83fe2e4d1590c6951",
+      "model": {
+        "meshes": 3,
+        "primitives": 6,
+        "vertices": 3483,
+        "triangles": 810,
+        "accessor_bounds": {
+          "min": [
+            -0.02,
+            0.0,
+            -1.28
+          ],
+          "max": [
+            1.28,
+            2.49267,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/shower.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3444,
+      "sha256": "7e138d46aa6a402e176304557808729f4801552f1ed73f1cdedd280bbf4c3856",
+      "image": {
+        "dimensions": [
+          116,
+          162
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/shower_round.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 72048,
+      "sha256": "1723208eaba3fb215089e02c8cdd3d7201d0980ad0c7b275319eb539f6094bfb",
+      "model": {
+        "meshes": 4,
+        "primitives": 5,
+        "vertices": 2400,
+        "triangles": 960,
+        "accessor_bounds": {
+          "min": [
+            -0.37843,
+            0.0,
+            -0.56179
+          ],
+          "max": [
+            0.56179,
+            1.09403,
+            0.37843
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/shower_round.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3874,
+      "sha256": "3969052ecd2b8585140d59f9a886e7f3e08fdcbdb2215647535565bc7a975e6c",
+      "image": {
+        "dimensions": [
+          116,
+          161
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/side_table.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8800,
+      "sha256": "8227810584f7d37582e4e9ec821c56f1dc54b99c88a8dc74242ea3b7402bc472",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 348,
+        "triangles": 118,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.52448,
+            0.38441,
+            0.01
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/side_table.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2042,
+      "sha256": "98a8edd3c942bedcf58701a05b35443b69d8c701453cc4b1bb21f78f2f6fe888",
+      "image": {
+        "dimensions": [
+          78,
+          57
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/side_table_drawers.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 19072,
+      "sha256": "911145653c11b103b2c2e84f3d019205d1886186015c3b52aceddc3801ae8fdf",
+      "model": {
+        "meshes": 3,
+        "primitives": 6,
+        "vertices": 732,
+        "triangles": 238,
+        "accessor_bounds": {
+          "min": [
+            -0.01,
+            0.0,
+            -0.21
+          ],
+          "max": [
+            0.52448,
+            0.38441,
+            0.1763
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/side_table_drawers.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2359,
+      "sha256": "71480a3954ea6841b7a923e484371a7e73994fcc9ef6f28f6e14330151870f09",
+      "image": {
+        "dimensions": [
+          78,
+          57
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/speaker.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15744,
+      "sha256": "78230b9fb382a937cb19e4bf7556ee9402d33ac80b1baaee2d2eb89493cfa1fc",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 696,
+        "triangles": 228,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            0.0,
+            -0.148
+          ],
+          "max": [
+            0.148,
+            0.6364,
+            -0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/speaker.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1597,
+      "sha256": "d62a339df0c880c95915de9ff40e7bfe32f1e11fccc56c599fb732a15e556b01",
+      "image": {
+        "dimensions": [
+          30,
+          94
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/speaker_small.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 15244,
+      "sha256": "34db09984703282822f3f57fc9a31bfdfa6a8f6bf8251893d0c907e7ee6601b2",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 672,
+        "triangles": 220,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.1332
+          ],
+          "max": [
+            0.148,
+            0.29798,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/speaker_small.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1321,
+      "sha256": "7636be9aec4a3acc4119e239f2a0ab2ff5661105590fe2b1833e9a6a320c8403",
+      "image": {
+        "dimensions": [
+          29,
+          45
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 21616,
+      "sha256": "b442f997583e417fcb32ec89470ecc441b0556f416d3afe00e3f18c806e556a0",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 1004,
+        "triangles": 308,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.79
+          ],
+          "max": [
+            1.82343,
+            1.33953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 6934,
+      "sha256": "016133dda4993160d7e960aea856ae060c6f021490ca0a61518eca075e080e1e",
+      "image": {
+        "dimensions": [
+          270,
+          197
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 21576,
+      "sha256": "250d3c51e10fa250c30954b8a3d6bb0d011362be34ba85a50f5bebdd4184e0dc",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 998,
+        "triangles": 312,
+        "accessor_bounds": {
+          "min": [
+            0.16395,
+            0.0,
+            -1.42579
+          ],
+          "max": [
+            1.93764,
+            1.33953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 7103,
+      "sha256": "89cc16ed47686e242a481bff1dca0adf8568929ce8f64b098ea9420b9358a723",
+      "image": {
+        "dimensions": [
+          265,
+          197
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_open.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 39924,
+      "sha256": "cbfe1dc9fd66f1375f9c79ccff7069923655238fdf49c7c366653d17632453a5",
+      "model": {
+        "meshes": 3,
+        "primitives": 5,
+        "vertices": 1506,
+        "triangles": 558,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.79
+          ],
+          "max": [
+            1.82343,
+            1.33953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_open.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 7461,
+      "sha256": "f38ed4410ad829964b17857149297018f24fe07dd22a167e9f0526fd584caadd",
+      "image": {
+        "dimensions": [
+          270,
+          197
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_open_single.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 24600,
+      "sha256": "97172c18eff61b844cfa871da32b6c639230adf20901188f378926861e7610de",
+      "model": {
+        "meshes": 2,
+        "primitives": 2,
+        "vertices": 566,
+        "triangles": 326,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.79
+          ],
+          "max": [
+            1.82343,
+            1.33953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stairs_open_single.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 4741,
+      "sha256": "334701b98449e5e02e4222321b69357a392596fcd5e2ef12135811d8c376dbc3",
+      "image": {
+        "dimensions": [
+          270,
+          197
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stool_bar.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 11816,
+      "sha256": "a86167a9f92401a61fec7e509ad089ecc552d0f299743add3aeb919acb24e341",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 492,
+        "triangles": 176,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.22988
+          ],
+          "max": [
+            0.26544,
+            0.435,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stool_bar.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1841,
+      "sha256": "12ef238bff34fedba7a6d14e5724c3ec07e4221c07961f024f0eaba68ebb7159",
+      "image": {
+        "dimensions": [
+          38,
+          65
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stool_bar_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9784,
+      "sha256": "a7e1099d64eb35416d4d8c9b16921ef12ae7c1c1e6fff5ea75f3ae19cc934a8b",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 388,
+        "triangles": 142,
+        "accessor_bounds": {
+          "min": [
+            0.05597,
+            0.0,
+            -0.18875
+          ],
+          "max": [
+            0.20947,
+            0.405,
+            -0.04113
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/stool_bar_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1687,
+      "sha256": "0da69f82d93d49a410cccf11031dc1da77796fa243811bc025d9c8e82ce28611",
+      "image": {
+        "dimensions": [
+          31,
+          60
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8196,
+      "sha256": "ff1a94498d023957f4bc3ff6f55a7a82977d336dbf01a573b3364f03afe5ff61",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 168,
+        "triangles": 120,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.44737
+          ],
+          "max": [
+            0.84149,
+            0.32673,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2042,
+      "sha256": "7bc0e103a8d53ab21ed86b08ade4a1a8b9e9de2b55e21f7aee20b904e8443341",
+      "image": {
+        "dimensions": [
+          133,
+          49
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cloth.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9920,
+      "sha256": "64de52b5c4370724c29feefd68a65b157c55c88592e2096987bbce007ae80bcb",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 396,
+        "triangles": 144,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.44737
+          ],
+          "max": [
+            0.84149,
+            0.32673,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cloth.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2204,
+      "sha256": "67276a22a161ee24e9fc98fb022e015001088ace0e876128e4354d7fe2acc3c4",
+      "image": {
+        "dimensions": [
+          133,
+          49
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8256,
+      "sha256": "e38bea760fbd514efbb75528d09b4752c91af44677bbb97e6d4386c263525179",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 168,
+        "triangles": 124,
+        "accessor_bounds": {
+          "min": [
+            -0.461,
+            -0.0,
+            -0.3
+          ],
+          "max": [
+            0.2,
+            0.23,
+            0.1
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1541,
+      "sha256": "61b8f6dcbd49aae95a24fb6e8a6172659b1899cfd5914541941d153ce9a7dfea",
+      "image": {
+        "dimensions": [
+          110,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_glass.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9428,
+      "sha256": "05bf257a086a540b3b79b0c1c7dae35b036ed4d520686aed74ea94ea701c447e",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 368,
+        "triangles": 140,
+        "accessor_bounds": {
+          "min": [
+            -0.461,
+            -0.0,
+            -0.3
+          ],
+          "max": [
+            0.2,
+            0.23,
+            0.1
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_glass.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1516,
+      "sha256": "d3bf08a0c68061bf97bd657b3733e7a7f6e9aab40085055d7f6d33ed66c78a7e",
+      "image": {
+        "dimensions": [
+          110,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_glass_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9448,
+      "sha256": "e4a7ebef6ad0dbafee629df78b0edd88433a1059c4dd5fb3d70304ba2f71b945",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 368,
+        "triangles": 140,
+        "accessor_bounds": {
+          "min": [
+            -0.461,
+            -0.0,
+            -0.3
+          ],
+          "max": [
+            -0.061,
+            0.23,
+            0.1
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_glass_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1337,
+      "sha256": "5a5f11318aba4032b49ae5d1ab874e4707d9d979cf46032829dbe7381e59f3ce",
+      "image": {
+        "dimensions": [
+          83,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 8276,
+      "sha256": "bcc81d8919a3af9141c9c93b4520106dd0a90a7144346cd87928014018aac816",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 168,
+        "triangles": 124,
+        "accessor_bounds": {
+          "min": [
+            -0.461,
+            -0.0,
+            -0.3
+          ],
+          "max": [
+            -0.061,
+            0.23,
+            0.1
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_coffee_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1380,
+      "sha256": "eb8766dd3e6e485ae82d2befc0013fdca7d96956325802be6f4aa5f085153d4b",
+      "image": {
+        "dimensions": [
+          83,
+          35
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cross.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 12140,
+      "sha256": "f0d83392aff5df82f6c9585cadff694643dbd30a4ff2b8bb01a00a7a161338a3",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 269,
+        "triangles": 178,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -1.06517
+          ],
+          "max": [
+            2.02886,
+            0.82717,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cross.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3125,
+      "sha256": "71539d07ddc9e13c4aebf480803bb352068ed6a0af4036137e3cb8797a14cd21",
+      "image": {
+        "dimensions": [
+          134,
+          52
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cross_cloth.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 13852,
+      "sha256": "3c16b86cdf9a9a82b80b97611030a1da2ed2e9e977ac76457e09a1547b0cebbc",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 598,
+        "triangles": 202,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -1.06517
+          ],
+          "max": [
+            2.02886,
+            0.82717,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_cross_cloth.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 3177,
+      "sha256": "4711b38aedd1e17f6cbb1a939eb43afc8e3ccc5c30a9bd6bc5ee88fdd5c06255",
+      "image": {
+        "dimensions": [
+          134,
+          52
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_glass.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 9848,
+      "sha256": "a5ed516d18b51cf5db3cc78f1403451f853a81db45510543d3ed56c1dd9c412b",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 392,
+        "triangles": 144,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.44737
+          ],
+          "max": [
+            0.84149,
+            0.32673,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_glass.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2185,
+      "sha256": "4f48f50d19f5c683bee4a9b11b0c75f59b21d68fb6ad1f938118f2720d814cd6",
+      "image": {
+        "dimensions": [
+          133,
+          49
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_round.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6444,
+      "sha256": "f8daea9124a542a00b7bdacfddac82dc468573d43e44d7b54dd6316e9695754b",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 128,
+        "triangles": 80,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.27,
+            -0.8
+          ],
+          "max": [
+            0.69282,
+            0.09673,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/table_round.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1534,
+      "sha256": "e43d1e3336849d3da1bfe14a3ababd86d79cbb4b528086787157c853619aee6b",
+      "image": {
+        "dimensions": [
+          113,
+          55
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_antenna.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 4500,
+      "sha256": "00eea4123b3efc7f8050fd3eaac0a83de3053c9e6cead18dc739260a429b2bb7",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 80,
+        "triangles": 44,
+        "accessor_bounds": {
+          "min": [
+            -0.13226,
+            0.0,
+            -0.08
+          ],
+          "max": [
+            0.13226,
+            0.10273,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_antenna.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1028,
+      "sha256": "b856e0f43655fe6f82bfdf7ca1c3ebafffee4bd582bb6cc15547ffe9abc7fd6b",
+      "image": {
+        "dimensions": [
+          30,
+          16
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_modern.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6368,
+      "sha256": "d89519ad0a5f28b5b0dccb0d83209dccf610cda959578238dd21bbf9e219cfc6",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 228,
+        "triangles": 72,
+        "accessor_bounds": {
+          "min": [
+            -0.3424,
+            0.0,
+            -0.0642
+          ],
+          "max": [
+            0.3424,
+            0.45475,
+            0.0642
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_modern.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1330,
+      "sha256": "0725d20233724e9421ef9eb7ddeb23186f7f10f232642cc2b14a84e12efcaa4c",
+      "image": {
+        "dimensions": [
+          74,
+          68
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_vintage.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 19392,
+      "sha256": "eb144cc8fb1e7f761e3665226e4266c8868679421d21d6548f24d2abad7c67cf",
+      "model": {
+        "meshes": 1,
+        "primitives": 4,
+        "vertices": 1656,
+        "triangles": 280,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.27
+          ],
+          "max": [
+            0.41,
+            0.27,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/television_vintage.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2034,
+      "sha256": "aa3f1d31cefe10b654d8a9322452cc5e279eaf693ff6e1dbed40cc94bc8ca81f",
+      "image": {
+        "dimensions": [
+          63,
+          41
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toaster.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 14924,
+      "sha256": "38c1fb7b122be9997758c8ee855d87f28014cf282f24d66d39f4e8d8b236d2af",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 652,
+        "triangles": 220,
+        "accessor_bounds": {
+          "min": [
+            -0.09399,
+            0.0,
+            -0.05
+          ],
+          "max": [
+            0.09399,
+            0.13,
+            0.05
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toaster.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 861,
+      "sha256": "72037b161c766923be19c78ce1d773a1f48880d4d7336171a41552913e4e23ed",
+      "image": {
+        "dimensions": [
+          29,
+          20
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toilet.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 18112,
+      "sha256": "16165cfd03c56c2cb443b800570810a22ef770f65e7a468f6761d9dc14eaaeae",
+      "model": {
+        "meshes": 2,
+        "primitives": 4,
+        "vertices": 1062,
+        "triangles": 230,
+        "accessor_bounds": {
+          "min": [
+            -0.0,
+            0.0,
+            -0.658
+          ],
+          "max": [
+            1.00458,
+            0.9494,
+            0.13171
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toilet.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2672,
+      "sha256": "672154bd6fcfc9f4ea8b4dbe3ffe7acd1c631de3a2626b6118f12ab4b548f043",
+      "image": {
+        "dimensions": [
+          74,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toilet_square.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 17548,
+      "sha256": "f241e26a22b0d9512d8455f3e868124f8032710c83c5265a546c19c67ecdd4b9",
+      "model": {
+        "meshes": 2,
+        "primitives": 3,
+        "vertices": 700,
+        "triangles": 228,
+        "accessor_bounds": {
+          "min": [
+            -0.24352,
+            -0.0,
+            -0.38718
+          ],
+          "max": [
+            0.30362,
+            0.45097,
+            0.09784
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/toilet_square.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2492,
+      "sha256": "b2bdca8b0adb8ab01a6667b91c212ef0434fd158423fbe928b6abf35a1325e25",
+      "image": {
+        "dimensions": [
+          66,
+          67
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/trashcan.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6452,
+      "sha256": "e0ccc1fe50cbd05386477fdff527171d1cf7c0de2ba7ff3233f8d9561feb2561",
+      "model": {
+        "meshes": 1,
+        "primitives": 2,
+        "vertices": 232,
+        "triangles": 68,
+        "accessor_bounds": {
+          "min": [
+            -0.25949,
+            -0.0,
+            -0.22
+          ],
+          "max": [
+            0.2365,
+            0.90644,
+            0.22
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/trashcan.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1308,
+      "sha256": "204d9cebc1907a2bd4f4be34268bb6307805019a3edf728c3b437ac5e9f78f00",
+      "image": {
+        "dimensions": [
+          33,
+          64
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3340,
+      "sha256": "69273d5d623bddfce41d12d4e5eeb5621ea04f1edcbd8f35c00a60c2fd3258b7",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 90,
+        "triangles": 12,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.05
+          ],
+          "max": [
+            1.0,
+            1.28953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 358,
+      "sha256": "38c60212400b3dc672f8d34d666f04e148f43cc202c515457050b3bcd2af8de3",
+      "image": {
+        "dimensions": [
+          108,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_corner.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 4460,
+      "sha256": "0e6521caee1f9282784c52e0f651084e49f575b091ad97bf25540b8049757aef",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 174,
+        "triangles": 28,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.55
+          ],
+          "max": [
+            0.55,
+            1.28953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_corner.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 284,
+      "sha256": "83d505e34e4eaa138323917939154458cd04997ac80ab2c3fe01daa54f9c9d66",
+      "image": {
+        "dimensions": [
+          52,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_corner_rond.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10448,
+      "sha256": "33e87dd846335dca5fce8a0e242225bb97d4a7b47c3ae84df33ba97fe1da33bf",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 636,
+        "triangles": 116,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.55
+          ],
+          "max": [
+            0.55,
+            1.28953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_corner_rond.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 319,
+      "sha256": "2594701f426218cc8a509ccf7dc1a994ac67620609562b2717d9bd3ccd4bd970",
+      "image": {
+        "dimensions": [
+          56,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_doorway.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6444,
+      "sha256": "a55be1da05aa80c74749d0c38bd093fa5e2b1eaf21cbc9a7c3a0e6fbcfbe38e2",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 324,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.06955
+          ],
+          "max": [
+            1.0,
+            1.28953,
+            0.01955
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_doorway.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1610,
+      "sha256": "d94686203937304b29e75adc7156b3327793e91f5920491c9c4be4e0b3c4e104",
+      "image": {
+        "dimensions": [
+          109,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_doorway_wide.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 6468,
+      "sha256": "877af5b239f31f12027e3cec92aa26e97d511e1ae8673a8e3d7d13302d33edf3",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 324,
+        "triangles": 60,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.0,
+            -0.06955
+          ],
+          "max": [
+            1.0,
+            1.28953,
+            0.01955
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_doorway_wide.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 1557,
+      "sha256": "c2f05b7639f8b274b77b422abceac00b9aa7c7cb2288f0f4c69d0af6b8529bff",
+      "image": {
+        "dimensions": [
+          108,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_half.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 3348,
+      "sha256": "24db9f126891b48b443dcfa9f80d79e4321c8780aede83fb6d8f384b3d4eb35f",
+      "model": {
+        "meshes": 1,
+        "primitives": 3,
+        "vertices": 90,
+        "triangles": 12,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.05
+          ],
+          "max": [
+            0.5,
+            1.28953,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_half.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 287,
+      "sha256": "67b83c905472d847fbd73566571fa7b479faedb3aae3160309c5e15088d73a4e",
+      "image": {
+        "dimensions": [
+          57,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_window.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 10744,
+      "sha256": "166a10fddb8a78d942bc2791186913f7015dfee8501d20efd7a7b8f196fc5c3e",
+      "model": {
+        "meshes": 2,
+        "primitives": 5,
+        "vertices": 476,
+        "triangles": 108,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.06955
+          ],
+          "max": [
+            1.0,
+            1.28953,
+            0.01955
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_window.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2666,
+      "sha256": "50f9029b7ff9893b021e1c4c5b016f89ab66f52ce9ae948c0d3796442b235a05",
+      "image": {
+        "dimensions": [
+          108,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_window_slide.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 14564,
+      "sha256": "33e51d7ee74f13de318e419b0ebfb31fe7f6e9fd37050f13aa9347641b49376a",
+      "model": {
+        "meshes": 3,
+        "primitives": 7,
+        "vertices": 604,
+        "triangles": 152,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            0.0,
+            -0.06955
+          ],
+          "max": [
+            1.0,
+            1.28953,
+            0.01955
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/wall_window_slide.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2996,
+      "sha256": "671bef582ebc9e4c3708b539ddd992442f75cc0a514c3960a73f66ff9581e7e8",
+      "image": {
+        "dimensions": [
+          109,
+          190
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/washer.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 48104,
+      "sha256": "0c9704df1817d2699b72305b96cde097c9558bacabaef2fd5ab1ff4c03b81abf",
+      "model": {
+        "meshes": 2,
+        "primitives": 6,
+        "vertices": 3288,
+        "triangles": 720,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.03,
+            -0.35
+          ],
+          "max": [
+            0.39,
+            0.47,
+            0.13
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/washer.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 2951,
+      "sha256": "cd689b5dfcc1839b8bdc9ef34e68dcb8983fb467cb1f6f6b74423cb276f9bcf0",
+      "image": {
+        "dimensions": [
+          76,
+          70
+        ]
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/washer_dryer_stacked.glb",
+      "source": "kenney-furniture-kit",
+      "bytes": 64060,
+      "sha256": "efcc2155ef170092dc2602a98179380de3442c2500998a6ca37cc5554d275676",
+      "model": {
+        "meshes": 3,
+        "primitives": 7,
+        "vertices": 4135,
+        "triangles": 992,
+        "accessor_bounds": {
+          "min": [
+            0.0,
+            -0.13,
+            -0.35
+          ],
+          "max": [
+            0.39,
+            0.94,
+            0.13
+          ]
+        }
+      }
+    },
+    {
+      "path": "assets/library/kenney-furniture/washer_dryer_stacked.png",
+      "source": "kenney-furniture-kit",
+      "bytes": 4198,
+      "sha256": "2680ee25ba86fb051ee6e4cf0a2f0b3238d0355dce7e3f4bacf536e05bbfca19",
+      "image": {
+        "dimensions": [
+          76,
+          139
+        ]
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/classic.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10837,
+      "sha256": "bf6e50ae0a1798bec93256f3b0e4adb5f8683c11c0d4f2b126cf9ce4a408c126"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/defined.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10862,
+      "sha256": "99f00ce76a9e1bfe302dfd7e7ed1a20ac5b55ea2b9163ec411a41f2a7b789fd7"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/heart.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 11047,
+      "sha256": "04dd4511ea26de48349adcde4c9cdd73630f5f25a004d8f6951731f4806dbbcd"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/narrow.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10819,
+      "sha256": "f3f6e143ffa806330ec5ac6dc7eba1c90ec567856550db6943b7094726e7ee1d"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/oval.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10870,
+      "sha256": "6fa426049caf152b69efd451d7d9a14739253177bc50bb50a806eb22a0255583"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/round.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10913,
+      "sha256": "5ffc0891036c48abcec74efc60e9b624cc826ebcb31e764d5c1b8466d3ec24ed"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/soft.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10897,
+      "sha256": "87c512f061512bf2508b02f81e88e19aba1b6373f02f6ce2d7562f259161a50f"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/face/square.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 11009,
+      "sha256": "4bc8c4f9d2a5a9bd64cd45362d56e8ca5478862715a9ad24fd20dc40bed454db"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/afro.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 11170,
+      "sha256": "26543c7fb4c455b5278bcc7361d0fab279a6d1a7e6491defb6e148e903a3d60e"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/close_crop.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10596,
+      "sha256": "3babe68b2726024400d227ef73f21a7f0ea6f9fc283caf6f8ccafc135daa09b0"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/long.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10835,
+      "sha256": "704e043bb10c08cbbb6f1df7979d6d2afe5dc157c178e2e7c0ab5d647be79191"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/none.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10378,
+      "sha256": "a3856948dbb19267c34e901bbf0afc0364208fb28ccebd2ef0139e498ae8cfbc"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/swept.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10806,
+      "sha256": "5ac7ae5f16346e687240ee73d3c8ea650c5867675f22c3d3b687ca7efbc72317"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hair/tousled.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 10462,
+      "sha256": "77685e704043ef8ef729a681504b9aabe2b0988efaf37cbe63ae7c33df9b4e32"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hat/none.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 12746,
+      "sha256": "84d6a6096ea667fa6b2f35e30b9c714037cf418cea7c57df2ebc920d0e5bd2cf"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/hat/ranger_hood.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 13501,
+      "sha256": "ea76352dacadacef2da09f665cddb2b19d8aa240ecd42c31c107afa0502c9f8d"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/active.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23588,
+      "sha256": "c539964c82ef63680fa836a67b42edd4e1fa014ed98721a3a42032e4d4f5e432"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/field_jacket.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 24061,
+      "sha256": "7d7782795754a74ce97084c852ea8ce76661c6c38130d4f45b79440464e20903"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/striped.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22779,
+      "sha256": "a95ac6886a73737ca19102632101c023eb8f6a3d0fdf5a9e09d2586640530078"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/tailored.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20897,
+      "sha256": "a77213f61f2d64cf945b5407fc0859c41105eaadebcc8f106015ca20573cd146"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/tee.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21031,
+      "sha256": "4c5072813c8d1e61e717edfdf22be151ad88e540cf76a7223cbf9c95948bf975"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/component-thumb/outfit/weekend.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23095,
+      "sha256": "bb9bbd7989ca663e644ed78c0e210370828fd8922146fe7228e144c7daa55a9c"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/core.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 95760,
+      "sha256": "8f5d10bdcbbfa34af4e272452178735b58f2eacfcb48c7988043740233d09889",
+      "model": {
+        "meshes": 3,
+        "primitives": 3,
+        "vertices": 2904,
+        "triangles": 4824,
+        "accessor_bounds": {
+          "min": [
+            -0.1494,
+            1.43263,
+            -0.11517
+          ],
+          "max": [
+            0.1494,
+            1.81008,
+            0.16071
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hair/afro.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 108256,
+      "sha256": "c4326e499c4267e765df592371c8fd622111ad802b3c07b46fa06b9e66fb996a",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 3502,
+        "triangles": 3284,
+        "accessor_bounds": {
+          "min": [
+            -0.15076,
+            1.53005,
+            -0.10266
+          ],
+          "max": [
+            0.15076,
+            1.77915,
+            0.1341
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hair/close_crop.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 86060,
+      "sha256": "7ce6f585fead4a9ac991a96558ccf6365a1fffeb1f8d564fef83bb1799a1d0ec",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 466,
+        "triangles": 830,
+        "accessor_bounds": {
+          "min": [
+            -0.0773,
+            1.64415,
+            -0.08289
+          ],
+          "max": [
+            0.0773,
+            1.81351,
+            0.10803
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hair/long.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 104844,
+      "sha256": "3b1fa75ee356de9089251f39aad81f2124508f80fdda44c9373ac1824981756a",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 3085,
+        "triangles": 2906,
+        "accessor_bounds": {
+          "min": [
+            -0.12236,
+            1.50087,
+            -0.10886
+          ],
+          "max": [
+            0.12236,
+            1.77723,
+            0.16159
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hair/swept.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 88636,
+      "sha256": "42cfdc35054c1dbd2bd8c0c4ff15dea24bc176b01ea166e6ea6f7df3f948e991",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 757,
+        "triangles": 1301,
+        "accessor_bounds": {
+          "min": [
+            -0.09,
+            1.66056,
+            -0.0788
+          ],
+          "max": [
+            0.08542,
+            1.83972,
+            0.10815
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hair/tousled.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 85904,
+      "sha256": "56cf07f13ffdbbcabbba62f4d20c2d9af0c4091d95987ac23282d543caf9b969",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 466,
+        "triangles": 830,
+        "accessor_bounds": {
+          "min": [
+            -0.07933,
+            1.60077,
+            -0.08289
+          ],
+          "max": [
+            0.07933,
+            1.77092,
+            0.11474
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/hat/ranger_hood.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 315528,
+      "sha256": "e50f07369c325b693f6d6fcf98a59d1583a5cee02ddd617ebdd816489fb3ac61",
+      "model": {
+        "meshes": 1,
+        "primitives": 1,
+        "vertices": 1240,
+        "triangles": 2136,
+        "accessor_bounds": {
+          "min": [
+            -0.15163,
+            1.52532,
+            -0.14104
+          ],
+          "max": [
+            0.15163,
+            1.86504,
+            0.19347
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_bald.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 17393,
+      "sha256": "d60f87444c5f4e61a3a44fe81a34197c12178a3610b03d55f8296e836062eb61"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_day_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22042,
+      "sha256": "1ebb0a3a8d7587090762d89fcccebba40060b1ba54ffe5ecdff3b1cdff3994f3"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_day_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21336,
+      "sha256": "c24c7927725219ed6bbea3230e80af7747400b195349dfc31a2e401de703bbff"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_lilac_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23396,
+      "sha256": "af525183f7293731088e78a98b9537d01e9f96d665ab929788eafc2b21f4cb53"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_lilac_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20587,
+      "sha256": "96c58264fd14f5f1d7d9137b94e7fe444cdd72e27a629651a2a124613b4dd3ee"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_sky_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22320,
+      "sha256": "caee3b621bb3a2debdc6fbb57277a43abfa73f5f90c67c52223695f8adeacca8"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/casual_sky_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 18790,
+      "sha256": "f35611ce7a8bbf37b6646c0e0cf8d747c2d3dd565d945ea850bb54e46b785c43"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/chef_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23639,
+      "sha256": "b6abe6423e331f249b57a5c399d84a6ce24b92fcdaa8303044c1974fde5e34cf"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/chef_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21082,
+      "sha256": "f8c6033f636b3b30ef7c0f61e0b0c2349fc80873e7503bf6571e3b3d5776fee1"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/classy_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21574,
+      "sha256": "3d4d054e8b716172e0d209f399b12aaf6e84f14770779985802abc4c4d164729"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/classy_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21011,
+      "sha256": "e9dbaabd488d6135e91c63027366e1187d929cd0bb984b0c66f3b4361445ef50"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/cowboy_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22692,
+      "sha256": "0693a1c0b9a766e5ea531ec94a582ce2a7d608a618b70e22b3f19efb283a09c2"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/cowboy_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20470,
+      "sha256": "7c1e4d3a2d4ba04994e87361710410413168f1d691f07448e57862ee276da82d"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/custom.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20855,
+      "sha256": "46e6f4315147cd6312e7e85575a25eb2fcb025ce015205e7bf133802477ef1f7"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/doctor_senior_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23176,
+      "sha256": "7adbe522c79786aa7aba38a08212bda221d8489b2ae423c1ace8c98558c19433"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/doctor_senior_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21544,
+      "sha256": "25d23900145aeffe8e74487fa6e445b3f693be08feab07252a9678d2eb89077d"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/doctor_young_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 24503,
+      "sha256": "f232cc751cfc9021921618c88c97865c0390eef52ef0b443c5251f23b24a216e"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/doctor_young_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22436,
+      "sha256": "94ccbfffe980c9ba918a499121f35f601c4eb5e619c02999c1a09a7a9e8ec9fd"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/elf.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 18734,
+      "sha256": "86e9e4d1e2147a121291d1462cf52091ea10ba61ae6b5ef10a678145ece513e6"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/gold_knight_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 26843,
+      "sha256": "6299f05dd2ecb3f78663952d826a898c10e54b9af7b15fd1d7d54c6e7011a24f"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/gold_knight_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 25541,
+      "sha256": "f58f9260e526414d41e91996b0c35af536bdf3e0ac46d7b3e6adf3c5bfdaa887"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/kimono_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23488,
+      "sha256": "4c467b464f28fd12194325dfdd61cfe8cc28e3b74ddb8b3a738af1ab59c8c79b"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/kimono_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 18853,
+      "sha256": "034288eff2f3f266f60c97f85fc59d215360bb86550372b936526c2336e16e55"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/knight_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 19419,
+      "sha256": "9881c7e86823f476ffcee08c8f6670861950cfca80e04757e99a622aaa285b60"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/ninja_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 24384,
+      "sha256": "5f0ceab9b45871784d8e215e76ebbacc51dc8818043623d7b3f0d01ccd2133cf"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/ninja_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 19250,
+      "sha256": "1de935663aa81b5e1fed8461b6b96a300b5621986d4274b7c2bfa76c7b0d2a90"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/pirate_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 23765,
+      "sha256": "3f2377928e1ed8fd646456c2d8206addc62d34420f8b69e1f68f7a5533befe60"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/pirate_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20256,
+      "sha256": "b51f3479046f5aba910cb09a40d93740d46a79d54ab09403a5f2488a58877d04"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/sand_ninja_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 26006,
+      "sha256": "fc0bdfab866a130551eda78457a6b37325ff8238a04091a2f834429f0290e62c"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/sand_ninja_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21919,
+      "sha256": "af5f796857d8790e7e5ff6f52608d26cfe7256d68304912b9bac068fe45d410c"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/suit_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22859,
+      "sha256": "3b306d0e20ddb8c6ade869852e0a23c2279839e7e0e65ccc068ccebc34f857d8"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/suit_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 22008,
+      "sha256": "dce0dee6e7737490e66e4bd028964dfb4837ec600e209902140a2e63b75d37f3"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/viking_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 24838,
+      "sha256": "91f78b19e19f5ba7636957f7b50f40016f9e57ab04fe6d7bfad6ff090ef87fc9"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/viking_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 20865,
+      "sha256": "ca49cf7ce99ccf8b1e053fc4776a1c2a99799ceba8b222c5005e63c09ae312a0"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/witch.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 19564,
+      "sha256": "759f8f849b3f8934e0c0440002e7debac738b5cad0cb3c7e4c0b6347de546668"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/wizard.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21743,
+      "sha256": "aeb7b8e1476cda3a8a7c638015c48ac15f9c219db02dfea73cc1a395bfb612b8"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/worker_f.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 21174,
+      "sha256": "7068c81822a7612554bfd8f732d50d9d4f67c246aaacfbeaa8c040f8694d09f1"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look-thumb/worker_m.jpg",
+      "source": "quaternius-followville-avatars",
+      "bytes": 19301,
+      "sha256": "cf7b655bdef6b845199bcb4353fa374d4e9dd7f2998c5f5567b25d6cd2f0e0eb"
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_bald.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 36476,
+      "sha256": "227210cecc51f0db280fb922c6dc096b2d3f52c391636b97229fc651dba8f534",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 2157,
+        "triangles": 2312,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.46194
+          ],
+          "max": [
+            0.63016,
+            3.07762,
+            0.53914
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_day_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 60984,
+      "sha256": "61e73bfdad14a10af709c10933fae3d961ca445e46a547572c5b8272dea5e6ea",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6653,
+        "triangles": 6624,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_day_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 60860,
+      "sha256": "ac40ad49b249267ea3e6051d45101cafd9c82d4acd7d389f531ad1fcb62c2a45",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6499,
+        "triangles": 6492,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.57224
+          ],
+          "max": [
+            0.63016,
+            3.2632,
+            0.74213
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_lilac_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 69652,
+      "sha256": "7514b2df76b945b8c8a18b7348721a2b4fb8d71995211aaf300ddc8deaf19c52",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 8503,
+        "triangles": 8444,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.0196,
+            -0.6178
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_lilac_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 51420,
+      "sha256": "35470bc9bc7cf6f9f325b28630084d847272cc056996f56bf27c272d542a09f6",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 4843,
+        "triangles": 4920,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.0196,
+            -0.54493
+          ],
+          "max": [
+            0.63016,
+            3.13949,
+            0.53914
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_sky_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 60744,
+      "sha256": "f0d57d0d8fa028fe29a160de2f839ecc425285de2aa1896dc60a47351af959b8",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6791,
+        "triangles": 6752,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01965,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.70441
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/casual_sky_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 42308,
+      "sha256": "9e94ac798a2886f1a99754a95caa4437b5f316b41fb5b95a13e312238eb3a244",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 3093,
+        "triangles": 3216,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01963,
+            -0.51506
+          ],
+          "max": [
+            0.63016,
+            3.13949,
+            0.53914
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/chef_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 69252,
+      "sha256": "e34fc6151ca5e81c024b22752c8f634728a7e1aa540799471fdd9e7d78509402",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 8412,
+        "triangles": 8768,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.6178
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/chef_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 52184,
+      "sha256": "b6105f05c1d00ea11afd2f06b7baa84b17a429dd9a0422741dee26e2f096f40d",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 4944,
+        "triangles": 5452,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.54493
+          ],
+          "max": [
+            0.63016,
+            3.13949,
+            0.62058
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/classy_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 66316,
+      "sha256": "35d7e7d93ade5da3a2aa842649c12c59d0a70283c99619d831b2ced7df07c15b",
+      "model": {
+        "meshes": 1,
+        "primitives": 8,
+        "vertices": 7110,
+        "triangles": 7008,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.7028,
+            0.70441
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/classy_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 58684,
+      "sha256": "aeb5c005fe64c10f4463ba7fcda4a705efabe5fdedf24cc312e4eb52c444f334",
+      "model": {
+        "meshes": 1,
+        "primitives": 8,
+        "vertices": 5419,
+        "triangles": 5432,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.54493
+          ],
+          "max": [
+            0.63016,
+            3.7028,
+            0.61555
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/cowboy_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 67328,
+      "sha256": "66d7fcdc0238eafc37bf3fc00dbca6678474dbede578a156f931bb59430f9f8d",
+      "model": {
+        "meshes": 1,
+        "primitives": 9,
+        "vertices": 7031,
+        "triangles": 6840,
+        "accessor_bounds": {
+          "min": [
+            -0.668,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.66915,
+            3.46381,
+            0.79377
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/cowboy_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 48184,
+      "sha256": "ec830688352d95f31ec7123b57b03cc49bb953a55fe0b8442bc9f72578c36d09",
+      "model": {
+        "meshes": 1,
+        "primitives": 9,
+        "vertices": 3231,
+        "triangles": 3176,
+        "accessor_bounds": {
+          "min": [
+            -0.66808,
+            -0.01941,
+            -0.67356
+          ],
+          "max": [
+            0.66907,
+            3.44823,
+            0.74569
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/doctor_senior_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 61964,
+      "sha256": "7a13a976791146d33daf5dfeffed722f4689af4d06e5ad4930c77d53a35c2a01",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6877,
+        "triangles": 6790,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.70441
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/doctor_senior_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 53116,
+      "sha256": "0e252c2bce1d1640ea77f543dd5bc180a7678371199b49f9e603a89104ea61ef",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 4981,
+        "triangles": 5006,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.54493
+          ],
+          "max": [
+            0.63016,
+            3.13949,
+            0.53914
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/doctor_young_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 71340,
+      "sha256": "8e344e7e6f17e2fdfad7c87bb023862615e25ddf4b53fc65df10f66aeb88ca65",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 8641,
+        "triangles": 8530,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.6178
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/doctor_young_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 61140,
+      "sha256": "15517d07d2e0169c0ff97189ab367dc0e0d70483f09ba23193a8e8bb50f9ff1c",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6531,
+        "triangles": 6498,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.57224
+          ],
+          "max": [
+            0.63016,
+            3.2632,
+            0.74213
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/elf.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 41576,
+      "sha256": "463ec5ec77fbe829f5630029fb8f2ead41dcdd4b91f9e86ee604e7caed741c5e",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 2464,
+        "triangles": 2594,
+        "accessor_bounds": {
+          "min": [
+            -0.8643,
+            -0.01941,
+            -0.83359
+          ],
+          "max": [
+            0.8656,
+            4.02689,
+            0.89549
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/gold_knight_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 58700,
+      "sha256": "956dae9fb72d5df1a1eef6960d7827d3bb0a510a6a7439c283dbe8402ac0a4ec",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 5909,
+        "triangles": 6224,
+        "accessor_bounds": {
+          "min": [
+            -0.88009,
+            -0.0194,
+            -0.71608
+          ],
+          "max": [
+            0.88137,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/gold_knight_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 31640,
+      "sha256": "1062086952d448391dec065f9f2eb62306d59b78b5cd7c6af583ec71c3f6ae73",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 1682,
+        "triangles": 2964,
+        "accessor_bounds": {
+          "min": [
+            -0.88009,
+            -0.0194,
+            -0.51088
+          ],
+          "max": [
+            0.88137,
+            3.11749,
+            0.58865
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/kimono_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 69320,
+      "sha256": "5453956ac348aa3c00cbe070516da61f2f1a5c42cc57e7dcd4151422565a20e4",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 8864,
+        "triangles": 9236,
+        "accessor_bounds": {
+          "min": [
+            -0.65221,
+            -0.01956,
+            -0.6178
+          ],
+          "max": [
+            0.64316,
+            3.13964,
+            0.70203
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/kimono_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 27336,
+      "sha256": "e30533dd264f345c178323885be31c34d48933961c752a957ac2efbad9e2d19a",
+      "model": {
+        "meshes": 1,
+        "primitives": 4,
+        "vertices": 1376,
+        "triangles": 2540,
+        "accessor_bounds": {
+          "min": [
+            -0.65221,
+            -0.01956,
+            -0.53348
+          ],
+          "max": [
+            0.64316,
+            3.25328,
+            0.54372
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/knight_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 31564,
+      "sha256": "b6e69b3147924fcb63fe4d559e34618b5bc1b7c1131928b822a485f610ca4d40",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 1698,
+        "triangles": 2992,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.0194,
+            -0.78629
+          ],
+          "max": [
+            0.63016,
+            3.51683,
+            0.58865
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/ninja_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 70176,
+      "sha256": "e03ae8746c371c776e87833cc97432555b4d4be06d48d462d2a371c6a4d487ad",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 7456,
+        "triangles": 7104,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/ninja_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 32492,
+      "sha256": "4bd93a813d9bb92b6fde70ee98bb122ac88decd62dcc3a969b2b951962dcb281",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 1658,
+        "triangles": 2720,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.47181
+          ],
+          "max": [
+            0.63016,
+            3.0879,
+            0.49152
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/pirate_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 81700,
+      "sha256": "7336634110b83c282f342d1a47600abf0db81f64ebbffa047bb60382bc4ebafd",
+      "model": {
+        "meshes": 1,
+        "primitives": 9,
+        "vertices": 9741,
+        "triangles": 9460,
+        "accessor_bounds": {
+          "min": [
+            -0.66853,
+            -0.01941,
+            -0.70674
+          ],
+          "max": [
+            0.66002,
+            3.873,
+            0.70203
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/pirate_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 34048,
+      "sha256": "536861f8127955bdf63a426490c7f9c9a87acf74ebe6424a574ac5f2db132b4a",
+      "model": {
+        "meshes": 1,
+        "primitives": 8,
+        "vertices": 1614,
+        "triangles": 2724,
+        "accessor_bounds": {
+          "min": [
+            -0.66853,
+            -0.01941,
+            -0.67943
+          ],
+          "max": [
+            0.66002,
+            3.73807,
+            0.65719
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/sand_ninja_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 70204,
+      "sha256": "4b0e59e3235c6f2af7007ea35ed3e16a36f9a312a7b76871f3f15e192625d218",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 7456,
+        "triangles": 7104,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/sand_ninja_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 32552,
+      "sha256": "e0e1e46865a5df221b52bfcbe89bc7b4a67aca9c0af215c46bdeeea1ae7765c8",
+      "model": {
+        "meshes": 1,
+        "primitives": 5,
+        "vertices": 1670,
+        "triangles": 2720,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.47181
+          ],
+          "max": [
+            0.63016,
+            3.0879,
+            0.49152
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/suit_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 64064,
+      "sha256": "eef1110342536f9c9fa274db24b67a48cce8feae25cb523bcd2a6817c0dc553e",
+      "model": {
+        "meshes": 1,
+        "primitives": 7,
+        "vertices": 6950,
+        "triangles": 6810,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.70441
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/suit_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 63288,
+      "sha256": "5eeb9b6d86a5d6cf1ffc6121837be04cddae4a64001fc114a418e03c66410fe7",
+      "model": {
+        "meshes": 1,
+        "primitives": 7,
+        "vertices": 6604,
+        "triangles": 6518,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.57224
+          ],
+          "max": [
+            0.63016,
+            3.2632,
+            0.74213
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/viking_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 70476,
+      "sha256": "4e764d3008725bbd672ff20f32574269a44b934a13f16a89b3784f22105d1e54",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 7515,
+        "triangles": 7320,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.6178
+          ],
+          "max": [
+            0.63016,
+            3.13964,
+            0.79344
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/viking_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 65872,
+      "sha256": "4ced8feda1cd39a17b0bed1e23a4f5cf717c72580e6aefe8e9dec412749be6e2",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 6534,
+        "triangles": 6264,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.73811
+          ],
+          "max": [
+            0.63016,
+            3.56167,
+            0.60699
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/witch.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 66764,
+      "sha256": "27d5fe12ca1935fb6c4ad02a997f5b1cdbe9882b35e7b53a2a66064b55cb5366",
+      "model": {
+        "meshes": 1,
+        "primitives": 7,
+        "vertices": 7152,
+        "triangles": 7066,
+        "accessor_bounds": {
+          "min": [
+            -0.86464,
+            -0.01941,
+            -0.86662
+          ],
+          "max": [
+            0.86526,
+            4.21509,
+            0.82644
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/wizard.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 66040,
+      "sha256": "f2d96eb8ba7f904c7d4b005e9d7c81325a789d9f1a63ba3bf2589016209d429d",
+      "model": {
+        "meshes": 1,
+        "primitives": 7,
+        "vertices": 6640,
+        "triangles": 6482,
+        "accessor_bounds": {
+          "min": [
+            -0.8643,
+            -0.01941,
+            -0.83359
+          ],
+          "max": [
+            0.8656,
+            4.02689,
+            0.89549
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/worker_f.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 59684,
+      "sha256": "5f28007f149b381f3f35445ff2828b9e167c9e775a7c58e822502b74bdd22294",
+      "model": {
+        "meshes": 1,
+        "primitives": 7,
+        "vertices": 5991,
+        "triangles": 5856,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.71608
+          ],
+          "max": [
+            0.63016,
+            3.35859,
+            0.77483
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/look/worker_m.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 30348,
+      "sha256": "d639ef6a2ce68e3a91084e1918a45e2948b348b6ddbf49b3de0557da5aa85db0",
+      "model": {
+        "meshes": 1,
+        "primitives": 6,
+        "vertices": 1446,
+        "triangles": 2524,
+        "accessor_bounds": {
+          "min": [
+            -0.63829,
+            -0.01941,
+            -0.52769
+          ],
+          "max": [
+            0.63016,
+            3.2664,
+            0.75346
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/active.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 557412,
+      "sha256": "2b3197875c5c4f90ae7486ea419779425b88a2d88de87f73b940e44a49402b22",
+      "model": {
+        "meshes": 7,
+        "primitives": 8,
+        "vertices": 22538,
+        "triangles": 23470,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.59974,
+            0.20595
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/field_jacket.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 557464,
+      "sha256": "237f4a71018669680394dd866415d20fe51cc0928726e34c2826b73795c3a67f",
+      "model": {
+        "meshes": 7,
+        "primitives": 8,
+        "vertices": 22538,
+        "triangles": 23470,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.59974,
+            0.20595
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/striped.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 349180,
+      "sha256": "5f3f0cd3b00397a0fffc9d683884e1de2be80d748e49f1fff841a7694ade2479",
+      "model": {
+        "meshes": 4,
+        "primitives": 5,
+        "vertices": 8859,
+        "triangles": 12894,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.55865,
+            0.18448
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/tailored.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 328436,
+      "sha256": "1420b542d3be63c895aa86870a8646daaf9e16540420bd51fab89b5e47d702ca",
+      "model": {
+        "meshes": 4,
+        "primitives": 5,
+        "vertices": 8859,
+        "triangles": 12894,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.55865,
+            0.18448
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/tee.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 328396,
+      "sha256": "319059397d1b648edaa15fa760bf717195a261d62a2ba798b59930beef5e94ad",
+      "model": {
+        "meshes": 4,
+        "primitives": 5,
+        "vertices": 8859,
+        "triangles": 12894,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.55865,
+            0.18448
+          ]
+        }
+      }
+    },
+    {
+      "path": "avatar_assets/avatar_v1/outfit/weekend.glb",
+      "source": "quaternius-followville-avatars",
+      "bytes": 503564,
+      "sha256": "3bf17237d7164a2af83c153d3995eeab21247d17536bf4296c4d6f4fb3b7d0d3",
+      "model": {
+        "meshes": 7,
+        "primitives": 8,
+        "vertices": 22538,
+        "triangles": 23470,
+        "accessor_bounds": {
+          "min": [
+            -0.89941,
+            -0.00397,
+            -0.16754
+          ],
+          "max": [
+            0.89941,
+            1.59974,
+            0.20595
+          ]
+        }
+      }
+    }
+  ]
+}

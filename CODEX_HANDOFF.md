@@ -1,4 +1,4 @@
-# Codex handoff -- current through the Day 32 First Alert Weather addition
+# Codex handoff -- current through the Day 32 asset-tooling pass
 
 Updated 2026-08-03 for Cade and Zach's next Claude/Codex session.
 
@@ -17,6 +17,16 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- The local project now has a safe CC0 asset intake shelf documented in
+  `ASSET_PIPELINE.md`: a provenance registry, deterministic hash/model manifest,
+  searchable internal `asset-library.html`, 140-model Kenney Furniture Kit
+  review library, isolated Blender normalizer, and focused tests. Nothing on the
+  shelf is automatically exposed to players; promotion into interiors, avatars,
+  or town geometry still requires explicit visual/performance review and the
+  relevant client/server allowlist changes. Blender MCP was repaired to version
+  1.8.0 and passed a local Blender 5.1 socket/scene probe with auto-connect off
+  and telemetry disabled. Restart Codex to refresh its MCP tool registry.
 
 - A local, not-yet-published Day 32 addition creates the permanent non-house
   Followville First Alert Weather station at Blender `(29.5,106)`: a retained

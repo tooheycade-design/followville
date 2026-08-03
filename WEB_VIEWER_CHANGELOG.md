@@ -3,6 +3,27 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Licensed asset intake and Blender tooling (local, 2026-08-03)
+- Added a provenance-gated asset registry, deterministic model/hash manifest,
+  searchable maintainer gallery, and focused automated checks. The intake shelf
+  is deliberately separate from gameplay allowlists, so importing a pack cannot
+  silently add furniture, avatars, downloads, or rendering cost to the game.
+- Imported Kenney's complete 140-model Furniture Kit as locally hosted CC0 review
+  material with matching preview images. Quaternius avatar and interior files are
+  covered by the same source registry and manifest. No third-party asset is
+  hotlinked at runtime.
+- Added an isolated Blender normalizer for grounding, centering, scaling,
+  inspection renders, and mesh statistics. It explicitly refuses the canonical
+  town GLB, chunk directory, and both authoritative Blend locations.
+- Repaired the local Blender MCP integration to maintained version 1.8.0, pinned
+  it to the compatible MCP v1 dependency line, synchronized the Blender 5.1
+  add-on, retained opt-in connection and disabled telemetry defaults, and passed
+  an end-to-end local socket/scene probe. Codex must be restarted before the
+  refreshed MCP appears in a session's tool list.
+- This is maintainership tooling only: no public page links, town geometry,
+  world state, population, claims, Supabase data, deployment, or production
+  asset changed. See `ASSET_PIPELINE.md` before importing or promoting assets.
+
 ## Followville First Alert Weather station (local, pending publication, 2026-08-03)
 - Added a permanent non-house forecast center on a retained civic terrace north
   of downtown, with a walkable raised drive, parking, glazed studio frontage,

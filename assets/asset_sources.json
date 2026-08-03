@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "quaternius-house-interior",
+      "title": "Ultimate House Interior Pack",
+      "creator": "Quaternius",
+      "source_urls": [
+        "https://quaternius.com/packs/ultimatehomeinterior.html"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-03",
+      "web_safe": true,
+      "managed_globs": [
+        "assets/interiors/quaternius/*.glb",
+        "assets/interiors/quaternius/*.webp"
+      ]
+    },
+    {
+      "id": "quaternius-followville-avatars",
+      "title": "Universal Base Characters, Modular Character Outfits - Fantasy, and Ultimate Animated Character Pack",
+      "creator": "Quaternius",
+      "source_urls": [
+        "https://quaternius.com/packs/universalbasecharacters.html",
+        "https://quaternius.com/packs/modularcharacteroutfitsfantasy.html",
+        "https://quaternius.com/packs/ultimateanimatedcharacterpack.html"
+      ],
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-07-17",
+      "web_safe": true,
+      "managed_globs": [
+        "avatar_assets/avatar_v1/**/*.glb",
+        "avatar_assets/avatar_v1/**/*.jpg"
+      ]
+    },
+    {
+      "id": "kenney-furniture-kit",
+      "title": "Furniture Kit 2.0",
+      "creator": "Kenney",
+      "source_urls": [
+        "https://kenney.nl/assets/furniture-kit"
+      ],
+      "download_url": "https://kenney.nl/media/pages/assets/furniture-kit/440e0608a4-1677580847/kenney_furniture-kit.zip",
+      "archive_sha256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-03",
+      "web_safe": true,
+      "managed_globs": [
+        "assets/library/kenney-furniture/*.glb",
+        "assets/library/kenney-furniture/*.png"
+      ],
+      "catalog_import": {
+        "environment_variable": "FOLLOWVILLE_KENNEY_FURNITURE_SOURCE",
+        "default_source": ".codex/integrations/kenney-furniture-kit/source",
+        "model_directory": "Models/GLTF format",
+        "preview_directory": "Side",
+        "license_file": "License.txt",
+        "target_directory": "assets/library/kenney-furniture"
+      }
+    }
+  ]
+}

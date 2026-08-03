@@ -368,6 +368,10 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 | `downtown_visual_plan.py` | `terrain_height` and the shared terrain model. |
 | `check_town_glb.py` | Export completeness and state consistency. |
 | `check_world_geometry.py` | Is anything off the ground, on a road, in the street. |
+| `assets/asset_sources.json` | Approved third-party asset provenance and licenses. |
+| `assets/asset_library_manifest.json` | Generated hashes and geometry stats for the review library. |
+| `scripts/build_asset_library.py` | Syncs and verifies approved review assets without promoting them. |
+| `scripts/normalize_game_asset.py` | Isolated Blender intake/preview tool; refuses canonical town outputs. |
 | `grow_windows.bat/.ps1`, `grow.sh` | Guarded growth launchers. |
 | `preview_website.bat/.ps1` | Local HTTP preview, no Python/Node needed. |
 | `tests/followville.spec.mjs` | The Playwright suite. |
@@ -377,7 +381,8 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 
 Other docs: `CLAIMING_SETUP.md`, `AVATAR_SYSTEM.md` (read before touching the
 avatar catalog, rigs, persistence or controls), `INTERIOR_SYSTEM.md` (read
-before touching the room, furnishing catalog, persistence or builder), `DOWNTOWN_TERRAIN_HANDOFF.md`
+before touching the room, furnishing catalog, persistence or builder),
+`ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `NEIGHBORHOOD_EXPANSION_PLAN.md`,
 `WEB_VIEWER_CHANGELOG.md`.
 

@@ -40,6 +40,24 @@ resumes the interrupted walk in landscape. The passive landscape chat feed is
 smaller than the opened composer. Do not apply this gate to `index.html`; the
 homepage intentionally remains portrait-friendly.
 
+## Asset intake and Blender MCP (2026-08-03)
+
+Read `ASSET_PIPELINE.md` before downloading, importing, normalizing, or promoting
+third-party models. `assets/asset_sources.json` is the provenance/license source
+of truth, `assets/asset_library_manifest.json` is generated, and
+`asset-library.html` is an internal review gallery. The current review shelf
+contains all 140 CC0 Kenney Furniture Kit models plus the existing Quaternius
+catalog coverage. Shelf assets are not gameplay assets until explicitly
+reviewed, optimized, copied to a runtime directory, and added to every required
+allowlist. Never hotlink a third-party model.
+
+The maintained local Blender MCP integration is version 1.8.0 and has passed an
+end-to-end Blender 5.1 socket probe. It is an interactive inspection/iteration
+aid only, not a growth or town-generation path. Keep connection opt-in and
+telemetry disabled, and finish useful experiments as reproducible project
+scripts or committed source assets. Restart Codex after MCP configuration or
+integration changes so the session reloads the tool registry.
+
 ## Interior furnishing release (2026-08-03)
 
 The web-only release originated on `codex/interior-builder-polish`.

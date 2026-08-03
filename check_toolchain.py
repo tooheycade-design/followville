@@ -25,6 +25,7 @@ Chromium is missing.
 import hashlib
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -36,6 +37,11 @@ BLENDER_PYTHON = (r"C:\Program Files\Blender Foundation\Blender 5.1\5.1"
                   r"\python\bin\python.exe")
 NODE_DIR = r"C:\Program Files\nodejs"
 SHARED_BLEND = r"C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend"
+BLENDER_MCP_DIR = os.path.join(os.path.expanduser("~"), ".codex",
+                               "integrations", "blender-mcp-6641189")
+BLENDER_MCP_ADDON = os.path.join(
+    os.path.expanduser("~"), "AppData", "Roaming", "Blender Foundation",
+    "Blender", "5.1", "scripts", "addons", "addon.py")
 
 results = []
 
@@ -181,6 +187,48 @@ def check_blender():
     record("build", "Blender", ok, line or "no version reported")
 
 
+def check_blender_mcp():
+    """Read-only integrity check; the live socket needs a visible Blender GUI."""
+    config = os.path.join(os.path.expanduser("~"), ".codex", "config.toml")
+    project = os.path.join(BLENDER_MCP_DIR, "pyproject.toml")
+    source_addon = os.path.join(BLENDER_MCP_DIR, "addon.py")
+    required = (config, project, source_addon, BLENDER_MCP_ADDON)
+    missing = [path for path in required if not os.path.isfile(path)]
+    if missing:
+        record("build", "Blender MCP", False,
+               "missing " + ", ".join(missing),
+               "read ASSET_PIPELINE.md and repair the local-only MCP install")
+        return
+    with open(config, encoding="utf-8") as handle:
+        config_text = handle.read()
+    with open(project, encoding="utf-8") as handle:
+        project_text = handle.read()
+    configured = ("[mcp_servers.blender]" in config_text
+                  and BLENDER_MCP_DIR.replace("\\", "\\\\") in config_text)
+    dependency_safe = bool(re.search(r'mcp\[cli\].*<2', project_text))
+
+    def digest(path):
+        sha = hashlib.sha256()
+        with open(path, "rb") as handle:
+            for block in iter(lambda: handle.read(1 << 20), b""):
+                sha.update(block)
+        return sha.hexdigest()
+
+    addon_matches = digest(source_addon) == digest(BLENDER_MCP_ADDON)
+    version_match = re.search(r'^version\s*=\s*"([^"]+)"', project_text,
+                              re.MULTILINE)
+    version = version_match.group(1) if version_match else "unknown"
+    ok = configured and dependency_safe and addon_matches
+    details = []
+    details.append("v%s" % version)
+    details.append("Codex configured" if configured else "Codex config missing")
+    details.append("MCP v1 pinned" if dependency_safe else "unsafe MCP dependency")
+    details.append("addon synchronized" if addon_matches else "addon differs")
+    record("build", "Blender MCP", ok, ", ".join(details),
+           None if ok else
+           "update the maintained checkout and synchronize addon.py; then restart Codex")
+
+
 def check_blends():
     repo_blend = os.path.join(REPO, "neighborhood.blend")
     for path in (repo_blend, SHARED_BLEND):
@@ -216,7 +264,7 @@ def main():
     for check in (check_python, check_repo_modules, check_state,
                   check_pygltflib, check_git, check_node, check_playwright,
                   check_preview_port, check_blender, check_blends,
-                  check_supabase_env):
+                  check_blender_mcp, check_supabase_env):
         try:
             check()
         except Exception as error:

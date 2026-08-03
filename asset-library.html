@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Followville Asset Library</title>
+  <style>
+    :root { color-scheme:light; --paper:#f3efe6; --ink:#17243a; --muted:#657080; --line:#d4cfc4; --accent:#c95f43; --panel:#fbf9f3; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.45 Inter,ui-sans-serif,system-ui,sans-serif; }
+    header { padding:38px clamp(24px,5vw,72px) 25px; border-bottom:1px solid var(--line); background:var(--panel); }
+    .eyebrow { margin:0 0 7px; color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:0; font:600 clamp(32px,5vw,54px)/1.02 Georgia,serif; letter-spacing:-.035em; }
+    .lede { max-width:760px; margin:14px 0 0; color:var(--muted); font-size:15px; }
+    main { padding:22px clamp(24px,5vw,72px) 60px; }
+    .toolbar { position:sticky; top:0; z-index:3; display:grid; grid-template-columns:minmax(220px,1fr) 220px auto; gap:10px; padding:12px 0; background:linear-gradient(var(--paper) 78%,transparent); }
+    input,select { width:100%; border:1px solid var(--line); border-radius:3px; background:var(--panel); color:var(--ink); padding:11px 12px; font:inherit; }
+    .count { align-self:center; min-width:120px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums; }
+    .source { margin:30px 0 13px; padding-bottom:8px; border-bottom:1px solid var(--line); font:600 21px/1.2 Georgia,serif; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:12px; }
+    .card { min-width:0; border:1px solid var(--line); border-radius:4px; background:var(--panel); overflow:hidden; transition:transform .14s ease,border-color .14s ease; }
+    .card:hover { transform:translateY(-2px); border-color:#9c9385; }
+    .preview { display:grid; place-items:center; height:145px; background:#e7e9e8; border-bottom:1px solid var(--line); }
+    .preview img { width:100%; height:100%; object-fit:contain; image-rendering:auto; }
+    .meta { padding:10px 11px 11px; }
+    .name { overflow:hidden; margin:0 0 4px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+    .details { color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+    .actions { display:flex; gap:10px; margin-top:8px; }
+    button,a { color:var(--accent); font:700 11px/1.2 inherit; text-decoration:none; }
+    button { border:0; padding:0; background:none; cursor:pointer; }
+    .empty { padding:60px 0; color:var(--muted); text-align:center; }
+    @media (max-width:680px) { .toolbar { grid-template-columns:1fr; } .count { text-align:left; } .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Maintainer tool · licensed local assets</p>
+    <h1>Followville Asset Library</h1>
+    <p class="lede">A searchable review shelf of provenance-recorded models. Nothing here enters the town, avatar system, or homeowner catalog until it passes scale, style, performance, collision, and runtime review.</p>
+  </header>
+  <main>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search models, such as desk, plant, kitchen…" autocomplete="off">
+      <select id="source" aria-label="Filter by source"><option value="">All sources</option></select>
+      <div id="count" class="count">Loading manifest…</div>
+    </div>
+    <div id="library" aria-live="polite"></div>
+  </main>
+  <script type="module">
+    const manifest=await fetch("assets/asset_library_manifest.json",{cache:"no-store"}).then(response=>{
+      if(!response.ok) throw new Error(`Manifest ${response.status}`); return response.json();
+    });
+    const sourceNames=new Map(manifest.sources.map(source=>[source.id,`${source.creator} · ${source.title}`]));
+    const models=new Map(manifest.assets.filter(asset=>asset.path.endsWith(".glb")).map(asset=>[asset.path.replace(/\.glb$/,"").replace(/\\/g,"/"),asset]));
+    const images=manifest.assets.filter(asset=>/\.(png|jpg|webp)$/.test(asset.path));
+    const cards=images.map(image=>{
+      const base=image.path.replace(/\.(png|jpg|webp)$/,"");
+      let model=models.get(base);
+      if(!model && image.source==="quaternius-followville-avatars") {
+        const filename=base.split("/").at(-1); model=[...models.values()].find(candidate=>candidate.source===image.source&&candidate.path.endsWith(`/${filename}.glb`));
+      }
+      return model?{id:model.path.split("/").at(-1).replace(/\.glb$/, ""),image,model}:null;
+    }).filter(Boolean).sort((a,b)=>a.model.source.localeCompare(b.model.source)||a.id.localeCompare(b.id));
+    const sourceSelect=document.querySelector("#source");
+    [...new Set(cards.map(card=>card.model.source))].forEach(id=>sourceSelect.add(new Option(sourceNames.get(id)||id,id)));
+    const humanize=id=>id.replaceAll("_"," ").replace(/\b\w/g,letter=>letter.toUpperCase());
+    const render=()=>{
+      const query=document.querySelector("#search").value.trim().toLowerCase();
+      const source=sourceSelect.value;
+      const visible=cards.filter(card=>{
+        const searchable=`${card.id.replaceAll("_"," ")} ${card.id} ${sourceNames.get(card.model.source)}`.toLowerCase();
+        return (!source||card.model.source===source)&&(!query||searchable.includes(query));
+      });
+      document.querySelector("#count").textContent=`${visible.length} of ${cards.length} models`;
+      const groups=Map.groupBy(visible,card=>card.model.source);
+      document.querySelector("#library").innerHTML=visible.length?[...groups].map(([id,items])=>`
+        <section><h2 class="source">${sourceNames.get(id)||id}</h2><div class="grid">${items.map(card=>{
+          const stats=card.model.model||{};
+          return `<article class="card" data-asset="${card.id}" data-source="${id}">
+            <div class="preview"><img src="${card.image.path}" alt="${humanize(card.id)} preview" loading="lazy"></div>
+            <div class="meta"><p class="name" title="${card.id}">${humanize(card.id)}</p>
+              <div class="details">${Number(stats.triangles||0).toLocaleString()} tris · ${(card.model.bytes/1024).toFixed(1)} KB</div>
+              <div class="actions"><button type="button" data-copy="${card.id}">Copy ID</button><a href="${card.model.path}" download>GLB</a></div>
+            </div></article>`;
+        }).join("")}</div></section>`).join(""):`<p class="empty">No models match this search.</p>`;
+      document.querySelectorAll("[data-copy]").forEach(button=>button.addEventListener("click",async()=>{
+        await navigator.clipboard.writeText(button.dataset.copy); button.textContent="Copied"; setTimeout(()=>button.textContent="Copy ID",900);
+      }));
+      document.body.dataset.assetLibraryReady="true";
+      document.body.dataset.assetLibraryVisible=String(visible.length);
+    };
+    document.querySelector("#search").addEventListener("input",render);
+    sourceSelect.addEventListener("change",render);
+    render();
+  </script>
+</body>
+</html>
