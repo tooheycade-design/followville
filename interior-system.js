@@ -26,7 +26,7 @@ export const INTERIOR_CATALOG = Object.freeze([
   { id:"table_lamp", label:"Table lamp", category:"Bedroom", size:[.42,.72,.42], footprint:[.35,.35], solid:false },
   { id:"bathroom_sink", label:"Vanity", category:"Bathroom", size:[1.2,1.0,.68], footprint:[1.12,.62] },
   { id:"toilet", label:"Toilet", category:"Bathroom", size:[.78,1.0,.92], footprint:[.7,.84] },
-  { id:"bathtub", label:"Bathtub", category:"Bathroom", size:[2.25,.88,1.1], footprint:[2.15,1.02] },
+  { id:"bathtub", label:"Bathtub", category:"Bathroom", size:[1.45,1.0,3.1], footprint:[1.35,3.0] },
   { id:"washing_machine", label:"Washer", category:"Bathroom", size:[1.05,1.18,.95], footprint:[.98,.88] },
   { id:"houseplant", label:"Houseplant", category:"Decor", size:[.85,1.45,.85], footprint:[.7,.7] },
   { id:"curtains_double", label:"Curtains", category:"Decor", size:[2.4,2.45,.35], footprint:[2.3,.25], solid:false },
@@ -49,10 +49,10 @@ export const DEFAULT_INTERIOR_LAYOUT = Object.freeze([
   {item:"chair",x:4.35,z:2.2,r:1},
   {item:"chair",x:3.0,z:.85,r:0},
   {item:"chair",x:3.0,z:3.55,r:2},
-  {item:"kitchen_sink",x:7.95,z:4.65,r:3},
-  {item:"drawer",x:7.95,z:3.1,r:3},
-  {item:"oven",x:7.95,z:1.75,r:3},
-  {item:"fridge",x:7.9,z:.25,r:3},
+  {item:"kitchen_sink",x:8.5,z:4.65,r:1},
+  {item:"drawer",x:8.5,z:3.1,r:1},
+  {item:"oven",x:8.5,z:1.75,r:1},
+  {item:"fridge",x:8.5,z:.25,r:1},
   {item:"stool",x:5.0,z:5.25,r:0},
   {item:"stool",x:3.9,z:5.25,r:0},
   {item:"bed_king",x:-5.55,z:-4.45,r:0},
@@ -61,13 +61,13 @@ export const DEFAULT_INTERIOR_LAYOUT = Object.freeze([
   {item:"table_lamp",x:-7.25,z:-5.75,r:0},
   {item:"table_lamp",x:-3.85,z:-5.75,r:0},
   {item:"shelf_large",x:-7.85,z:-1.1,r:3},
-  {item:"bathtub",x:-7.25,z:3.0,r:1},
-  {item:"toilet",x:-7.35,z:5.65,r:2},
-  {item:"bathroom_sink",x:-5.45,z:5.8,r:2},
-  {item:"washing_machine",x:-3.9,z:5.8,r:2},
+  {item:"bathtub",x:-8.1,z:3.25,r:0},
+  {item:"toilet",x:-7.35,z:6.5,r:2},
+  {item:"bathroom_sink",x:-5.45,z:6.5,r:2},
+  {item:"washing_machine",x:-3.9,z:6.5,r:2},
   {item:"houseplant",x:-2.25,z:5.75,r:0},
-  {item:"curtains_double",x:5.8,z:6.78,r:0},
-  {item:"curtains_double",x:-5.8,z:6.78,r:0},
+  {item:"curtains_double",x:5.8,z:6.3,r:0},
+  {item:"curtains_double",x:-5.8,z:6.3,r:0},
   {item:"light_ceiling",x:4.5,z:-3.5,r:0},
   {item:"light_ceiling",x:3.5,z:3.5,r:0},
   {item:"light_ceiling",x:-5.5,z:-3.5,r:0},
@@ -84,7 +84,7 @@ export function normalizeInteriorLayout(value){
     if (!raw || typeof raw!=="object" || !CATALOG_BY_ID.has(raw.item)) continue;
     const x=snap(raw.x),z=snap(raw.z),r=Math.trunc(Number(raw.r));
     if (!Number.isFinite(x)||!Number.isFinite(z)||!Number.isFinite(r)) continue;
-    if (Math.abs(x)>8.3||Math.abs(z)>6.3||r<0||r>3) continue;
+    if (Math.abs(x)>8.55||Math.abs(z)>6.55||r<0||r>3) continue;
     out.push({item:raw.item,x,z,r});
   }
   return out;
@@ -120,7 +120,7 @@ export function createInteriorSystem({scene,renderer,camera,getPlayerPosition,re
   const shell=new THREE.Group();shell.name="interior-architecture";group.add(shell);
   const furnishings=new THREE.Group();furnishings.name="interior-furnishings";group.add(furnishings);
   const loader=new GLTFLoader(),templates=new Map(),loads=new Map();
-  const colliders=[];let itemColliders=[];let records=cloneLayout(DEFAULT_INTERIOR_LAYOUT);let savedRecords=cloneLayout(records);
+  const colliders=[];let records=cloneLayout(DEFAULT_INTERIOR_LAYOUT);let savedRecords=cloneLayout(records);
   let itemRoots=[],active=false,editable=false,building=false,saving=false,category="Living",selected=-1;
   let placementId=null,placementGhost=null,placementRecord=null,history=[];let currentHouseId=null;
 
@@ -214,7 +214,7 @@ export function createInteriorSystem({scene,renderer,camera,getPlayerPosition,re
   }
 
   function disposeRoot(root){root.traverse(obj=>{const mats=Array.isArray(obj.material)?obj.material:[obj.material];for(const mat of mats){if(mat?.userData?.interiorInstance)mat.dispose();}});}
-  function clearFurnishings(){for(const root of itemRoots){furnishings.remove(root);disposeRoot(root);}itemRoots=[];furnishings.clear();itemColliders=[];}
+  function clearFurnishings(){for(const root of itemRoots){furnishings.remove(root);disposeRoot(root);}itemRoots=[];furnishings.clear();}
 
   async function makeItem(record,index,{ghost=false}={}){
     const def=CATALOG_BY_ID.get(record.item),template=await loadTemplate(record.item),root=template.clone(true);root.name=`interior-item-${record.item}`;
@@ -226,12 +226,14 @@ export function createInteriorSystem({scene,renderer,camera,getPlayerPosition,re
   async function renderLayout(next=records){
     clearFurnishings();records=cloneLayout(next);const roots=await Promise.all(records.map((record,index)=>makeItem(record,index)));
     for(const root of roots){furnishings.add(root);itemRoots.push(root);}
-    itemColliders=records.flatMap(record=>{const def=CATALOG_BY_ID.get(record.item);return def.solid===false?[]:[makeCollider(record.x,record.z,def.footprint[0],def.footprint[1],record.r,`interior-${record.item}`)];});
     document.body.dataset.interiorItems=String(records.length);document.body.dataset.interiorLoaded="true";
     updateSelection();
   }
 
-  function currentColliders(){return active?[...colliders,...itemColliders]:[];}
+  // Furniture remains selectable and overlap-checked in build mode, but it is
+  // intentionally non-blocking during play. Only walls and closed doors keep
+  // the player/camera inside the room.
+  function currentColliders(){return active?colliders:[];}
   function resolvePlayer(position){for(const collider of currentColliders())resolveCollision(position,collider);}
   function cameraColliders(){return currentColliders();}
 
@@ -288,7 +290,7 @@ export function createInteriorSystem({scene,renderer,camera,getPlayerPosition,re
   function pointerFloor(event){const rect=renderer.domElement.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-((event.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);return raycaster.ray.intersectPlane(floorPlane,hitPoint)?hitPoint:null;}
   function placementValid(record){
     const def=CATALOG_BY_ID.get(record.item),w=record.r%2?def.footprint[1]:def.footprint[0],d=record.r%2?def.footprint[0]:def.footprint[1];
-    if(Math.abs(record.x)+w/2>8.35||Math.abs(record.z)+d/2>6.35)return false;
+    if(Math.abs(record.x)+w/2>8.84||Math.abs(record.z)+d/2>6.84)return false;
     if(def.solid===false)return true;
     return !records.some(other=>{const otherDef=CATALOG_BY_ID.get(other.item);if(otherDef.solid===false)return false;const ow=other.r%2?otherDef.footprint[1]:otherDef.footprint[0],od=other.r%2?otherDef.footprint[0]:otherDef.footprint[1];return Math.abs(record.x-other.x)<(w+ow)/2+.06&&Math.abs(record.z-other.z)<(d+od)/2+.06;});
   }

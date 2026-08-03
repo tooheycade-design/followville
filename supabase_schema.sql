@@ -418,8 +418,8 @@ begin
                'bed_king','bed_single','nightstand','table_lamp','bathroom_sink','toilet',
                'bathtub','washing_machine','houseplant','curtains_double','light_ceiling','door_double'
              )
-             or abs((item.value->>'x')::numeric) > 8.3
-             or abs((item.value->>'z')::numeric) > 6.3
+             or abs((item.value->>'x')::numeric) > 8.55
+             or abs((item.value->>'z')::numeric) > 6.55
              or (item.value->>'r')::numeric <> trunc((item.value->>'r')::numeric)
              or (item.value->>'r')::int not between 0 and 3
        ) then

@@ -24,6 +24,13 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Desktop and landscape-phone visual interaction passes succeeded, including
   real home entry/exit and add/rotate/delete/cancel flows. This web release
   changes no world state, population, Blender geometry, or GLB.
+- Corrected the first live visual review: the complete kitchen run now faces
+  into the room and sits flush to its wall; the vanity, toilet, and washer sit
+  flush to the bathroom wall; and the bathtub uses its real long axis at a
+  credible full size against the side wall. Furnishings remain overlap-checked
+  while building but no longer block the player or camera during ordinary play.
+  The narrow wall-alignment migration changed validator bounds only and left
+  the 40-claim / 39-account snapshot byte-for-byte unchanged.
 
 ## Day 32 Timber Bend growth and campaign reveal (2026-08-02)
 - Grew the canonical town once from population 625 to 656 with 31 ordinary

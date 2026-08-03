@@ -27,7 +27,11 @@ workflow.
   hardened version-2 `update_my_customization` migration is applied live and
   preserved the exact 40-claim / 39-account snapshot and digest
   `754ed801b3514af5f546255efc54f53a`; no claim row changed. Read
-  `INTERIOR_SYSTEM.md` before changing it.
+  `INTERIOR_SYSTEM.md` before changing it. The post-release alignment fix turns
+  the kitchen fronts into the room, places kitchen/bath fixtures flush to their
+  walls, restores the bathtub's correct full-size long axis, and removes
+  furniture gameplay hitboxes while retaining shell collision and build-mode
+  overlap checks.
 
 - Day 32 is population 656 with 717 total records. One guarded +31 growth
   consumed plan IDs 482-512 / seeds 687-717: nineteen homes finished Timber

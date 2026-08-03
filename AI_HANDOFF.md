@@ -45,7 +45,8 @@ homepage intentionally remains portrait-friendly.
 The web-only release originated on `codex/interior-builder-polish`.
 `interior-system.js` owns an enclosed,
 warmly lit four-zone house, the lazy-loaded 25-item local CC0 catalog, physical
-furniture/shell collisions, and the verified-owner builder. The builder supports
+room-shell collision, and the verified-owner builder. Furnishings do not block
+the player/camera but remain overlap-checked while building. The builder supports
 desktop and landscape-phone placement, rotate/delete/undo/default/cancel/save,
 quarter-grid snapping, overlap/boundary guards, and a 48-item cap. Visitors see
 saved layouts through existing claim Realtime; homes without saved layouts use
@@ -53,7 +54,8 @@ the curated 34-item default and need no backfill.
 
 The live `update_my_customization` RPC now accepts only a strict version-2
 interior allowlist and still derives ownership from `auth.uid()`. Its migration
-is `supabase_migrations/20260803_interior_builder_v1.sql`. Transactional valid,
+is `supabase_migrations/20260803_interior_builder_v1.sql`, followed by the
+wall-alignment-only `20260803_interior_wall_alignment.sql`. Transactional valid,
 invalid, preservation, and permission checks passed; the exact 40-claim /
 39-account digest stayed `754ed801b3514af5f546255efc54f53a`, so no claims,
 owners, or saved customizations changed. Read `INTERIOR_SYSTEM.md` before

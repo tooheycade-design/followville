@@ -5100,6 +5100,14 @@ interiorSystem = createInteriorSystem({
   }
 });
 window.__followvilleInteriorQA = interiorSystem;
+if(localDesignPreview){
+  window.__followvilleInteriorAuditCamera=(eye,look)=>{
+    gameRunning=false;
+    camera.position.set(Number(eye[0]),Number(eye[1]),Number(eye[2]));
+    camera.lookAt(Number(look[0]),Number(look[1]),Number(look[2]));
+    camera.updateProjectionMatrix();
+  };
+}
 
 function applyInteriorTheme(building) {
   const type = building?.type || "house";

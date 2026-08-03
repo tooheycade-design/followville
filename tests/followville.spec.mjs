@@ -872,6 +872,22 @@ test("verified homeowners can furnish a shared low-poly interior", async ({ page
   await expect(page.locator("body")).toHaveAttribute("data-interior-loaded", "true");
   const startingCount = Number(await page.locator("body").getAttribute("data-interior-items"));
   expect(startingCount).toBeGreaterThan(20);
+  const roomAudit = await page.evaluate(() => {
+    const layout = window.__followvilleInteriorQA.getLayout();
+    const kitchenIds = new Set(["kitchen_sink", "drawer", "oven", "fridge"]);
+    const backWallIds = new Set(["toilet", "bathroom_sink", "washing_machine"]);
+    return {
+      kitchen: layout.filter(item => kitchenIds.has(item.item)),
+      bathroom: layout.filter(item => backWallIds.has(item.item)),
+      tub: layout.find(item => item.item === "bathtub"),
+      colliderLabels: [...new Set(window.__followvilleInteriorQA.cameraColliders().map(item => item.label))]
+    };
+  });
+  expect(roomAudit.kitchen).toHaveLength(4);
+  expect(roomAudit.kitchen.every(item => item.x === 8.5 && item.r === 1)).toBe(true);
+  expect(roomAudit.bathroom.every(item => item.z === 6.5 && item.r === 2)).toBe(true);
+  expect(roomAudit.tub).toMatchObject({ x:-8.1, z:3.25, r:0 });
+  expect(roomAudit.colliderLabels).toEqual(["interior"]);
   await expect(page.locator("#interiorBuildToggle")).toBeVisible();
   await page.locator("#interiorBuildToggle").click();
   await expect(page.locator("#interiorBuildPanel")).toBeVisible();

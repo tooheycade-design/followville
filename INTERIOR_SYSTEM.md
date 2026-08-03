@@ -8,8 +8,9 @@ Status: released to production from `codex/interior-builder-polish` on
 - Entering a supported claimed home opens a complete 18m x 14m interior with a
   ceiling, framed windows, baseboards, wood-plank floor, warm practical lights,
   entrance doors, and living, dining/kitchen, bedroom, and bathroom zones.
-- A curated 34-piece default makes every unsaved home feel finished. Furniture
-  and room walls participate in player and follow-camera collision.
+- A curated 34-piece default makes every unsaved home feel finished. Room walls
+  constrain the player and follow camera; furniture is deliberately non-blocking
+  so compact rooms stay easy to move through.
 - Only the verified owner sees **Furnish my home**. The six catalog categories
   expose 25 approved low-poly pieces with thumbnails. Owners select a piece,
   place it on a 0.25m floor grid, rotate or delete it, undo changes, restore the
@@ -67,18 +68,25 @@ The optional `claims.customization.interior` array uses this normalized shape:
 ```
 
 `supabase_migrations/20260803_interior_builder_v1.sql` upgrades the existing
-owner-only `update_my_customization(bigint,jsonb)` RPC. It checks `auth.uid()`
+owner-only `update_my_customization(bigint,jsonb)` RPC. The follow-up
+`20260803_interior_wall_alignment.sql` expands only the center-coordinate bounds
+needed for fixtures to meet the physical wall faces. The RPC checks `auth.uid()`
 and house ownership before writing, allows only exact item records, limits the
 array to 48 and the whole JSON payload to 8192 bytes, bounds X/Z to the room,
 snaps positions to 0.25m, and accepts rotation integers 0-3. `anon` and `PUBLIC`
 have no execute grant. An exterior-only save preserves a previously saved
 interior. Existing version-1 claims remain valid and need no backfill.
 
-The live migration was first tested inside rolled-back transactions. A valid
+The live migrations were first tested inside rolled-back transactions. A valid
 layout normalized correctly, an unknown asset ID failed, an exterior-only save
 preserved the interior, and permissions remained owner-scoped. The before/after
 snapshot stayed 40 claims across 39 accounts with digest
 `754ed801b3514af5f546255efc54f53a`; no claim row changed.
+
+The release correction also turns every kitchen front into the room, aligns the
+kitchen and bathroom runs to their walls, and defines the bathtub by its true
+long axis at full size. Furniture footprints remain builder-only spacing rules;
+they are not gameplay or camera hitboxes.
 
 ## Verification and rollback
 
