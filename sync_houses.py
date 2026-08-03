@@ -39,6 +39,7 @@ NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "s
                        "elementaryschool", "followmart", "coffeetruck", "firestation",
                        "cityhallroad", "cityhall",
                        "civicsquare", "fishingpond", "raftingstation",
+                       "weatherstation",
                        "constructionzone", "movietheater",
                        "forestreserve",
                        "tree", "bush", "rock", "duck"}

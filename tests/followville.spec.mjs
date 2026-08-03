@@ -692,6 +692,31 @@ test("Day 29 rafting outpost has a walkable launch and protected dock", async ({
   expect(errors).toEqual([]);
 });
 
+test("First Alert Weather is a mapped, walkable, non-home landmark", async ({ page }) => {
+  const station=worldState.buildings.find(building=>building.type==="weatherstation");
+  test.skip(!station,"weather station is not built in this state");
+  const errors=watchPageErrors(page);
+  expect(String(station.instagram_handle)).toBe("followville_faw");
+  expect(String(station.type)).not.toMatch(/house$/);
+  await page.goto("/town.html?local=1&view=free&at=29,-86&look=29,8,-106#walk");
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-landmark-hitboxes","pass");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-landmark-hitboxes-mapped",/weatherstation/);
+  const audit=await page.evaluate(()=>{
+    const qa=window.__followvilleTerrainQA;
+    const pads=qa.surfaces().pads||[];
+    return {
+      stationPads:pads.filter(pad=>pad[5]==="weather-station-campus").length,
+      accessSegments:qa.surfaces().segments.filter(segment=>
+        segment[0]>3&&segment[0]<24&&segment[1]<-83&&segment[1]>-109).length,
+    };
+  });
+  expect(audit.stationPads).toBe(1);
+  expect(audit.accessSegments).toBeGreaterThanOrEqual(4);
+  expect(errors).toEqual([]);
+});
+
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 

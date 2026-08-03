@@ -38,6 +38,10 @@ from downtown_visual_plan import river_center_x, river_distance, river_water_hei
 from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
                           STORYBOOK_ACCESS,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
+                          WEATHER_STATION_CENTER,
+                          WEATHER_STATION_HALF_EXTENTS,
+                          weather_station_access_points,
+                          weather_station_base_height,
                           transform_building_point, transform_point)
 
 
@@ -307,6 +311,32 @@ def mat(name, rgb, rough=0.85, metallic=0.0, alpha=1.0,
         m.use_transparency_overlap = False
     return m
 
+
+def image_mat(name, relative_path, rough=.58):
+    """Packed image material for a permanent branded sign in the Blend/GLB."""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    path = os.path.join(_SCRIPT_DIR, relative_path)
+    if not os.path.isfile(path):
+        raise RuntimeError("Missing branded image asset: %s" % path)
+    image = bpy.data.images.load(path, check_existing=True)
+    if not image.packed_file:
+        image.pack()
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nodes = m.node_tree.nodes
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+    texture = nodes.new("ShaderNodeTexImage")
+    texture.image = image
+    texture.interpolation = "Linear"
+    bsdf.inputs["Roughness"].default_value = rough
+    m.node_tree.links.new(texture.outputs["Color"], bsdf.inputs["Base Color"])
+    m.node_tree.links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
+    return m
+
 def std_mats():
     return {
         "grass":  mat("NB_grass",  (0.42, 0.60, 0.33), 1.0),
@@ -345,6 +375,24 @@ def add_box(col, name, w, d, h, x, y, z, material):
     obj = bpy.data.objects.new(name, me)
     obj.location = (x, y, z)
     obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+
+def add_image_panel(col, name, w, h, x, y, z, material):
+    """Single UV-mapped facade panel facing local -Y."""
+    hw = w / 2
+    verts = [(-hw, 0, 0), (hw, 0, 0), (hw, 0, h), (-hw, 0, h)]
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], [(0, 1, 2, 3)])
+    mesh.materials.append(material)
+    uv = mesh.uv_layers.new(name="UVMap")
+    for loop, coordinate in zip(mesh.polygons[0].loop_indices,
+                                ((0, 0), (1, 0), (1, 1), (0, 1))):
+        uv.data[loop].uv = coordinate
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (x, y, z)
     col.objects.link(obj)
     return obj
 
@@ -2971,7 +3019,7 @@ def build_coffee_truck(col, seed):
 
 
 def _add_retaining_skirt(col, name, half_x, half_y, top_z, origin, material,
-                         bury=.55, step=1.0):
+                         bury=.55, step=1.0, front_gap=None):
     """Close a level deck to the ground it stands on, all the way round.
 
     A wall across one face only holds up on level ground.  The moment the site
@@ -2999,9 +3047,17 @@ def _add_retaining_skirt(col, name, half_x, half_y, top_z, origin, material,
                          terrain_height(origin[0] + x, origin[1] + y) - bury))
               for x, y in perimeter]
     count = len(perimeter)
-    faces = [(index, (index + 1) % count,
-              count + (index + 1) % count, count + index)
-             for index in range(count)]
+    faces = []
+    for index in range(count):
+        next_index = (index + 1) % count
+        a, b = perimeter[index], perimeter[next_index]
+        if front_gap and abs(a[1] + half_y) < .001 and abs(b[1] + half_y) < .001:
+            gap_center, gap_width = front_gap
+            midpoint = (a[0] + b[0]) * .5
+            if abs(midpoint - gap_center) < gap_width * .5:
+                continue
+        faces.append((index, next_index,
+                      count + next_index, count + index))
     mesh = bpy.data.meshes.new(name + "_mesh")
     mesh.from_pydata(verts, [], faces)
     mesh.materials.append(material)
@@ -4036,6 +4092,7 @@ ASSET_VARIANTS = {
     "civicsquare": [("AST_civicsquare_0", lambda c: build_civic_square(c, 3100))],
     "fishingpond": [("AST_fishingpond_0", lambda c: build_fishing_pond(c, 3200))],
     "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
+    "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
@@ -4082,6 +4139,8 @@ def web_chunk_id(b):
         return "fishing-pond"
     if b.get("type") == "raftingstation":
         return "rafting-station"
+    if b.get("type") == "weatherstation":
+        return "weather-station"
     if b.get("type") == "constructionzone":
         return "construction-zone"
     if b.get("type") == "movietheater":
@@ -4112,7 +4171,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
-        "raftingstation": 1}
+        "raftingstation": 1, "weatherstation": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -4643,6 +4702,240 @@ def _offset_terrain_path(points, offset):
         x, y = point[0]+nx*offset, point[1]+ny*offset
         result.append((x, y, terrain_height(x, y)))
     return result
+
+
+def build_weather_station(col, seed):
+    """Permanent First Alert Weather forecast center and Doppler tower."""
+    _ = seed
+    m = std_mats()
+    navy = mat("FV_weather_navy", (.055, .105, .20), .72)
+    navy_light = mat("FV_weather_navy_light", (.11, .23, .38), .64)
+    coral = mat("FV_weather_alert_coral", (.91, .24, .18), .60)
+    cream = mat("FV_weather_cream", (.92, .90, .82), .86)
+    white = mat("FV_weather_white", (.97, .98, .96), .58)
+    sign_white = mat("FV_weather_sign_white", (.99, .99, .97), .46)
+    sign_bsdf = sign_white.node_tree.nodes.get("Principled BSDF")
+    sign_emission = (sign_bsdf.inputs.get("Emission Color")
+                     or sign_bsdf.inputs.get("Emission"))
+    if sign_emission:
+        sign_emission.default_value = (.82, .91, 1.0, 1.0)
+    sign_strength = sign_bsdf.inputs.get("Emission Strength")
+    if sign_strength:
+        sign_strength.default_value = .32
+    concrete = mat("FV_weather_concrete", (.44, .45, .43), .96)
+    asphalt = m["road"]
+    steel = mat("FV_weather_steel", (.28, .31, .34), .42, .62)
+    glass = mat("FV_weather_glass", (.075, .22, .34), .12, .12, 1.0, 0.0, .66)
+    screen = mat("FV_weather_screen", (.18, .55, .72), .38)
+    yellow = mat("FV_weather_lightning", (.98, .73, .08), .55)
+    lawn = mat("FV_weather_lawn", (.35, .59, .28), .98)
+    logo = image_mat("FV_weather_profile_logo",
+                     os.path.join("assets", "branding", "followville_faw.jpg"))
+
+    cx, cy = WEATHER_STATION_CENTER
+    half_x, half_y = WEATHER_STATION_HALF_EXTENTS
+    base = weather_station_base_height()
+    pad_top = base + .18
+
+    # A real retained civic terrace, not a floating slab on the north meadow.
+    # The lawn and retaining face contain a real driveway opening. A single
+    # full-size slab left grass underneath the asphalt ramp, which showed
+    # through the parking notch and made the entrance look pasted on.
+    add_box(col, "weather_campus_lawn_rear", half_x * 2, 23.0, .18,
+            0, 2.0, base, lawn)
+    add_box(col, "weather_campus_lawn_front_west", 2.8, 4.0, .18,
+            -14.1, -11.5, base, lawn)
+    add_box(col, "weather_campus_lawn_front_east", 22.8, 4.0, .18,
+            4.1, -11.5, base, lawn)
+    _add_retaining_skirt(col, "weather_campus_retaining", half_x, half_y,
+                         base, (cx, cy), concrete, bury=.62, step=.75,
+                         front_gap=(-10.0, 5.4))
+    for x in (-half_x + .22, half_x - .22):
+        add_box(col, "weather_retaining_cap_side", .34, half_y * 2, .18,
+                x, 0, pad_top - .01, cream)
+    add_box(col, "weather_retaining_cap_end", half_x * 2 - .7, .34, .18,
+            0, half_y - .22, pad_top - .01, cream)
+    add_box(col, "weather_retaining_cap_front_west", 2.45, .34, .18,
+            -13.925, -half_y + .22, pad_top - .01, cream)
+    add_box(col, "weather_retaining_cap_front_east", 22.45, .34, .18,
+            3.925, -half_y + .22, pad_top - .01, cream)
+
+    # One continuous city-asphalt drive climbs from the existing north-grid
+    # street. It flares at the curb, then lands in a matching notch cut into
+    # the parking court, so no separate slab edge or material change is visible.
+    access_world = weather_station_access_points()
+    access_local = [(x - cx, y - cy, z) for x, y, z in access_world]
+    access_widths = [5.4 + 1.8 * max(0.0, 1.0 - index / 2.0) ** 2
+                     for index in range(len(access_local))]
+    _add_road_strip(col, "weather_access_ramp", access_local, asphalt,
+                    width=5.4, widths=access_widths,
+                    bottom_offset=.015, top_offset=.08,
+                    terrain_origin=(cx, cy))
+    for index, (wx, wy, wz) in enumerate(access_world[2:-1:3]):
+        ground = terrain_height(wx, wy) - .22
+        if wz - ground > .35:
+            add_ngon_cone(col, "weather_ramp_support", .16, .13,
+                          wz - ground, 10, wx - cx, wy - cy, ground, concrete)
+
+    # Parking/arrival court. Three pieces leave a genuine 5.4m opening for the
+    # driveway instead of overlapping two coplanar asphalt faces. The rear
+    # band closes the court at the driveway endpoint with shared height and
+    # material, making the transition read as one poured/paved surface.
+    add_box(col, "weather_parking_rear", 28.2, 3.15, .08, 0, -7.925,
+            pad_top, asphalt)
+    add_box(col, "weather_parking_front_west", 1.4, 3.25, .08, -13.4, -11.125,
+            pad_top, asphalt)
+    add_box(col, "weather_parking_front_east", 21.4, 3.25, .08, 3.4, -11.125,
+            pad_top, asphalt)
+    for x in (-7.3, -3.02, 1.26, 5.54, 9.82):
+        add_box(col, "weather_parking_line", .10, 4.6, .025, x, -9.7,
+                pad_top + .085, white)
+    add_box(col, "weather_front_walk", 24.6, 2.25, .10, 0, -5.25,
+            pad_top + .01, cream)
+    for x in (-11.8, 11.8):
+        add_ngon_cone(col, "weather_entry_bollard", .13, .10, .82, 10,
+                      x, -6.25, pad_top + .10, navy)
+
+    # Forecast center: a calm modern civic building with a taller operations wing.
+    add_box(col, "weather_building_plinth", 24.8, 13.8, .62, 0, 1.7,
+            pad_top, concrete)
+    add_box(col, "weather_main_body", 23.8, 12.8, 6.0, 0, 1.7,
+            pad_top + .62, cream)
+    add_box(col, "weather_operations_wing", 7.4, 10.8, 8.5, 7.4, 2.35,
+            pad_top + .62, navy_light)
+    add_box(col, "weather_entry_volume", 5.0, 2.0, 4.4, .15, -5.35,
+            pad_top + .62, navy)
+
+    # Deep parapets, rain canopy, and layered bands give the station a finished silhouette.
+    add_box(col, "weather_main_cornice", 24.5, 13.5, .36, 0, 1.7,
+            pad_top + 6.62, navy)
+    add_box(col, "weather_main_parapet", 23.9, .38, .72, 0, -4.52,
+            pad_top + 6.90, navy)
+    add_box(col, "weather_wing_cornice", 8.0, 11.4, .38, 7.4, 2.35,
+            pad_top + 9.12, coral)
+    add_box(col, "weather_entry_canopy", 6.5, 2.5, .30, .15, -6.72,
+            pad_top + 4.72, coral)
+    for x in (-2.35, 2.65):
+        add_ngon_cone(col, "weather_canopy_column", .14, .14, 4.0, 10,
+                      x, -7.45, pad_top + .18, steel)
+
+    # Glazed public lobby, studio windows, mullions, sills, and entry hardware.
+    add_box(col, "weather_entry_glass", 4.25, .16, 3.45, .15, -6.42,
+            pad_top + 1.00, glass)
+    add_box(col, "weather_entry_split", .12, .10, 3.42, .15, -6.56,
+            pad_top + 1.02, cream)
+    for x in (-.70, 1.0):
+        add_box(col, "weather_door_handle", .08, .10, .76, x, -6.61,
+                pad_top + 2.12, steel)
+    for x in (-9.8, -6.75, -3.7, 4.8, 7.35, 9.9):
+        add_box(col, "weather_window_frame", 2.45, .30, 2.45, x, -4.82,
+                pad_top + 1.75, white)
+        add_box(col, "weather_window_glass", 2.08, .12, 2.08, x, -4.99,
+                pad_top + 1.93, glass)
+        add_box(col, "weather_window_mullion", .10, .08, 2.08, x, -5.08,
+                pad_top + 1.93, navy)
+        add_box(col, "weather_window_sill", 2.62, .42, .16, x, -5.02,
+                pad_top + 1.68, navy)
+    for y in (-1.1, 2.0, 5.1):
+        add_box(col, "weather_side_window", .12, 2.15, 2.05, 11.96, y,
+                pad_top + 2.05, glass)
+
+    # Exact public profile mark plus large geometry text that stays readable in renders.
+    add_box(col, "weather_logo_frame", 3.7, .28, 3.7, -8.65, -5.04,
+            pad_top + 4.42, white)
+    add_image_panel(col, "weather_profile_logo", 3.35, 3.35,
+                    -8.65, -5.22, pad_top + 4.60, logo)
+    add_box(col, "weather_brand_board", 11.9, .30, 2.75, -1.3, -5.02,
+            pad_top + 7.05, navy)
+    add_box(col, "weather_brand_alert_bar", 11.3, .10, .42, -1.3, -5.22,
+            pad_top + 8.96, coral)
+    add_text(col, "weather_brand_first_alert", "FIRST ALERT", .72, .055,
+             -1.3, -5.22, pad_top + 8.50, sign_white)
+    add_text(col, "weather_brand_weather", "WEATHER", .82, .055,
+             -1.3, -5.22, pad_top + 7.58, sign_white)
+
+    # Doppler lattice: four tapered legs, diagonal bracing, service deck and radome.
+    tower_x, tower_y = 7.4, 3.6
+    tower_bottom, tower_top = pad_top + 9.42, pad_top + 18.0
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            add_beam_between(col, "weather_tower_leg",
+                             (tower_x + sx * 1.65, tower_y + sy * 1.65, tower_bottom),
+                             (tower_x + sx * .92, tower_y + sy * .92, tower_top),
+                             .20, steel)
+    for level in range(4):
+        z0 = tower_bottom + level * 2.05
+        z1 = min(tower_top, z0 + 2.05)
+        spread0 = 1.65 - level * .18
+        spread1 = max(.92, spread0 - .18)
+        for sy in (-1, 1):
+            add_beam_between(col, "weather_tower_brace",
+                             (tower_x - spread0, tower_y + sy * spread0, z0),
+                             (tower_x + spread1, tower_y + sy * spread1, z1),
+                             .09, coral)
+            add_beam_between(col, "weather_tower_brace",
+                             (tower_x + spread0, tower_y + sy * spread0, z0),
+                             (tower_x - spread1, tower_y + sy * spread1, z1),
+                             .09, coral)
+    add_box(col, "weather_radar_platform", 3.2, 3.2, .28, tower_x, tower_y,
+            tower_top, steel)
+    for sx in (-1.42, 1.42):
+        for sy in (-1.42, 1.42):
+            add_ngon_cone(col, "weather_platform_rail_post", .055, .055,
+                          1.0, 8, tower_x + sx, tower_y + sy,
+                          tower_top + .28, steel)
+    add_ngon_cone(col, "weather_radome_base", 2.15, 2.15, .72, 20,
+                  tower_x, tower_y, tower_top + .28, navy)
+    add_uv_sphere(col, "weather_doppler_radome", 2.55, tower_x, tower_y,
+                  tower_top + 3.20, white, rings=10, segments=20)
+    add_ngon_cone(col, "weather_beacon_mast", .09, .065, 1.35, 10,
+                  tower_x, tower_y, tower_top + 5.55, steel)
+    add_uv_sphere(col, "weather_beacon", .22, tower_x, tower_y,
+                  tower_top + 6.95, coral, rings=6, segments=10)
+
+    # Secondary instruments make the roof read as a working weather station.
+    mast_x, mast_y = -7.1, 3.0
+    add_ngon_cone(col, "weather_instrument_mast", .09, .07, 4.3, 10,
+                  mast_x, mast_y, pad_top + 7.0, steel)
+    add_beam_between(col, "weather_anemometer_bar",
+                     (mast_x - 1.15, mast_y, pad_top + 10.92),
+                     (mast_x + 1.15, mast_y, pad_top + 10.92), .07, steel)
+    for dx, dy in ((-1.15, .0), (1.15, .0), (0, 1.15)):
+        add_ngon_cone(col, "weather_anemometer_cup", .24, .16, .34, 10,
+                      mast_x + dx, mast_y + dy, pad_top + 10.78, navy)
+    add_beam_between(col, "weather_wind_vane",
+                     (mast_x, mast_y - .85, pad_top + 10.35),
+                     (mast_x, mast_y + 1.2, pad_top + 10.35), .08, steel)
+    vane = add_box(col, "weather_wind_vane_tail", .82, .08, .48,
+                   mast_x, mast_y - 1.15, pad_top + 10.12, coral)
+    vane.rotation_euler.z = math.radians(15)
+
+    # Forecast display, rain gauge, planters and monument sign finish the campus.
+    add_box(col, "weather_forecast_display_frame", 4.3, .24, 2.5,
+            7.4, -3.38, pad_top + 5.45, white)
+    add_box(col, "weather_forecast_display", 3.85, .10, 2.06,
+            7.4, -3.54, pad_top + 5.68, screen)
+    for x, height in ((6.25, .55), (7.05, 1.05), (7.85, .78), (8.65, 1.38)):
+        add_box(col, "weather_radar_bar", .42, .055, height, x, -3.62,
+                pad_top + 5.94, yellow if x > 7.5 else coral)
+    add_ngon_cone(col, "weather_rain_gauge", .23, .32, 1.35, 12,
+                  -11.5, 6.6, pad_top + .20, glass)
+    for x in (-12.8, 12.8):
+        add_ngon_cone(col, "weather_planter", .62, .52, .68, 12,
+                      x, -5.75, pad_top + .10, navy)
+        add_uv_sphere(col, "weather_planter_shrub", .72, x, -5.75,
+                      pad_top + 1.02, lawn, rings=6, segments=10)
+    add_box(col, "weather_monument_base", 5.6, 1.25, .48, 10.0, -11.4,
+            pad_top + .08, concrete)
+    add_box(col, "weather_monument", 5.0, .62, 2.65, 10.0, -11.4,
+            pad_top + .52, navy)
+    add_image_panel(col, "weather_monument_logo", 2.15, 2.15,
+                    8.55, -11.74, pad_top + .76, logo)
+    add_text(col, "weather_monument_text", "FIRST ALERT", .38, .04,
+             11.15, -11.76, pad_top + 2.42, sign_white)
+    add_text(col, "weather_monument_handle", "@FOLLOWVILLE_FAW", .22, .04,
+             11.15, -11.76, pad_top + 1.64, sign_white)
+
 
 
 def _polyline_surface_sample(points, distance):
@@ -5757,6 +6050,7 @@ def scatter_nature(world_col, occupied, buildings):
     city_hall_present = any(b.get("type") == "cityhall" for b in buildings)
     civic_square_present = any(b.get("type") == "civicsquare" for b in buildings)
     fishing_pond_present = any(b.get("type") == "fishingpond" for b in buildings)
+    weather_station_present = any(b.get("type") == "weatherstation" for b in buildings)
     if city_hall_present:
         active_segments.extend(zip(CITY_HALL_APPROACH, CITY_HALL_APPROACH[1:]))
         active_segments.append((CITY_HALL_APPROACH[-1],
@@ -5765,6 +6059,9 @@ def scatter_nature(world_col, occupied, buildings):
     # plant trees on. It was short enough before this to get away with it.
     if any(b.get("type") == "raftingstation" for b in buildings):
         lane = rafting_access_points()
+        active_segments.extend(zip(lane, lane[1:]))
+    if weather_station_present:
+        lane = [(x, y) for x, y, _z in weather_station_access_points()]
         active_segments.extend(zip(lane, lane[1:]))
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_segments.extend((a, b) for district in active_districts
@@ -5809,6 +6106,12 @@ def scatter_nature(world_col, occupied, buildings):
             if fishing_pond_present and (
                     abs(point[0] - FISHING_POND_X) < FISHING_POND_RX + 6.0 and
                     abs(point[1] - FISHING_POND_Y) < FISHING_POND_RY + 7.0):
+                continue
+            if weather_station_present and (
+                    abs(point[0] - WEATHER_STATION_CENTER[0]) <
+                    WEATHER_STATION_HALF_EXTENTS[0] + 5.0 and
+                    abs(point[1] - WEATHER_STATION_CENTER[1]) <
+                    WEATHER_STATION_HALF_EXTENTS[1] + 5.0):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()

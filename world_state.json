@@ -1,7 +1,7 @@
 {
  "day": 32,
  "pop": 656,
- "seed_counter": 718,
+ "seed_counter": 719,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -8519,6 +8519,20 @@
    "district": "Timber Bend",
    "street": "Lodgepole Loop",
    "seed": 717,
+   "day": 32
+  },
+  {
+   "type": "weatherstation",
+   "gx": 0,
+   "gy": 0,
+   "px": 29.5,
+   "py": 106.0,
+   "pz": 0.0,
+   "rot": 0.0,
+   "feature_id": "first_alert_weather_day32",
+   "name": "Followville First Alert Weather",
+   "instagram_handle": "followville_faw",
+   "seed": 718,
    "day": 32
   }
  ],

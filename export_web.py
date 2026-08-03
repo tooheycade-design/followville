@@ -59,6 +59,7 @@ def _chunk_id_for_building(building):
         "firestation": "fire-station",
         "fishingpond": "fishing-pond",
         "raftingstation": "rafting-station",
+        "weatherstation": "weather-station",
         "followmart": "follow-mart",
         "forestreserve": "east-woods",
     }

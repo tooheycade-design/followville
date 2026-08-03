@@ -3,6 +3,25 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Followville First Alert Weather station (local, pending publication, 2026-08-03)
+- Added a permanent non-house forecast center on a retained civic terrace north
+  of downtown, with a walkable raised drive, parking, glazed studio frontage,
+  deep facade detailing, weather instruments, and a finished Doppler tower.
+- Moved the still-unpublished campus ten metres east onto flatter ground and
+  replaced the diagonal raised wedge with a straight street-aligned driveway
+  that meets the west parking aisle cleanly.
+- Used the public `followville_faw` Instagram profile image on the facade and
+  monument sign. The username appears only as a website proximity tag matching
+  claimed-home labels; the superseded physical rooftop username board was
+  removed. The local branding file records the image's source and retrieval date.
+- Added the station as canonical non-claimable seed 718 and a dedicated streamed
+  `weather-station` chunk, plus homepage/map visibility, map/search naming,
+  proximity username label, landmark collisions, and distance-aware loading.
+- Population stays 656, Day stays 32, and address 513 is still next. This local
+  pass has not changed Supabase, claims, ownership, the live site, or daily
+  growth. Geometry, full/streamed asset coverage, saved-Blend inspection, and
+  the focused browser landmark/walk-surface check all passed.
+
 ## Home interior furnishing release (2026-08-03)
 - Replaced the visible primitive furniture prototype with a complete enclosed
   four-room home: warm house-derived materials, wood-plank floors, ceiling,

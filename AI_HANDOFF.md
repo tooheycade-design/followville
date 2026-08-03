@@ -70,7 +70,16 @@ an array of numeric IDs.
 
 ## Current town (Day 32, 2026-08-02)
 
-Population is 656 with 717 records. Day 32 added 31 ordinary claimable homes:
+The working tree contains one local, not-yet-published non-population addition:
+seed 718 is the non-claimable Followville First Alert Weather station at
+Blender `(29.5,106)`, with a retained forecast-center campus, profile logo,
+Doppler tower, seamless street/parking entrance, map/search support, collision,
+and a website-only floating `@followville_faw` tag matching claimed-home labels.
+The station has a dedicated streamed chunk. This leaves Day 32, population 656,
+and next address 513 unchanged. Local state has 718 records; `origin/main`,
+Supabase, and production remain at 717 until Cade authorizes publication.
+
+The published town is population 656 with 717 records. Day 32 added 31 ordinary claimable homes:
 plan IDs 482-500 finished Timber Bend Road and 501-512 opened Lodgepole Loop;
 seeds 687-717 are the new records and address 513 is next. Supabase insert-only
 sync added all 31 rows without modifying existing claims or ownership. Full

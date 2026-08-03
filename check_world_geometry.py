@@ -40,6 +40,7 @@ from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
                           LANDMARK_FOOTPRINTS, LEVEL_WATER, RETAINED_PADS,
                           STORYBOOK_ACCESS, rafting_access_points,
+                          weather_station_access_points,
                           transform_building_point, transform_point,
                           walk_surface_manifest)
 
@@ -134,6 +135,9 @@ def every_road(state):
                       [(x, y) for x, y, _z in STORYBOOK_ACCESS]))
     if "raftingstation" in present:
         roads.append(("rafting outpost lane", rafting_access_points()))
+    if "weatherstation" in present:
+        roads.append(("First Alert Weather access",
+                      [(x, y) for x, y, _z in weather_station_access_points()]))
     return roads
 
 

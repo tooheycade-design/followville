@@ -1,4 +1,4 @@
-# Codex handoff -- current through Day 32 and the interior furnishing release
+# Codex handoff -- current through the Day 32 First Alert Weather addition
 
 Updated 2026-08-03 for Cade and Zach's next Claude/Codex session.
 
@@ -17,6 +17,16 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- A local, not-yet-published Day 32 addition creates the permanent non-house
+  Followville First Alert Weather station at Blender `(29.5,106)`: a retained
+  forecast-center campus, parking and walkable access ramp, public profile logo,
+  Doppler tower, instruments, map/search entry, and a website-only floating
+  `@followville_faw` proximity tag matching claimed-home labels, plus landmark collision and its own streamed
+  chunk. It is seed 718, non-claimable, and adds no follower, resident, daily
+  growth, or ordinary address; population remains 656 and address 513 remains
+  next. Local state has 718 records while `origin/main`, Supabase, and the live
+  site remain at 717 until Cade authorizes publication.
 
 - The web-only high-quality interior and homeowner furnishing release shipped
   from `codex/interior-builder-polish`. It replaces the visible primitive room

@@ -4310,7 +4310,7 @@ function addLandmarkColliders(root){
   const configured=new Set();
   for(const building of worldBuildings){
     if(!["burjhouse","followmart","firestation","cityhall","constructionzone",
-         "movietheater","raftingstation"].includes(building.type))continue;
+         "movietheater","raftingstation","weatherstation"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -4342,6 +4342,11 @@ function addLandmarkColliders(root){
                                           "landmark-rafting-lodge"));
       colliders.push(rootLocalBoxCollider(visual,-1.6,-5.35,4.15,1.65,
                                           "landmark-rafting-gear-shelter"));
+    }else if(building.type==="weatherstation"){
+      colliders.push(rootLocalBoxCollider(visual,0,1.7,12.4,6.9,
+                                          "landmark-weather-center"));
+      colliders.push(rootLocalBoxCollider(visual,7.4,3.6,2.1,2.1,
+                                          "landmark-weather-radar-tower"));
     }else{
       colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
       colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
@@ -4353,6 +4358,7 @@ function addLandmarkColliders(root){
     ?"movietheater":"constructionzone";
   const expected=["burjhouse","followmart","firestation","cityhall",destinationType];
   if(worldBuildings.some(b=>b.type==="raftingstation"))expected.push("raftingstation");
+  if(worldBuildings.some(b=>b.type==="weatherstation"))expected.push("weatherstation");
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }
@@ -5246,6 +5252,7 @@ const TAG_HEIGHT = {
   house: 9.2, mushroomhouse: 8, casinohouse: 7.5, cathouse: 8, castlehouse: 9.5,
   eiffelhouse: 16.5, flowerhouse: 8, burjhouse: 25.5, toilethouse: 8,
   beachhouse: 8, cottagehouse: 8.5, ringhouse: 9.2, lanehouse: 6.5,
+  weatherstation: 28,
 };
 
 function buildingTagHeight(building){
@@ -5682,6 +5689,7 @@ const MAP_LANDMARK_NAMES = {
   cityhall:"Followville City Hall", civicsquare:"Civic Square",
   fishingpond:"Followville Fishing Pond",
   raftingstation:"River Run Outfitters",
+  weatherstation:"Followville First Alert Weather",
   parkdistrict:"Founder Park",
   park:"Community park", pond:"Neighborhood pond", plaza:"Town plaza",
   stadium:"Followville stadium", shop:"Town shop", apartment:"Apartments",
@@ -6190,6 +6198,9 @@ function rebuildTownMap3D(){
     }else if(item.building.type==="forestreserve"){
       geometry=new THREE.CylinderGeometry(19,23,4.5,18);
       material=new THREE.MeshStandardMaterial({color:0x3c6f39,roughness:.95});
+    }else if(item.building.type==="weatherstation"){
+      geometry=new THREE.BoxGeometry(16,7,10);
+      material=new THREE.MeshStandardMaterial({color:0x173653,roughness:.64,metalness:.08});
     }else{
       geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
       material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});
@@ -6810,6 +6821,15 @@ function rebuildNameTags(){
     spr.position.set(x,tagHeight,z);
     spr.userData.houseId=Number(id);
     spr.visible = false;   // shown only when the player is nearby (see animate)
+    nameTags.add(spr);
+  }
+  for(const building of worldBuildings.filter(item =>
+    item.type==="weatherstation" && item.instagram_handle)){
+    const [x,z]=buildingWorldXZ(building);
+    const spr=makeTagSprite("@"+String(building.instagram_handle).replace(/^@+/,""));
+    spr.position.set(x,buildingTagHeight(building),z);
+    spr.userData.landmarkType="weatherstation";
+    spr.visible=false;
     nameTags.add(spr);
   }
 }
@@ -7805,6 +7825,7 @@ const VISIBLE_RADIUS_BY_TYPE = {
   followmart: 180,
   firestation: 170,
   movietheater: 170,
+  weatherstation: 240,
   schoolhouse: 170,
   casinohouse: 160,
   mushroomhouse: 150,

@@ -55,6 +55,56 @@ RAFTING_ACCESS_SPINE = [
     (318.0, -22.5), (323.0, -23.5),
 ]
 
+# Followville First Alert Weather sits on a retained terrace immediately north
+# of the legacy grid. Its diagonal drive climbs from the north edge street
+# without extending the flat downtown road grid into the surrounding hillside.
+WEATHER_STATION_CENTER = (29.5, 106.0)
+WEATHER_STATION_HALF_EXTENTS = (15.5, 13.5)
+
+
+def weather_station_base_height():
+    """Level weather-campus datum, pinned above its highest terrain corner."""
+    from downtown_visual_plan import terrain_height
+    cx, cy = WEATHER_STATION_CENTER
+    hx, hy = WEATHER_STATION_HALF_EXTENTS
+    return max(terrain_height(cx + dx, cy + dy)
+               for dx in (-hx, 0.0, hx)
+               for dy in (-hy, 0.0, hy)) + .12
+
+
+def weather_station_access_points(step=2.5):
+    """Closely sampled authored ramp from the grid road to the terrace."""
+    import math
+    from downtown_visual_plan import terrain_height
+    cx, cy = WEATHER_STATION_CENTER
+    base = weather_station_base_height() + .18
+    # A straight, perpendicular driveway reads as a real entrance and aligns
+    # with the west parking aisle. The former diagonal route made the raised
+    # deck look like a loose wedge laid over the street.
+    spine = [(cx - 10.0, 87.0), (cx - 10.0, cy - 9.5)]
+    lengths = [math.hypot(b[0] - a[0], b[1] - a[1])
+               for a, b in zip(spine, spine[1:])]
+    total = sum(lengths)
+    # The driveway surface uses an 8cm top offset in Blender. Starting at
+    # +9cm makes its top exactly meet the downtown road's 17cm asphalt top.
+    start_z = terrain_height(*spine[0]) + .09
+    points = []
+    travelled = 0.0
+    for (a, b), length in zip(zip(spine, spine[1:]), lengths):
+        count = max(1, int(math.ceil(length / step)))
+        for index in range(count):
+            local = index / count
+            distance = travelled + length * local
+            t = distance / total if total else 1.0
+            points.append((
+                a[0] + (b[0] - a[0]) * local,
+                a[1] + (b[1] - a[1]) * local,
+                start_z + (base - start_z) * t,
+            ))
+        travelled += length
+    points.append((spine[-1][0], spine[-1][1], base))
+    return points
+
 
 # --- what check_world_geometry.py audits against -------------------------
 #
@@ -81,6 +131,7 @@ LANDMARK_FOOTPRINTS = {
     "civicsquare":     (-23.0,   17.0,  -16.0,   16.0, False),
     "fishingpond":     (-26.0,   23.0,  -17.0,   16.0, True),
     "raftingstation":   (-9.0,   33.0,   -8.0,   12.0, True),
+    "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
 }
 
 # Authored ground that stands above the terrain. A road whose deck is taken
@@ -101,6 +152,7 @@ RETAINED_PADS = {
     "rafting-dock": "timber piles driven to the riverbed",
     "rafting-forecourt": "retaining skirt on its three downhill edges",
     "fishing-dock": "steel piles in the pond",
+    "weather-station-campus": "continuous concrete retaining wall",
 }
 
 # Road decks that are meant to be off the ground, and why. Rectangles in world
@@ -108,6 +160,7 @@ RETAINED_PADS = {
 INTENTIONALLY_RAISED_ROADS = [
     ("Founders Crossing bridge deck", 275.0, 415.0, -230.0, -195.0),
     ("rafting launch boardwalk", 332.0, 360.0, -34.0, -26.0),
+    ("First Alert Weather access ramp", 16.5, 22.5, 84.0, 108.0),
 ]
 
 # Water surfaces that must be level, with how far their rim may fall across
@@ -120,6 +173,7 @@ LANDMARK_APPROACHES = {
     "cityhall": {"City Hall approach"},
     "civicsquare": {"City Hall approach"},
     "raftingstation": {"rafting outpost lane"},
+    "weatherstation": {"First Alert Weather access"},
 }
 
 # Roads that carry their own authored heights rather than following the
@@ -317,6 +371,18 @@ def walk_surface_manifest(state):
             stable_height(x - 5.0), stable_height(-y - 9.5),
             stable_height(terrain_height(x - 5.0, y + 7.6) + .24),
             4.0, 2.5, "rafting-forecourt",
+        ])
+    weather_station = next((building for building in state.get("buildings", [])
+                            if building.get("type") == "weatherstation"), None)
+    if weather_station:
+        x, y = transform_building_point(weather_station)
+        access = weather_station_access_points()
+        append_graded_road(access, 2.35)
+        half_x, half_y = WEATHER_STATION_HALF_EXTENTS
+        pads.append([
+            stable_height(x), stable_height(-y),
+            stable_height(weather_station_base_height() + .18),
+            half_x, half_y, "weather-station-campus",
         ])
     river_manifest = None
     if river_active:

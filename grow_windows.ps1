@@ -245,7 +245,7 @@ function Sync-Houses {
             'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
             'streetlight', 'car', 'elementaryschool', 'followmart',
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
-            'civicsquare', 'fishingpond', 'constructionzone', 'movietheater',
+            'civicsquare', 'fishingpond', 'weatherstation', 'constructionzone', 'movietheater',
             'forestreserve',
             'tree', 'bush', 'rock', 'duck'
         )

@@ -5,6 +5,9 @@ river chapter extends the same deterministic system by 250 addresses,
 367-616, carrying population 500 to 750. See `RIVER_EXPANSION_PLAN.md`.
 
 Current progress: addresses 1-512 are built through Day 32 (population 656).
+The permanent Followville First Alert Weather station is a separate civic
+landmark record and does not consume an address or change population; address
+513 remains next.
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills
