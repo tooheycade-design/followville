@@ -63,7 +63,7 @@ Don't re-run and hope. If you open the Blend read-only to inspect something,
 always answer "Ignore" / "Don't Save" on any prompt.
 
 Flags: `--special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
---cam NAME --tag NAME --time day|sunset|night --season X --still --scatter`.
+--cam NAME --tag NAME --time day|sunset|night|storm --season X --still --scatter`.
 Videos auto-copy to Desktop.
 
 Cameras: `overhead street park housefront newgrowth newstreet newgrowthoverhead

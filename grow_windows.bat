@@ -17,7 +17,7 @@ REM   --render                  render the day's 9:16 video
 REM   --still                   render a single preview PNG instead
 REM   --apartments N | --parks N | --trees N | --special TYPEhouse[@gx,gy]
 REM   --followers N             population change differs from house count
-REM   --cam overhead | --tag NAME | --time day|sunset|night | --season X
+REM   --cam overhead | --tag NAME | --time day|sunset|night|storm | --season X
 REM   --hero | --celebrate
 REM   --preflight-only          validate paths/Git/mirrors; do not run Blender
 REM

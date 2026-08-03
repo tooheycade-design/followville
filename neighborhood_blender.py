@@ -145,6 +145,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day30reveal  18-second low downtown angle into 46 Cedarbank home rises
 #   --cam day31reveal  20-second whole-town, 20-home, and City Hall drone reveal
 #   --cam day32campaign 20-second town, 31-home, billboard, and campaign-semi reveal
+#   --cam day33storm  20-second storm flight through 33 homes to the weather station
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -6570,6 +6571,8 @@ TODS = {
                    sky=(0.16, 0.22, 0.34), sky_s=.68, win=6.0, lamp=18.0),
     "night":  dict(sun_e=0.30, sun_c=(0.55, 0.65, 1.00), sun_rot=(55, 0, 140),
                    sky=(0.05, 0.07, 0.14), sky_s=0.7, win=9.0, lamp=35.0),
+    "storm":  dict(sun_e=0.46, sun_c=(0.64, 0.73, 0.86), sun_rot=(58, 0, 132),
+                   sky=(0.105, 0.14, 0.19), sky_s=.42, win=3.4, lamp=12.0),
 }
 
 SEASONS = {
@@ -7718,6 +7721,78 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day33storm":
+        # Day 33: a stormy whole-town establish, two overlapping waves for the
+        # 33 new homes, and a deliberate final descent onto First Alert Weather.
+        # The station's rise is render-only; its canonical seed is not duplicated.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        lodgepole = [b for b in newest_homes
+                     if int(b.get("plan_id", 0)) <= 526]
+        millstone = [b for b in newest_homes
+                     if int(b.get("plan_id", 0)) >= 527]
+        weather = next((b for b in buildings
+                        if b.get("type") == "weatherstation"), None)
+
+        def _mid(group, fallback):
+            if not group:
+                return fallback
+            pts = [build_pos(b) for b in group]
+            return (sum(p[0] for p in pts) / len(pts),
+                    sum(p[1] for p in pts) / len(pts))
+
+        lodge_x, lodge_y = _mid(lodgepole, (582.0, 264.0))
+        mill_x, mill_y = _mid(millstone, (448.0, 226.0))
+        weather_x, weather_y = build_pos(weather) if weather else (29.5, 106.0)
+        weather_z = weather_station_base_height() + 5.6
+
+        aim = bpy.data.objects.new("Day33StormAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day33StormCamera")
+        cam_data.lens = 42
+        cam_data.clip_start = .35
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day33StormCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-3.7s: the entire storm-darkened town establishes geography.
+            (1, (790.0, -610.0, 930.0), (280.0, 30.0, 10.0)),
+            (70, (735.0, -420.0, 680.0), (350.0, 70.0, 9.0)),
+            (110, (675.0, -230.0, 430.0), (470.0, 145.0, 8.0)),
+            # 3.7-11.5s: descend through Lodgepole and Millstone as all homes rise.
+            (145, (665.0, -30.0, 275.0), (lodge_x, lodge_y, 8.0)),
+            (225, (635.0, 105.0, 165.0), (lodge_x, lodge_y, 7.0)),
+            (285, (565.0, 125.0, 132.0),
+             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 7.0)),
+            (345, (520.0, 135.0, 112.0), (mill_x, mill_y, 7.0)),
+            # 11.5-15.0s: climb just enough for a readable cross-town transfer.
+            (390, (420.0, 80.0, 215.0), (270.0, 115.0, 10.0)),
+            (450, (205.0, 35.0, 160.0),
+             (weather_x, weather_y, weather_z)),
+            # 15.0-20.0s: settle in front of the station while it rises in rain.
+            (500, (102.0, 54.0, 78.0),
+             (weather_x, weather_y, weather_z)),
+            (550, (77.0, 64.0, 53.0),
+             (weather_x, weather_y, weather_z)),
+            (frame_end, (66.0, 69.0, 42.0),
+             (weather_x, weather_y, weather_z)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day32campaign":
         # Day 32: establish the larger town, follow all 31 Timber Bend homes,
         # then descend to the roadside billboard and moving campaign semi.
@@ -8619,6 +8694,111 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         bg.inputs[0].default_value = (*t["sky"], 1.0)
         bg.inputs[1].default_value = t["sky_s"]  # 2026-07-09 evening: brightness boost removed
 
+
+def build_storm_layer(world_col, frame_end):
+    """Camera-following rain and brief lightning, excluded from every GLB."""
+    camera = bpy.context.scene.camera
+    if camera is None:
+        raise RuntimeError("Storm layer requires an active camera")
+
+    rain = mat("NB_storm_rain", (.58, .72, .86), .22, alpha=.38)
+    bsdf = rain.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        emission = bsdf.inputs.get("Emission Color") or bsdf.inputs.get("Emission")
+        if emission:
+            emission.default_value = (.48, .66, .88, 1.0)
+        strength = bsdf.inputs.get("Emission Strength")
+        if strength:
+            strength.default_value = 1.25
+
+    # Three deterministic, cycling screen-space fields keep the rain readable
+    # during both the high drone pass and the close architectural finale.
+    for layer_index in range(3):
+        rng = random.Random(3300 + layer_index)
+        verts, faces = [], []
+        for _index in range(190):
+            depth = rng.uniform(8.0, 72.0)
+            x = rng.uniform(-depth * .44, depth * .44)
+            y = rng.uniform(-depth * .72, depth * .72)
+            length = depth * rng.uniform(.025, .043)
+            width = depth * rng.uniform(.00055, .0010)
+            slant = length * .16
+            z = -depth
+            start = len(verts)
+            verts.extend(((x - width, y + length * .5, z),
+                          (x + width, y + length * .5, z),
+                          (x + slant + width, y - length * .5, z),
+                          (x + slant - width, y - length * .5, z)))
+            faces.append((start, start + 1, start + 2, start + 3))
+        mesh = bpy.data.meshes.new("storm_rain_mesh_%d" % layer_index)
+        mesh.from_pydata(verts, [], faces)
+        mesh.materials.append(rain)
+        mesh.update()
+        field = bpy.data.objects.new("storm_rain_%d" % layer_index, mesh)
+        world_col.objects.link(field)
+        field.parent = camera
+        field["nb_render_only"] = True
+        phase = layer_index * 6.0
+        field.location.y = phase
+        field.keyframe_insert("location", frame=1)
+        field.location.y = phase - 8.0
+        field.keyframe_insert("location", frame=23)
+        for fc in obj_fcurves(field):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
+            fc.modifiers.new("CYCLES")
+
+    # A restrained fork behind the forecast center gives the storm a authored
+    # focal beat without covering the logo or turning the film into an effect reel.
+    lightning = mat("NB_storm_lightning", (.83, .91, 1.0), .18)
+    if lightning.use_nodes:
+        _set_mat_emission("NB_storm_lightning", (.72, .86, 1.0), 14.0)
+    points = ((13.0, 139.0, 64.0), (17.0, 137.0, 51.0),
+              (14.5, 140.0, 39.0), (20.0, 137.5, 25.0),
+              (18.0, 141.0, 11.0))
+    bolt_parts = []
+    for index, (start, end) in enumerate(zip(points, points[1:])):
+        bolt_parts.append(add_beam_between(
+            world_col, "storm_lightning_bolt_%d" % index,
+            start, end, .19 if index < 2 else .13, lightning))
+    bolt_parts.append(add_beam_between(
+        world_col, "storm_lightning_branch", points[2], (8.0, 143.5, 29.0),
+        .09, lightning))
+    for part in bolt_parts:
+        part["nb_render_only"] = True
+        _keyframe_hidden(part, 1, True)
+        _keyframe_hidden(part, 452, False)
+        _keyframe_hidden(part, 456, True)
+        _keyframe_hidden(part, 522, False)
+        _keyframe_hidden(part, 525, True)
+
+    flash_data = bpy.data.lights.new("StormLightningFlash", type="AREA")
+    flash_data.color = (.64, .78, 1.0)
+    flash_data.shape = "DISK"
+    flash_data.size = 95.0
+    flash = bpy.data.objects.new("StormLightningFlash", flash_data)
+    flash.location = (29.5, 106.0, 68.0)
+    flash["nb_render_only"] = True
+    world_col.objects.link(flash)
+    for frame, energy in ((1, 0.0), (451, 0.0), (452, 1750.0),
+                          (455, 0.0), (521, 0.0), (522, 1250.0),
+                          (525, 0.0), (frame_end, 0.0)):
+        flash_data.energy = energy
+        flash_data.keyframe_insert("energy", frame=frame)
+    for fc in obj_fcurves(flash_data):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "CONSTANT"
+
+    world = bpy.context.scene.world
+    bg = world.node_tree.nodes.get("Background") if world and world.use_nodes else None
+    if bg:
+        base = bg.inputs[1].default_value
+        for frame, strength in ((1, base), (451, base), (452, base * 2.8),
+                                (455, base), (521, base), (522, base * 2.25),
+                                (525, base), (frame_end, base)):
+            bg.inputs[1].default_value = strength
+            bg.inputs[1].keyframe_insert("default_value", frame=frame)
+
 def setup_render(state, frame_end, tag=None):
     sc = bpy.context.scene
     for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):  # 4.2+ / older & 5.x
@@ -9074,7 +9254,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day32campaign":
+    if cfg.get("cam") == "day33storm":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day32campaign":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day31reveal":
         frame_end = max(frame_end, FPS * 20)
@@ -9109,7 +9291,25 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day32campaign":
+    if cfg.get("cam") == "day33storm":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        lodgepole_roots = [e for e in home_roots
+                           if int(e.get("nb_world_plan_id", 0)) <= 526]
+        millstone_roots = [e for e in home_roots
+                           if int(e.get("nb_world_plan_id", 0)) >= 527]
+        for index, e in enumerate(lodgepole_roots):
+            animate_rise(e, 135 + index * 5, dur=29)
+        for index, e in enumerate(millstone_roots):
+            animate_rise(e, 225 + index * 5, dur=29)
+        weather_roots = [e for e in building_roots
+                         if e.get("nb_world_type") == "weatherstation"]
+        if len(weather_roots) != 1:
+            raise RuntimeError("Day 33 storm reveal requires exactly one weather station")
+        animate_rise(weather_roots[0], 442, dur=46)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 190)
+    elif cfg.get("cam") == "day32campaign":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         for index, e in enumerate(home_roots):
             animate_rise(e, 140 + index * 6, dur=28)
@@ -9312,6 +9512,8 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "day33storm":
+        build_storm_layer(world_col, frame_end)
     if cfg.get("cam") == "day32campaign":
         build_day32_campaign_vignette(world_col, frame_end)
     if cfg.get("cam") == "football":
@@ -9386,7 +9588,7 @@ def _register_ui():
         description="+5 add houses | -3 remove | =50 set total | replay")
     S.nb_time = bpy.props.EnumProperty(
         name="Time", default="auto",
-        items=[(k, k.title(), "") for k in ("auto", "day", "sunset", "night")])
+        items=[(k, k.title(), "") for k in ("auto", "day", "sunset", "night", "storm")])
     S.nb_season = bpy.props.EnumProperty(
         name="Season", default="auto",
         items=[(k, k.title(), "") for k in ("auto", "spring", "summer", "fall", "winter")])
