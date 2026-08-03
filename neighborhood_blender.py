@@ -7750,7 +7750,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         aim = bpy.data.objects.new("Day33StormAim", None)
         world_col.objects.link(aim)
         cam_data = bpy.data.cameras.new("Day33StormCamera")
-        cam_data.lens = 42
+        cam_data.lens = 36
         cam_data.clip_start = .35
         cam_data.clip_end = 8000.0
         cam_data.dof.use_dof = False
@@ -7765,15 +7765,20 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (1, (790.0, -610.0, 930.0), (280.0, 30.0, 10.0)),
             (70, (735.0, -420.0, 680.0), (350.0, 70.0, 9.0)),
             (110, (675.0, -230.0, 430.0), (470.0, 145.0, 8.0)),
-            # 3.7-11.5s: descend through Lodgepole and Millstone as all homes rise.
-            (145, (665.0, -30.0, 275.0), (lodge_x, lodge_y, 8.0)),
-            (225, (635.0, 105.0, 165.0), (lodge_x, lodge_y, 7.0)),
-            (285, (565.0, 125.0, 132.0),
-             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 7.0)),
-            (345, (520.0, 135.0, 112.0), (mill_x, mill_y, 7.0)),
-            # 11.5-15.0s: climb just enough for a readable cross-town transfer.
-            (390, (420.0, 80.0, 215.0), (270.0, 115.0, 10.0)),
-            (450, (205.0, 35.0, 160.0),
+            # 3.7-12.0s: one wide, legible composition holds Lodgepole and
+            # Millstone together for the entire 33-home rise. Do not turn this
+            # back into two close-ups; Cade needs to see the complete batch.
+            (120, (760.0, -140.0, 455.0),
+             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 9.0)),
+            (180, (735.0, -85.0, 425.0),
+             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 8.0)),
+            (270, (705.0, -25.0, 392.0),
+             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 8.0)),
+            (360, (675.0, 25.0, 360.0),
+             ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 8.0)),
+            # 12.0-15.2s: a high cross-town transfer avoids an abrupt zoom.
+            (405, (480.0, 60.0, 245.0), (275.0, 112.0, 10.0)),
+            (456, (205.0, 35.0, 160.0),
              (weather_x, weather_y, weather_z)),
             # 15.0-20.0s: settle in front of the station while it rises in rain.
             (500, (102.0, 54.0, 78.0),
@@ -8701,7 +8706,7 @@ def build_storm_layer(world_col, frame_end):
     if camera is None:
         raise RuntimeError("Storm layer requires an active camera")
 
-    rain = mat("NB_storm_rain", (.58, .72, .86), .22, alpha=.38)
+    rain = mat("NB_storm_rain", (.58, .72, .86), .22, alpha=.32)
     bsdf = rain.node_tree.nodes.get("Principled BSDF")
     if bsdf:
         emission = bsdf.inputs.get("Emission Color") or bsdf.inputs.get("Emission")
@@ -8711,25 +8716,30 @@ def build_storm_layer(world_col, frame_end):
         if strength:
             strength.default_value = 1.25
 
-    # Three deterministic, cycling screen-space fields keep the rain readable
-    # during both the high drone pass and the close architectural finale.
-    for layer_index in range(3):
+    # Each field sits at one fixed camera depth and repeats the same streaks one
+    # exact vertical tile apart. Moving the field by precisely one tile makes
+    # frame N and the cycle restart visually identical: rain continues falling
+    # without the old random-pattern snap every 22 frames.
+    layer_specs = ((12.0, 44), (30.0, 58), (58.0, 72))
+    for layer_index, (depth, base_count) in enumerate(layer_specs):
         rng = random.Random(3300 + layer_index)
         verts, faces = [], []
-        for _index in range(190):
-            depth = rng.uniform(8.0, 72.0)
+        tile_height = depth * 1.08
+        for _index in range(base_count):
             x = rng.uniform(-depth * .44, depth * .44)
-            y = rng.uniform(-depth * .72, depth * .72)
+            base_y = rng.uniform(0.0, tile_height)
             length = depth * rng.uniform(.025, .043)
-            width = depth * rng.uniform(.00055, .0010)
+            width = depth * rng.uniform(.00045, .00082)
             slant = length * .16
             z = -depth
-            start = len(verts)
-            verts.extend(((x - width, y + length * .5, z),
-                          (x + width, y + length * .5, z),
-                          (x + slant + width, y - length * .5, z),
-                          (x + slant - width, y - length * .5, z)))
-            faces.append((start, start + 1, start + 2, start + 3))
+            for tile_index in range(-2, 3):
+                y = base_y + tile_index * tile_height
+                start = len(verts)
+                verts.extend(((x - width, y + length * .5, z),
+                              (x + width, y + length * .5, z),
+                              (x + slant + width, y - length * .5, z),
+                              (x + slant - width, y - length * .5, z)))
+                faces.append((start, start + 1, start + 2, start + 3))
         mesh = bpy.data.meshes.new("storm_rain_mesh_%d" % layer_index)
         mesh.from_pydata(verts, [], faces)
         mesh.materials.append(rain)
@@ -8738,11 +8748,10 @@ def build_storm_layer(world_col, frame_end):
         world_col.objects.link(field)
         field.parent = camera
         field["nb_render_only"] = True
-        phase = layer_index * 6.0
-        field.location.y = phase
+        field.location.y = 0.0
         field.keyframe_insert("location", frame=1)
-        field.location.y = phase - 8.0
-        field.keyframe_insert("location", frame=23)
+        field.location.y = -tile_height
+        field.keyframe_insert("location", frame=46 + layer_index * 9)
         for fc in obj_fcurves(field):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
