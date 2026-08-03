@@ -86,29 +86,24 @@ last point is important: do not regress the checks to `myClaims.includes(id)`,
 which hides the owner builder because profile status returns claim records, not
 an array of numeric IDs.
 
-## Current town (Day 32, 2026-08-02)
+## Current town (Day 33, 2026-08-03)
 
-The working tree contains one local, not-yet-published non-population addition:
-seed 718 is the non-claimable Followville First Alert Weather station at
-Blender `(29.5,106)`, with a retained forecast-center campus, profile logo,
-Doppler tower, seamless street/parking entrance, map/search support, collision,
-and a website-only floating `@followville_faw` tag matching claimed-home labels.
-The station has a dedicated streamed chunk. This leaves Day 32, population 656,
-and next address 513 unchanged. Local state has 718 records; `origin/main`,
-Supabase, and production remain at 717 until Cade authorizes publication.
+The published town is population 689 with 751 records. Day 33 added exactly 33
+ordinary claimable homes: plan IDs 513-526 finished Timber Bend's Lodgepole Loop
+and 527-545 opened Eastbank Village's Millstone Way; their seeds are 719-751
+and address 546 is next. Permanent seed 718 is the non-claimable Followville
+First Alert Weather station at Blender `(29.5,106)`, with its retained campus,
+profile logo, Doppler tower, seamless entrance, map/search support, collision,
+floating website username tag and dedicated streamed chunk. The insert-only
+Supabase sync added the station plus 33 houses without changing prior rows;
+current verification finds 41 claims across 40 accounts and none on the new
+records. Full fallback and 34 streamed chunks match canonical state.
 
-The published town is population 656 with 717 records. Day 32 added 31 ordinary claimable homes:
-plan IDs 482-500 finished Timber Bend Road and 501-512 opened Lodgepole Loop;
-seeds 687-717 are the new records and address 513 is next. Supabase insert-only
-sync added all 31 rows without modifying existing claims or ownership. Full
-fallback and 32 streamed chunks match the canonical state. Road construction
-now relies on continuous ribbons at ordinary bends instead of placing a raised
-cover disc at every control point; actual junction covers and authored
-cul-de-sac bulbs remain. The reviewed delivery is one 20-second 1080x1920
-daytime MP4 using `--cam day32campaign`: whole-town establish, all 31 home
-rises, a `VOTE MR MAYOR` / `VOTE BSB_DOMWILLIS` roadside billboard, and a
-moving `VOTE XAD_INSTA` semi. The campaign objects are render-only and removed
-before every website export.
+The reviewed delivery is one 20-second 1080x1920 MP4 using
+`--cam day33storm --time storm`: whole-town establish, both home-rise waves,
+cross-town transfer, continuous rain and lightning, then a render-only station
+rise and close view. The effect objects are tagged `nb_render_only` and removed
+before web export. The video is in shared iCloud renders and Cade's Desktop.
 
 ## Prior town (Day 26, 2026-07-27)
 

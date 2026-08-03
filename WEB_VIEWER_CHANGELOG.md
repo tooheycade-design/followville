@@ -3,7 +3,27 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
-## Licensed asset intake and Blender tooling (local, 2026-08-03)
+## Day 33 storm and First Alert Weather reveal (2026-08-03)
+- Grew exactly 33 ordinary claimable homes from population 656 to 689. Plan
+  IDs 513-526 finish Timber Bend's Lodgepole Loop and IDs 527-545 open
+  Eastbank Village's Millstone Way; address 546 is next.
+- Published permanent non-house seed 718 as the non-claimable Followville First
+  Alert Weather station. Supabase received that station plus seeds 719-751 as
+  insert-only rows; the 33 houses are claimable, the station is not, none of
+  the new rows is claimed, and the current pre-existing 41 claims across 40
+  accounts remain untouched.
+- Added reusable `--time storm` lighting and a 20-second `--cam day33storm`
+  portrait flight: whole-town establish, two neighborhood home-rise waves,
+  cross-town transfer, continuous camera-following rain, two lightning beats,
+  and a final weather-station rise and close architectural view. Rain,
+  lightning geometry, and the station's repeat rise are render-only and are
+  removed before website export.
+- The canonical state and production site now contain Day 33, population 689,
+  751 records, and 34 streamed chunks. Geometry/self-tests, exact full/chunk
+  coverage, live state/manifest checks, a live browser load, and seven MP4
+  checkpoints all passed.
+
+## Licensed asset intake and Blender tooling (2026-08-03)
 - Added a provenance-gated asset registry, deterministic model/hash manifest,
   searchable maintainer gallery, and focused automated checks. The intake shelf
   is deliberately separate from gameplay allowlists, so importing a pack cannot
@@ -20,11 +40,11 @@ Kept here (rather than just in chat) so it survives across sessions.
   add-on, retained opt-in connection and disabled telemetry defaults, and passed
   an end-to-end local socket/scene probe. Codex must be restarted before the
   refreshed MCP appears in a session's tool list.
-- This is maintainership tooling only: no public page links, town geometry,
-  world state, population, claims, Supabase data, deployment, or production
-  asset changed. See `ASSET_PIPELINE.md` before importing or promoting assets.
+- This is maintainership tooling only: it has no public page link and changed no
+  gameplay catalog, town geometry, world state, population, claims, or Supabase
+  data. See `ASSET_PIPELINE.md` before importing or promoting assets.
 
-## Followville First Alert Weather station (local, pending publication, 2026-08-03)
+## Followville First Alert Weather station (built locally, published Day 33, 2026-08-03)
 - Added a permanent non-house forecast center on a retained civic terrace north
   of downtown, with a walkable raised drive, parking, glazed studio frontage,
   deep facade detailing, weather instruments, and a finished Doppler tower.
@@ -38,10 +58,10 @@ Kept here (rather than just in chat) so it survives across sessions.
 - Added the station as canonical non-claimable seed 718 and a dedicated streamed
   `weather-station` chunk, plus homepage/map visibility, map/search naming,
   proximity username label, landmark collisions, and distance-aware loading.
-- Population stays 656, Day stays 32, and address 513 is still next. This local
-  pass has not changed Supabase, claims, ownership, the live site, or daily
-  growth. Geometry, full/streamed asset coverage, saved-Blend inspection, and
-  the focused browser landmark/walk-surface check all passed.
+- This construction pass itself kept population 656 and address 513 unchanged;
+  Day 33 subsequently published the station without consuming an address or
+  follower. Geometry, full/streamed asset coverage, saved-Blend inspection, and
+  the focused browser landmark/walk-surface check passed.
 
 ## Home interior furnishing release (2026-08-03)
 - Replaced the visible primitive furniture prototype with a complete enclosed

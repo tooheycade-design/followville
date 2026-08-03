@@ -1,4 +1,4 @@
-# Codex handoff -- current through the Day 32 asset-tooling pass
+# Codex handoff -- current through Day 33
 
 Updated 2026-08-03 for Cade and Zach's next Claude/Codex session.
 
@@ -18,6 +18,23 @@ workflow.
 
 ## Current canon
 
+- Day 33 is live at population 689 with 751 total records and 34 streamed
+  chunks. One guarded +33 growth consumed plan IDs 513-545 / seeds 719-751:
+  fourteen homes finished Timber Bend's Lodgepole Loop and nineteen opened
+  Eastbank Village's Millstone Way. Address 546 is next. Permanent seed 718 is
+  now published as the non-claimable Followville First Alert Weather station;
+  it consumes no address or population. The insert-only Supabase sync added the
+  previously local station plus all 33 homes. A read-only audit confirms the
+  station is non-claimable, every new home is claimable, none of the new rows is
+  claimed, and the current 41 claims across 40 accounts are preserved.
+
+- The reviewed Day 33 delivery is one 20-second 1080x1920 MP4 using
+  `--cam day33storm --time storm`: full-town establish, Lodgepole and Millstone
+  home-rise waves, a cross-town flight, continuous rain, two lightning beats,
+  and a final weather-station rise. Rain, lightning and the station's repeat
+  rise are render-only and excluded from GLBs. The MP4 is in the shared iCloud
+  `renders` folder and on Cade's Desktop.
+
 - The local project now has a safe CC0 asset intake shelf documented in
   `ASSET_PIPELINE.md`: a provenance registry, deterministic hash/model manifest,
   searchable internal `asset-library.html`, 140-model Kenney Furniture Kit
@@ -27,16 +44,6 @@ workflow.
   relevant client/server allowlist changes. Blender MCP was repaired to version
   1.8.0 and passed a local Blender 5.1 socket/scene probe with auto-connect off
   and telemetry disabled. Restart Codex to refresh its MCP tool registry.
-
-- A local, not-yet-published Day 32 addition creates the permanent non-house
-  Followville First Alert Weather station at Blender `(29.5,106)`: a retained
-  forecast-center campus, parking and walkable access ramp, public profile logo,
-  Doppler tower, instruments, map/search entry, and a website-only floating
-  `@followville_faw` proximity tag matching claimed-home labels, plus landmark collision and its own streamed
-  chunk. It is seed 718, non-claimable, and adds no follower, resident, daily
-  growth, or ordinary address; population remains 656 and address 513 remains
-  next. Local state has 718 records while `origin/main`, Supabase, and the live
-  site remain at 717 until Cade authorizes publication.
 
 - The web-only high-quality interior and homeowner furnishing release shipped
   from `codex/interior-builder-polish`. It replaces the visible primitive room
@@ -56,7 +63,8 @@ workflow.
   matching for the claim-record array so verified owners actually see
   **Furnish my home** after entering their claimed house.
 
-- Day 32 is population 656 with 717 total records. One guarded +31 growth
+- Day 32 was population 656 with 717 total records before the separate local
+  weather-station record. One guarded +31 growth
   consumed plan IDs 482-512 / seeds 687-717: nineteen homes finished Timber
   Bend Road and twelve opened Lodgepole Loop. Address 513 is next. The
   insert-only houses sync added all 31 new rows without changing existing
