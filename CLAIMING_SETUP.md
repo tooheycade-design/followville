@@ -195,22 +195,46 @@ Sources from the research: [Meta webhook docs](https://developers.facebook.com/d
 [business_discovery limits](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery/),
 [app-review reality check](https://developers.chatwoot.com/self-hosted/instagram-app-review).
 
-## 5. House customization (shipped 2026-07-15)
+## 5. House customization (exterior shipped 2026-07-15; interior builder prepared 2026-08-03)
 
-`claims.customization` stores only normalized palette IDs in this shape:
+`claims.customization` stores normalized exterior palette IDs and, when an
+owner has saved a furnished room, an approved interior layout in this shape:
 
 ```json
-{"version":1,"wall":"sage","roof":"charcoal","door":"red","yard":"flowers"}
+{
+  "version": 2,
+  "wall": "sage",
+  "roof": "charcoal",
+  "door": "red",
+  "yard": "flowers",
+  "interior": [{"item":"couch_l","x":-4.5,"z":1.25,"r":1}]
+}
 ```
 
 Allowed values are defined in both `supabase_schema.sql` (the authoritative
-security validation) and `town.html` (the picker/render palette). Keep those two
-lists synchronized when adding an option. Never accept arbitrary CSS colors or
-arbitrary decoration/model URLs from a client.
+security validation) and the browser catalogs (`town.html` for exterior and
+`interior-system.js` for interior). Keep those lists synchronized when adding
+an option. Never accept arbitrary CSS colors, model URLs, or client-supplied
+asset paths.
 `update_my_customization(bigint,jsonb)` is intentionally executable only by
 `authenticated` and updates the requested row only when it matches
 `auth.uid()`; `anon` and `PUBLIC` have no execute grant. Re-running the complete
 schema safely creates/replaces the RPC without changing existing claim rows.
+
+The optional `interior` array is limited to 48 known catalog items. PostgreSQL
+requires exactly `item`, `x`, `z`, and `r`, clamps the system to room bounds,
+canonicalizes positions to a 0.25m grid, accepts only quarter-turn rotations,
+and rejects payloads over 8192 bytes. An exterior-only save deliberately
+preserves an existing interior array. Homes without an array render the
+curated 34-item default layout; they do not need a database backfill. The
+2026-08-03 migration is
+`supabase_migrations/20260803_interior_builder_v1.sql`.
+
+Only the verified owner sees **Furnish my home**. Layouts remain in the existing
+claim row and flow to visitors over the existing public-claim/Realtime path;
+there is no second interior table and no direct client `claims` update grant.
+The catalog and interaction architecture are documented in
+`INTERIOR_SYSTEM.md`.
 
 Yard pieces are browser-only and are placed from the exported home's actual
 root rotation, its full-height structural silhouette, and the distance to the

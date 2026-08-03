@@ -1248,6 +1248,7 @@ import {
   AVATAR_CATALOG, DEFAULT_AVATAR, avatarChoice, avatarConfigKey,
   createAvatarModel, disposeAvatarModel, normalizeAvatarConfig, preloadAvatarAssets, updateAvatarMotion
 } from "./avatar-system.js";
+import { createInteriorSystem, normalizeInteriorLayout } from "./interior-system.js";
 
 const pageParams = new URLSearchParams(location.search);
 const previewView = pageParams.get("preview");
@@ -2333,6 +2334,7 @@ function addTownAtmosphere(){
    instead of acting as the collision body, which keeps movement, map markers,
    claims, streaming, and multiplayer honest while making the avatar visible. */
 const playerPosition = new THREE.Vector3(0,0,-70);
+let interiorSystem = null;
 let playerJumpOffset=0;
 let playerJumpVelocity=0;
 let playerJumpPeak=0;
@@ -2423,10 +2425,12 @@ function cameraColliderDistanceLimit(target,desired){
   const desiredDistance=desired.distanceTo(target);
   if(desiredDistance<.7)return desiredDistance;
   let safeT=1;
+  const activeColliders = window.inHouseInterior && interiorSystem
+    ? interiorSystem.cameraColliders() : colliders;
   for(let i=2;i<=28;i++){
     const t=i/28;
     const sampleX=target.x+dx*t,sampleZ=target.z+dz*t;
-    for(const collider of colliders){
+    for(const collider of activeColliders){
       if(!pointInsideCameraCollider(sampleX,sampleZ,collider))continue;
       safeT=Math.max(.12,(i-1)/28);i=29;break;
     }
@@ -3695,6 +3699,7 @@ if (isTouch){
   let lookTouchId = null, lastX = 0, lastY = 0, gameplayPinchDistance = 0;
 
   lookZone.addEventListener("touchstart", e => {
+    if(interiorSystem?.isBuildMode())return;
     if(e.targetTouches.length>=2){
       const a=e.targetTouches[0],b=e.targetTouches[1];gameplayPinchDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
       lookTouchId=null;return;
@@ -3706,6 +3711,7 @@ if (isTouch){
   }, { passive:false });
 
   lookZone.addEventListener("touchmove", e => {
+    if(interiorSystem?.isBuildMode())return;
     e.preventDefault();
     if(e.targetTouches.length>=2){
       const a=e.targetTouches[0],b=e.targetTouches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
@@ -4028,7 +4034,7 @@ function houseInteriorSurfaceHeight(x, z){
 
 function walkSurfaceHeight(x,z){
   if (typeof window !== "undefined" && window.inHouseInterior && Math.abs(x - 10000) <= 9.0 && Math.abs(z - 10000) <= 7.0) {
-    return 500.20;
+    return 500.00;
   }
   return Math.max(0,regionalTerrainHeight(x,z),
                   downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
@@ -5063,7 +5069,37 @@ function initInteriorRoomInstance() {
   const ambientRoomLight = new THREE.AmbientLight(0xffffff, 0.65);
   interiorRoomGroup.add(ambientRoomLight);
 }
-initInteriorRoomInstance();
+// Superseded 2026-08-03: keep the first-generation primitive room as a
+// short-term rollback reference, but do not construct its meshes or lights.
+// interior-system.js owns architecture, furnishings and build mode, so the
+// retired implementation has no runtime or rendering cost.
+interiorRoomGroup.visible = false;
+
+interiorSystem = createInteriorSystem({
+  scene,
+  renderer,
+  camera,
+  getPlayerPosition: () => playerPosition,
+  resolveCollision: resolvePlayerCollision,
+  showToast,
+  saveLayout: async (houseId, layout) => {
+    if (!sb || !session || !myClaims.includes(Number(houseId))) {
+      throw new Error("Only this home's verified owner can save furnishings.");
+    }
+    const current = claimCustomizations.get(Number(houseId)) || myClaim?.customization || {};
+    const payload = normalizeCustomization({ ...current, interior:layout });
+    const { data, error } = await sb.rpc("update_my_customization", {
+      p_house_id:Number(houseId), p_customization:payload
+    });
+    if (error) throw new Error(error.message?.includes("bad_customization")
+      ? "That layout wasn't accepted. Move the item inside the room and try again."
+      : "Couldn't save the interior yet. " + (error.message || "Please try again."));
+    if (data && Number(data.house_id) === Number(myClaim?.house_id)) myClaim = data;
+    claimCustomizations.set(Number(houseId), data?.customization || payload);
+    await refreshClaims();
+  }
+});
+window.__followvilleInteriorQA = interiorSystem;
 
 function applyInteriorTheme(building) {
   const type = building?.type || "house";
@@ -5124,9 +5160,21 @@ function enterHouseInterior(doorTarget) {
     requestAnimationFrame(() => { fadeEl.style.opacity = "1"; });
   }
 
-  setTimeout(() => {
+  setTimeout(async () => {
     window.inHouseInterior = true;
-    placePlayerAt(10000, 10005.5, Math.PI); // Facing inward from foyer double doors
+    const saved = claimCustomizations.get(Number(doorTarget.houseId));
+    try {
+      await interiorSystem?.enter({
+        building:doorTarget.building,
+        houseId:Number(doorTarget.houseId),
+        layout:saved && Object.prototype.hasOwnProperty.call(saved, "interior") ? saved.interior : null,
+        isOwner:myClaims.includes(Number(doorTarget.houseId))
+      });
+    } catch (error) {
+      console.error("Followville interior failed to load", error);
+      showToast("The furniture didn't finish loading. Try entering again.");
+    }
+    placePlayerAt(10000, 10004.0, 0); // Facing inward with camera clearance from the foyer doors
     showToast(`Welcome to @${doorTarget.ownerHandle}'s House (${theme.name})!`, 5000);
 
     setTimeout(() => {
@@ -5148,6 +5196,7 @@ function exitHouseInterior() {
 
   setTimeout(() => {
     window.inHouseInterior = false;
+    interiorSystem?.exit();
     currentInteriorHouse = null;
     if (savedOpenWorldPosition) {
       placePlayerAt(savedOpenWorldPosition.x, savedOpenWorldPosition.z, savedOpenWorldYaw);
@@ -5218,7 +5267,7 @@ const HOME_OPTIONS = {
 // Paused 2026-07-15 at Cade's request. Keep normalized saved choices intact so
 // a future redesign can restore them without deleting homeowner data.
 const YARD_DECORATIONS_ENABLED = false;
-const HOME_DEFAULTS = { version:1, wall:"original", roof:"original", door:"original", yard:"none" };
+const HOME_DEFAULTS = { version:2, wall:"original", roof:"original", door:"original", yard:"none" };
 const HOME_COLORS = Object.fromEntries(
   ["wall", "roof", "door"].flatMap(key => HOME_OPTIONS[key].map(([id, , color]) => [`${key}:${id}`, color]))
 );
@@ -5229,6 +5278,8 @@ function normalizeCustomization(value){
   for (const key of ["wall", "roof", "door", "yard"]){
     if (HOME_OPTIONS[key].some(([id]) => id === input[key])) out[key] = input[key];
   }
+  const interior = normalizeInteriorLayout(input.interior);
+  if (interior !== null) out.interior = interior;
   return out;
 }
 
@@ -6657,6 +6708,11 @@ async function refreshClaims(){
     rebuildNameTags();
     rebuildClaimSpots();
     applyAllHomeCustomizations();
+    if (window.inHouseInterior && currentInteriorHouse && interiorSystem){
+      const current = claimCustomizations.get(Number(currentInteriorHouse.houseId));
+      interiorSystem.refresh(current && Object.prototype.hasOwnProperty.call(current, "interior")
+        ? current.interior : null);
+    }
     if (townMapOpen()) refreshTownMap();
   }
 }
@@ -8470,7 +8526,7 @@ function animate(){
   }
 
   let localMovementSpeed=0;
-  if (gameRunning){
+  if (gameRunning && !interiorSystem?.isBuildMode()){
     const frameDistance = (move.run ? 11 : 5.5) * dt;
     movementDelta.set(0,0,0);
     camera.getWorldDirection(movementForward);movementForward.y=0;
@@ -8490,6 +8546,7 @@ function animate(){
     // Shape-aware push-out against building/car footprints and tree trunks.
     const p = playerPosition;
     for (const col of colliders) resolvePlayerCollision(p, col);
+    if (window.inHouseInterior) interiorSystem?.resolvePlayer(p);
     updatePlayerJump(dt);
     p.y=walkSurfaceHeight(p.x,p.z)+playerJumpOffset;
     if(localAvatar){

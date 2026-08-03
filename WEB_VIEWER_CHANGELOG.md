@@ -3,6 +3,28 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Home interior furnishing release candidate (2026-08-03)
+- Replaced the visible primitive furniture prototype with a complete enclosed
+  four-room home: warm house-derived materials, wood-plank floors, ceiling,
+  framed windows, baseboards, doorway trim, practical lighting, and 34
+  professionally modeled default furnishings. The retired prototype is kept
+  only as clearly marked rollback code and is no longer constructed at runtime.
+- Added an owner-only furnishing mode with six catalog categories, 25 locally
+  hosted CC0 low-poly items, real model thumbnails, quarter-grid placement,
+  rotate/delete/undo/default actions, overlap and room-boundary guards, a
+  48-item budget, desktop pointer controls, and landscape-phone touch controls.
+  Visitors see the saved layout through the existing claim Realtime flow.
+- Interior models load only after entering a home. The complete curated catalog
+  plus thumbnails is under 1 MB and no third-party host is contacted at runtime.
+- Extended `update_my_customization` to a strictly validated version-2 interior
+  payload. The owner check, hard-coded item allowlist, coordinate/rotation
+  bounds, payload limit, and authenticated-only execute grant are enforced in
+  PostgreSQL. The live migration preserved all 40 claims across 39 accounts and
+  the exact ownership/customization digest; no claim row changed.
+- Desktop and landscape-phone visual interaction passes succeeded, including
+  real home entry/exit and add/rotate/delete/cancel flows. This web release
+  candidate changes no world state, population, Blender geometry, or GLB.
+
 ## Day 32 Timber Bend growth and campaign reveal (2026-08-02)
 - Grew the canonical town once from population 625 to 656 with 31 ordinary
   claimable homes: plan IDs 482-500 finished Timber Bend Road and 501-512

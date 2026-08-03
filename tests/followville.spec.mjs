@@ -853,3 +853,45 @@ test("claimed house door transitions into dedicated preset interior instance and
   await expect.poll(() => page.evaluate(() => window.inHouseInterior)).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test("verified homeowners can furnish a shared low-poly interior", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html?admin=1#walk");
+  await waitForTown(page);
+  await page.evaluate(() => {
+    const b = (window.worldBuildings || []).find(item => Number(item.seed) === 15) || (window.worldBuildings || [])[0];
+    window.enterHouseInterior({ building:b, houseId:Number(b.seed), ownerHandle:"testfollower" });
+  });
+  await expect.poll(() => page.evaluate(() => window.inHouseInterior)).toBe(true);
+  await expect(page.locator("body")).toHaveAttribute("data-interior-loaded", "true", { timeout:30_000 });
+  await page.evaluate(async () => {
+    const b = (window.worldBuildings || []).find(item => Number(item.seed) === 15) || (window.worldBuildings || [])[0];
+    await window.__followvilleInteriorQA.enter({ building:b, houseId:Number(b.seed), layout:null, isOwner:true });
+  });
+
+  await expect(page.locator("body")).toHaveAttribute("data-interior-loaded", "true");
+  const startingCount = Number(await page.locator("body").getAttribute("data-interior-items"));
+  expect(startingCount).toBeGreaterThan(20);
+  await expect(page.locator("#interiorBuildToggle")).toBeVisible();
+  await page.locator("#interiorBuildToggle").click();
+  await expect(page.locator("#interiorBuildPanel")).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-interior-build-mode", "true");
+
+  await page.locator('[data-item="light_floor"]').click();
+  await page.mouse.move(380, 560, { steps:8 });
+  await page.mouse.click(380, 560);
+  await expect.poll(() => page.locator("body").getAttribute("data-interior-items"))
+    .toBe(String(startingCount + 1));
+  await page.locator('[data-action="delete"]').click();
+  await expect.poll(() => page.locator("body").getAttribute("data-interior-items"))
+    .toBe(String(startingCount));
+  await page.locator('[data-action="cancel"]').click();
+  await expect(page.locator("#interiorBuildPanel")).toBeHidden();
+  await expect(page.locator("body")).not.toHaveAttribute("data-interior-build-mode", "true");
+
+  await page.evaluate(() => {
+    window.__followvilleInteriorQA.exit();
+    window.inHouseInterior = false;
+  });
+  expect(errors).toEqual([]);
+});

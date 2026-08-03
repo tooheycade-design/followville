@@ -376,7 +376,8 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 | `AI_HANDOFF.md` | Cheap-model manual. |
 
 Other docs: `CLAIMING_SETUP.md`, `AVATAR_SYSTEM.md` (read before touching the
-avatar catalog, rigs, persistence or controls), `DOWNTOWN_TERRAIN_HANDOFF.md`
+avatar catalog, rigs, persistence or controls), `INTERIOR_SYSTEM.md` (read
+before touching the room, furnishing catalog, persistence or builder), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `NEIGHBORHOOD_EXPANSION_PLAN.md`,
 `WEB_VIEWER_CHANGELOG.md`.
 
