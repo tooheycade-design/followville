@@ -195,7 +195,7 @@ Sources from the research: [Meta webhook docs](https://developers.facebook.com/d
 [business_discovery limits](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery/),
 [app-review reality check](https://developers.chatwoot.com/self-hosted/instagram-app-review).
 
-## 5. House customization (exterior shipped 2026-07-15; interior builder prepared 2026-08-03)
+## 5. House customization (exterior shipped 2026-07-15; interior builder released 2026-08-03)
 
 `claims.customization` stores normalized exterior palette IDs and, when an
 owner has saved a furnished room, an approved interior layout in this shape:
@@ -226,7 +226,7 @@ requires exactly `item`, `x`, `z`, and `r`, clamps the system to room bounds,
 canonicalizes positions to a 0.25m grid, accepts only quarter-turn rotations,
 and rejects payloads over 8192 bytes. An exterior-only save deliberately
 preserves an existing interior array. Homes without an array render the
-curated 34-item default layout; they do not need a database backfill. The
+curated 32-item default layout; they do not need a database backfill. The
 2026-08-03 migrations are
 `supabase_migrations/20260803_interior_builder_v1.sql` and the narrow
 `20260803_interior_wall_alignment.sql` follow-up. The latter permits fixture
@@ -235,6 +235,8 @@ centers to reach the real inside wall faces; it changes no claim data.
 Only the verified owner sees **Furnish my home**. Layouts remain in the existing
 claim row and flow to visitors over the existing public-claim/Realtime path;
 there is no second interior table and no direct client `claims` update grant.
+Frontend ownership checks compare the requested ID with each claim record's
+`house_id`; `myClaims` contains objects, not numeric IDs.
 The catalog and interaction architecture are documented in
 `INTERIOR_SYSTEM.md`.
 

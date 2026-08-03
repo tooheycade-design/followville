@@ -6,7 +6,7 @@ Kept here (rather than just in chat) so it survives across sessions.
 ## Home interior furnishing release (2026-08-03)
 - Replaced the visible primitive furniture prototype with a complete enclosed
   four-room home: warm house-derived materials, wood-plank floors, ceiling,
-  framed windows, baseboards, doorway trim, practical lighting, and 34
+  framed windows, baseboards, doorway trim, practical lighting, and 32
   professionally modeled default furnishings. The retired prototype is kept
   only as clearly marked rollback code and is no longer constructed at runtime.
 - Added an owner-only furnishing mode with six catalog categories, 25 locally
@@ -31,6 +31,12 @@ Kept here (rather than just in chat) so it survives across sessions.
   while building but no longer block the player or camera during ordinary play.
   The narrow wall-alignment migration changed validator bounds only and left
   the 40-claim / 39-account snapshot byte-for-byte unchanged.
+- Removed the two default curtain models after review showed only their dark
+  rods reading clearly against the windows, and rotated/aligned the fireplace
+  so its front faces the living room flush with the wall. Fixed the homeowner
+  check to accept the actual claim-record objects returned by profile status;
+  **Furnish my home** now appears through real owner entry instead of only the
+  test-only forced-owner path. No database, claim, or world asset changed.
 
 ## Day 32 Timber Bend growth and campaign reveal (2026-08-02)
 - Grew the canonical town once from population 625 to 656 with 31 ordinary

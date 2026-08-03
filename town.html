@@ -5075,6 +5075,13 @@ function initInteriorRoomInstance() {
 // retired implementation has no runtime or rendering cost.
 interiorRoomGroup.visible = false;
 
+function ownsHouseId(houseId) {
+  const targetId = Number(houseId);
+  return Number.isFinite(targetId) && Array.isArray(myClaims) && myClaims.some(claim =>
+    Number(claim?.house_id ?? claim) === targetId
+  );
+}
+
 interiorSystem = createInteriorSystem({
   scene,
   renderer,
@@ -5083,7 +5090,7 @@ interiorSystem = createInteriorSystem({
   resolveCollision: resolvePlayerCollision,
   showToast,
   saveLayout: async (houseId, layout) => {
-    if (!sb || !session || !myClaims.includes(Number(houseId))) {
+    if (!sb || !session || !ownsHouseId(houseId)) {
       throw new Error("Only this home's verified owner can save furnishings.");
     }
     const current = claimCustomizations.get(Number(houseId)) || myClaim?.customization || {};
@@ -5101,6 +5108,7 @@ interiorSystem = createInteriorSystem({
 });
 window.__followvilleInteriorQA = interiorSystem;
 if(localDesignPreview){
+  window.__followvilleInteriorOwnerQA=(claims)=>{ myClaims=Array.isArray(claims)?claims:[]; };
   window.__followvilleInteriorAuditCamera=(eye,look)=>{
     gameRunning=false;
     camera.position.set(Number(eye[0]),Number(eye[1]),Number(eye[2]));
@@ -5137,7 +5145,7 @@ function findNearbyClaimedHouseDoor(px, pz) {
     if (!b || !["house", "ringhouse", "lanehouse", "storybookhouse", "mushroomhouse", "casinohouse", "cathouse", "castlehouse", "eiffelhouse", "flowerhouse", "burjhouse", "toilethouse", "beachhouse", "cottagehouse"].includes(b.type)) continue;
     const houseId = Number(b.seed);
     const dbOwner = claimedBy.get(houseId);
-    const isMyClaim = Array.isArray(myClaims) && myClaims.includes(houseId);
+    const isMyClaim = ownsHouseId(houseId);
     // Only allow entering homes that have actually been claimed by a follower!
     const ownerHandle = dbOwner || (isMyClaim ? myProfile?.instagram_handle : null) || (claimedBy.size === 0 ? (b.follower || b.owner) : null);
     if (!ownerHandle) continue; // Only claimed homes!
@@ -5176,7 +5184,7 @@ function enterHouseInterior(doorTarget) {
         building:doorTarget.building,
         houseId:Number(doorTarget.houseId),
         layout:saved && Object.prototype.hasOwnProperty.call(saved, "interior") ? saved.interior : null,
-        isOwner:myClaims.includes(Number(doorTarget.houseId))
+        isOwner:ownsHouseId(doorTarget.houseId)
       });
     } catch (error) {
       console.error("Followville interior failed to load", error);

@@ -856,18 +856,18 @@ test("claimed house door transitions into dedicated preset interior instance and
 
 test("verified homeowners can furnish a shared low-poly interior", async ({ page }) => {
   const errors = watchPageErrors(page);
-  await page.goto("/town.html?admin=1#walk");
+  await page.goto("/town.html?admin=1&local=1#walk");
   await waitForTown(page);
+  await expect.poll(() => page.evaluate(() =>
+    Boolean(window.__followvilleInteriorOwnerQA && window.enterHouseInterior && (window.worldBuildings || []).length)
+  ), { timeout:45_000 }).toBe(true);
   await page.evaluate(() => {
     const b = (window.worldBuildings || []).find(item => Number(item.seed) === 15) || (window.worldBuildings || [])[0];
+    window.__followvilleInteriorOwnerQA([{ house_id:Number(b.seed) }]);
     window.enterHouseInterior({ building:b, houseId:Number(b.seed), ownerHandle:"testfollower" });
   });
   await expect.poll(() => page.evaluate(() => window.inHouseInterior)).toBe(true);
   await expect(page.locator("body")).toHaveAttribute("data-interior-loaded", "true", { timeout:30_000 });
-  await page.evaluate(async () => {
-    const b = (window.worldBuildings || []).find(item => Number(item.seed) === 15) || (window.worldBuildings || [])[0];
-    await window.__followvilleInteriorQA.enter({ building:b, houseId:Number(b.seed), layout:null, isOwner:true });
-  });
 
   await expect(page.locator("body")).toHaveAttribute("data-interior-loaded", "true");
   const startingCount = Number(await page.locator("body").getAttribute("data-interior-items"));
@@ -880,6 +880,8 @@ test("verified homeowners can furnish a shared low-poly interior", async ({ page
       kitchen: layout.filter(item => kitchenIds.has(item.item)),
       bathroom: layout.filter(item => backWallIds.has(item.item)),
       tub: layout.find(item => item.item === "bathtub"),
+      fireplace: layout.find(item => item.item === "fireplace"),
+      curtains: layout.filter(item => item.item === "curtains_double"),
       colliderLabels: [...new Set(window.__followvilleInteriorQA.cameraColliders().map(item => item.label))]
     };
   });
@@ -887,6 +889,8 @@ test("verified homeowners can furnish a shared low-poly interior", async ({ page
   expect(roomAudit.kitchen.every(item => item.x === 8.5 && item.r === 1)).toBe(true);
   expect(roomAudit.bathroom.every(item => item.z === 6.5 && item.r === 2)).toBe(true);
   expect(roomAudit.tub).toMatchObject({ x:-8.1, z:3.25, r:0 });
+  expect(roomAudit.fireplace).toMatchObject({ x:8.5, z:-3.25, r:1 });
+  expect(roomAudit.curtains).toEqual([]);
   expect(roomAudit.colliderLabels).toEqual(["interior"]);
   await expect(page.locator("#interiorBuildToggle")).toBeVisible();
   await page.locator("#interiorBuildToggle").click();

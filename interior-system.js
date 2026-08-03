@@ -40,7 +40,7 @@ const CATEGORIES = ["Living", "Dining", "Kitchen", "Bedroom", "Bathroom", "Decor
 export const DEFAULT_INTERIOR_LAYOUT = Object.freeze([
   {item:"rug",x:4.25,z:-3.55,r:0},
   {item:"couch_l",x:4.25,z:-4.7,r:0},
-  {item:"fireplace",x:8.15,z:-3.25,r:3},
+  {item:"fireplace",x:8.5,z:-3.25,r:1},
   {item:"shelf_large",x:1.15,z:-6.55,r:0},
   {item:"light_floor",x:7.15,z:-5.8,r:0},
   {item:"houseplant",x:7.75,z:-6.0,r:0},
@@ -66,8 +66,6 @@ export const DEFAULT_INTERIOR_LAYOUT = Object.freeze([
   {item:"bathroom_sink",x:-5.45,z:6.5,r:2},
   {item:"washing_machine",x:-3.9,z:6.5,r:2},
   {item:"houseplant",x:-2.25,z:5.75,r:0},
-  {item:"curtains_double",x:5.8,z:6.3,r:0},
-  {item:"curtains_double",x:-5.8,z:6.3,r:0},
   {item:"light_ceiling",x:4.5,z:-3.5,r:0},
   {item:"light_ceiling",x:3.5,z:3.5,r:0},
   {item:"light_ceiling",x:-5.5,z:-3.5,r:0},

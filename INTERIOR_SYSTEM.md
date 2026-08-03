@@ -8,7 +8,7 @@ Status: released to production from `codex/interior-builder-polish` on
 - Entering a supported claimed home opens a complete 18m x 14m interior with a
   ceiling, framed windows, baseboards, wood-plank floor, warm practical lights,
   entrance doors, and living, dining/kitchen, bedroom, and bathroom zones.
-- A curated 34-piece default makes every unsaved home feel finished. Room walls
+- A curated 32-piece default makes every unsaved home feel finished. Room walls
   constrain the player and follow camera; furniture is deliberately non-blocking
   so compact rooms stay easy to move through.
 - Only the verified owner sees **Furnish my home**. The six catalog categories
@@ -16,6 +16,9 @@ Status: released to production from `codex/interior-builder-polish` on
   place it on a 0.25m floor grid, rotate or delete it, undo changes, restore the
   curated default, cancel, or save. Invalid overlaps and out-of-room placement
   are visibly rejected. A home may contain at most 48 pieces.
+- Owner matching reads `house_id` from the claim records returned by profile
+  status. Do not replace it with `myClaims.includes(id)`: that compares a
+  number with an object and silently hides the builder from real homeowners.
 - Desktop uses pointer placement; landscape phones use touch placement without
   camera-look stealing the gesture. Normal movement pauses while building.
 - Saved rooms are shared, not local decoration: visitors to the same house see
@@ -86,7 +89,10 @@ snapshot stayed 40 claims across 39 accounts with digest
 The release correction also turns every kitchen front into the room, aligns the
 kitchen and bathroom runs to their walls, and defines the bathtub by its true
 long axis at full size. Furniture footprints remain builder-only spacing rules;
-they are not gameplay or camera hitboxes.
+they are not gameplay or camera hitboxes. The subsequent room review removed
+the default curtain models and aligned the fireplace front flush to the living
+room wall; the curtain remains an approved optional catalog item for backward
+compatibility with saved layouts.
 
 ## Verification and rollback
 

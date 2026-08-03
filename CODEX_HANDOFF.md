@@ -31,7 +31,10 @@ workflow.
   the kitchen fronts into the room, places kitchen/bath fixtures flush to their
   walls, restores the bathtub's correct full-size long axis, and removes
   furniture gameplay hitboxes while retaining shell collision and build-mode
-  overlap checks.
+  overlap checks. The follow-up room review also removed the default curtains,
+  corrected the fireplace front/wall alignment, and fixed `town.html` ownership
+  matching for the claim-record array so verified owners actually see
+  **Furnish my home** after entering their claimed house.
 
 - Day 32 is population 656 with 717 total records. One guarded +31 growth
   consumed plan IDs 482-512 / seeds 687-717: nineteen homes finished Timber

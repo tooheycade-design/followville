@@ -50,7 +50,7 @@ the player/camera but remain overlap-checked while building. The builder support
 desktop and landscape-phone placement, rotate/delete/undo/default/cancel/save,
 quarter-grid snapping, overlap/boundary guards, and a 48-item cap. Visitors see
 saved layouts through existing claim Realtime; homes without saved layouts use
-the curated 34-item default and need no backfill.
+the curated 32-item default and need no backfill.
 
 The live `update_my_customization` RPC now accepts only a strict version-2
 interior allowlist and still derives ownership from `auth.uid()`. Its migration
@@ -60,6 +60,13 @@ invalid, preservation, and permission checks passed; the exact 40-claim /
 39-account digest stayed `754ed801b3514af5f546255efc54f53a`, so no claims,
 owners, or saved customizations changed. Read `INTERIOR_SYSTEM.md` before
 editing this system.
+
+The post-release visual/ownership correction removes curtains from the curated
+default, faces the fireplace into the living room flush with its wall, and
+normalizes `myClaims` claim objects by `house_id` before entry and saving. This
+last point is important: do not regress the checks to `myClaims.includes(id)`,
+which hides the owner builder because profile status returns claim records, not
+an array of numeric IDs.
 
 ## Current town (Day 32, 2026-08-02)
 
