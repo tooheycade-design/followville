@@ -392,6 +392,25 @@ export function updateAvatarMotion(group, { dt=0, speed=0, running=false }={}){
   avatar.visualRoot.position.y = THREE.MathUtils.lerp(avatar.visualRoot.position.y,bob,blend);
 }
 
+export function updateAvatarFishingPose(group,{dt=0,stage="waiting",phase=0,tension=0}={}){
+  const avatar=group?.userData?.avatar;
+  if(!avatar?.ready)return;
+  const blend=Math.min(1,dt*13);
+  const castSweep=stage==="casting"?Math.sin(Math.min(1,phase)*Math.PI):0;
+  const bitePull=stage==="bite"?.24:0;
+  const fightPull=THREE.MathUtils.clamp(tension,0,1)*.20;
+  for(const rig of avatar.rigs){
+    poseBone(rig,"upperarm_l",AXIS_X,-.82-castSweep*.48-bitePull,blend);
+    poseBone(rig,"upperarm_r",AXIS_X,-1.02-castSweep*.32-bitePull-fightPull,blend);
+    poseBone(rig,"lowerarm_l",AXIS_X,.72+castSweep*.18,blend);
+    poseBone(rig,"lowerarm_r",AXIS_X,.88+castSweep*.22+fightPull,blend);
+    poseBone(rig,"spine_02",AXIS_X,-.06-castSweep*.10+bitePull*.35,blend);
+    poseBone(rig,"head",AXIS_X,-.04+castSweep*.06,blend);
+  }
+  const bodyBob=stage==="bite"?Math.sin(performance.now()*.025)*.014:0;
+  avatar.visualRoot.position.y=THREE.MathUtils.lerp(avatar.visualRoot.position.y,bodyBob,blend);
+}
+
 export function disposeAvatarModel(group){
   if (!group) return;
   const materials = group.userData?.avatar?.materials;

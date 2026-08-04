@@ -170,13 +170,14 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("the fishing pond runs one immersive cast-to-catch scene with harder momentum", async ({ page }) => {
+test("the fishing pond casts in-world before the focused fish fight", async ({ page }) => {
   test.setTimeout(180_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?local=1&view=fishing#walk");
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","immersive-v3");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","world-v4");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-presentation","world-first");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
   // The pond's level shelf is authored in the shared terrain model, so its
   // centre is duplicated in town.html. Drift there puts the water back on the
@@ -184,13 +185,17 @@ test("the fishing pond runs one immersive cast-to-catch scene with harder moment
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond-datum","pass");
   await expect(page.locator("#fishPrompt")).toBeVisible();
   await page.locator("#fishPrompt").click();
-  await expect(page.locator("#fishingGame")).toBeVisible();
+  await expect(page.locator("#fishingGame")).toBeHidden();
+  await expect(page.locator("#worldFishingHud")).toBeVisible();
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","aim");
-  await expect(page.locator("#fishingScene")).toBeVisible();
-  await expect(page.locator("#fishingRod")).toBeVisible();
-  await expect(page.locator("#castMeter")).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-world-fishing-stage","aim");
+  await expect(page.locator('canvas[data-engine^="three.js"]')).toBeVisible();
+  await expect(page.locator("#worldCastMeter")).toBeVisible();
 
-  await page.locator("#fishAction").evaluate(async button=>{
+  // Keep the cast-to-hook sequence inside the page's own animation loop. In
+  // the two-worker suite, driver round-trips can exceed the deliberate 2.6s
+  // hook window even though the town rendered every gameplay state correctly.
+  const castFlow=await page.locator("#worldFishAction").evaluate(async button=>{
     button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:1}));
     await new Promise((resolve,reject)=>{
       const started=performance.now();
@@ -207,45 +212,65 @@ test("the fishing pond runs one immersive cast-to-catch scene with harder moment
       releaseWhenReady();
     });
     button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
-  });
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","casting");
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-cast",/good|great|perfect/);
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting",{timeout:5_000});
-  await expect(page.locator("#fishingCard")).toHaveAttribute("data-stage","waiting");
-  // Casting, waiting, hooking and fighting stay inside the same original
-  // dialog and pond scene; no intermediary instruction modal is mounted.
-  await expect(page.locator("#fishingGame[role=dialog]")).toHaveCount(1);
-  await expect(page.locator("#fishingScene")).toBeVisible();
-  await expect(page.locator("#castBobber")).toBeVisible();
-  // Wait for the bite and set the hook in the same page-side operation. On a
-  // loaded software renderer, returning to the driver between those steps can
-  // consume most of the deliberately short hook window.
-  const hookState=await page.locator("#fishAction").evaluate(async button=>{
+    let sawCasting=false,sawWaiting=false;
     await new Promise((resolve,reject)=>{
       const started=performance.now();
       const hookWhenBiting=()=>{
+        const stage=document.body.dataset.fishingGame;
+        if(stage==="casting")sawCasting=true;
+        if(stage==="waiting")sawWaiting=true;
         if(document.body.dataset.fishingGame==="bite")return resolve();
-        if(performance.now()-started>30_000)return reject(new Error(
+        if(performance.now()-started>45_000)return reject(new Error(
           "bite never arrived; game="+document.body.dataset.fishingGame));
         requestAnimationFrame(hookWhenBiting);
       };
       hookWhenBiting();
     });
     button.click();
-    return document.body.dataset.fishingGame;
+    return {
+      stage:document.body.dataset.fishingGame,
+      cast:document.body.dataset.fishingCast,
+      sawCasting,sawWaiting
+    };
   });
   expect(errors).toEqual([]);
-  expect(hookState).toBe("catching");
+  expect(castFlow).toMatchObject({stage:"catching",sawCasting:true,sawWaiting:true});
+  expect(castFlow.cast).toMatch(/good|great|perfect/);
+  await expect(page.locator("#fishingGame")).toBeVisible();
+  await expect(page.locator("#worldFishingHud")).toBeHidden();
   await expect(page.locator("#catchGame")).toBeVisible();
-  await expect(page.locator("#fishingScene")).toBeVisible();
+  await expect(page.locator("#fishingScene")).toBeHidden();
   await expect(page.locator("#catchRarity")).toHaveText("Common");
   await expect(page.locator("#catchBehavior")).toContainText("smooth movement");
+
+  // A boundary contact must replace the unreachable target, not merely clamp
+  // the visible icon for one frame. Verify both ends drive the fish back into
+  // playable water with matching target and velocity directions.
+  expect(await page.evaluate(()=>window.__followvilleFishingQA.forceBoundary("bottom"))).toBe(true);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-boundary","bottom");
+  let boundaryMotion=await page.locator("body").evaluate(body=>({
+    target:Number(body.dataset.fishingFishTarget),velocity:Number(body.dataset.fishingFishVelocity)
+  }));
+  expect(boundaryMotion.target).toBeGreaterThan(.20);
+  expect(boundaryMotion.velocity).toBeGreaterThan(0);
+  expect(await page.evaluate(()=>window.__followvilleFishingQA.forceBoundary("top"))).toBe(true);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-boundary","top");
+  boundaryMotion=await page.locator("body").evaluate(body=>({
+    target:Number(body.dataset.fishingFishTarget),velocity:Number(body.dataset.fishingFishVelocity)
+  }));
+  expect(boundaryMotion.target).toBeLessThan(.80);
+  expect(boundaryMotion.velocity).toBeLessThan(0);
+  // Restore the audit fish near the catch zone before playing normally. The
+  // top-edge probe is an artificial teleport, not a state a Common fish can
+  // reach at the opening of a real round.
+  expect(await page.evaluate(()=>window.__followvilleFishingQA.forceBoundary("bottom"))).toBe(true);
 
   // Play through the public binary input: hold while the catch-zone center is
   // below the fish, release before it overshoots. This validates acceleration,
   // momentum, overlap progress and success rather than mutating internal state.
-  await page.evaluate(async ()=>{
+  const catchAudit=await page.evaluate(async ()=>{
     let pressed=false;
+    let sawLocked=false;
     const setPressed=next=>{
       if(next===pressed)return;
       pressed=next;
@@ -257,6 +282,7 @@ test("the fishing pond runs one immersive cast-to-catch scene with harder moment
     let previousCenter=null;
     let previousTime=performance.now();
     while(document.body.dataset.fishingGame==="catching"){
+      if(document.body.dataset.fishingLock==="locked")sawLocked=true;
       const fish=parseFloat(document.getElementById("catchFish").style.bottom)/100;
       const barBottom=parseFloat(document.getElementById("catchBar").style.bottom)/100;
       const barHeight=parseFloat(document.getElementById("catchBar").style.height)/100;
@@ -277,12 +303,15 @@ test("the fishing pond runs one immersive cast-to-catch scene with harder moment
       await new Promise(resolve=>setTimeout(resolve,20));
     }
     setPressed(false);
+    return {sawLocked};
   });
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","caught");
-  await expect(page.locator("#caughtBadge")).toContainText(
-    /You caught a Common fish/);
-  await page.getByRole("button",{name:"back to the pond"}).click();
+  expect(catchAudit.sawLocked).toBe(true);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","payoff");
   await expect(page.locator("#fishingGame")).toBeHidden();
+  await expect(page.locator("#worldFishingHud")).toBeVisible();
+  await expect(page.locator("#worldFishingStatus")).toContainText(/landed a Common fish/);
+  await page.getByRole("button",{name:"put the rod away"}).click();
+  await expect(page.locator("#worldFishingHud")).toBeHidden();
   await expect(page.locator("#fishPrompt")).toBeVisible();
   expect(errors).toEqual([]);
 });

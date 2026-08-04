@@ -378,6 +378,23 @@
     display:inline-block; margin-right:7px; padding:1px 8px; border-radius:6px;
     background:#fff; color:#12394b; font-weight:850;
   }
+  #worldFishingHud {
+    position:fixed; z-index:28; left:50%; bottom:24px; transform:translateX(-50%);
+    display:none; width:min(520px,calc(100vw - 28px)); padding:12px; border-radius:18px;
+    background:rgba(8,38,51,.91); color:#fff; border:1px solid rgba(255,255,255,.28);
+    box-shadow:0 16px 42px rgba(0,0,0,.38); backdrop-filter:blur(9px); text-align:center;
+  }
+  #worldFishingHud.open { display:block; }
+  #worldFishingStatus { margin:0 6px 9px; font-size:13px; font-weight:800; line-height:1.35; }
+  #worldCastRow { display:flex; align-items:center; gap:9px; }
+  #worldCastMeter { position:relative; flex:1; height:18px; overflow:hidden; border-radius:9px; border:1px solid rgba(255,255,255,.65); background:linear-gradient(90deg,#879883 0 24%,#c4ad68 25% 44%,#68a56e 45% 79%,#e7c45d 80% 100%); }
+  #worldCastTarget { position:absolute; inset:0 14% 0 auto; width:20%; border-inline:2px solid rgba(255,255,255,.9); background:rgba(255,239,124,.24); }
+  #worldCastFill { position:absolute; inset:0 auto 0 0; width:0; background:linear-gradient(90deg,#f2e6a4,#fff4a7); box-shadow:0 0 10px rgba(255,240,132,.72); }
+  #worldCastRating { flex:0 0 66px; color:#ffe16f; font-size:11px; font-weight:950; text-align:right; text-transform:uppercase; }
+  #worldFishAction { width:100%; min-height:46px; margin-top:9px; border:0; border-radius:12px; background:#f0b34a; color:#173246; font:900 14px inherit; cursor:pointer; touch-action:none; }
+  #worldFishAction.bite { background:#cf5132; color:#fff; animation:fishBitePulse .45s ease-in-out infinite alternate; }
+  #worldFishingHud.payoff #worldCastRow { display:none; }
+  #worldFishingClose { margin-top:8px; border:0; background:none; color:#d5e8eb; font:750 11px inherit; text-decoration:underline; cursor:pointer; }
   #houseEnterPrompt {
     position:fixed; bottom:92px; left:50%; transform:translateX(-50%); z-index:9;
     display:none; border:1px solid rgba(255,255,255,.35); border-radius:24px;
@@ -414,6 +431,9 @@
   #fishingHeader span { color:#65727a; font-size:11px; font-weight:850; letter-spacing:1.4px; text-transform:uppercase; }
   #fishingPlayfield { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; transition:grid-template-columns .38s ease; }
   #fishingCard[data-stage="catching"] #fishingPlayfield,#fishingCard[data-stage="caught"] #fishingPlayfield,#fishingCard.fight[data-stage="escaped"] #fishingPlayfield { grid-template-columns:minmax(0,1fr) minmax(250px,.72fr); }
+  #fishingCard[data-stage="catching"],#fishingCard.fight[data-stage="escaped"] { width:min(370px,calc(100vw - 24px)); }
+  #fishingCard[data-stage="catching"] #fishingPlayfield,#fishingCard.fight[data-stage="escaped"] #fishingPlayfield { grid-template-columns:1fr; }
+  #fishingCard[data-stage="catching"] #fishingScene,#fishingCard.fight[data-stage="escaped"] #fishingScene { display:none; }
   #fishingScene {
     position:relative; min-height:312px; overflow:hidden; border-radius:20px;
     background:linear-gradient(#9cd3d4 0 43%,#5db4bd 43% 48%,#287d92 48% 100%);
@@ -510,6 +530,8 @@
     box-shadow:inset 0 0 14px rgba(229,255,199,.38),0 0 9px rgba(163,235,115,.45);
   }
   #catchBar::after { content:"CATCH ZONE"; position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); color:rgba(239,255,221,.8); font-size:9px; font-weight:900; letter-spacing:1px; white-space:nowrap; }
+  #catchBar.locked { border-color:#fff7a9; background:linear-gradient(90deg,rgba(126,223,113,.72),rgba(223,249,116,.90),rgba(126,223,113,.72)); box-shadow:inset 0 0 18px rgba(255,255,205,.62),0 0 16px rgba(240,246,116,.82); }
+  #catchBar.locked::after { content:"LOCKED ON"; color:#173f45; }
   #catchFish {
     position:absolute; left:50%; bottom:50%; z-index:3; width:58px; height:30px;
     transform:translate(-50%,50%); filter:drop-shadow(0 4px 3px rgba(0,25,42,.32));
@@ -517,6 +539,13 @@
   #catchFish::before { content:""; position:absolute; left:11px; top:5px; width:37px; height:21px; border-radius:65% 48% 48% 65%; background:var(--fish-color,#f5c55b); box-shadow:inset 0 -5px rgba(0,0,0,.12); }
   #catchFish::after { content:""; position:absolute; left:1px; top:6px; border-top:10px solid transparent; border-bottom:10px solid transparent; border-right:16px solid var(--fish-color,#f5c55b); }
   #catchFishEye { position:absolute; right:12px; top:10px; z-index:2; width:5px; height:5px; border-radius:50%; background:#102b3b; box-shadow:0 0 0 2px #fff; }
+  #catchFishWake { position:absolute; z-index:-1; left:-22px; top:9px; width:18px; height:10px; opacity:.48; }
+  #catchFishWake::before { content:""; position:absolute; width:6px; height:6px; border:2px solid rgba(223,251,255,.78); border-radius:50%; box-shadow:-10px 5px 0 -1px rgba(223,251,255,.48),-17px -2px 0 -2px rgba(223,251,255,.38); animation:fishWake .72s ease-out infinite; }
+  #catchFish.boundary-turn { filter:drop-shadow(0 4px 3px rgba(0,25,42,.32)) brightness(1.22); }
+  #catchGame[data-behavior="dart"] #catchFishWake::before { animation-duration:.28s; box-shadow:-10px 5px 0 0 rgba(223,251,255,.65),-19px -2px 0 -1px rgba(223,251,255,.55); }
+  #catchGame[data-behavior="floater"] #catchFish::before { box-shadow:inset 0 -5px rgba(0,0,0,.12),0 0 13px rgba(204,241,255,.78); }
+  #catchGame[data-behavior="sinker"] #catchFishWake { transform:rotate(-24deg); }
+  #catchGame[data-behavior="smooth"] #catchFishWake { opacity:.30; }
   #catchCrown { display:none; position:absolute; left:50%; top:-11px; transform:translateX(-50%); color:#ffe26b; font-size:17px; text-shadow:0 1px 2px #654a00; }
   #catchReadout { display:none; align-items:center; justify-content:center; gap:8px; margin:10px 0 2px; color:#2d5964; font-size:12px; font-weight:800; }
   #catchReadout.open { display:flex; }
@@ -541,6 +570,7 @@
   @keyframes biteMark { to{transform:translateX(-50%) scale(1.08) rotate(4deg)} }
   @keyframes throwCallout { 0%{opacity:0;transform:translate(-50%,6px) scale(.75) rotate(-2deg)} 18%,70%{opacity:1;transform:translate(-50%,0) scale(1) rotate(-2deg)} 100%{opacity:0;transform:translate(-50%,-12px) scale(.96) rotate(-2deg)} }
   @keyframes catchBoardIn { from{opacity:0;transform:translateX(24px) scale(.96)} to{opacity:1;transform:none} }
+  @keyframes fishWake { from{transform:translateX(5px) scale(.65);opacity:.85} to{transform:translateX(-8px) scale(1.25);opacity:0} }
 
   @media (max-height:680px) {
     #fishingCard { padding:12px 16px; }
@@ -1153,6 +1183,12 @@
 <button id="fishPrompt" type="button"><span class="key">E</span><span id="fishPromptText">fish from the dock</span></button>
 <button id="houseEnterPrompt" type="button"><span id="houseEnterRing"></span><span class="key">E</span><span id="houseEnterText">enter home</span></button>
 <div id="houseTransitionFade"></div>
+<section id="worldFishingHud" aria-label="In-world fishing controls" aria-hidden="true">
+  <div id="worldFishingStatus">Hold to build throw power.</div>
+  <div id="worldCastRow"><div id="worldCastMeter"><div id="worldCastTarget"></div><div id="worldCastFill"></div></div><span id="worldCastRating">hold</span></div>
+  <button id="worldFishAction" type="button">hold to cast</button>
+  <button id="worldFishingClose" type="button">put the rod away</button>
+</section>
 <section id="fishingGame" role="dialog" aria-modal="true" aria-labelledby="fishingTitle" aria-hidden="true">
   <div id="fishingCard" data-stage="aim">
     <div id="fishingHeader"><h2 id="fishingTitle">Followville Fishing</h2><span>one cast · one fight</span></div>
@@ -1173,7 +1209,7 @@
         <div id="catchProgress" aria-label="Catch progress"><div id="catchProgressFill"></div><div id="catchProgressIcon">★</div></div>
         <div id="fishTrack">
           <div id="catchBar"></div>
-          <div id="catchFish"><span id="catchFishEye"></span><span id="catchCrown">♛</span></div>
+          <div id="catchFish"><span id="catchFishWake"></span><span id="catchFishEye"></span><span id="catchCrown">♛</span></div>
         </div>
       </div>
     </div>
@@ -1311,7 +1347,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import {
   AVATAR_CATALOG, DEFAULT_AVATAR, avatarChoice, avatarConfigKey,
-  createAvatarModel, disposeAvatarModel, normalizeAvatarConfig, preloadAvatarAssets, updateAvatarMotion
+  createAvatarModel, disposeAvatarModel, normalizeAvatarConfig, preloadAvatarAssets, updateAvatarMotion,
+  updateAvatarFishingPose
 } from "./avatar-system.js";
 import { createInteriorSystem, normalizeInteriorLayout } from "./interior-system.js";
 
@@ -2600,7 +2637,10 @@ function updateThirdPersonCamera(force=false){
   document.body.dataset.cameraMode=firstPerson?"first-person":"third-person";
   document.body.dataset.cameraYaw=cameraOrbitYaw.toFixed(4);
   document.body.dataset.cameraPitch=cameraOrbitPitch.toFixed(4);
-  if(localAvatar)localAvatar.visible=!previewMode&&!firstPerson;
+  // Local review mode normally hides the walker so environment audits stay
+  // unobstructed. Fishing is explicitly avatar-led, so keep the caster visible
+  // there as well as in the live town; otherwise the rod appears to float.
+  if(localAvatar)localAvatar.visible=(!previewMode||fishingSessionActive)&&!firstPerson;
   if(firstPerson){
     camera.position.copy(cameraTarget);
     camera.rotation.order="YXZ";
@@ -2990,6 +3030,12 @@ const pauseHomesBtn = document.getElementById("pauseHomesBtn");
 const pauseExitBtn = document.getElementById("pauseExitBtn");
 const fishPrompt = document.getElementById("fishPrompt");
 const fishPromptText = document.getElementById("fishPromptText");
+const worldFishingHud = document.getElementById("worldFishingHud");
+const worldFishingStatus = document.getElementById("worldFishingStatus");
+const worldCastFill = document.getElementById("worldCastFill");
+const worldCastRating = document.getElementById("worldCastRating");
+const worldFishAction = document.getElementById("worldFishAction");
+const worldFishingClose = document.getElementById("worldFishingClose");
 const fishingGame = document.getElementById("fishingGame");
 const fishingStatus = document.getElementById("fishingStatus");
 const fishingCard = document.getElementById("fishingCard");
@@ -3171,7 +3217,9 @@ function clearMovementInput(){
    scene instead of a stack of modal prompts. The interaction rhythm is genre-
    familiar, while the art, tuning, and rarity system are Followville's own. */
 let fishingSpot = null;
+let fishingSessionActive = false;
 let fishingStage = "idle";
+let fishingStageTime = 0;
 let fishingHeld = false;
 let fishingLinePosition = .04;
 let fishingLineDirection = 1;
@@ -3188,10 +3236,26 @@ let fishingFishY = .52;
 let fishingFishVelocity = 0;
 let fishingFishTarget = .52;
 let fishingRetargetTimer = 0;
+let fishingBoundaryLock = 0;
+let fishingBoundaryDirection = 0;
 let fishingProgress = .28;
 let fishingWasOverlapping = true;
 let fishingPerfect = true;
 let fishingOutsideTime = 0;
+let fishingLockTime = 0;
+let worldFishingGroup = null;
+let worldFishingRod = null;
+let worldFishingLine = null;
+let worldFishingBobber = null;
+let worldFishingRipple = null;
+let worldFishingCatch = null;
+const worldFishingBase = new THREE.Vector3();
+const worldFishingTip = new THREE.Vector3();
+const worldFishingWater = new THREE.Vector3();
+const worldFishingForward = new THREE.Vector3(1,0,0);
+const worldFishingRight = new THREE.Vector3(0,0,1);
+const worldFishingPoint = new THREE.Vector3();
+const fishingLinePoints=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
 const FISHING_PROFILES = [
   {rarity:"Common",color:"#587d88",fishColor:"#edbf59",weight:.56,difficulty:32,behavior:"smooth",barHeight:.29},
   {rarity:"Uncommon",color:"#43875f",fishColor:"#e77d4f",weight:.25,difficulty:51,behavior:"mixed",barHeight:.25},
@@ -3199,11 +3263,100 @@ const FISHING_PROFILES = [
   {rarity:"Legendary",color:"#c07a22",fishColor:"#e8a444",weight:.055,difficulty:94,behavior:"floater",barHeight:.195,legendary:true},
   {rarity:"Mythical",color:"#9b4bb3",fishColor:"#c781f1",weight:.015,difficulty:110,behavior:"dart",barHeight:.18,legendary:true}
 ];
-function fishingOpen(){ return fishingGame.classList.contains("open"); }
+function fishingOpen(){ return fishingSessionActive; }
 function setFishingStage(stage){
   fishingStage = stage;
+  fishingStageTime = 0;
   document.body.dataset.fishingGame = stage;
   fishingCard.dataset.stage = stage;
+}
+function makeFishingWorldCylinder(name,radius,length,material){
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius*.82,length,10),material);
+  mesh.name=name;
+  return mesh;
+}
+function placeFishingWorldCylinder(mesh,start,end){
+  worldFishingPoint.subVectors(end,start);
+  mesh.position.copy(start).addScaledVector(worldFishingPoint,.5);
+  mesh.scale.y=worldFishingPoint.length()/mesh.geometry.parameters.height;
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),worldFishingPoint.normalize());
+}
+function ensureWorldFishingScene(){
+  if(worldFishingGroup)return;
+  worldFishingGroup=new THREE.Group();
+  worldFishingGroup.name="FV_world_fishing_session";
+  const rodMat=new THREE.MeshStandardMaterial({color:0xb98245,roughness:.72});
+  worldFishingRod=makeFishingWorldCylinder("FV_fishing_rod",.025,1,rodMat);
+  worldFishingGroup.add(worldFishingRod);
+  const lineGeometry=new THREE.BufferGeometry().setFromPoints(fishingLinePoints);
+  worldFishingLine=new THREE.Line(lineGeometry,new THREE.LineBasicMaterial({color:0xf7f1d8,transparent:true,opacity:.92}));
+  worldFishingLine.name="FV_fishing_line";
+  worldFishingGroup.add(worldFishingLine);
+  worldFishingBobber=new THREE.Group();
+  const bobberTop=new THREE.Mesh(new THREE.SphereGeometry(.10,10,7),new THREE.MeshStandardMaterial({color:0xf05c42,roughness:.55}));
+  bobberTop.scale.y=.72;
+  const bobberBottom=bobberTop.clone();bobberBottom.material=new THREE.MeshStandardMaterial({color:0xfff2d2,roughness:.62});bobberBottom.position.y=-.09;
+  worldFishingBobber.add(bobberTop,bobberBottom);
+  worldFishingGroup.add(worldFishingBobber);
+  worldFishingRipple=new THREE.Mesh(new THREE.RingGeometry(.16,.21,24),new THREE.MeshBasicMaterial({color:0xd9fbff,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));
+  worldFishingRipple.rotation.x=-Math.PI/2;
+  worldFishingGroup.add(worldFishingRipple);
+  worldFishingCatch=new THREE.Group();
+  const fishBody=new THREE.Mesh(new THREE.SphereGeometry(.24,10,7),new THREE.MeshStandardMaterial({color:0xedbf59,roughness:.58}));
+  fishBody.scale.set(1.45,.72,.72);
+  const fishTail=new THREE.Mesh(new THREE.ConeGeometry(.17,.30,3),fishBody.material);
+  fishTail.rotation.z=-Math.PI/2;fishTail.position.x=-.34;
+  worldFishingCatch.add(fishBody,fishTail);
+  worldFishingGroup.add(worldFishingCatch);
+  scene.add(worldFishingGroup);
+  worldFishingGroup.visible=false;
+}
+function updateWorldFishingScene(dt){
+  if(!fishingSessionActive||!fishingSpot)return;
+  ensureWorldFishingScene();
+  fishingStageTime+=dt;
+  worldFishingGroup.visible=!['catching','closed'].includes(fishingStage);
+  document.body.dataset.worldFishingStage=fishingStage;
+  worldFishingWater.set(fishingSpot.waterX,walkSurfaceHeight(fishingSpot.waterX,fishingSpot.waterZ)+.12,fishingSpot.waterZ);
+  worldFishingForward.set(fishingSpot.waterX-playerPosition.x,0,fishingSpot.waterZ-playerPosition.z).normalize();
+  worldFishingRight.set(-worldFishingForward.z,0,worldFishingForward.x);
+  worldFishingBase.copy(playerPosition).addScaledVector(worldFishingForward,.22).addScaledVector(worldFishingRight,.18);worldFishingBase.y+=1.12;
+  const powerLift=fishingStage==="charging"?fishingLinePosition*.42:0;
+  const castSwing=fishingStage==="casting"?Math.sin(Math.min(1,fishingStageTime/.76)*Math.PI)*.82:0;
+  const bitePull=fishingStage==="bite"?.34:0;
+  worldFishingTip.copy(worldFishingBase).addScaledVector(worldFishingForward,.62+castSwing-bitePull).setY(worldFishingBase.y+1.18+powerLift+castSwing*.28+bitePull);
+  placeFishingWorldCylinder(worldFishingRod,worldFishingBase,worldFishingTip);
+  const lineLive=['casting','waiting','bite','payoff'].includes(fishingStage);
+  worldFishingLine.visible=lineLive;
+  worldFishingBobber.visible=lineLive&&!['payoff'].includes(fishingStage);
+  worldFishingRipple.visible=['waiting','bite'].includes(fishingStage);
+  worldFishingCatch.visible=fishingStage==="payoff";
+  if(fishingStage==="casting"){
+    const t=Math.min(1,fishingStageTime/.76),arc=4*t*(1-t);
+    worldFishingBobber.position.lerpVectors(worldFishingTip,worldFishingWater,t);
+    worldFishingBobber.position.y+=arc*2.15;
+  }else if(['waiting','bite'].includes(fishingStage)){
+    worldFishingBobber.position.copy(worldFishingWater);
+    worldFishingBobber.position.y+=(fishingStage==="bite"?-.08:Math.sin(fishingStageTime*5)*.035);
+  }
+  if(lineLive&&!worldFishingCatch.visible){
+    fishingLinePoints[0].copy(worldFishingTip);
+    fishingLinePoints[2].copy(worldFishingBobber.position);
+    fishingLinePoints[1].lerpVectors(fishingLinePoints[0],fishingLinePoints[2],.52);
+    fishingLinePoints[1].y+=fishingStage==="bite"?.06:.34;
+    worldFishingLine.geometry.setFromPoints(fishingLinePoints);
+    worldFishingLine.material.color.set(fishingStage==="bite"?0xffb05a:0xf7f1d8);
+  }
+  if(worldFishingRipple.visible){
+    worldFishingRipple.position.copy(worldFishingWater);worldFishingRipple.position.y+=.01;
+    const pulse=(fishingStageTime%(fishingStage==="bite"?.38:1.3))/(fishingStage==="bite"?.38:1.3);
+    worldFishingRipple.scale.setScalar(.7+pulse*3.2);worldFishingRipple.material.opacity=.78*(1-pulse);
+  }
+  if(worldFishingCatch.visible){
+    const t=Math.min(1,fishingStageTime/1.55),jump=Math.sin(t*Math.PI)*2.4;
+    worldFishingCatch.position.copy(worldFishingWater).addScaledVector(worldFishingForward,-t*1.7);worldFishingCatch.position.y+=jump+.22;
+    worldFishingCatch.rotation.z=-.25+Math.sin(t*Math.PI)*.75;
+  }
 }
 function fishingRarityProfile(){
   // The dedicated local fishing view is also the deterministic browser/visual
@@ -3233,8 +3386,10 @@ function castJudgement(power){
 }
 function updateFishingCastVisuals(){
   castLine.style.width = `${fishingLinePosition*100}%`;
+  worldCastFill.style.width = `${fishingLinePosition*100}%`;
   const judgement=castJudgement(fishingLinePosition);
   castRating.textContent = fishingStage==="charging" ? judgement.label : "hold";
+  worldCastRating.textContent = fishingStage==="charging" ? judgement.label : "hold";
   document.body.dataset.fishingAim = fishingLinePosition>=.45 ? "ready" : "charging";
   document.body.dataset.fishingPower = fishingLinePosition.toFixed(3);
 }
@@ -3254,6 +3409,9 @@ function resetFishingRound(){
   fishingCastRating = "Good";
   fishingCard.style.setProperty("--bobber-x","71%");
   fishingCard.classList.remove("fight");
+  worldFishingHud.classList.remove("payoff");
+  worldFishingHud.classList.add("open");
+  worldFishingHud.setAttribute("aria-hidden","false");
   fishingLinePath.setAttribute("d","M152 129 Q 190 112 142 105");
   catchGame.classList.remove("open");
   catchReadout.classList.remove("open");
@@ -3263,6 +3421,10 @@ function resetFishingRound(){
   fishAction.disabled = false;
   fishAction.classList.remove("bite","catching","pressed");
   fishAction.textContent = "hold to cast";
+  worldFishAction.disabled=false;
+  worldFishAction.classList.remove("bite");
+  worldFishAction.textContent="hold to cast";
+  worldFishingStatus.textContent="Hold to build throw power. Release in the bright end.";
   fishingStatus.textContent = "Hold to build throw power. Release in the bright end of the meter.";
   castRating.textContent = "hold";
   throwCallout.textContent = "Good throw";
@@ -3273,6 +3435,7 @@ function resetFishingRound(){
 }
 function startFishing(){
   if (!fishingSpot || fishingOpen()) return;
+  fishingSessionActive=true;
   clearMovementInput();
   gameRunning = false;
   hint.style.display = "none";
@@ -3284,10 +3447,13 @@ function startFishing(){
   }
   if (document.pointerLockElement) document.exitPointerLock();
   fishPrompt.style.display = "none";
-  fishingGame.classList.add("open");
-  fishingGame.setAttribute("aria-hidden","false");
+  playerPosition.set(fishingSpot.x,walkSurfaceHeight(fishingSpot.x,fishingSpot.z),fishingSpot.z);
+  playerYaw=Math.atan2(fishingSpot.waterX-playerPosition.x,fishingSpot.waterZ-playerPosition.z);
+  if(localAvatar){localAvatar.position.copy(playerPosition);localAvatar.rotation.y=playerYaw;localAvatar.visible=true;}
+  ensureWorldFishingScene();
   resetFishingRound();
-  requestAnimationFrame(()=>fishAction.focus({preventScroll:true}));
+  updateThirdPersonCamera(true);
+  requestAnimationFrame(()=>worldFishAction.focus({preventScroll:true}));
 }
 function closeFishing(){
   if (!fishingOpen()) return;
@@ -3295,8 +3461,12 @@ function closeFishing(){
   clearTimeout(fishingBiteTimer);
   clearTimeout(fishingEscapeTimer);
   fishingHeld = false;
+  fishingSessionActive=false;
   fishingGame.classList.remove("open");
   fishingGame.setAttribute("aria-hidden","true");
+  worldFishingHud.classList.remove("open","payoff");
+  worldFishingHud.setAttribute("aria-hidden","true");
+  if(worldFishingGroup)worldFishingGroup.visible=false;
   setFishingStage("closed");
   if (isTouch) resumeWalkingWithoutPointerLock();
   else resumeDesktopWalking();
@@ -3312,11 +3482,16 @@ function successfulCast(power){
   setFishingStage("casting");
   fishAction.disabled = true;
   fishAction.textContent = "casting…";
+  worldFishAction.disabled=true;
+  worldFishAction.textContent="casting…";
+  worldFishingStatus.textContent=`${judgement.label} throw — watch the real bobber.`;
   fishingStatus.textContent = `${judgement.label} throw — watch the bobber land.`;
   fishingCastTimer=setTimeout(()=>{
     if(!fishingOpen()||fishingStage!=="casting")return;
     setFishingStage("waiting");
     fishAction.textContent="watch the bobber…";
+    worldFishAction.textContent="watch the bobber…";
+    worldFishingStatus.textContent="The line is live. Watch the float.";
     fishingStatus.textContent="The line is live. Watch the float and be ready to set the hook.";
     fishingBiteTimer=setTimeout(()=>{
       if(!fishingOpen()||fishingStage!=="waiting")return;
@@ -3324,19 +3499,27 @@ function successfulCast(power){
       fishAction.disabled=false;
       fishAction.classList.add("bite");
       fishAction.textContent="BITE! set the hook";
+      worldFishAction.disabled=false;
+      worldFishAction.classList.add("bite");
+      worldFishAction.textContent="BITE! set the hook";
+      worldFishingStatus.textContent="The float went under — hook it now!";
       fishingStatus.textContent="The float went under — tap now!";
       fishingEscapeTimer=setTimeout(()=>{
         if(fishingStage!=="bite")return;
         setFishingStage("escaped");
         fishAction.classList.remove("bite");
         fishAction.textContent="cast again";
+        worldFishAction.classList.remove("bite");
+        worldFishAction.textContent="cast again";
+        worldFishingHud.classList.add("payoff");
+        worldFishingStatus.textContent="Too slow — the fish stole the bait.";
         fishingStatus.textContent="Too slow — the fish stole the bait.";
       },2600);
     },1250+Math.random()*1250);
   },760);
 }
 function beginFishingCatch(){
-  if (fishingStage === "caught" || fishingStage === "escaped"){
+  if (fishingStage === "caught" || fishingStage === "escaped" || fishingStage === "payoff"){
     resetFishingRound();
     return;
   }
@@ -3349,14 +3532,26 @@ function beginFishingCatch(){
   fishingBarY = .08;
   fishingBarVelocity = 0;
   fishingFishY = .17 + Math.random()*.13;
-  fishingFishVelocity = 0;
-  fishingFishTarget = fishingFishY;
-  fishingRetargetTimer = 0;
+  // Every fight opens with a readable upward swim. Previously the target
+  // began exactly on the fish, so the first random choice could pin it into
+  // the floor before the player ever saw the movement model work.
+  fishingFishVelocity = .08;
+  fishingFishTarget = Math.min(.78,fishingFishY+.24+Math.random()*.18);
+  fishingRetargetTimer = .42;
+  fishingBoundaryLock = .52;
+  fishingBoundaryDirection = 1;
   fishingProgress = Math.max(.16,.215+castBonus);
   fishingWasOverlapping = true;
   fishingPerfect = true;
   fishingOutsideTime = 0;
+  fishingLockTime = 0;
+  document.body.dataset.fishingBoundary = "clear";
+  document.body.dataset.fishingLock = "building";
   setFishingStage("catching");
+  worldFishingHud.classList.remove("open");
+  worldFishingHud.setAttribute("aria-hidden","true");
+  fishingGame.classList.add("open");
+  fishingGame.setAttribute("aria-hidden","false");
   fishAction.classList.remove("bite");
   fishAction.classList.add("catching");
   fishAction.textContent = "hold to lift catch zone";
@@ -3366,6 +3561,8 @@ function beginFishingCatch(){
   catchRarity.textContent = fishingProfile.rarity;
   catchRarity.style.background = fishingProfile.color;
   catchBehavior.textContent = `${fishingProfile.behavior} movement · difficulty ${fishingProfile.difficulty}`;
+  catchGame.dataset.behavior=fishingProfile.behavior;
+  catchBar.classList.remove("locked");
   catchFish.style.setProperty("--fish-color",fishingProfile.fishColor);
   catchCrown.style.display = fishingProfile.legendary ? "block" : "none";
   fishingStatus.textContent = "Hold to lift, release to fall. Brake before the catch zone overshoots.";
@@ -3374,7 +3571,7 @@ function beginFishingCatch(){
 function finishFishingCatch(caught){
   if(fishingStage !== "catching")return;
   fishingHeld = false;
-  setFishingStage(caught ? "caught" : "escaped");
+  setFishingStage(caught ? "payoff" : "escaped");
   fishAction.classList.remove("catching","pressed");
   fishAction.textContent = caught ? "fish again" : "try another cast";
   fishingStatus.textContent = caught
@@ -3385,16 +3582,53 @@ function finishFishingCatch(caught){
     caughtBadge.style.color = fishingProfile.color;
     caughtBadge.textContent = `You caught a ${fishingProfile.rarity} fish${fishingPerfect ? " — Perfect!" : "!"}`;
   }
+  fishingGame.classList.remove("open");
+  fishingGame.setAttribute("aria-hidden","true");
+  worldFishingHud.classList.add("open","payoff");
+  worldFishingHud.setAttribute("aria-hidden","false");
+  worldFishAction.disabled=false;
+  worldFishAction.classList.remove("bite");
+  worldFishAction.textContent=caught?"fish again":"cast again";
+  worldFishingStatus.textContent=caught
+    ? `${fishingPerfect?"Perfect! ":""}You landed a ${fishingProfile.rarity} fish.`
+    : `${fishingProfile.rarity} fish escaped. Brake earlier and use lighter taps.`;
+  if(caught&&worldFishingCatch){
+    worldFishingCatch.children.forEach(child=>child.material?.color?.set(fishingProfile.fishColor));
+  }
 }
 function updateFishingCatchVisuals(){
   catchBar.style.height = `${fishingBarHeight*100}%`;
   catchBar.style.bottom = `${fishingBarY*100}%`;
   catchFish.style.bottom = `${fishingFishY*100}%`;
+  const fishTilt=Math.max(-14,Math.min(14,-fishingFishVelocity*18));
+  catchFish.style.transform = `translate(-50%,50%) rotate(${fishTilt}deg)`;
   catchProgressFill.style.height = `${fishingProgress*100}%`;
   catchProgressIcon.style.bottom = `calc(${fishingProgress*100}% - 10px)`;
   document.body.dataset.fishingOverlap = fishingFishY >= fishingBarY &&
     fishingFishY <= fishingBarY + fishingBarHeight ? "true" : "false";
   document.body.dataset.fishingProgress = fishingProgress.toFixed(3);
+  document.body.dataset.fishingFishTarget = fishingFishTarget.toFixed(3);
+  document.body.dataset.fishingFishVelocity = fishingFishVelocity.toFixed(3);
+}
+function turnFishingFishFromBoundary(edge,difficulty){
+  const upward=edge==="bottom";
+  fishingFishY=upward?.025:.975;
+  fishingFishTarget=upward
+    ? .34+Math.random()*(.30+.16*difficulty)
+    : .66-Math.random()*(.30+.16*difficulty);
+  fishingFishTarget=Math.max(.12,Math.min(.88,fishingFishTarget));
+  const turnSpeed=.22+.30*difficulty;
+  fishingFishVelocity=upward
+    ? Math.max(turnSpeed,Math.abs(fishingFishVelocity)*.55)
+    : -Math.max(turnSpeed,Math.abs(fishingFishVelocity)*.55);
+  fishingBoundaryDirection=upward?1:-1;
+  fishingBoundaryLock=.52;
+  fishingRetargetTimer=.34+.18*(1-difficulty);
+  document.body.dataset.fishingBoundary=edge;
+  catchFish.classList.remove("boundary-turn");
+  void catchFish.offsetWidth;
+  catchFish.classList.add("boundary-turn");
+  setTimeout(()=>catchFish.classList.remove("boundary-turn"),260);
 }
 function updateFishingCatch(dt){
   if(fishingStage !== "catching" || !fishingProfile)return;
@@ -3428,12 +3662,19 @@ function updateFishingCatch(dt){
     floater:{interval:.95,displacement:.95,jitter:.8,bias:.12},
     dart:{interval:.58,displacement:1+2*fishingProfile.difficulty/100,jitter:1.8,bias:0}
   }[behavior];
+  fishingBoundaryLock=Math.max(0,fishingBoundaryLock-dt);
   fishingRetargetTimer -= dt;
   if(fishingRetargetTimer <= 0){
     const hopRoll = Math.random();
     const hopScale = hopRoll < .58 ? .28 : (hopRoll < .9 ? .62 : 1);
-    let delta = (Math.random()<.5?-1:1)*baseDisplacement*modifiers.displacement*hopScale;
+    const direction=fishingBoundaryLock>0?fishingBoundaryDirection:(Math.random()<.5?-1:1);
+    const forcedScale=fishingBoundaryLock>0?Math.max(.58,hopScale):hopScale;
+    let delta = direction*baseDisplacement*modifiers.displacement*forcedScale;
     delta += modifiers.bias*(.55+Math.random()*.45);
+    if(fishingBoundaryLock>0){
+      const minimumTurn=.20+.13*difficulty;
+      delta=direction*Math.max(minimumTurn,Math.abs(delta));
+    }
     fishingFishTarget = Math.max(.035,Math.min(.965,fishingFishY+delta));
     fishingRetargetTimer = (.55+Math.random()*.9)*baseInterval*modifiers.interval;
   }
@@ -3446,19 +3687,24 @@ function updateFishingCatch(dt){
   fishingFishVelocity += Math.sign(velocityDelta)*Math.min(Math.abs(velocityDelta),fishAcceleration*dt);
   fishingFishVelocity += (Math.random()-.5)*(.18*difficulty)*modifiers.jitter*dt;
   fishingFishY += fishingFishVelocity*dt;
-  if(fishingFishY <= .025){fishingFishY=.025;fishingFishVelocity=Math.abs(fishingFishVelocity)*.35;}
-  if(fishingFishY >= .975){fishingFishY=.975;fishingFishVelocity=-Math.abs(fishingFishVelocity)*.35;}
+  if(fishingFishY <= .025)turnFishingFishFromBoundary("bottom",difficulty);
+  else if(fishingFishY >= .975)turnFishingFishFromBoundary("top",difficulty);
 
   const overlapping = fishingFishY >= fishingBarY && fishingFishY <= fishingBarY+fishingBarHeight;
   if(overlapping){
     fishingProgress += .215*dt;
     fishingOutsideTime = 0;
+    fishingLockTime=Math.min(1.2,fishingLockTime+dt);
   }else{
     fishingProgress -= .285*dt;
     fishingOutsideTime += dt;
+    fishingLockTime=Math.max(0,fishingLockTime-dt*1.8);
     if(fishingWasOverlapping)fishingPerfect = false;
   }
   fishingWasOverlapping = overlapping;
+  const locked=fishingLockTime>=.72;
+  catchBar.classList.toggle("locked",locked);
+  document.body.dataset.fishingLock=locked?"locked":"building";
   fishingProgress = Math.max(0,Math.min(1,fishingProgress));
   updateFishingCatchVisuals();
   if(fishingProgress >= 1)finishFishingCatch(true);
@@ -3478,6 +3724,14 @@ fishAction.addEventListener("pointerdown",event=>{
   fishAction.textContent = "release to throw";
   fishAction.setPointerCapture?.(event.pointerId);
 });
+worldFishAction.addEventListener("pointerdown",event=>{
+  if(fishingStage!=="aim")return;
+  event.preventDefault();
+  fishingHeld=true;
+  setFishingStage("charging");
+  worldFishAction.textContent="release to throw";
+  worldFishAction.setPointerCapture?.(event.pointerId);
+});
 function finishFishingCast(event){
   if(fishingStage === "catching"){
     event?.preventDefault();
@@ -3490,6 +3744,7 @@ function finishFishingCast(event){
   successfulCast(fishingLinePosition);
 }
 fishAction.addEventListener("pointerup",finishFishingCast);
+worldFishAction.addEventListener("pointerup",finishFishingCast);
 // Pointer capture is widely supported, but a window-level release also makes
 // mouse and touch casts reliable if the player's finger slides off the button.
 window.addEventListener("pointerup",finishFishingCast);
@@ -3498,7 +3753,21 @@ window.addEventListener("pointercancel",()=>{
   else if(fishingStage==="catching")setFishingHeld(false);
 });
 fishAction.addEventListener("click",beginFishingCatch);
-document.body.dataset.fishingVersion = "immersive-v3";
+worldFishAction.addEventListener("click",beginFishingCatch);
+document.body.dataset.fishingVersion = "world-v4";
+document.body.dataset.fishingPresentation = "world-first";
+if(localDesignPreview){
+  window.__followvilleFishingQA={
+    forceBoundary(edge){
+      if(fishingStage!=="catching"||!['bottom','top'].includes(edge))return false;
+      fishingFishY=edge==="bottom"?.024:.976;
+      fishingFishVelocity=edge==="bottom"?-.9:.9;
+      fishingFishTarget=edge==="bottom"?.01:.99;
+      fishingRetargetTimer=1;
+      return true;
+    }
+  };
+}
 window.addEventListener("keydown",event=>{
   if(!fishingOpen() || event.code!=="Space" || event.repeat)return;
   event.preventDefault();
@@ -3506,6 +3775,7 @@ window.addEventListener("keydown",event=>{
     fishingHeld=true;
     setFishingStage("charging");
     fishAction.textContent="release to throw";
+    worldFishAction.textContent="release to throw";
   }else if(fishingStage==="catching")setFishingHeld(true);
   else if(fishingStage==="bite")beginFishingCatch();
 });
@@ -3517,6 +3787,7 @@ window.addEventListener("keyup",event=>{
 });
 fishPrompt.addEventListener("click",startFishing);
 fishingClose.addEventListener("click",closeFishing);
+worldFishingClose.addEventListener("click",closeFishing);
 fishingGame.addEventListener("pointerdown",event=>event.stopPropagation());
 document.body.dataset.fishingGame = "closed";
 function clearPassiveChatFeed(){
@@ -8385,7 +8656,7 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
     if (fishingPondBuilding){
       const [pondX,pondZ] = buildingWorldXZ(fishingPondBuilding);
       // Local dock head is 10.8m west and 2.7m south in Blender space.
-      fishingSpot = {x:pondX-10.8,z:pondZ+2.7};
+      fishingSpot = {x:pondX-10.8,z:pondZ+2.7,waterX:pondX-2.0,waterZ:pondZ+2.4};
       document.body.dataset.fishingPond = "ready";
       auditFishingDockSurface();
       if (isTouch){
@@ -8650,6 +8921,7 @@ const _camDir = new THREE.Vector3();
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  updateWorldFishingScene(dt);
   updateFishingCatch(dt);
   if (fishingOpen() && fishingStage === "charging"){
     fishingLinePosition += fishingLineDirection * dt * .68;
@@ -8801,7 +9073,10 @@ function animate(){
     }
   }
 
-  if(localAvatar)updateAvatarMotion(localAvatar,{dt,speed:localMovementSpeed,running:move.run&&localMovementSpeed>.03});
+  if(localAvatar){
+    if(fishingOpen()&&fishingStage!=="catching")updateAvatarFishingPose(localAvatar,{dt,stage:fishingStage,phase:Math.min(1,fishingStageTime/.76),tension:fishingStage==="bite"?1:0});
+    else updateAvatarMotion(localAvatar,{dt,speed:localMovementSpeed,running:move.run&&localMovementSpeed>.03});
+  }
   updateAvatarPreview(dt);
 
   updateMultiplayer(dt);
