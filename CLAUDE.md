@@ -68,8 +68,9 @@ Videos auto-copy to Desktop.
 
 Cameras: `overhead street park housefront newgrowth newstreet newgrowthoverhead
 wholeoverhead storybookstreet cinematic dronezoom dronehover day25reveal
-day29reveal`. `--cam housefront` and `--godzilla` are **render-only** and never
-change state, GLBs or the Blend.
+day29reveal day30reveal day31reveal day32campaign day33storm day34fire`.
+`--cam housefront`, `--cam day34fire`'s emergency vignette, and `--godzilla`
+are **render-only** and never change state, GLBs or the Blend.
 
 ### Deploying
 
