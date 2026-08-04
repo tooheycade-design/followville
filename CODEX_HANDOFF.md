@@ -1,6 +1,6 @@
-# Codex handoff -- current through Day 33
+# Codex handoff -- current through Day 34
 
-Updated 2026-08-03 for Cade and Zach's next Claude/Codex session.
+Updated 2026-08-04 for Cade and Zach's next Claude/Codex session.
 
 ## Open the authoritative project
 
@@ -17,6 +17,18 @@ iCloud conflict copy, use iCloud-only state, or run the retired `--no-git`
 workflow.
 
 ## Current canon
+
+- Day 34 is live at population 720 with 782 total records and 34 streamed
+  chunks. One guarded +31 growth consumed plan IDs 546-576 / seeds 752-782:
+  eleven homes finished Millstone Way and twenty opened Ferry Street in
+  Eastbank Village. Address 577 is next. The insert-only Supabase sync added
+  all 31 claimable rows while the exact 41 existing claims remained unchanged.
+  The reviewed delivery is `day_034_day34_fire_response_0001-0480.mp4`, an
+  exact 16-second 1080x1920/30fps portrait film: a five-second angled downtown
+  skyline with an unclaimed building fire and responding engine, a fast river
+  transfer, and all 31 homes rising in one held composition. Fire, smoke,
+  engine, hose, lights, and water are render-only and excluded from state and
+  web exports. The MP4 is in shared iCloud renders and on Cade's Desktop.
 
 - Day 33 is live at population 689 with 751 total records and 34 streamed
   chunks. One guarded +33 growth consumed plan IDs 513-545 / seeds 719-751:

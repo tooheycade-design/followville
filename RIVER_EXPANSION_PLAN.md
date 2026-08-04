@@ -1,7 +1,19 @@
 # Followville river chapter: population 501–750
 
-Status: Day 32 released at population 656 through plan ID/address 512. The
-deterministic reserve continues through population 750; address 513 is next.
+Status: Day 34 released at population 720 through plan ID/address 576. The
+deterministic reserve continues through population 750; address 577 is next.
+
+## Day 34 Eastbank Village continuation
+
+- Day 34 grew from population 689 to 720 with exactly 31 ordinary claimable
+  homes, taking total world records from 751 to 782 without adding a permanent
+  landmark.
+- Plan IDs 546-556 finished Millstone Way and plan IDs 557-576 opened Ferry
+  Street. Eastbank Village now has 50 of 58 homes; plan ID 577 is next.
+- Seeds 752-782 belong to the Day 34 homes. The exact 16-second
+  `day34_fire_response` portrait video opens with a five-second angled downtown
+  skyline and render-only fire response, crosses the river quickly, then holds
+  all 31 homes in frame for their rise.
 
 ## Day 32 Timber Bend continuation
 

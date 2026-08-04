@@ -4,10 +4,10 @@ The original 366-address reserve was implemented 2026-07-11. The approved
 river chapter extends the same deterministic system by 250 addresses,
 367-616, carrying population 500 to 750. See `RIVER_EXPANSION_PLAN.md`.
 
-Current progress: addresses 1-545 are built through Day 33 (population 689).
+Current progress: addresses 1-576 are built through Day 34 (population 720).
 The permanent Followville First Alert Weather station is a separate civic
 landmark record and does not consume an address or change population; address
-546 remains next.
+577 remains next.
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills
@@ -25,7 +25,8 @@ eleven remaining Alder Court homes and opening Timber Bend Road with nine
 homes. Day 32 consumed addresses 482-512: nineteen finished Timber Bend Road
 and twelve opened Lodgepole Loop. Day 33 consumed addresses 513-545: fourteen
 finished Lodgepole Loop and nineteen opened Eastbank Village's Millstone Way.
-Address 546 is next.
+Day 34 consumed addresses 546-576: eleven finished Millstone Way and twenty
+opened Ferry Street. Address 577 is next.
 
 ## Behavior
 
@@ -63,7 +64,7 @@ Address 546 is next.
 | 367-414 | Rivergate | 48 (complete) |
 | 415-472 | Cedarbank | 58 (complete) |
 | 473-526 | Timber Bend | 54 (complete) |
-| 527-584 | Eastbank Village | 58 (19 built; 39 remain) |
+| 527-584 | Eastbank Village | 58 (50 built; 8 remain) |
 | 585-616 | River Meadows | 32 (not started) |
 
 ## Safe daily operation
