@@ -22,6 +22,8 @@ AI is helping each of them) can see what the other did on their turn.
 
 ## Log
 
+2026-08-03 - Zach (via Mac Codex) - [WEB] Moved Followville Fishing's cast, avatar rod motion, line, bobber, bite cue, and caught-fish jump into the actual 3D pond world, reserving the second screen for the fish fight; added tension-colored line feedback, a sustained-overlap LOCKED ON state, rarity-behavior visual personalities, and true inward top/bottom boundary turns, then visually audited every stage and passed all 21 browser regressions while Day 33, population 689, all 751 records, Blender, GLBs, claims, and Supabase remained unchanged.
+
 2026-08-03 - Zach (via Mac Codex) - [WEB] Rebuilt Followville Fishing as one continuous cast-to-catch scene: a hold-and-release throw meter now judges Short/Good/Great/Perfect casts, an original animated angler, rod, line, bobber, ripples, and bite cue replace the two setup pop-ups, and the unchanged rarity ladder now drives smaller catch zones, stronger fish movement, lower starting progress, and faster escape drain; focused desktop/landscape visual QA and all 21 browser regressions passed while Day 33, population 689, all 751 records, Blender, GLBs, claims, and Supabase remained unchanged.
 
 2026-08-03 - Cade (via Windows Codex) - [WORLD] Rebuilt the Day 33 storm delivery as a guarded replay only: replaced the visibly resetting rain loop with exact seamless camera-space tiles and widened the growth flight so all 33 Lodgepole/Millstone homes remain fully framed across both rise waves; reviewed the corrected 20-second v2 MP4, placed it in shared iCloud renders and on Cade's Desktop, and preserved Day 33, population 689, all 751 records, claims, ownership, and Supabase.
