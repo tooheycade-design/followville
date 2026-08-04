@@ -170,13 +170,13 @@ test("walking keyboard overlays close without trapping movement", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("the fishing pond offers a momentum catch with rarity-scaled fish movement", async ({ page }) => {
+test("the fishing pond runs one immersive cast-to-catch scene with harder momentum", async ({ page }) => {
   test.setTimeout(180_000);
   const errors=watchPageErrors(page);
   await page.goto("/town.html?local=1&view=fishing#walk");
   await waitForTown(page);
   await expect(page.locator("body")).toHaveAttribute("data-fishing-pond","ready");
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","momentum-v2");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-version","immersive-v3");
   await expect(page.locator("body")).toHaveAttribute("data-fishing-dock-walkable","pass");
   // The pond's level shelf is authored in the shared terrain model, so its
   // centre is duplicated in town.html. Drift there puts the water back on the
@@ -186,6 +186,9 @@ test("the fishing pond offers a momentum catch with rarity-scaled fish movement"
   await page.locator("#fishPrompt").click();
   await expect(page.locator("#fishingGame")).toBeVisible();
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","aim");
+  await expect(page.locator("#fishingScene")).toBeVisible();
+  await expect(page.locator("#fishingRod")).toBeVisible();
+  await expect(page.locator("#castMeter")).toBeVisible();
 
   await page.locator("#fishAction").evaluate(async button=>{
     button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:1}));
@@ -205,7 +208,15 @@ test("the fishing pond offers a momentum catch with rarity-scaled fish movement"
     });
     button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1}));
   });
-  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","casting");
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-cast",/good|great|perfect/);
+  await expect(page.locator("body")).toHaveAttribute("data-fishing-game","waiting",{timeout:5_000});
+  await expect(page.locator("#fishingCard")).toHaveAttribute("data-stage","waiting");
+  // Casting, waiting, hooking and fighting stay inside the same original
+  // dialog and pond scene; no intermediary instruction modal is mounted.
+  await expect(page.locator("#fishingGame[role=dialog]")).toHaveCount(1);
+  await expect(page.locator("#fishingScene")).toBeVisible();
+  await expect(page.locator("#castBobber")).toBeVisible();
   // Wait for the bite and set the hook in the same page-side operation. On a
   // loaded software renderer, returning to the driver between those steps can
   // consume most of the deliberately short hook window.
@@ -226,6 +237,7 @@ test("the fishing pond offers a momentum catch with rarity-scaled fish movement"
   expect(errors).toEqual([]);
   expect(hookState).toBe("catching");
   await expect(page.locator("#catchGame")).toBeVisible();
+  await expect(page.locator("#fishingScene")).toBeVisible();
   await expect(page.locator("#catchRarity")).toHaveText("Common");
   await expect(page.locator("#catchBehavior")).toContainText("smooth movement");
 
@@ -256,7 +268,12 @@ test("the fishing pond offers a momentum catch with rarity-scaled fish movement"
       else if(predictedCenter>fish+.015)setPressed(false);
       previousCenter=center;
       previousTime=now;
-      if(performance.now()-started>30_000)throw new Error("momentum catch did not resolve");
+      // The full local suite can run a second software-rendered town in the
+      // asset-library worker. Gameplay advances by frame dt, so that CPU load
+      // should not change the physics, but it can stretch the wall-clock time
+      // needed to receive enough frames. Keep this above the focused run's
+      // normal duration without weakening any public-input assertions.
+      if(performance.now()-started>75_000)throw new Error("momentum catch did not resolve");
       await new Promise(resolve=>setTimeout(resolve,20));
     }
     setPressed(false);
