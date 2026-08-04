@@ -146,6 +146,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day31reveal  20-second whole-town, 20-home, and City Hall drone reveal
 #   --cam day32campaign 20-second town, 31-home, billboard, and campaign-semi reveal
 #   --cam day33storm  20-second storm flight through 33 homes to the weather station
+#   --cam day34fire    16-second skyline fire response into 31 Eastbank home rises
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -6558,6 +6559,202 @@ def build_day32_campaign_vignette(world_col, frame_end):
                 kp.interpolation = "CONSTANT"
     return billboard, truck
 
+
+def build_day34_fire_response(world_col, buildings, frame_end):
+    """Render-only downtown fire and Station 1 response for Day 34.
+
+    Seed 129 is a verified-unclaimed downtown townhouse at (64.5,-38.5).
+    Station 1 centers on the same street at (64.5,-70.5), so the response
+    remains legible in the background without inventing a route through town.
+    """
+    target = next((b for b in buildings if int(b.get("seed", -1)) == 129), None)
+    station = next((b for b in buildings if b.get("type") == "firestation"), None)
+    if not target or target.get("type") != "house":
+        raise RuntimeError("Day 34 fire response requires downtown house seed 129")
+    if not station or int(station.get("seed", -1)) != 396:
+        raise RuntimeError("Day 34 fire response requires canonical Station 1 seed 396")
+    target_x, target_y = build_pos(target)
+    station_x, station_y = build_pos(station)
+    station_center_x = station_x + (SIZE["firestation"] - 1) * LOT / 2
+    station_center_y = station_y + (SIZE["firestation"] - 1) * LOT / 2
+    if ((target_x, target_y) != (64.5, -38.5)
+            or (station_center_x, station_center_y) != (64.5, -70.5)):
+        raise RuntimeError("Day 34 fire-response anchors drifted from the audited street")
+
+    red = mat("NB_day34_engine_red", (.80, .025, .018), .58)
+    red_dark = mat("NB_day34_engine_dark", (.28, .018, .014), .74)
+    white = mat("NB_day34_engine_white", (.94, .93, .87), .66)
+    steel = mat("NB_day34_engine_steel", (.38, .42, .44), .34, .62)
+    dark = mat("NB_day34_engine_tire", (.025, .03, .035), .72)
+    glass = mat("NB_day34_engine_glass", (.08, .24, .34), .12, .10, 1.0, 0.0, .68)
+    hot = mat("NB_day34_fire_hot", (1.0, .56, .025), .24)
+    flame = mat("NB_day34_fire_flame", (1.0, .105, .008), .28)
+    ember = mat("NB_day34_fire_ember", (1.0, .24, .012), .32)
+    smoke = mat("NB_day34_fire_smoke", (.10, .095, .085), .98)
+    smoke_light = mat("NB_day34_fire_smoke_light", (.24, .22, .19), .98)
+    water = mat("NB_day34_hose_water", (.36, .76, .96), .16, .08)
+    blue = mat("NB_day34_light_blue", (.05, .30, 1.0), .16)
+    emergency_red = mat("NB_day34_light_red", (1.0, .015, .01), .16)
+    _set_mat_emission("NB_day34_fire_hot", (1.0, .24, .005), 12.0)
+    _set_mat_emission("NB_day34_fire_flame", (1.0, .055, .002), 9.0)
+    _set_mat_emission("NB_day34_fire_ember", (1.0, .12, .002), 6.0)
+    _set_mat_emission("NB_day34_hose_water", (.14, .52, 1.0), 2.2)
+    _set_mat_emission("NB_day34_light_blue", (.02, .16, 1.0), 11.0)
+    _set_mat_emission("NB_day34_light_red", (1.0, .005, .002), 11.0)
+
+    truck = bpy.data.objects.new("Day34_FireEngine_RenderOnly", None)
+    truck["nb_render_only"] = True
+    truck["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    truck.rotation_euler.z = math.pi  # authored front -Y drives north/+Y
+    world_col.objects.link(truck)
+    truck_parts = []
+
+    def attach(obj):
+        obj.parent = truck
+        obj["nb_render_only"] = True
+        truck_parts.append(obj)
+        return obj
+
+    attach(add_box(world_col, "day34_engine_chassis", 4.8, 8.4, .48,
+                   0, 0, .58, dark))
+    attach(add_box(world_col, "day34_engine_body", 4.55, 4.8, 3.15,
+                   0, 1.55, .82, red_dark))
+    attach(add_box(world_col, "day34_engine_cab", 4.45, 3.15, 3.55,
+                   0, -2.55, .82, red))
+    attach(add_box(world_col, "day34_engine_windshield", 3.72, .10, 1.18,
+                   0, -4.17, 2.70, glass))
+    attach(add_box(world_col, "day34_engine_bumper", 4.78, .34, .42,
+                   0, -4.40, .66, steel))
+    attach(add_box(world_col, "day34_engine_grille", 2.35, .10, .72,
+                   0, -4.59, 1.13, dark))
+    for side in (-1, 1):
+        attach(add_box(world_col, "day34_engine_locker", .12, 3.8, 1.76,
+                       side * 2.28, 1.25, 1.42, steel))
+        for axle_y in (-2.55, 2.25):
+            tire = attach(add_ngon_cone(
+                world_col, "day34_engine_tire", .70, .70, .36, 12,
+                side * 2.35, axle_y, .70, dark))
+            tire.rotation_euler.y = math.pi / 2
+            hub = attach(add_ngon_cone(
+                world_col, "day34_engine_hub", .30, .30, .39, 12,
+                side * 2.37, axle_y, .70, steel))
+            hub.rotation_euler.y = math.pi / 2
+    attach(add_box(world_col, "day34_engine_ladder", 3.85, .44, .26,
+                   0, .35, 4.35, white))
+    for y in (-.72, 0, .72, 1.44):
+        attach(add_box(world_col, "day34_engine_ladder_rung", 3.85, .09, .09,
+                       0, y, 4.42, steel))
+    red_light = attach(add_box(world_col, "day34_lightbar_red", 1.05, .42, .28,
+                               -.58, -2.55, 4.46, emergency_red))
+    blue_light = attach(add_box(world_col, "day34_lightbar_blue", 1.05, .42, .28,
+                                .58, -2.55, 4.46, blue))
+    for side in (-1, 1):
+        attach(add_box(world_col, "day34_engine_headlight", .52, .10, .42,
+                       side * 1.58, -4.60, 1.30, white))
+
+    truck.location = (station_center_x, station_center_y - 9.0,
+                      terrain_height(station_center_x, station_center_y - 9.0))
+    truck.keyframe_insert("location", frame=1)
+    truck.keyframe_insert("location", frame=8)
+    truck.location = (target_x, target_y - 13.0,
+                      terrain_height(target_x, target_y - 13.0))
+    truck.keyframe_insert("location", frame=96)
+    truck.keyframe_insert("location", frame=frame_end)
+    for fc in obj_fcurves(truck):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "LINEAR" if fc.data_path == "location" else "CONSTANT"
+    for frame in range(1, 151, 10):
+        red_light.hide_render = (frame // 10) % 2 == 1
+        blue_light.hide_render = not red_light.hide_render
+        red_light.keyframe_insert("hide_render", frame=frame)
+        blue_light.keyframe_insert("hide_render", frame=frame)
+
+    roof_z = 9.65
+    for index, (dx, dy, radius, height) in enumerate((
+            (-2.5, -.7, 1.25, 4.6), (-1.1, .4, 1.55, 5.8),
+            (.5, -.2, 1.35, 5.0), (2.0, .7, 1.20, 4.4),
+            (-.2, 1.5, 1.05, 4.1))):
+        fire_obj = add_ngon_cone(world_col, "day34_roof_flame", radius, .06,
+                                 height, 9, target_x + dx, target_y + dy,
+                                 roof_z, flame if index % 2 else hot)
+        fire_obj["nb_render_only"] = True
+        for frame, scale in ((1, (1.0, .86, 1.0)),
+                             (18 + index * 2, (.72, 1.08, 1.28)),
+                             (36 + index * 2, (1.12, .78, .88)),
+                             (58 + index * 2, (.82, 1.12, 1.20)),
+                             (82 + index * 2, (1.0, .86, 1.0)),
+                             (120 + index * 2, (.74, 1.04, 1.22)),
+                             (150, (1.0, .86, 1.0))):
+            fire_obj.scale = scale
+            fire_obj.keyframe_insert("scale", frame=frame)
+        for fc in obj_fcurves(fire_obj):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+
+    for index in range(9):
+        angle = index * 2.17
+        puff = add_uv_sphere(
+            world_col, "day34_roof_smoke", 2.5 + (index % 3) * .45,
+            target_x + math.cos(angle) * 1.8,
+            target_y + math.sin(angle) * 1.3,
+            roof_z + 4.0 + index * 1.15,
+            smoke if index % 2 else smoke_light, 7, 10)
+        puff["nb_render_only"] = True
+        puff.scale = (.72, .72, .86)
+        puff.keyframe_insert("scale", frame=1)
+        puff.keyframe_insert("location", frame=1)
+        puff.location.x += math.sin(index * 1.4) * 5.0
+        puff.location.y += 2.5 + math.cos(index) * 2.0
+        puff.location.z += 12.0 + index * .55
+        puff.scale = (1.45, 1.45, 1.85)
+        puff.keyframe_insert("location", frame=150)
+        puff.keyframe_insert("scale", frame=150)
+        for fc in obj_fcurves(puff):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+
+    for index in range(14):
+        angle = index * 2.4
+        spark = add_uv_sphere(world_col, "day34_roof_ember", .18 + .05*(index%3),
+                              target_x + math.cos(angle) * 2.3,
+                              target_y + math.sin(angle) * 1.4,
+                              roof_z + 2.0 + index * .26, ember, 5, 7)
+        spark["nb_render_only"] = True
+        spark.keyframe_insert("location", frame=1)
+        spark.location.x += math.sin(index) * 3.0
+        spark.location.z += 7.0 + index * .28
+        spark.keyframe_insert("location", frame=135)
+
+    nozzle = (target_x, target_y - 10.4, 3.25)
+    impact = (target_x, target_y - .45, roof_z + 3.0)
+    hose_core = add_beam_between(world_col, "day34_hose_stream",
+                                 nozzle, impact, .17, water)
+    hose_core["nb_render_only"] = True
+    _keyframe_hidden(hose_core, 1, True)
+    _keyframe_hidden(hose_core, 99, True)
+    _keyframe_hidden(hose_core, 100, False)
+    for index in range(11):
+        t = (index + .5) / 11.0
+        x = nozzle[0]
+        y = nozzle[1] + (impact[1] - nozzle[1]) * t
+        z = nozzle[2] + (impact[2] - nozzle[2]) * t + math.sin(math.pi*t)*1.5
+        drop = add_uv_sphere(world_col, "day34_hose_droplet", .22,
+                             x + math.sin(index*1.8)*.18, y, z, water, 5, 7)
+        drop["nb_render_only"] = True
+        _keyframe_hidden(drop, 1, True)
+        _keyframe_hidden(drop, 99, True)
+        _keyframe_hidden(drop, 100 + index % 3, False)
+
+    light_data = bpy.data.lights.new("Day34FireGlow", type="POINT")
+    light_data.color = (1.0, .12, .015)
+    light_data.energy = 1800.0
+    light_data.shadow_soft_size = 7.0
+    light_obj = bpy.data.objects.new("Day34FireGlow", light_data)
+    light_obj.location = (target_x, target_y, roof_z + 4.0)
+    light_obj["nb_render_only"] = True
+    world_col.objects.link(light_obj)
+    return truck
+
 # ═══════════════════════ TIME OF DAY / SEASONS (mood) ═══════════════════════════
 
 TODS = {
@@ -7710,6 +7907,57 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # 14.1-18.0s: settled descending push across pond and dock.
             (frame_end, (144.0, -96.0, 39.0),
              (FISHING_POND_X - 3.0, FISHING_POND_Y, 2.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day34fire":
+        # Day 34: spend five seconds on an angled downtown skyline where a
+        # render-only fire response is readable but remains background action,
+        # then make one fast drone transfer to all 31 Eastbank homes.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest_homes]
+        hx = sum(p[0] for p in points) / len(points) if points else 425.0
+        hy = sum(p[1] for p in points) / len(points) if points else 325.0
+
+        aim = bpy.data.objects.new("Day34FireAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day34FireCamera")
+        cam_data.lens = 43
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day34FireCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-5s: a low-enough skyline angle to retain building depth. The
+            # burning unclaimed townhouse (64.5,-38.5) and Station 1 response on
+            # the same north/south street sit right of downtown center.
+            (1, (148.0, -190.0, 84.0), (12.0, -10.0, 11.0)),
+            (78, (136.0, -174.0, 76.0), (14.0, -11.0, 11.0)),
+            (150, (120.0, -151.0, 67.0), (17.0, -12.0, 11.5)),
+            # 5-6.7s: deliberately quick cross-town drone transfer.
+            (168, (230.0, -66.0, 118.0), (210.0, 126.0, 15.0)),
+            (200, (566.0, 146.0, 222.0), (hx, hy, 8.0)),
+            # 6.7-16s: descend in a broad three-quarter arc while every home
+            # rises. The framing includes late Millstone and all Ferry Street.
+            (260, (554.0, 179.0, 190.0), (hx, hy + 2.0, 7.5)),
+            (350, (536.0, 216.0, 158.0), (hx, hy + 4.0, 7.0)),
+            (420, (535.0, 218.0, 157.0), (hx, hy + 4.0, 6.5)),
+            (frame_end, (532.0, 222.0, 154.0), (hx, hy + 4.0, 6.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -9263,7 +9511,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day33storm":
+    if cfg.get("cam") == "day34fire":
+        frame_end = max(frame_end, FPS * 16)
+    elif cfg.get("cam") == "day33storm":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day32campaign":
         frame_end = max(frame_end, FPS * 20)
@@ -9300,7 +9550,20 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day33storm":
+    if cfg.get("cam") == "day34fire":
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        millstone_roots = [e for e in home_roots
+                           if int(e.get("nb_world_plan_id", 0)) <= 556]
+        ferry_roots = [e for e in home_roots
+                       if int(e.get("nb_world_plan_id", 0)) >= 557]
+        for index, e in enumerate(millstone_roots):
+            animate_rise(e, 205 + index * 5, dur=28)
+        for index, e in enumerate(ferry_roots):
+            animate_rise(e, 250 + index * 5, dur=28)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 205)
+    elif cfg.get("cam") == "day33storm":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         lodgepole_roots = [e for e in home_roots
                            if int(e.get("nb_world_plan_id", 0)) <= 526]
@@ -9521,6 +9784,8 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "day34fire":
+        build_day34_fire_response(world_col, state["buildings"], frame_end)
     if cfg.get("cam") == "day33storm":
         build_storm_layer(world_col, frame_end)
     if cfg.get("cam") == "day32campaign":
