@@ -218,11 +218,14 @@ EAST_WOODS_RADIUS = 58.0
 RAFTING_STATION_X = 330.0
 RAFTING_STATION_Y = -30.0
 
-# Salmon Pro Shop. Sited by measurement, not by eye: the ground falls 0.27m
-# across the whole 50x56m pad, the nearest house is 45m off, and Pebble Court's
-# terminus at (78,232) is a short, near-level approach to the west.
-SALMON_SHOP_X = 120.0
-SALMON_SHOP_Y = 220.0
+# Salmon Pro Shop, on the western edge of town about 130m out from downtown
+# centre -- as close as a 50x56m pad fits, because everything inside that is
+# either paved grid or suburb. Sited by measurement: 18m clear of the nearest
+# building, no building anywhere inside the pad, and a drive off the Twin Oaks
+# connector. The ground falls 3.78m west to east across it, so the pad is a
+# genuinely retained platform rather than a slab resting on a slope.
+SALMON_SHOP_X = -128.0
+SALMON_SHOP_Y = -36.0
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -3341,22 +3344,21 @@ def build_salmon_pro_shop(col, seed):
                          base_z - .30, origin, stone_dark)
 
     # ── parking apron, south half ───────────────────────────────────────────
+    LOT_TOP = base_z + .06
     add_box(col, "salmon_lot", 44.0, 22.0, .06, 0, -15.0, base_z, asphalt)
-    for x in (-19.8, 19.8):
-        add_box(col, "salmon_lot_kerb", .5, 22.0, .16, x, -15.0, base_z, cream)
+    # The kerb is deliberately broken on the west side: that gap is where the
+    # approach road comes in, and a continuous kerb would have the drive
+    # running straight into a 16cm wall.
+    add_box(col, "salmon_lot_kerb", .5, 7.0, .16, -19.8, -22.5, base_z, cream)
+    add_box(col, "salmon_lot_kerb", .5, 7.0, .16, -19.8, -7.5, base_z, cream)
+    add_box(col, "salmon_lot_kerb", .5, 22.0, .16, 19.8, -15.0, base_z, cream)
     for index in range(13):
         x = -18.0 + index * 3.0
         for y in (-21.0, -9.6):
             add_box(col, "salmon_lot_stripe", .16, 4.9, .012,
-                    x, y, base_z + .06, paint)
+                    x, y, LOT_TOP, paint)
     add_box(col, "salmon_lot_aisle", 40.0, .18, .012, 0, -15.4,
-            base_z + .06, paint)
-    # Kerbed island so the lot is not one flat sheet from the drone.
-    add_box(col, "salmon_lot_island", 9.0, 2.2, .22, 0, -15.4, base_z + .06,
-            cream)
-    for x in (-3.0, 0.0, 3.0):
-        add_ngon_cone(col, "salmon_island_shrub", .85, .55, 1.05, 7,
-                      x, -15.4, base_z + .28, needle)
+            LOT_TOP, paint)
 
     # ── the lodge ───────────────────────────────────────────────────────────
     STORE_Y, STORE_W, STORE_D = 9.0, 34.0, 22.0
@@ -3371,11 +3373,17 @@ def build_salmon_pro_shop(col, seed):
             0, STORE_Y, base_z + 1.05, log)
     # Horizontal log courses read as a cabin at street level and survive the
     # aerial pass as texture rather than noise.
+    # add_ngon_cone's `rot` only spins the n-gon's cross-section; the cylinder
+    # always extends along local +Z. Laying a log on its side is a rotation of
+    # the object, not of its profile -- getting that wrong stood nine 33m masts
+    # up through the roof.
     for index in range(9):
         z = base_z + 1.35 + index * .68
-        add_ngon_cone(col, "salmon_log_course", .30, .30, STORE_W - .4, 8,
-                      0, STORE_Y - STORE_D / 2 - .06, z, log_dark,
-                      rot=math.pi / 2)
+        course = add_ngon_cone(col, "salmon_log_course", .30, .30,
+                               STORE_W - .4, 8,
+                               -(STORE_W - .4) / 2,
+                               STORE_Y - STORE_D / 2 - .06, z, log_dark)
+        course.rotation_euler = (0, math.pi / 2, 0)
     for x in (-17.2, 17.2):
         add_box(col, "salmon_corner_post", .62, STORE_D + .5, 7.35,
                 x, STORE_Y, base_z + 1.05, timber)
@@ -3534,30 +3542,64 @@ def build_salmon_pro_shop(col, seed):
     add_box(col, "salmon_entry_walk", 11.0, 4.4, .07, 0, -9.0,
             base_z + .06, cream)
 
-    # Approach from Pebble Court's terminus. Control points every ~3m, because
-    # walk_surface_manifest uses them as given while _add_road_strip subdivides
-    # internally, and coarse points drift the walk surface off the visible road.
-    approach = []
+    # Approach from the town road to the lot. Control points every ~3m,
+    # because walk_surface_manifest uses them as given while _add_road_strip
+    # subdivides internally, and coarse points drift the walk surface off the
+    # visible road.
+    #
+    # The last SALMON_SHOP_ENTRY_RAMP metres lift from the natural ground onto
+    # the store's pad, so the drive arrives level with the asphalt instead of
+    # butting into the side of a raised slab. The kerb is broken to match.
+    dense = []
     for a, b in zip(SALMON_SHOP_APPROACH, SALMON_SHOP_APPROACH[1:]):
         steps = max(1, int(math.ceil(math.hypot(b[0] - a[0], b[1] - a[1]) / 3.0)))
         for step in range(steps):
             t = step / steps
-            x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
-            approach.append((x - SALMON_SHOP_X, y - SALMON_SHOP_Y,
-                             terrain_height(x, y)))
-    last = SALMON_SHOP_APPROACH[-1]
-    approach.append((last[0] - SALMON_SHOP_X, last[1] - SALMON_SHOP_Y,
-                     terrain_height(*last)))
-    _add_road_strip(col, "salmon_approach_road", approach, asphalt, width=5.2,
+            dense.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    dense.append(tuple(SALMON_SHOP_APPROACH[-1]))
+
+    total = 0.0
+    runs = [0.0]
+    for a, b in zip(dense, dense[1:]):
+        total += math.hypot(b[0] - a[0], b[1] - a[1])
+        runs.append(total)
+
+    approach = []
+    for (x, y), run in zip(dense, runs):
+        ground = terrain_height(x, y)
+        remaining = total - run
+        if remaining < SALMON_SHOP_ENTRY_RAMP:
+            blend = 1.0 - remaining / SALMON_SHOP_ENTRY_RAMP
+            blend = blend * blend * (3.0 - 2.0 * blend)      # ease, no kink
+            ground = ground + (LOT_TOP - .055 - ground) * blend
+        approach.append((x - SALMON_SHOP_X, y - SALMON_SHOP_Y, ground))
+
+    _add_road_strip(col, "salmon_approach_road", approach, asphalt, width=5.6,
                     bottom_offset=.006, top_offset=.055,
                     terrain_conform=True,
                     terrain_origin=(SALMON_SHOP_X, SALMON_SHOP_Y))
-    for distance in (12, 30, 48, 66):
+    # Centre dashes on the same rhythm as every other road in town, riding the
+    # authored deck rather than the ground so they stay on the ramp.
+    for distance in range(8, int(total) - 6, 9):
         x, y, angle = _polyline_sample(approach, distance)
-        dash = add_box(col, "salmon_approach_dash", 1.20, .13, .025,
-                       x, y, terrain_height(SALMON_SHOP_X + x,
-                                            SALMON_SHOP_Y + y) + .065, paint)
+        deck = max(terrain_height(SALMON_SHOP_X + x, SALMON_SHOP_Y + y),
+                   _polyline_height(approach, distance))
+        dash = add_box(col, "salmon_approach_dash", 1.40, .14, .025,
+                       x, y, deck + .066, paint)
         dash.rotation_euler.z = angle
+    # Kerbed shoulders so the drive reads as built road, not a mown strip.
+    for side in (-1, 1):
+        for a, b in zip(approach, approach[1:]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            length = math.hypot(dx, dy)
+            if length < .01:
+                continue
+            nx, ny = -dy / length * 3.05, dx / length * 3.05
+            kerb = add_box(col, "salmon_approach_kerb", length + .3, .34, .17,
+                           (a[0] + b[0]) / 2 + nx * side,
+                           (a[1] + b[1]) / 2 + ny * side,
+                           max(a[2], b[2]) - .02, cream)
+            kerb.rotation_euler.z = math.atan2(dy, dx)
 
 
 def build_fire_station(col, seed):
@@ -4967,6 +5009,22 @@ def _polyline_sample(points, distance):
         distance -= length
     a, b = points[-2], points[-1]
     return b[0], b[1], math.atan2(b[1] - a[1], b[0] - a[0])
+
+
+def _polyline_height(points, distance):
+    """Authored deck height at one distance along a 3D polyline.
+
+    _polyline_sample answers where and which way; a road that ramps needs to
+    know how high as well, or its markings stay pinned to the ground while the
+    asphalt climbs away from them.
+    """
+    for a, b in zip(points, points[1:]):
+        length = math.hypot(b[0] - a[0], b[1] - a[1])
+        if distance <= length:
+            t = distance / max(length, .001)
+            return a[2] + (b[2] - a[2]) * t
+        distance -= length
+    return points[-1][2]
 
 
 def _offset_terrain_path(points, offset):

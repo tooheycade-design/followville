@@ -24,9 +24,13 @@ STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 # and running east into the store's lot. The whole run sits between z=6.07 and
 # z=6.14, so it is level enough to need no grading at all -- which is why the
 # store went where it did.
-SALMON_SHOP_APPROACH = [(78.0, 232.0), (88.0, 229.0), (97.0, 223.0),
-                        (102.0, 215.0), (103.0, 207.0), (109.0, 201.0),
-                        (117.0, 197.5)]
+SALMON_SHOP_APPROACH = [(-123.0, 18.0), (-130.0, 10.0), (-141.0, -1.0),
+                        (-151.0, -17.0), (-156.0, -33.0), (-154.0, -45.0),
+                        (-149.0, -51.0)]
+# Where the drive stops being a road and becomes the lot, in world metres. The
+# last stretch ramps from the ground up onto the store's pad so the asphalt
+# meets the lot surface flush instead of stepping into its edge.
+SALMON_SHOP_ENTRY_RAMP = 14.0
 
 # Authored roads that are not in the suburban plan. They live here so that
 # check_world_geometry.py can see every road in the town; a checker that only
