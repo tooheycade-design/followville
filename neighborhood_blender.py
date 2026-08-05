@@ -148,6 +148,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day32campaign 20-second town, 31-home, billboard, and campaign-semi reveal
 #   --cam day33storm  20-second storm flight through 33 homes to the weather station
 #   --cam day34fire    16-second skyline fire response into 31 Eastbank home rises
+#   --cam day35store  24-second continuous town/homes/Salmon Pro Shop reveal
+#   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -3443,24 +3445,53 @@ def build_salmon_pro_shop(col, seed):
                 base_z + 2.0 + index * 1.55, stone_dark)
 
     # ── the mounted salmon, and the sign it hangs over ──────────────────────
-    fish_z = base_z + 9.30
-    body = add_uv_sphere(col, "salmon_fish_body", 1.55, 0, -7.55, fish_z,
-                         pink, 9, 14)
-    body.scale = (2.55, .62, 1.0)
-    belly = add_uv_sphere(col, "salmon_fish_belly", 1.18, 0, -7.72,
-                          fish_z - .42, pink_pale, 8, 12)
-    belly.scale = (2.30, .50, .55)
-    tail = add_ngon_cone(col, "salmon_fish_tail", .18, 1.55, 1.85, 6,
-                         -4.05, -7.55, fish_z, pink, rot=math.pi / 2)
-    tail.rotation_euler = (0, -math.pi / 2, 0)
-    for sign, name in ((1, "salmon_fish_fin_top"), (-1, "salmon_fish_fin_low")):
-        fin = add_ngon_cone(col, name, .95, .12, 1.15, 5,
-                            .35, -7.60, fish_z + sign * 1.05, pink)
-        fin.rotation_euler = (0, 0, 0) if sign > 0 else (math.pi, 0, 0)
-    add_ngon_cone(col, "salmon_fish_pec", .70, .10, .95, 5,
-                  1.45, -8.05, fish_z - .30, pink_pale)
-    add_uv_sphere(col, "salmon_fish_eye", .17, 3.35, -8.02, fish_z + .45,
-                  timber, 6, 8)
+    # The mounted salmon sits clear above the sign board rather than across it,
+    # and is built from a tapered body, a forked tail and a real dorsal fin --
+    # a single scaled sphere just reads as a lump at any distance.
+    fish_z = base_z + 10.75
+    body = add_uv_sphere(col, "salmon_fish_body", 1.42, .55, -7.55, fish_z,
+                         pink, 9, 16)
+    body.scale = (2.15, .58, .92)
+    belly = add_uv_sphere(col, "salmon_fish_belly", 1.10, .55, -7.74,
+                          fish_z - .40, pink_pale, 8, 12)
+    belly.scale = (2.05, .46, .52)
+    # Tapered rear third, so the body narrows into the tail instead of ending.
+    peduncle = add_ngon_cone(col, "salmon_fish_peduncle", .82, .30, 1.55, 7,
+                             -2.55, -7.55, fish_z, pink)
+    peduncle.rotation_euler = (0, -math.pi / 2, 0)
+    # Forked tail: two swept lobes, not one cone.
+    for lobe in (1, -1):
+        fin = add_ngon_cone(col, "salmon_fish_tail_lobe", .62, .10, 1.70, 4,
+                            -4.05, -7.55, fish_z, pink)
+        fin.rotation_euler = (0, -math.radians(118) * lobe, 0)
+    add_box(col, "salmon_fish_tail_web", 1.05, .16, .55, -4.55, -7.55,
+            fish_z - .27, pink)
+    # Dorsal, adipose and pectoral fins, and a head that reads as a head.
+    dorsal = add_ngon_cone(col, "salmon_fish_dorsal", .80, .10, 1.25, 4,
+                           .30, -7.62, fish_z + 1.02, pink)
+    dorsal.rotation_euler = (0, -math.radians(18), 0)
+    add_ngon_cone(col, "salmon_fish_adipose", .30, .06, .48, 4,
+                  -1.95, -7.62, fish_z + .78, pink)
+    for side, y in ((1, -8.12), (-1, -7.02)):
+        pec = add_ngon_cone(col, "salmon_fish_pec", .58, .09, 1.05, 4,
+                            1.15, y, fish_z - .48, pink_pale)
+        pec.rotation_euler = (math.radians(24) * side, 0, math.radians(30))
+    anal = add_ngon_cone(col, "salmon_fish_anal", .48, .08, .82, 4,
+                         -1.55, -7.62, fish_z - 1.05, pink)
+    anal.rotation_euler = (math.pi, 0, 0)
+    snout = add_ngon_cone(col, "salmon_fish_snout", .95, .34, 1.15, 8,
+                          2.65, -7.55, fish_z - .10, pink)
+    snout.rotation_euler = (0, math.pi / 2, 0)
+    add_box(col, "salmon_fish_jaw", .70, .52, .16, 3.30, -7.55,
+            fish_z - .38, pink_pale)
+    for y in (-7.95, -7.15):
+        add_uv_sphere(col, "salmon_fish_eye", .155, 2.85, y, fish_z + .30,
+                      cream, 6, 8)
+        add_uv_sphere(col, "salmon_fish_pupil", .085, 2.98, y, fish_z + .30,
+                      timber, 5, 6)
+    # Mounting board, so it reads as a trophy fixed to the gable.
+    add_box(col, "salmon_fish_mount", 5.40, .30, .70, 0, -7.16,
+            fish_z - .35, timber)
 
     add_box(col, "salmon_sign_board", 15.4, .40, 2.35, 0, -7.15,
             base_z + 6.05, timber)
@@ -8254,6 +8285,60 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day35store":
+        # Day 35, one unbroken 24-second move: the town as it stood, then the
+        # 24 new homes rising under the drone, then a descent onto the Salmon
+        # Pro Shop as it appears, then a climb out over the finished town.
+        # Nothing cuts -- every beat is a keyframe on the same camera.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest_homes]
+        hx = sum(p[0] for p in points) / len(points) if points else 0.0
+        hy = sum(p[1] for p in points) / len(points) if points else 0.0
+        sx, sy = SALMON_SHOP_X, SALMON_SHOP_Y
+
+        aim = bpy.data.objects.new("Day35StoreAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day35StoreCamera")
+        cam_data.lens = 40
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day35StoreCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+        beats = (
+            # 0-6s: the town as it was this morning, a wide banking establish
+            # across downtown. Nothing has risen yet.
+            (1, (330.0, -300.0, 210.0), (10.0, -10.0, 12.0)),
+            (90, (250.0, -300.0, 196.0), (5.0, -12.0, 12.0)),
+            (180, (150.0, -286.0, 180.0), (0.0, -14.0, 12.0)),
+            # 6-13s: swing onto the new homes and hold while they rise.
+            (250, (hx + 150.0, hy - 210.0, 150.0), (hx, hy, 8.0)),
+            (330, (hx + 96.0, hy - 150.0, 104.0), (hx, hy + 2.0, 7.0)),
+            (390, (hx + 70.0, hy - 118.0, 86.0), (hx, hy + 3.0, 6.5)),
+            # 13-19.5s: cross town and descend onto the store as it appears.
+            (440, (sx + 210.0, sy - 150.0, 150.0), (sx + 20.0, sy, 14.0)),
+            (500, (sx + 96.0, sy - 84.0, 74.0), (sx, sy - 2.0, 10.0)),
+            (560, (sx + 62.0, sy - 60.0, 44.0), (sx, sy - 3.0, 9.0)),
+            # 19.5-24s: climb back out over the finished town.
+            (640, (sx + 150.0, sy - 130.0, 128.0), (-30.0, -20.0, 12.0)),
+            (frame_end, (250.0, -240.0, 232.0), (-10.0, -18.0, 12.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day34fire":
         # Day 34: spend five seconds on an angled downtown skyline where a
         # render-only fire response is readable but remains background action,
@@ -9861,7 +9946,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day34fire":
+    if cfg.get("cam") == "day35store":
+        frame_end = max(frame_end, FPS * 24)
+    elif cfg.get("cam") == "day34fire":
         frame_end = max(frame_end, FPS * 16)
     elif cfg.get("cam") == "day33storm":
         frame_end = max(frame_end, FPS * 20)
@@ -9913,6 +10000,21 @@ def main(cfg=None):
         for e in rise:
             if e not in home_roots:
                 animate_rise(e, 205)
+    elif cfg.get("cam") == "day35store":
+        # One continuous shot, so the rises have to land under the camera
+        # rather than the camera cutting to them. Homes finish before the
+        # drone leaves them; the store starts as the drone arrives over it.
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        store_roots = [e for e in rise if e.name.startswith("salmonproshop_d")]
+        if len(store_roots) != 1:
+            raise RuntimeError("Day 35 reveal needs exactly one Salmon Pro Shop"
+                               " root, found %d" % len(store_roots))
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 196 + index * 5, dur=30)
+        animate_rise(store_roots[0], 432, dur=58)
+        for e in rise:
+            if e not in home_roots and e not in store_roots:
+                animate_rise(e, 180)
     elif cfg.get("cam") == "day33storm":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         lodgepole_roots = [e for e in home_roots
