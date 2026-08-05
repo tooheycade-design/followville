@@ -24,9 +24,13 @@ STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 # and running east into the store's lot. The whole run sits between z=6.07 and
 # z=6.14, so it is level enough to need no grading at all -- which is why the
 # store went where it did.
-SALMON_SHOP_APPROACH = [(-123.0, 18.0), (-130.0, 10.0), (-141.0, -1.0),
-                        (-151.0, -17.0), (-156.0, -33.0), (-154.0, -45.0),
-                        (-149.0, -51.0)]
+# The drive keeps west of the pad's edge (x=-153) the whole way down and only
+# crosses it at the kerb gap. An earlier line cut the pad's north-west corner,
+# and a raytrace at (-151,-17) came back with the pad slab 26cm ABOVE the
+# asphalt -- the road was running underneath its own car park.
+SALMON_SHOP_APPROACH = [(-123.0, 18.0), (-133.0, 10.0), (-146.0, -2.0),
+                        (-157.0, -6.0), (-161.0, -22.0), (-163.0, -38.0),
+                        (-160.0, -49.0), (-153.0, -52.0), (-146.0, -51.0)]
 # Where the drive stops being a road and becomes the lot, in world metres. The
 # last stretch ramps from the ground up onto the store's pad so the asphalt
 # meets the lot surface flush instead of stepping into its edge.
