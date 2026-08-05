@@ -37,13 +37,12 @@ STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 # It also stays clear of the pad until the kerb gap: an earlier line cut the
 # corner, and a raytrace came back with the pad slab 26cm ABOVE the asphalt --
 # the road was running underneath its own car park.
-SALMON_SHOP_APPROACH = [(-93.0, -70.0), (-103.0, -76.0), (-114.0, -78.0),
-                        (-124.0, -74.0), (-128.0, -67.0), (-124.0, -62.0),
-                        (-117.0, -59.0), (-113.0, -56.0)]
+SALMON_SHOP_APPROACH = [(-101.0, -88.0), (-99.0, -78.0), (-102.0, -70.0),
+                        (-107.0, -63.0), (-113.0, -56.0)]
 # Where the drive stops being a road and becomes the lot, in world metres. The
 # last stretch ramps from the ground up onto the store's pad so the asphalt
 # meets the lot surface flush instead of stepping into its edge.
-SALMON_SHOP_ENTRY_RAMP = 45.0
+SALMON_SHOP_ENTRY_RAMP = 30.0
 
 # Authored roads that are not in the suburban plan. They live here so that
 # check_world_geometry.py can see every road in the town; a checker that only

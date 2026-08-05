@@ -3365,8 +3365,8 @@ def build_salmon_pro_shop(col, seed):
     # The kerb is deliberately broken on the west side: that gap is where the
     # approach road comes in, and a continuous kerb would have the drive
     # running straight into a 16cm wall.
-    add_box(col, "salmon_lot_kerb", .5, 7.0, .16, -19.8, -22.5, base_z, cream)
-    add_box(col, "salmon_lot_kerb", .5, 7.0, .16, -19.8, -7.5, base_z, cream)
+    add_box(col, "salmon_lot_kerb", .5, 4.0, .16, -19.8, -24.0, base_z, cream)
+    add_box(col, "salmon_lot_kerb", .5, 4.0, .16, -19.8, -6.0, base_z, cream)
     add_box(col, "salmon_lot_kerb", .5, 22.0, .16, 19.8, -15.0, base_z, cream)
     for index in range(13):
         x = -18.0 + index * 3.0
@@ -3406,45 +3406,133 @@ def build_salmon_pro_shop(col, seed):
 
     add_prism_roof(col, "salmon_roof", STORE_W + 2.4, STORE_D + 2.2, 6.60,
                    0, STORE_Y, base_z + 7.35, green)
+
+    # ── massing: an entry tower and two projecting wings ────────────────────
+    # One box under one gable reads as a shed at any distance. A destination
+    # store needs a silhouette: a tall centre that carries the sign, wings that
+    # break the front plane, and dormers that stop the roof being one sheet.
+    TOWER_W, TOWER_D, TOWER_H = 12.4, 11.0, 10.6
+    add_box(col, "salmon_tower_base", TOWER_W + 1.0, TOWER_D + .8, 1.35,
+            0, -3.2, base_z, stone)
+    for index in range(14):
+        add_box(col, "salmon_tower_stone", 1.35, .20, .38,
+                -6.2 + index * .95, -8.72,
+                base_z + .16 + (.44 if index % 2 else .0), stone_dark)
+    add_box(col, "salmon_tower_body", TOWER_W, TOWER_D, TOWER_H,
+            0, -3.2, base_z + 1.35, log)
+    for index in range(11):
+        course = add_ngon_cone(col, "salmon_tower_log", .29, .29,
+                               TOWER_W - .35, 8, -(TOWER_W - .35) / 2,
+                               -8.66, base_z + 1.70 + index * .78, log_dark)
+        course.rotation_euler = (0, math.pi / 2, 0)
+    add_prism_roof(col, "salmon_tower_roof", TOWER_W + 2.0, TOWER_D + 1.8,
+                   5.40, 0, -3.2, base_z + 11.95, green)
+    add_box(col, "salmon_tower_ridge", TOWER_W + 2.4, .42, .24,
+            0, -3.2, base_z + 17.35, green_dark)
+    # Exposed truss in the tower gable -- the detail that says "lodge".
+    add_beam_between(col, "salmon_tower_truss",
+                     (-5.6, -8.9, base_z + 11.95),
+                     (0.0, -8.9, base_z + 14.55), .28, timber)
+    add_beam_between(col, "salmon_tower_truss",
+                     (5.6, -8.9, base_z + 11.95),
+                     (0.0, -8.9, base_z + 14.55), .28, timber)
+    add_box(col, "salmon_tower_collar", 7.6, .26, .30, 0, -8.9,
+            base_z + 12.95, timber)
+
+    # Two wings step forward at each end, each under its own cross gable.
+    for side in (-1, 1):
+        wx = side * 12.6
+        add_box(col, "salmon_wing_base", 9.6, 15.0, 1.05, wx, 1.2,
+                base_z, stone)
+        add_box(col, "salmon_wing_body", 8.8, 14.2, 6.10, wx, 1.2,
+                base_z + 1.05, log)
+        for index in range(8):
+            course = add_ngon_cone(col, "salmon_wing_log", .27, .27, 8.45, 8,
+                                   wx - 4.22, -5.98,
+                                   base_z + 1.40 + index * .72, log_dark)
+            course.rotation_euler = (0, math.pi / 2, 0)
+        wing_roof = add_prism_roof(col, "salmon_wing_roof", 15.2, 9.6, 4.30,
+                                   wx, 1.2, base_z + 7.15, green)
+        wing_roof.rotation_euler.z = math.pi / 2
+        add_box(col, "salmon_wing_ridge", .40, 15.6, .22, wx, 1.2,
+                base_z + 11.45, green_dark)
+        add_box(col, "salmon_wing_barge", 9.9, .34, .30, wx, -6.12,
+                base_z + 7.05, green_dark)
+        # Tall gable window under each wing peak.
+        add_box(col, "salmon_wing_window", 4.20, .26, 4.60, wx, -6.02,
+                base_z + 2.10, glass)
+        add_box(col, "salmon_wing_glow", 3.80, .14, 3.90, wx, -5.88,
+                base_z + 2.40, warm)
+        for mullion in (-1.35, 0.0, 1.35):
+            add_box(col, "salmon_wing_mullion", .15, .34, 4.70,
+                    wx + mullion, -6.16, base_z + 2.05, timber)
+        add_box(col, "salmon_wing_head", 4.90, .36, .32, wx, -6.20,
+                base_z + 6.70, timber)
+
+    # Dormers along the main roof, so it is not one uninterrupted sheet.
+    for dx in (-6.2, 6.2):
+        add_box(col, "salmon_dormer_body", 3.30, 2.60, 2.05, dx, 2.6,
+                base_z + 8.65, log)
+        add_prism_roof(col, "salmon_dormer_roof", 3.90, 3.20, 1.45,
+                       dx, 2.6, base_z + 10.70, green)
+        add_box(col, "salmon_dormer_glass", 2.20, .20, 1.30, dx, 1.36,
+                base_z + 9.05, glass)
     add_box(col, "salmon_ridge_cap", STORE_W + 2.8, .46, .26,
             0, STORE_Y, base_z + 13.85, green_dark)
     for y in (STORE_Y - STORE_D / 2 - 1.1, STORE_Y + STORE_D / 2 + 1.1):
         add_box(col, "salmon_eave", STORE_W + 2.8, .40, .34,
                 0, y, base_z + 7.15, green_dark)
 
-    # Entrance gable projecting toward the lot, the building's public face.
-    add_box(col, "salmon_entry_block", 13.0, 5.6, 6.10,
-            0, -3.6, base_z + 1.05, log)
-    add_prism_roof(col, "salmon_entry_gable", 14.2, 6.6, 4.30,
-                   0, -3.6, base_z + 7.15, green)
-    add_box(col, "salmon_entry_gable_trim", 14.6, .34, .26,
-            0, -6.85, base_z + 7.05, green_dark)
-    for x in (-6.1, 6.1):
-        add_box(col, "salmon_entry_pilaster", .70, .70, 7.00,
-                x, -6.35, base_z + 1.05, timber)
+    # Covered entrance porch on heavy log columns, standing off the tower face
+    # so the doors sit in shade rather than flat against the wall.
+    add_box(col, "salmon_porch_deck", 14.6, 4.6, .34, 0, -11.3,
+            base_z + .06, stone)
+    add_box(col, "salmon_porch_step", 15.4, .90, .18, 0, -13.7,
+            base_z + .06, stone_dark)
+    for x in (-6.4, -2.15, 2.15, 6.4):
+        add_ngon_cone(col, "salmon_porch_column", .44, .38, 5.10, 10,
+                      x, -11.9, base_z + .40, timber)
+        add_box(col, "salmon_porch_capital", 1.15, 1.15, .30, x, -11.9,
+                base_z + 5.50, log_dark)
+        add_box(col, "salmon_porch_base_block", 1.25, 1.25, .40, x, -11.9,
+                base_z + .38, stone_dark)
+    add_box(col, "salmon_porch_beam", 15.0, .70, .78, 0, -11.9,
+            base_z + 5.80, timber)
+    add_prism_roof(col, "salmon_porch_roof", 16.0, 6.0, 2.35, 0, -11.0,
+                   base_z + 6.58, green)
+    add_box(col, "salmon_porch_barge", 16.4, .32, .26, 0, -13.95,
+            base_z + 6.48, green_dark)
+    for x in (-4.3, 0.0, 4.3):
+        add_beam_between(col, "salmon_porch_brace",
+                         (x - 1.5, -11.9, base_z + 5.80),
+                         (x, -11.9, base_z + 6.55), .20, timber)
+        add_beam_between(col, "salmon_porch_brace",
+                         (x + 1.5, -11.9, base_z + 5.80),
+                         (x, -11.9, base_z + 6.55), .20, timber)
 
     # Doors, glazing and the warm interior band behind it.
+    # Doors and the glazed gable above them, set into the tower face.
     for x in (-3.3, 3.3):
-        add_box(col, "salmon_door", 2.90, .26, 3.30, x, -6.52,
-                base_z + 1.05, glass)
+        add_box(col, "salmon_door", 2.90, .26, 3.40, x, -8.76,
+                base_z + 1.35, glass)
         add_box(col, "salmon_door_pull", .10, .12, .95,
-                x + (-.95 if x < 0 else .95), -6.70, base_z + 2.35, gold)
-    add_box(col, "salmon_transom", 9.0, .22, 1.30, 0, -6.52, base_z + 4.45,
-            glass)
-    add_box(col, "salmon_lobby_glow", 8.4, .16, 1.05, 0, -6.34,
-            base_z + 4.55, warm)
-    # Tall showroom windows down both long faces.
-    for x in (-13.4, -8.9, 8.9, 13.4):
-        add_box(col, "salmon_window", 3.30, .24, 4.20, x,
-                STORE_Y - STORE_D / 2 - .10, base_z + 2.05, glass)
-        add_box(col, "salmon_window_glow", 2.95, .14, 3.40, x,
-                STORE_Y - STORE_D / 2 + .04, base_z + 2.35, warm)
-        add_box(col, "salmon_window_head", 3.85, .32, .30, x,
-                STORE_Y - STORE_D / 2 - .18, base_z + 6.25, timber)
-        for mullion in (-1.10, 1.10):
-            add_box(col, "salmon_window_mullion", .13, .34, 4.25,
-                    x + mullion, STORE_Y - STORE_D / 2 - .20, base_z + 2.02,
-                    timber)
+                x + (-.95 if x < 0 else .95), -8.94, base_z + 2.70, gold)
+    add_box(col, "salmon_door_mullion", .22, .30, 3.40, 0, -8.80,
+            base_z + 1.35, timber)
+    add_box(col, "salmon_transom", 9.4, .22, 1.45, 0, -8.76,
+            base_z + 4.85, glass)
+    add_box(col, "salmon_lobby_glow", 8.8, .16, 1.15, 0, -8.58,
+            base_z + 4.95, warm)
+    # Big arched-feel gable window high in the tower, the lit focal point.
+    add_box(col, "salmon_tower_window", 7.40, .26, 3.90, 0, -8.76,
+            base_z + 7.05, glass)
+    add_box(col, "salmon_tower_glow", 6.90, .14, 3.30, 0, -8.60,
+            base_z + 7.35, warm)
+    for mullion in (-2.4, 0.0, 2.4):
+        add_box(col, "salmon_tower_mullion", .16, .34, 4.00, mullion,
+                -8.90, base_z + 7.00, timber)
+    add_box(col, "salmon_tower_sill", 8.00, .38, .30, 0, -8.92,
+            base_z + 6.70, timber)
 
     # Fieldstone chimney: the silhouette element that stops the roof reading
     # as one long extrusion from the air.
@@ -3461,60 +3549,60 @@ def build_salmon_pro_shop(col, seed):
     # The mounted salmon sits clear above the sign board rather than across it,
     # and is built from a tapered body, a forked tail and a real dorsal fin --
     # a single scaled sphere just reads as a lump at any distance.
-    fish_z = base_z + 10.75
-    body = add_uv_sphere(col, "salmon_fish_body", 1.42, .55, -7.55, fish_z,
+    fish_z = base_z + 13.35
+    body = add_uv_sphere(col, "salmon_fish_body", 1.42, .55, -9.25, fish_z,
                          pink, 9, 16)
     body.scale = (2.15, .58, .92)
-    belly = add_uv_sphere(col, "salmon_fish_belly", 1.10, .55, -7.74,
+    belly = add_uv_sphere(col, "salmon_fish_belly", 1.10, .55, -9.44,
                           fish_z - .40, pink_pale, 8, 12)
     belly.scale = (2.05, .46, .52)
     # Tapered rear third, so the body narrows into the tail instead of ending.
     peduncle = add_ngon_cone(col, "salmon_fish_peduncle", .82, .30, 1.55, 7,
-                             -2.55, -7.55, fish_z, pink)
+                             -2.55, -9.25, fish_z, pink)
     peduncle.rotation_euler = (0, -math.pi / 2, 0)
     # Forked tail: two swept lobes, not one cone.
     for lobe in (1, -1):
         fin = add_ngon_cone(col, "salmon_fish_tail_lobe", .62, .10, 1.70, 4,
-                            -4.05, -7.55, fish_z, pink)
+                            -4.05, -9.25, fish_z, pink)
         fin.rotation_euler = (0, -math.radians(118) * lobe, 0)
-    add_box(col, "salmon_fish_tail_web", 1.05, .16, .55, -4.55, -7.55,
+    add_box(col, "salmon_fish_tail_web", 1.05, .16, .55, -4.55, -9.25,
             fish_z - .27, pink)
     # Dorsal, adipose and pectoral fins, and a head that reads as a head.
     dorsal = add_ngon_cone(col, "salmon_fish_dorsal", .80, .10, 1.25, 4,
-                           .30, -7.62, fish_z + 1.02, pink)
+                           .30, -9.32, fish_z + 1.02, pink)
     dorsal.rotation_euler = (0, -math.radians(18), 0)
     add_ngon_cone(col, "salmon_fish_adipose", .30, .06, .48, 4,
-                  -1.95, -7.62, fish_z + .78, pink)
-    for side, y in ((1, -8.12), (-1, -7.02)):
+                  -1.95, -9.32, fish_z + .78, pink)
+    for side, y in ((1, -9.82), (-1, -8.72)):
         pec = add_ngon_cone(col, "salmon_fish_pec", .58, .09, 1.05, 4,
                             1.15, y, fish_z - .48, pink_pale)
         pec.rotation_euler = (math.radians(24) * side, 0, math.radians(30))
     anal = add_ngon_cone(col, "salmon_fish_anal", .48, .08, .82, 4,
-                         -1.55, -7.62, fish_z - 1.05, pink)
+                         -1.55, -9.32, fish_z - 1.05, pink)
     anal.rotation_euler = (math.pi, 0, 0)
     snout = add_ngon_cone(col, "salmon_fish_snout", .95, .34, 1.15, 8,
-                          2.65, -7.55, fish_z - .10, pink)
+                          2.65, -9.25, fish_z - .10, pink)
     snout.rotation_euler = (0, math.pi / 2, 0)
-    add_box(col, "salmon_fish_jaw", .70, .52, .16, 3.30, -7.55,
+    add_box(col, "salmon_fish_jaw", .70, .52, .16, 3.30, -9.25,
             fish_z - .38, pink_pale)
-    for y in (-7.95, -7.15):
+    for y in (-9.65, -8.95):
         add_uv_sphere(col, "salmon_fish_eye", .155, 2.85, y, fish_z + .30,
                       cream, 6, 8)
         add_uv_sphere(col, "salmon_fish_pupil", .085, 2.98, y, fish_z + .30,
                       timber, 5, 6)
     # Mounting board, so it reads as a trophy fixed to the gable.
-    add_box(col, "salmon_fish_mount", 5.40, .30, .70, 0, -7.16,
+    add_box(col, "salmon_fish_mount", 5.40, .30, .70, 0, -8.86,
             fish_z - .35, timber)
 
-    add_box(col, "salmon_sign_board", 15.4, .40, 2.35, 0, -7.15,
+    add_box(col, "salmon_sign_board", 12.2, .40, 2.05, 0, -8.95,
             base_z + 6.05, timber)
-    add_box(col, "salmon_sign_frame", 15.9, .22, .22, 0, -7.28,
+    add_box(col, "salmon_sign_frame", 12.7, .22, .22, 0, -9.08,
             base_z + 8.40, gold)
-    add_box(col, "salmon_sign_frame_low", 15.9, .22, .22, 0, -7.28,
+    add_box(col, "salmon_sign_frame_low", 12.7, .22, .22, 0, -9.08,
             base_z + 5.83, gold)
-    _add_followmart_text(col, "SALMON PRO SHOP", 1.30, 0, -7.42,
+    _add_followmart_text(col, "SALMON PRO SHOP", 1.02, 0, -9.22,
                          base_z + 7.20, cream, extrude=.11, bevel=.016)
-    _add_followmart_text(col, "OUTFITTERS  SINCE  DAY 35", .48, 0, -6.62,
+    _add_followmart_text(col, "OUTFITTERS  SINCE  DAY 35", .40, 0, -8.42,
                          base_z + 5.35, gold, extrude=.06, bevel=.008)
 
     # ── forecourt: flags, a boat on a trailer, planting, parked cars ────────
