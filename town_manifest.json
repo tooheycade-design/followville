@@ -604,10 +604,10 @@
     },
     {
       "asset": {
-        "bytes": 602568,
+        "bytes": 568464,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "a65dfd83a9d166c4b7b7870c6ebb2a164d7b5abcf12178b71960f290b9aae56f"
+        "sha256": "388fcc958c033a8485607c3deecf97a66e4212122ac0d8d6698054f81a21fa1f"
       },
       "bounds": {
         "center": [
@@ -2319,9 +2319,9 @@
     }
   ],
   "fallback": {
-    "bytes": 26821484,
+    "bytes": 26767180,
     "file": "town.glb",
-    "sha256": "c865977d10ebde0a81ac6867c9f38bc785eebb0b524cb9ce9521f5043eb0b695"
+    "sha256": "2f517988d6e17adb5486c810b7fc714954b056357cd2c2110b65ef6b2b40f867"
   },
   "state": {
     "building_count": 807,
