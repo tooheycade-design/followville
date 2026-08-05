@@ -37,6 +37,7 @@ from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
 from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
                           STORYBOOK_ACCESS, SALMON_SHOP_APPROACH,
+                          SALMON_SHOP_ENTRY_RAMP,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           WEATHER_STATION_CENTER,
                           WEATHER_STATION_HALF_EXTENTS,
