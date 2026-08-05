@@ -3550,48 +3550,48 @@ def build_salmon_pro_shop(col, seed):
     # and is built from a tapered body, a forked tail and a real dorsal fin --
     # a single scaled sphere just reads as a lump at any distance.
     fish_z = base_z + 13.35
-    body = add_uv_sphere(col, "salmon_fish_body", 1.42, .55, -9.25, fish_z,
+    body = add_uv_sphere(col, "salmon_fish_body", 1.42, .55, -10.75, fish_z,
                          pink, 9, 16)
     body.scale = (2.15, .58, .92)
-    belly = add_uv_sphere(col, "salmon_fish_belly", 1.10, .55, -9.44,
+    belly = add_uv_sphere(col, "salmon_fish_belly", 1.10, .55, -10.94,
                           fish_z - .40, pink_pale, 8, 12)
     belly.scale = (2.05, .46, .52)
     # Tapered rear third, so the body narrows into the tail instead of ending.
     peduncle = add_ngon_cone(col, "salmon_fish_peduncle", .82, .30, 1.55, 7,
-                             -2.55, -9.25, fish_z, pink)
+                             -2.55, -10.75, fish_z, pink)
     peduncle.rotation_euler = (0, -math.pi / 2, 0)
     # Forked tail: two swept lobes, not one cone.
     for lobe in (1, -1):
         fin = add_ngon_cone(col, "salmon_fish_tail_lobe", .62, .10, 1.70, 4,
-                            -4.05, -9.25, fish_z, pink)
+                            -4.05, -10.75, fish_z, pink)
         fin.rotation_euler = (0, -math.radians(118) * lobe, 0)
-    add_box(col, "salmon_fish_tail_web", 1.05, .16, .55, -4.55, -9.25,
+    add_box(col, "salmon_fish_tail_web", 1.05, .16, .55, -4.55, -10.75,
             fish_z - .27, pink)
     # Dorsal, adipose and pectoral fins, and a head that reads as a head.
     dorsal = add_ngon_cone(col, "salmon_fish_dorsal", .80, .10, 1.25, 4,
-                           .30, -9.32, fish_z + 1.02, pink)
+                           .30, -10.82, fish_z + 1.02, pink)
     dorsal.rotation_euler = (0, -math.radians(18), 0)
     add_ngon_cone(col, "salmon_fish_adipose", .30, .06, .48, 4,
-                  -1.95, -9.32, fish_z + .78, pink)
-    for side, y in ((1, -9.82), (-1, -8.72)):
+                  -1.95, -10.82, fish_z + .78, pink)
+    for side, y in ((1, -11.32), (-1, -10.22)):
         pec = add_ngon_cone(col, "salmon_fish_pec", .58, .09, 1.05, 4,
                             1.15, y, fish_z - .48, pink_pale)
         pec.rotation_euler = (math.radians(24) * side, 0, math.radians(30))
     anal = add_ngon_cone(col, "salmon_fish_anal", .48, .08, .82, 4,
-                         -1.55, -9.32, fish_z - 1.05, pink)
+                         -1.55, -10.82, fish_z - 1.05, pink)
     anal.rotation_euler = (math.pi, 0, 0)
     snout = add_ngon_cone(col, "salmon_fish_snout", .95, .34, 1.15, 8,
-                          2.65, -9.25, fish_z - .10, pink)
+                          2.65, -10.75, fish_z - .10, pink)
     snout.rotation_euler = (0, math.pi / 2, 0)
-    add_box(col, "salmon_fish_jaw", .70, .52, .16, 3.30, -9.25,
+    add_box(col, "salmon_fish_jaw", .70, .52, .16, 3.30, -10.75,
             fish_z - .38, pink_pale)
-    for y in (-9.65, -8.95):
+    for y in (-11.15, -8.95):
         add_uv_sphere(col, "salmon_fish_eye", .155, 2.85, y, fish_z + .30,
                       cream, 6, 8)
         add_uv_sphere(col, "salmon_fish_pupil", .085, 2.98, y, fish_z + .30,
                       timber, 5, 6)
     # Mounting board, so it reads as a trophy fixed to the gable.
-    add_box(col, "salmon_fish_mount", 5.40, .30, .70, 0, -8.86,
+    add_box(col, "salmon_fish_mount", 3.60, 2.20, .55, 0, -9.55,
             fish_z - .35, timber)
 
     add_box(col, "salmon_sign_board", 12.2, .40, 2.05, 0, -8.95,
