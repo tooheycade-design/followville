@@ -3591,10 +3591,14 @@ def build_salmon_pro_shop(col, seed):
     # world matrix carries location, rotation and scale together, which matters
     # because the fish's fins and the cars' wheels already carry rotations of
     # their own and the fish body carries a scale.
+    # matrix_basis, not matrix_world. These asset collections are built off the
+    # scene so the depsgraph never evaluates them; matrix_world reads back as
+    # identity there, and composing onto it replaces every transform instead of
+    # adding to it -- which piles the whole store on its own origin.
     turn = Matrix.Rotation(QUARTER, 4, "Z")
     for obj in list(col.objects):
         if obj not in store_start:
-            obj.matrix_world = turn @ obj.matrix_world
+            obj.matrix_basis = turn @ obj.matrix_basis
 
     # Now that the pad is where it will stay, close it to the ground.
     _add_retaining_skirt(col, "salmon_pad_skirt", TURNED_X, TURNED_Y,
