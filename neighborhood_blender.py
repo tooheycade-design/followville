@@ -3714,20 +3714,28 @@ def build_salmon_pro_shop(col, seed):
         total += math.hypot(b[0] - a[0], b[1] - a[1])
         runs.append(total)
 
+    # The climb has to FINISH before the drive crosses onto the pad, not at the
+    # end of the polyline. Ramping all the way to the last point left the final
+    # stretch still climbing while it was already over a 30cm slab, so the road
+    # ran under its own car park for the last few metres.
+    ENTRY_FLAT = 11.0
+    DECK = LOT_TOP - .055
     approach = []
     for (x, y), run in zip(dense, runs):
         ground = terrain_height(x, y)
         remaining = total - run
-        if remaining < SALMON_SHOP_ENTRY_RAMP:
-            blend = 1.0 - remaining / SALMON_SHOP_ENTRY_RAMP
+        if remaining <= ENTRY_FLAT:
+            ground = DECK
+        elif remaining < SALMON_SHOP_ENTRY_RAMP:
+            blend = ((SALMON_SHOP_ENTRY_RAMP - remaining)
+                     / (SALMON_SHOP_ENTRY_RAMP - ENTRY_FLAT))
             blend = blend * blend * (3.0 - 2.0 * blend)      # ease, no kink
-            ground = ground + (LOT_TOP - .055 - ground) * blend
-        approach.append((x - SALMON_SHOP_X, y - SALMON_SHOP_Y, ground))
+            ground = ground + (DECK - ground) * blend
+        approach.append((x - SALMON_SHOP_X, y - SALMON_SHOP_Y,
+                         max(ground, terrain_height(x, y))))
 
     _add_road_strip(col, "salmon_approach_road", approach, asphalt, width=5.6,
-                    bottom_offset=.006, top_offset=.055,
-                    terrain_conform=True,
-                    terrain_origin=(SALMON_SHOP_X, SALMON_SHOP_Y))
+                    bottom_offset=.006, top_offset=.055)
     # Centre dashes on the same rhythm as every other road in town, riding the
     # authored deck rather than the ground so they stay on the ramp.
     for distance in range(8, int(total) - 6, 9):
@@ -3737,19 +3745,25 @@ def build_salmon_pro_shop(col, seed):
         dash = add_box(col, "salmon_approach_dash", 1.40, .14, .025,
                        x, y, deck + .066, paint)
         dash.rotation_euler.z = angle
-    # Kerbed shoulders so the drive reads as built road, not a mown strip.
+    # Kerbed shoulders. These were one rotated box per 3m segment, which on a
+    # curve leaves a row of disconnected rectangles with visible gaps at every
+    # joint. A road strip is a single mitred ribbon with shared vertices, which
+    # is exactly the problem _add_road_strip was written to solve for roads --
+    # so the kerbs use it too, offset from the same centreline and carrying the
+    # same authored deck heights so they never part company with the asphalt.
     for side in (-1, 1):
-        for a, b in zip(approach, approach[1:]):
-            dx, dy = b[0] - a[0], b[1] - a[1]
-            length = math.hypot(dx, dy)
-            if length < .01:
-                continue
-            nx, ny = -dy / length * 3.05, dx / length * 3.05
-            kerb = add_box(col, "salmon_approach_kerb", length + .3, .34, .17,
-                           (a[0] + b[0]) / 2 + nx * side,
-                           (a[1] + b[1]) / 2 + ny * side,
-                           max(a[2], b[2]) - .02, cream)
-            kerb.rotation_euler.z = math.atan2(dy, dx)
+        shoulder = []
+        for index, point in enumerate(approach):
+            before = approach[max(0, index - 1)]
+            after = approach[min(len(approach) - 1, index + 1)]
+            dx, dy = after[0] - before[0], after[1] - before[1]
+            length = max(.001, math.hypot(dx, dy))
+            nx, ny = -dy / length, dx / length
+            shoulder.append((point[0] + nx * 3.05 * side,
+                             point[1] + ny * 3.05 * side,
+                             point[2] - .02))
+        _add_road_strip(col, "salmon_approach_kerb", shoulder, cream,
+                        width=.46, bottom_offset=-.10, top_offset=.17)
 
 
 def build_fire_station(col, seed):
@@ -6550,6 +6564,10 @@ def scatter_nature(world_col, occupied, buildings):
     if weather_station_present:
         lane = [(x, y) for x, y, _z in weather_station_access_points()]
         active_segments.extend(zip(lane, lane[1:]))
+    salmon_shop_present = any(b.get("type") == "salmonproshop" for b in buildings)
+    if salmon_shop_present:
+        active_segments.extend(zip(SALMON_SHOP_APPROACH,
+                                   SALMON_SHOP_APPROACH[1:]))
     active_districts = {b.get("district") for b in buildings if b.get("plan_id")}
     active_segments.extend((a, b) for district in active_districts
                            for a, b in zip(DISTRICT_CONNECTORS.get(district, ()),
@@ -6599,6 +6617,12 @@ def scatter_nature(world_col, occupied, buildings):
                     WEATHER_STATION_HALF_EXTENTS[0] + 5.0 and
                     abs(point[1] - WEATHER_STATION_CENTER[1]) <
                     WEATHER_STATION_HALF_EXTENTS[1] + 5.0):
+                continue
+            # The store's pad is 56x50 after its quarter turn. Without this a
+            # scattered conifer grows straight up through the car park.
+            if salmon_shop_present and (
+                    abs(point[0] - SALMON_SHOP_X) < 32.0 and
+                    abs(point[1] - SALMON_SHOP_Y) < 29.0):
                 continue
             r = random.Random(gx * 7919 + gy * 104729 + 13)
             roll = r.random()
