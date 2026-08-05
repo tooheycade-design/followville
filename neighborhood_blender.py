@@ -3334,17 +3334,30 @@ def build_salmon_pro_shop(col, seed):
     needle = mat("NB_salmon_pine", (.10, .26, .15), .92)
     bark = mat("NB_salmon_bark", (.26, .17, .10), .95)
 
+    # Everything below is authored front-toward-local -Y, the same convention
+    # as the school and the cinema. The store then gets turned a quarter turn
+    # so its face and its lot both look east into the city instead of out at
+    # the meadow. The turn is applied to the store's own objects only; the
+    # approach road is built afterwards, in true local coordinates, because a
+    # road that rotates with the building stops meeting the town.
+    store_start = set(col.objects)
+    QUARTER = math.pi / 2
+
     HALF_X, HALF_Y = 25.0, 28.0
     origin = (SALMON_SHOP_X, SALMON_SHOP_Y)
+    # The quarter turn swaps the pad's footprint in world space, so terrain is
+    # sampled over the rectangle it will actually occupy, not the one it is
+    # authored in. Getting this backwards would bed the plinth into the wrong
+    # ground on a site that falls 3.8m across itself.
+    TURNED_X, TURNED_Y = HALF_Y, HALF_X
     base_z = max(terrain_height(SALMON_SHOP_X + x, SALMON_SHOP_Y + y)
-                 for x in (-HALF_X, 0.0, HALF_X)
-                 for y in (-HALF_Y, 0.0, HALF_Y)) + .10
+                 for x in (-TURNED_X, 0.0, TURNED_X)
+                 for y in (-TURNED_Y, 0.0, TURNED_Y)) + .10
 
-    # Level pad, closed to the ground on every side.
+    # Level pad; its skirt is added after the turn, below, so that it samples
+    # the ground the pad ends up standing on.
     add_box(col, "salmon_pad", HALF_X * 2, HALF_Y * 2, .30,
             0, 0, base_z - .30, stone_dark)
-    _add_retaining_skirt(col, "salmon_pad_skirt", HALF_X, HALF_Y,
-                         base_z - .30, origin, stone_dark)
 
     # ── parking apron, south half ───────────────────────────────────────────
     LOT_TOP = base_z + .06
@@ -3573,6 +3586,19 @@ def build_salmon_pro_shop(col, seed):
     # A short paved walk from the lot to the doors, stepped clear of both.
     add_box(col, "salmon_entry_walk", 11.0, 4.4, .07, 0, -9.0,
             base_z + .06, cream)
+
+    # Turn the store a quarter turn so it faces the city. Composing on the
+    # world matrix carries location, rotation and scale together, which matters
+    # because the fish's fins and the cars' wheels already carry rotations of
+    # their own and the fish body carries a scale.
+    turn = Matrix.Rotation(QUARTER, 4, "Z")
+    for obj in list(col.objects):
+        if obj not in store_start:
+            obj.matrix_world = turn @ obj.matrix_world
+
+    # Now that the pad is where it will stay, close it to the ground.
+    _add_retaining_skirt(col, "salmon_pad_skirt", TURNED_X, TURNED_Y,
+                         base_z - .30, origin, stone_dark)
 
     # Approach from the town road to the lot. Control points every ~3m,
     # because walk_surface_manifest uses them as given while _add_road_strip

@@ -24,17 +24,26 @@ STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 # and running east into the store's lot. The whole run sits between z=6.07 and
 # z=6.14, so it is level enough to need no grading at all -- which is why the
 # store went where it did.
-# The drive keeps west of the pad's edge (x=-153) the whole way down and only
-# crosses it at the kerb gap. An earlier line cut the pad's north-west corner,
-# and a raytrace at (-151,-17) came back with the pad slab 26cm ABOVE the
-# asphalt -- the road was running underneath its own car park.
-SALMON_SHOP_APPROACH = [(-123.0, 18.0), (-133.0, 10.0), (-146.0, -2.0),
-                        (-157.0, -6.0), (-161.0, -22.0), (-163.0, -38.0),
-                        (-160.0, -49.0), (-153.0, -52.0), (-146.0, -51.0)]
+# The store faces east into the city, so its lot faces the city too and the
+# drive comes off the Meadow Run connector on the city side rather than
+# doubling back round the building.
+#
+# It arrives the long way on purpose. The site falls 3.8m west to east, the
+# pad is level at the high end, and the lot is therefore about 3.9m above the
+# ground on the side the drive comes from. A short entrance would have been a
+# 28% ramp; this sweep spreads the same climb over roughly 60m, which is
+# inside the ~13% the rest of the town's streets hold to.
+#
+# It also stays clear of the pad until the kerb gap: an earlier line cut the
+# corner, and a raytrace came back with the pad slab 26cm ABOVE the asphalt --
+# the road was running underneath its own car park.
+SALMON_SHOP_APPROACH = [(-93.0, -70.0), (-103.0, -76.0), (-114.0, -78.0),
+                        (-124.0, -74.0), (-128.0, -67.0), (-124.0, -62.0),
+                        (-117.0, -59.0), (-113.0, -56.0)]
 # Where the drive stops being a road and becomes the lot, in world metres. The
 # last stretch ramps from the ground up onto the store's pad so the asphalt
 # meets the lot surface flush instead of stepping into its edge.
-SALMON_SHOP_ENTRY_RAMP = 14.0
+SALMON_SHOP_ENTRY_RAMP = 45.0
 
 # Authored roads that are not in the suburban plan. They live here so that
 # check_world_geometry.py can see every road in the town; a checker that only
@@ -147,7 +156,8 @@ LANDMARK_FOOTPRINTS = {
     "civicsquare":     (-23.0,   17.0,  -16.0,   16.0, False),
     "fishingpond":     (-26.0,   23.0,  -17.0,   16.0, True),
     "raftingstation":   (-9.0,   33.0,   -8.0,   12.0, True),
-    "salmonproshop":   (-25.0,   25.0,  -28.0,   28.0, True),
+    # Turned a quarter turn to face the city, so the pad is 56 wide by 50 deep.
+    "salmonproshop":   (-28.0,   28.0,  -25.0,   25.0, True),
     "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
 }
 
