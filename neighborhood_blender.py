@@ -10151,12 +10151,17 @@ def main(cfg=None):
         if len(store_roots) != 1:
             raise RuntimeError("Day 35 reveal needs exactly one Salmon Pro Shop"
                                " root, found %d" % len(store_roots))
+        # 30fps, 720 frames. The camera establishes the town as it stood over
+        # frames 1-180, sits on the new homes 250-390, descends onto the store
+        # 440-560, then climbs out. Every rise is timed inside the beat that
+        # frames it: nothing appears before the drone has arrived to see it,
+        # and nothing is still growing when the drone leaves.
         for index, e in enumerate(home_roots):
-            animate_rise(e, 196 + index * 5, dur=30)
-        animate_rise(store_roots[0], 432, dur=58)
+            animate_rise(e, 252 + index * 4, dur=28)     # last settles at 372
+        animate_rise(store_roots[0], 468, dur=64)        # settles at 532
         for e in rise:
             if e not in home_roots and e not in store_roots:
-                animate_rise(e, 180)
+                animate_rise(e, 235)
     elif cfg.get("cam") == "day33storm":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         lodgepole_roots = [e for e in home_roots
