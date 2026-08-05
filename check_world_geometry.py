@@ -39,6 +39,7 @@ from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, INTENTIONALLY_RAISED_ROADS,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
                           LANDMARK_FOOTPRINTS, LEVEL_WATER, RETAINED_PADS,
+                          SALMON_SHOP_APPROACH,
                           STORYBOOK_ACCESS, rafting_access_points,
                           weather_station_access_points,
                           transform_building_point, transform_point,
@@ -138,6 +139,8 @@ def every_road(state):
     if "weatherstation" in present:
         roads.append(("First Alert Weather access",
                       [(x, y) for x, y, _z in weather_station_access_points()]))
+    if "salmonproshop" in present:
+        roads.append(("Salmon Pro Shop approach", list(SALMON_SHOP_APPROACH)))
     return roads
 
 

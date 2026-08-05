@@ -20,6 +20,14 @@ FOUNDER_PARK_OFFSET = (35.0, 0.0)
 STORYBOOK_OFFSET = (35.0, 0.0)
 STORYBOOK_LAYOUT_CENTER = (305.0, 60.0)
 
+# The Salmon Pro Shop's approach, leaving Pebble Court's terminus at (78,232)
+# and running east into the store's lot. The whole run sits between z=6.07 and
+# z=6.14, so it is level enough to need no grading at all -- which is why the
+# store went where it did.
+SALMON_SHOP_APPROACH = [(78.0, 232.0), (88.0, 229.0), (97.0, 223.0),
+                        (102.0, 215.0), (103.0, 207.0), (109.0, 201.0),
+                        (117.0, 197.5)]
+
 # Authored roads that are not in the suburban plan. They live here so that
 # check_world_geometry.py can see every road in the town; a checker that only
 # knows about half the roads will happily approve a building sitting on one of
@@ -131,6 +139,7 @@ LANDMARK_FOOTPRINTS = {
     "civicsquare":     (-23.0,   17.0,  -16.0,   16.0, False),
     "fishingpond":     (-26.0,   23.0,  -17.0,   16.0, True),
     "raftingstation":   (-9.0,   33.0,   -8.0,   12.0, True),
+    "salmonproshop":   (-25.0,   25.0,  -28.0,   28.0, True),
     "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
 }
 
@@ -149,6 +158,8 @@ KEEP_OUT_REGIONS = [
 # three of its four sides until its plinth was closed all the way round.
 RETAINED_PADS = {
     "rafting-terrace": "continuous stone plinth, _add_retaining_skirt()",
+    "salmon-pro-shop": "fieldstone skirt round the whole pad, "
+                       "_add_retaining_skirt()",
     "rafting-dock": "timber piles driven to the riverbed",
     "rafting-forecourt": "retaining skirt on its three downhill edges",
     "fishing-dock": "steel piles in the pond",
@@ -173,6 +184,7 @@ LANDMARK_APPROACHES = {
     "cityhall": {"City Hall approach"},
     "civicsquare": {"City Hall approach"},
     "raftingstation": {"rafting outpost lane"},
+    "salmonproshop": {"Salmon Pro Shop approach"},
     "weatherstation": {"First Alert Weather access"},
 }
 

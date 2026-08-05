@@ -36,7 +36,7 @@ from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
                                   FISHING_POND_RX, FISHING_POND_RY)
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
 from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
-                          STORYBOOK_ACCESS,
+                          STORYBOOK_ACCESS, SALMON_SHOP_APPROACH,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           WEATHER_STATION_CENTER,
                           WEATHER_STATION_HALF_EXTENTS,
@@ -176,7 +176,8 @@ def _cli():
              "--constructionzone": "constructionzone",
              "--movietheater": "movietheater",
              "--eastwoods": "eastwoods",
-             "--raftingstation": "raftingstation"}
+             "--raftingstation": "raftingstation",
+             "--salmonproshop": "salmonproshop"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -216,6 +217,12 @@ EAST_WOODS_Y = 180.0
 EAST_WOODS_RADIUS = 58.0
 RAFTING_STATION_X = 330.0
 RAFTING_STATION_Y = -30.0
+
+# Salmon Pro Shop. Sited by measurement, not by eye: the ground falls 0.27m
+# across the whole 50x56m pad, the nearest house is 45m off, and Pebble Court's
+# terminus at (78,232) is a short, near-level approach to the west.
+SALMON_SHOP_X = 120.0
+SALMON_SHOP_Y = 220.0
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -3286,6 +3293,273 @@ def build_rafting_station(col, seed):
         splash.scale = (1.8 + rng.random(), .22, .10)
 
 
+def build_salmon_pro_shop(col, seed):
+    """Salmon Pro Shop: a timber-and-fieldstone outdoors superstore.
+
+    The big-box outfitter idiom -- a long lodge with a steep green roof, a
+    stone chimney, a projecting entrance gable under a mounted fish, and a
+    striped lot in front of it. Front faces local -Y, like the school and the
+    cinema, so the south-east camera sees the entrance.
+
+    The site at (120, 220) was chosen by measuring rather than by eye: the
+    ground falls 0.27m across the whole 50x56m pad, the nearest house is 45m
+    away, and Pebble Court's terminus is a short approach to the west. The pad
+    is still skirted, because 0.27m of fall is still 0.27m of daylight under a
+    level slab.
+    """
+    rng = random.Random(seed)
+    stone = mat("NB_salmon_fieldstone", (.44, .43, .40), .96)
+    stone_dark = mat("NB_salmon_fieldstone_dark", (.30, .29, .27), .97)
+    log = mat("NB_salmon_log", (.53, .35, .18), .90)
+    log_dark = mat("NB_salmon_log_shadow", (.36, .23, .11), .93)
+    timber = mat("NB_salmon_timber", (.29, .17, .085), .92)
+    green = mat("NB_salmon_roof", (.055, .24, .16), .84)
+    green_dark = mat("NB_salmon_roof_trim", (.03, .145, .10), .80)
+    cream = mat("NB_salmon_cream", (.92, .88, .77), .82)
+    gold = mat("NB_salmon_gold", (.85, .62, .16), .34, .55)
+    glass = mat("NB_salmon_glass", (.11, .26, .32), .12, .10, .90, .08, .62)
+    warm = mat("NB_salmon_warm_light", (1.0, .74, .34), .24)
+    asphalt = mat("NB_salmon_asphalt", (.155, .16, .17), .96)
+    paint = mat("NB_salmon_paint", (.94, .93, .86), .74)
+    pink = mat("NB_salmon_fish", (.86, .40, .34), .52)
+    pink_pale = mat("NB_salmon_fish_belly", (.95, .82, .74), .56)
+    steel = mat("NB_salmon_steel", (.36, .39, .41), .42, .58)
+    hull = mat("NB_salmon_hull", (.10, .32, .52), .58)
+    needle = mat("NB_salmon_pine", (.10, .26, .15), .92)
+    bark = mat("NB_salmon_bark", (.26, .17, .10), .95)
+
+    HALF_X, HALF_Y = 25.0, 28.0
+    origin = (SALMON_SHOP_X, SALMON_SHOP_Y)
+    base_z = max(terrain_height(SALMON_SHOP_X + x, SALMON_SHOP_Y + y)
+                 for x in (-HALF_X, 0.0, HALF_X)
+                 for y in (-HALF_Y, 0.0, HALF_Y)) + .10
+
+    # Level pad, closed to the ground on every side.
+    add_box(col, "salmon_pad", HALF_X * 2, HALF_Y * 2, .30,
+            0, 0, base_z - .30, stone_dark)
+    _add_retaining_skirt(col, "salmon_pad_skirt", HALF_X, HALF_Y,
+                         base_z - .30, origin, stone_dark)
+
+    # ── parking apron, south half ───────────────────────────────────────────
+    add_box(col, "salmon_lot", 44.0, 22.0, .06, 0, -15.0, base_z, asphalt)
+    for x in (-19.8, 19.8):
+        add_box(col, "salmon_lot_kerb", .5, 22.0, .16, x, -15.0, base_z, cream)
+    for index in range(13):
+        x = -18.0 + index * 3.0
+        for y in (-21.0, -9.6):
+            add_box(col, "salmon_lot_stripe", .16, 4.9, .012,
+                    x, y, base_z + .06, paint)
+    add_box(col, "salmon_lot_aisle", 40.0, .18, .012, 0, -15.4,
+            base_z + .06, paint)
+    # Kerbed island so the lot is not one flat sheet from the drone.
+    add_box(col, "salmon_lot_island", 9.0, 2.2, .22, 0, -15.4, base_z + .06,
+            cream)
+    for x in (-3.0, 0.0, 3.0):
+        add_ngon_cone(col, "salmon_island_shrub", .85, .55, 1.05, 7,
+                      x, -15.4, base_z + .28, needle)
+
+    # ── the lodge ───────────────────────────────────────────────────────────
+    STORE_Y, STORE_W, STORE_D = 9.0, 34.0, 22.0
+    add_box(col, "salmon_store_base", STORE_W + .8, STORE_D + .8, 1.05,
+            0, STORE_Y, base_z, stone)
+    for index in range(22):            # fieldstone coursing, not a flat band
+        x = -17.0 + index * 1.62
+        add_box(col, "salmon_base_stone", 1.30, .18, .34,
+                x, STORE_Y - STORE_D / 2 - .52,
+                base_z + .12 + (.40 if index % 2 else .0), stone_dark)
+    add_box(col, "salmon_store_body", STORE_W, STORE_D, 6.30,
+            0, STORE_Y, base_z + 1.05, log)
+    # Horizontal log courses read as a cabin at street level and survive the
+    # aerial pass as texture rather than noise.
+    for index in range(9):
+        z = base_z + 1.35 + index * .68
+        add_ngon_cone(col, "salmon_log_course", .30, .30, STORE_W - .4, 8,
+                      0, STORE_Y - STORE_D / 2 - .06, z, log_dark,
+                      rot=math.pi / 2)
+    for x in (-17.2, 17.2):
+        add_box(col, "salmon_corner_post", .62, STORE_D + .5, 7.35,
+                x, STORE_Y, base_z + 1.05, timber)
+
+    add_prism_roof(col, "salmon_roof", STORE_W + 2.4, STORE_D + 2.2, 6.60,
+                   0, STORE_Y, base_z + 7.35, green)
+    add_box(col, "salmon_ridge_cap", STORE_W + 2.8, .46, .26,
+            0, STORE_Y, base_z + 13.85, green_dark)
+    for y in (STORE_Y - STORE_D / 2 - 1.1, STORE_Y + STORE_D / 2 + 1.1):
+        add_box(col, "salmon_eave", STORE_W + 2.8, .40, .34,
+                0, y, base_z + 7.15, green_dark)
+
+    # Entrance gable projecting toward the lot, the building's public face.
+    add_box(col, "salmon_entry_block", 13.0, 5.6, 6.10,
+            0, -3.6, base_z + 1.05, log)
+    add_prism_roof(col, "salmon_entry_gable", 14.2, 6.6, 4.30,
+                   0, -3.6, base_z + 7.15, green)
+    add_box(col, "salmon_entry_gable_trim", 14.6, .34, .26,
+            0, -6.85, base_z + 7.05, green_dark)
+    for x in (-6.1, 6.1):
+        add_box(col, "salmon_entry_pilaster", .70, .70, 7.00,
+                x, -6.35, base_z + 1.05, timber)
+
+    # Doors, glazing and the warm interior band behind it.
+    for x in (-3.3, 3.3):
+        add_box(col, "salmon_door", 2.90, .26, 3.30, x, -6.52,
+                base_z + 1.05, glass)
+        add_box(col, "salmon_door_pull", .10, .12, .95,
+                x + (-.95 if x < 0 else .95), -6.70, base_z + 2.35, gold)
+    add_box(col, "salmon_transom", 9.0, .22, 1.30, 0, -6.52, base_z + 4.45,
+            glass)
+    add_box(col, "salmon_lobby_glow", 8.4, .16, 1.05, 0, -6.34,
+            base_z + 4.55, warm)
+    # Tall showroom windows down both long faces.
+    for x in (-13.4, -8.9, 8.9, 13.4):
+        add_box(col, "salmon_window", 3.30, .24, 4.20, x,
+                STORE_Y - STORE_D / 2 - .10, base_z + 2.05, glass)
+        add_box(col, "salmon_window_glow", 2.95, .14, 3.40, x,
+                STORE_Y - STORE_D / 2 + .04, base_z + 2.35, warm)
+        add_box(col, "salmon_window_head", 3.85, .32, .30, x,
+                STORE_Y - STORE_D / 2 - .18, base_z + 6.25, timber)
+        for mullion in (-1.10, 1.10):
+            add_box(col, "salmon_window_mullion", .13, .34, 4.25,
+                    x + mullion, STORE_Y - STORE_D / 2 - .20, base_z + 2.02,
+                    timber)
+
+    # Fieldstone chimney: the silhouette element that stops the roof reading
+    # as one long extrusion from the air.
+    add_box(col, "salmon_chimney", 3.40, 3.40, 15.60, 13.6,
+            STORE_Y + 6.4, base_z + 1.05, stone)
+    add_box(col, "salmon_chimney_cap", 4.00, 4.00, .42, 13.6,
+            STORE_Y + 6.4, base_z + 16.65, stone_dark)
+    for index in range(9):
+        add_box(col, "salmon_chimney_stone", 1.5, .16, .30,
+                13.6 + (-.7 if index % 2 else .7), STORE_Y + 4.66,
+                base_z + 2.0 + index * 1.55, stone_dark)
+
+    # ── the mounted salmon, and the sign it hangs over ──────────────────────
+    fish_z = base_z + 9.30
+    body = add_uv_sphere(col, "salmon_fish_body", 1.55, 0, -7.55, fish_z,
+                         pink, 9, 14)
+    body.scale = (2.55, .62, 1.0)
+    belly = add_uv_sphere(col, "salmon_fish_belly", 1.18, 0, -7.72,
+                          fish_z - .42, pink_pale, 8, 12)
+    belly.scale = (2.30, .50, .55)
+    tail = add_ngon_cone(col, "salmon_fish_tail", .18, 1.55, 1.85, 6,
+                         -4.05, -7.55, fish_z, pink, rot=math.pi / 2)
+    tail.rotation_euler = (0, -math.pi / 2, 0)
+    for sign, name in ((1, "salmon_fish_fin_top"), (-1, "salmon_fish_fin_low")):
+        fin = add_ngon_cone(col, name, .95, .12, 1.15, 5,
+                            .35, -7.60, fish_z + sign * 1.05, pink)
+        fin.rotation_euler = (0, 0, 0) if sign > 0 else (math.pi, 0, 0)
+    add_ngon_cone(col, "salmon_fish_pec", .70, .10, .95, 5,
+                  1.45, -8.05, fish_z - .30, pink_pale)
+    add_uv_sphere(col, "salmon_fish_eye", .17, 3.35, -8.02, fish_z + .45,
+                  timber, 6, 8)
+
+    add_box(col, "salmon_sign_board", 15.4, .40, 2.35, 0, -7.15,
+            base_z + 6.05, timber)
+    add_box(col, "salmon_sign_frame", 15.9, .22, .22, 0, -7.28,
+            base_z + 8.40, gold)
+    add_box(col, "salmon_sign_frame_low", 15.9, .22, .22, 0, -7.28,
+            base_z + 5.83, gold)
+    _add_followmart_text(col, "SALMON PRO SHOP", 1.30, 0, -7.42,
+                         base_z + 7.20, cream, extrude=.11, bevel=.016)
+    _add_followmart_text(col, "OUTFITTERS  SINCE  DAY 35", .48, 0, -6.62,
+                         base_z + 5.35, gold, extrude=.06, bevel=.008)
+
+    # ── forecourt: flags, a boat on a trailer, planting, parked cars ────────
+    for x in (-9.2, 9.2):
+        add_ngon_cone(col, "salmon_flagpole", .13, .09, 8.40, 8,
+                      x, -9.60, base_z, steel)
+        add_uv_sphere(col, "salmon_flagpole_ball", .19, x, -9.60,
+                      base_z + 8.50, gold, 6, 8)
+        add_box(col, "salmon_flag", .10, 2.10, 1.30, x + .05, -8.50,
+                base_z + 6.90, green if x < 0 else cream)
+
+    # Display boat, the thing that says "outdoors store" from 60m up.
+    boat_x, boat_y = -15.4, -7.4
+    add_box(col, "salmon_trailer_bed", 6.40, 1.90, .28, boat_x, boat_y,
+            base_z + .34, steel)
+    for dx in (-1.9, 1.9):
+        for dy in (-1.02, 1.02):
+            wheel = add_ngon_cone(col, "salmon_trailer_wheel", .38, .38, .26,
+                                  10, boat_x + dx, boat_y + dy, base_z + .06,
+                                  timber)
+            wheel.rotation_euler = (math.pi / 2, 0, 0)
+    add_box(col, "salmon_boat_hull", 6.00, 2.05, 1.02, boat_x, boat_y,
+            base_z + .62, hull)
+    add_box(col, "salmon_boat_gunwale", 6.20, 2.25, .18, boat_x, boat_y,
+            base_z + 1.64, cream)
+    bow = add_ngon_cone(col, "salmon_boat_bow", 1.05, .12, 1.35, 5,
+                        boat_x + 3.35, boat_y, base_z + .62, hull)
+    bow.rotation_euler = (0, math.pi / 2, 0)
+    add_box(col, "salmon_boat_deck", 4.60, 1.70, .10, boat_x - .3, boat_y,
+            base_z + 1.56, timber)
+    add_box(col, "salmon_boat_console", .85, .95, .78, boat_x - .1, boat_y,
+            base_z + 1.66, cream)
+    add_box(col, "salmon_boat_motor", .60, .72, 1.15, boat_x - 3.25, boat_y,
+            base_z + 1.05, stone_dark)
+
+    for x, y in ((-22.0, 6.0), (-21.4, 16.5), (22.0, 6.0), (21.6, 17.0),
+                 (-22.2, 24.0), (22.2, 24.0)):
+        height = 5.0 + rng.random() * 2.4
+        add_ngon_cone(col, "salmon_pine_trunk", .30, .24, height * .34, 7,
+                      x, y, base_z, bark)
+        for tier in range(3):
+            add_ngon_cone(col, "salmon_pine_tier",
+                          2.10 - tier * .52, .12, height * .40, 8,
+                          x, y, base_z + height * (.28 + tier * .22), needle)
+
+    car_colors = (mat("NB_salmon_car_a", (.72, .19, .16), .52),
+                  mat("NB_salmon_car_b", (.19, .32, .55), .52),
+                  mat("NB_salmon_car_c", (.90, .89, .84), .54),
+                  mat("NB_salmon_car_d", (.24, .43, .30), .52))
+    for index, x in enumerate((-16.5, -10.5, -1.5, 7.5, 16.5)):
+        for y, flip in ((-19.0, 1), (-11.2, -1)):
+            if (index + (y < -15)) % 2:
+                continue
+            paint_mat = car_colors[(index + (1 if y < -15 else 0))
+                                   % len(car_colors)]
+            add_box(col, "salmon_car_body", 1.95, 4.35, .78,
+                    x, y, base_z + .34, paint_mat)
+            add_box(col, "salmon_car_cabin", 1.78, 2.30, .68,
+                    x, y - flip * .22, base_z + 1.12, paint_mat)
+            add_box(col, "salmon_car_glass", 1.62, 2.05, .46,
+                    x, y - flip * .22, base_z + 1.22, glass)
+            for dx in (-.92, .92):
+                for dy in (-1.48, 1.48):
+                    tyre = add_ngon_cone(col, "salmon_car_wheel", .34, .34,
+                                         .22, 10, x + dx, y + dy,
+                                         base_z + .12, stone_dark)
+                    tyre.rotation_euler = (0, math.pi / 2, 0)
+
+    # A short paved walk from the lot to the doors, stepped clear of both.
+    add_box(col, "salmon_entry_walk", 11.0, 4.4, .07, 0, -9.0,
+            base_z + .06, cream)
+
+    # Approach from Pebble Court's terminus. Control points every ~3m, because
+    # walk_surface_manifest uses them as given while _add_road_strip subdivides
+    # internally, and coarse points drift the walk surface off the visible road.
+    approach = []
+    for a, b in zip(SALMON_SHOP_APPROACH, SALMON_SHOP_APPROACH[1:]):
+        steps = max(1, int(math.ceil(math.hypot(b[0] - a[0], b[1] - a[1]) / 3.0)))
+        for step in range(steps):
+            t = step / steps
+            x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+            approach.append((x - SALMON_SHOP_X, y - SALMON_SHOP_Y,
+                             terrain_height(x, y)))
+    last = SALMON_SHOP_APPROACH[-1]
+    approach.append((last[0] - SALMON_SHOP_X, last[1] - SALMON_SHOP_Y,
+                     terrain_height(*last)))
+    _add_road_strip(col, "salmon_approach_road", approach, asphalt, width=5.2,
+                    bottom_offset=.006, top_offset=.055,
+                    terrain_conform=True,
+                    terrain_origin=(SALMON_SHOP_X, SALMON_SHOP_Y))
+    for distance in (12, 30, 48, 66):
+        x, y, angle = _polyline_sample(approach, distance)
+        dash = add_box(col, "salmon_approach_dash", 1.20, .13, .025,
+                       x, y, terrain_height(SALMON_SHOP_X + x,
+                                            SALMON_SHOP_Y + y) + .065, paint)
+        dash.rotation_euler.z = angle
+
+
 def build_fire_station(col, seed):
     """Full-block Followville Fire & Rescue campus, front facing local -Y."""
     rng = random.Random(seed)
@@ -4094,6 +4368,7 @@ ASSET_VARIANTS = {
     "civicsquare": [("AST_civicsquare_0", lambda c: build_civic_square(c, 3100))],
     "fishingpond": [("AST_fishingpond_0", lambda c: build_fishing_pond(c, 3200))],
     "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
+    "salmonproshop": [("AST_salmonproshop_0", lambda c: build_salmon_pro_shop(c, 3800))],
     "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
@@ -4141,6 +4416,8 @@ def web_chunk_id(b):
         return "fishing-pond"
     if b.get("type") == "raftingstation":
         return "rafting-station"
+    if b.get("type") == "salmonproshop":
+        return "salmon-pro-shop"
     if b.get("type") == "weatherstation":
         return "weather-station"
     if b.get("type") == "constructionzone":
@@ -4173,7 +4450,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
-        "raftingstation": 1, "weatherstation": 1}
+        "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -4183,7 +4460,7 @@ def footprint(b):
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
     if (b.get("plan_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
-                          "raftingstation", "forestreserve")):
+                          "raftingstation", "forestreserve", "salmonproshop")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -9248,7 +9525,8 @@ def main(cfg=None):
                 specials or cfg.get("cityhall") or cfg.get("civicsquare") or
                 cfg.get("fishingpond") or cfg.get("constructionzone") or
                 cfg.get("movietheater") or
-                cfg.get("eastwoods") or cfg.get("raftingstation")):
+                cfg.get("eastwoods") or cfg.get("raftingstation") or
+                cfg.get("salmonproshop")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -9416,6 +9694,19 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(rafting_station)
             new_batch.append(rafting_station)
+        if cfg.get("salmonproshop"):
+            if any(b["type"] == "salmonproshop" for b in state["buildings"]):
+                raise RuntimeError("Salmon Pro Shop already exists")
+            salmon_pro_shop = {
+                "type": "salmonproshop", "gx": 0, "gy": 0,
+                "px": SALMON_SHOP_X, "py": SALMON_SHOP_Y, "pz": 0.0,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "name": "Salmon Pro Shop",
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(salmon_pro_shop)
+            new_batch.append(salmon_pro_shop)
         if cfg.get("constructionzone"):
             existing_zone = [b for b in state["buildings"]
                              if b["type"] == "constructionzone"]
