@@ -127,6 +127,70 @@
   }
   .account-line a { color:#ffd5bd; }
 
+  /* Sign in / sign out. Most visitors arrive here from Instagram, and voting
+     needs an account but not a house, so the account control belongs in the
+     header of the landing page rather than only inside the 3D town. Kept to
+     plain text buttons -- the page's style is editorial, not a dashboard. */
+  .account-bar {
+    display:flex; align-items:center; justify-content:flex-end; gap:11px;
+    width:100%; min-height:30px; margin-bottom:2px; font-size:13px;
+  }
+  .account-bar .who { opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .account-bar .who b { font-weight:600; opacity:1; }
+  .auth-btn {
+    font:inherit; font-size:13px; font-weight:600; padding:7px 15px; border-radius:999px;
+    cursor:pointer; color:#fff; border:1px solid rgba(255,255,255,.34);
+    background:rgba(255,255,255,.10); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .auth-btn:hover { background:rgba(255,255,255,.19); border-color:rgba(255,255,255,.52); }
+  .auth-btn.solid {
+    background:rgba(201,107,74,.95); border-color:transparent;
+    box-shadow:0 8px 20px rgba(88,35,21,.28);
+  }
+  .auth-btn.solid:hover { background:#d6764f; }
+  .auth-btn.quiet { background:none; font-weight:500; border-color:rgba(255,255,255,.28); }
+  .auth-btn[hidden] { display:none; }
+
+  .auth-overlay {
+    position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+    padding:20px; background:rgba(7,14,24,.66);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  .auth-overlay[hidden] { display:none; }
+  .auth-card {
+    position:relative; width:100%; max-width:342px; padding:26px 24px 22px; border-radius:16px;
+    background:var(--cream); color:var(--navy); box-shadow:0 26px 60px rgba(4,12,22,.5);
+  }
+  .auth-card h3 { margin:0 0 6px; font-size:21px; letter-spacing:-.3px; }
+  .auth-card .auth-sub { margin:0 0 4px; font-size:13px; line-height:1.5; opacity:.72; }
+  .auth-card label {
+    display:block; margin:13px 0 5px; font-size:11px; letter-spacing:.07em;
+    text-transform:uppercase; opacity:.6;
+  }
+  .auth-card input {
+    width:100%; font:inherit; font-size:16px; padding:10px 12px; border-radius:9px;
+    background:#fff; color:var(--navy); border:1px solid rgba(28,43,69,.22);
+  }
+  .auth-card input:focus { outline:2px solid rgba(201,107,74,.5); outline-offset:1px; }
+  .auth-card .primary {
+    width:100%; margin-top:18px; padding:11px; border:0; border-radius:9px; cursor:pointer;
+    font:inherit; font-size:15px; font-weight:600; background:var(--accent); color:#fff;
+  }
+  .auth-card .primary:disabled { opacity:.55; cursor:default; }
+  .auth-card .linkish {
+    display:block; width:100%; margin-top:12px; padding:0; border:0; background:none;
+    cursor:pointer; font:inherit; font-size:12.5px; color:var(--navy); opacity:.66;
+    text-decoration:underline;
+  }
+  .auth-card .err { margin-top:9px; min-height:16px; font-size:12.5px; color:#a8321d; }
+  .auth-card .note { margin:8px 0 0; font-size:13px; line-height:1.55; text-align:center; }
+  .auth-close {
+    position:absolute; top:9px; right:12px; padding:4px; border:0; background:none;
+    cursor:pointer; font-size:22px; line-height:1; color:var(--navy); opacity:.45;
+  }
+  .auth-close:hover { opacity:.8; }
+
   .founders-note {
     margin-top:38px; font-size:12.5px; opacity:0.55; text-align:center; line-height:1.6;
     max-width:320px;
@@ -320,6 +384,12 @@
 <div class="bg-grid"></div>
 
 <main class="content">
+  <div class="account-bar">
+    <span class="who" id="accountWho" hidden>signed in as <b id="accountHandle"></b></span>
+    <button class="auth-btn solid" id="signInBtn" type="button" hidden>Sign in</button>
+    <button class="auth-btn quiet" id="signOutBtn" type="button" hidden>Sign out</button>
+  </div>
+
   <header class="brand-row">
     <div class="brand-identity">
       <div class="logo-ring">
@@ -406,10 +476,16 @@
 
   <footer class="home-footer">
     <p class="hint">third-person walking &middot; first-person zoom &middot; desktop and mobile</p>
-    <p class="account-line" id="accountLine" style="display:none;">
-      logged in as <b id="accountHandle"></b> &middot; <a href="#" id="logoutLink">log out</a>
-    </p>
   </footer>
+
+  <div class="auth-overlay" id="authOverlay" hidden>
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="auth-close" id="authClose" type="button" aria-label="Close">&times;</button>
+      <h3 id="authTitle">Sign in</h3>
+      <p class="auth-sub" id="authSub">Welcome back to Followville.</p>
+      <div id="authForms"></div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -688,21 +764,110 @@
   // Fails silently to the plain static page if anything here can't load.
   const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
+  const overlay = document.getElementById("authOverlay");
+  const forms   = document.getElementById("authForms");
+  const title   = document.getElementById("authTitle");
+  const sub     = document.getElementById("authSub");
+  const signInBtn  = document.getElementById("signInBtn");
+  const signOutBtn = document.getElementById("signOutBtn");
+  const esc = s => String(s).replace(/[&<>"']/g,
+    c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
   try {
     const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const setErr = m => { const e = document.getElementById("authErr"); if (e) e.textContent = m || ""; };
+    const closeModal = () => { overlay.hidden = true; };
+    const openModal = (mode) => {
+      overlay.hidden = false;
+      renderAuthForms(mode || "signin");
+      setTimeout(() => document.getElementById("fEmail")?.focus(), 30);
+    };
+
+    // Deliberately the same fields, the same handle metadata key and the same
+    // order as town.html's panel, so an account created here and an account
+    // created in the town are indistinguishable to setup_profile.
+    function renderAuthForms(mode){
+      const up = mode === "signup";
+      title.textContent = up ? "Create your account" : "Sign in";
+      sub.textContent = up
+        ? "One account per follower. It claims your home and lets you vote for mayor."
+        : "Welcome back to Followville.";
+      forms.innerHTML = up ? `
+        <label for="fEmail">email</label>
+        <input id="fEmail" type="email" autocomplete="email" />
+        <label for="fPass">password</label>
+        <input id="fPass" type="password" autocomplete="new-password" />
+        <label for="fHandle">instagram handle</label>
+        <input id="fHandle" placeholder="@yourhandle" autocapitalize="none" autocorrect="off" />
+        <button class="primary" id="doSignup" type="button">Create account</button>
+        <div class="err" id="authErr"></div>
+        <button class="linkish" id="swap" type="button">Already have an account? Sign in</button>` : `
+        <label for="fEmail">email</label>
+        <input id="fEmail" type="email" autocomplete="email" />
+        <label for="fPass">password</label>
+        <input id="fPass" type="password" autocomplete="current-password" />
+        <button class="primary" id="doSignin" type="button">Sign in</button>
+        <div class="err" id="authErr"></div>
+        <button class="linkish" id="swap" type="button">New here? Create an account</button>`;
+      document.getElementById("swap").onclick = () => renderAuthForms(up ? "signin" : "signup");
+      const submit = document.getElementById(up ? "doSignup" : "doSignin");
+      submit.onclick = up ? doSignup : doSignin;
+      forms.querySelectorAll("input").forEach(input =>
+        input.addEventListener("keydown", e => { if (e.key === "Enter") submit.click(); }));
+    }
+
+    async function doSignin(){
+      const btn = document.getElementById("doSignin");
+      btn.disabled = true; setErr("");
+      const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById("fEmail").value.trim(),
+        password: document.getElementById("fPass").value
+      });
+      btn.disabled = false;
+      if (error) return setErr(error.message);
+      location.reload();
+    }
+
+    async function doSignup(){
+      const email  = document.getElementById("fEmail").value.trim();
+      const pass   = document.getElementById("fPass").value;
+      const handle = document.getElementById("fHandle").value.trim();
+      if (!email || !pass || !handle) return setErr("Fill in all three fields.");
+      const btn = document.getElementById("doSignup");
+      btn.disabled = true; setErr("");
+      const { data: created, error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { instagram_handle: handle.replace(/^@/, "").toLowerCase() } }
+      });
+      btn.disabled = false;
+      if (error) return setErr(error.message);
+      if (!created.session){
+        forms.innerHTML = `<p class="note">Almost there &mdash; click the confirmation link we
+          just emailed to <b>${esc(email)}</b>, then come back and sign in.</p>
+          <button class="linkish" id="swap" type="button">Back to sign in</button>`;
+        document.getElementById("swap").onclick = () => renderAuthForms("signin");
+        return;
+      }
+      location.reload();
+    }
+
+    signInBtn.onclick = () => openModal("signin");
+    document.getElementById("authClose").onclick = closeModal;
+    overlay.onclick = e => { if (e.target === overlay) closeModal(); };
+    document.addEventListener("keydown",
+      e => { if (e.key === "Escape" && !overlay.hidden) closeModal(); });
+
     const { data } = await sb.auth.getSession();
     if (data?.session){
+      signOutBtn.hidden = false;
+      signOutBtn.onclick = async () => { await sb.auth.signOut(); location.reload(); };
       const { data: status } = await sb.rpc("my_status");
       const handle = status?.profile?.instagram_handle;
       if (handle){
         document.getElementById("accountHandle").textContent = "@" + handle;
-        document.getElementById("accountLine").style.display = "block";
-        document.getElementById("logoutLink").onclick = async (e) => {
-          e.preventDefault();
-          await sb.auth.signOut();
-          location.reload();
-        };
+        document.getElementById("accountWho").hidden = false;
       }
       if (status?.claim){
         const btn = document.getElementById("claimBtn");
@@ -715,9 +880,20 @@
       if (status?.profile?.is_admin){
         document.getElementById("adminBtn").style.display = "flex";
       }
+    } else {
+      signInBtn.hidden = false;
+      // /vote and the claim card both need an account, so let them link
+      // straight to the form instead of stranding people on the homepage.
+      if (location.hash === "#signin" || location.hash === "#signup"){
+        openModal(location.hash.slice(1));
+      }
     }
   } catch (e) {
-    console.warn("account check skipped:", e);
+    // Supabase unreachable: leave the page exactly as it was before accounts
+    // existed rather than showing a sign-in button that cannot work.
+    console.warn("account control unavailable:", e);
+    if (signInBtn) signInBtn.hidden = true;
+    if (signOutBtn) signOutBtn.hidden = true;
   }
 </script>
 </body>
