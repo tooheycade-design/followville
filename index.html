@@ -331,6 +331,12 @@
   @media (max-width:820px){
     body { justify-content:flex-start; padding:15px 12px max(14px,env(safe-area-inset-bottom)); }
     .content { gap:11px; }
+    /* Phone screens are the common case here (most visitors arrive from the
+       Instagram in-app browser), and this row is competing with the map for
+       vertical space, so keep it to the height of the button itself. */
+    .account-bar { min-height:0; margin-bottom:-3px; font-size:12px; }
+    .auth-btn { padding:6px 13px; font-size:12px; }
+    .auth-card { max-width:none; padding:22px 20px 20px; }
     .brand-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px 12px; padding-bottom:10px; }
     .logo-ring { width:60px; height:60px; }
     h1 { font-size:28px; }
