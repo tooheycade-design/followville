@@ -72,7 +72,7 @@ page depending on who is looking:
 | --- | --- |
 | Signed out | "You need to be a citizen to vote", how to become one, and a link to sign up. Plus the closing time and how many are running — **no names, no counts**. |
 | Signed in, no handle set | "One step left" — finish account setup. |
-| Pending approval | "Your citizenship is pending" — DM the code to @followville. Re-checks every few seconds, so it flips to the ballot the moment you approve them. |
+| Pending approval | "Your citizenship is pending" — DM the code to @thefollowville. Re-checks every few seconds, so it flips to the ballot the moment you approve them. |
 | Rejected | Told plainly they can't vote. |
 | **Citizen, poll not open yet** | The field of candidates, no voting yet, opening time. |
 | **Citizen, poll open** | The ballot on the left, live leaderboard on the right. |

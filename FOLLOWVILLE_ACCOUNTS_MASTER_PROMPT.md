@@ -69,7 +69,7 @@ that assumes this is possible is wrong. What IS available:
 1. User signs up on the site with email/password (or magic link) via Supabase Auth, and
    types their Instagram handle.
 2. The backend generates a one-time verification code tied to their account.
-3. UI instructs them to either DM that code to `@followville`'s Instagram account, or add
+3. UI instructs them to either DM that code to `@thefollowville`'s Instagram account, or add
    it temporarily to their Instagram bio (support whichever is easier to detect via the
    Messaging/Graph API — investigate both during build and pick the more reliable one).
 4. A webhook/poll against the Instagram Messaging API (or Graph API for bio-checking)

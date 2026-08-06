@@ -141,7 +141,7 @@ The manual SQL way (works from any machine with dashboard access):
 True "does this person follow me?" checking is impossible via Instagram's API —
 what verification proves is that the person **controls the handle** they typed
 (stops one person claiming 50 houses under handles they don't own). Users get a
-one-time code like `FV-3A7K2C` and are told to DM it to @followville (or put it
+one-time code like `FV-3A7K2C` and are told to DM it to @thefollowville (or put it
 in their bio). While Meta app review is pending, YOU are the webhook:
 
 - **See who's waiting** (SQL Editor):
@@ -177,7 +177,7 @@ account is Business/Creator — most followers are Personal, so bios are
 unreadable. DM webhooks work regardless of the sender's account type.
 
 When ready:
-1. Make @followville a Business/Creator account (probably already is).
+1. Make @thefollowville a Business/Creator account (probably already is).
 2. Create a Meta Developer App, add Instagram Messaging, subscribe to `messages`
    webhooks. During development this works for up to **25 test users without
    app review** — enough to pilot.
