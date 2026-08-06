@@ -89,7 +89,40 @@ last point is important: do not regress the checks to `myClaims.includes(id)`,
 which hides the owner builder because profile status returns claim records, not
 an array of numeric IDs.
 
-## Current town (Day 33, 2026-08-03)
+## Current town (Day 36, 2026-08-06)
+
+The published town is population 757 with 820 records. Day 36 added exactly 13
+ordinary claimable homes, plan IDs 601-613 / seeds 808-820, opening Heron Reach
+in River Meadows; address 614 is next. All 13 were synced insert-only into
+Supabase and no prior claim, owner or building changed.
+
+The same commit fixed a geometry defect shared by 30 already-built houses.
+`build_river_house` drew its projecting log bands and corner posts across the
+full width and height of the lot envelope, which is only correct for the styles
+that really are one full-height box. Style 3 is a tall narrow main mass beside a
+low wing, so above that wing the timber stood in open air with no wall behind it
+and no roof over it. Bands and posts now follow a per-style list of the masses
+each variant actually builds; styles 0/2/4/5/6/7 are byte-identical and style 1's
+post no longer overshoots its A-frame. **If you add a river-house style, add its
+masses too** -- the envelope is not the massing.
+
+Two things worth reusing. The defect class is "an upward-facing flat face with
+open sky above it", which is cheap to test and caught this exactly; consider
+folding it into `check_world_geometry.py`, which does not currently look for it.
+And the whole diagnosis ran without Blender: `town_chunks/*.glb` are Draco, so
+`DracoPy` plus `pygltflib` gives you the exact shipped triangles, and the asset
+builders only use `add_box`/`add_prism_roof`/`add_ngon_cone`, which are simple
+enough to stand in for and re-run in seconds instead of a 35-minute render.
+
+`--cam day36reveal` is 16 seconds portrait: two identical keys hold the drone
+dead still on the downtown skyline for six seconds (auto-clamped bezier keeps an
+equal-valued pair flat), then one ~150 m/s transfer south-east, then a slow
+descending push while the homes rise. The opening framing deliberately copies the
+Day 35 reel -- south-south-east above Fire Station 1, 30 degrees down, looking up
+the Burj's spire. Rises are timed to start at frame 268, after the drone arrives
+at 258.
+
+## Prior town (Day 33, 2026-08-03)
 
 The published town is population 689 with 751 records. Day 33 added exactly 33
 ordinary claimable homes: plan IDs 513-526 finished Timber Bend's Lodgepole Loop
