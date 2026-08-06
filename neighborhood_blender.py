@@ -149,6 +149,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day33storm  20-second storm flight through 33 homes to the weather station
 #   --cam day34fire    16-second skyline fire response into 31 Eastbank home rises
 #   --cam day35store  24-second continuous town/homes/Salmon Pro Shop reveal
+#   --cam day36reveal 16-second held skyline, fast transfer, 13 Heron Reach rises
 #   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
@@ -1486,16 +1487,37 @@ def build_river_house(col, variant):
     front_y = -depth / 2
     # Real projecting log bands. Each band overlaps the wall by 3 cm and owns
     # its visible face by 7 cm, satisfying the project's depth rule.
-    band_levels = [base_z + .48 + index * .46
-                   for index in range(6 if not two_story else 11)]
-    for index, z in enumerate(band_levels):
-        add_box(col, "river_log_band_%02d" % index, width + .08, .10, .105,
-                0, front_y - .02, z, timber)
-        add_box(col, "river_rear_log_band_%02d" % index, width + .08, .10, .105,
-                0, -front_y + .02, z, timber)
-    for side in (-1, 1):
-        add_box(col, "river_corner_post", .12, depth + .08,
-                body_h + .08, side*(width/2+.02), 0, base_z, timber)
+    #
+    # The bands and posts must trace the massing this style actually built,
+    # not the lot envelope. Styles 1 and 3 are not a single full-height box:
+    # style 3 sets a low wing beside a tall main mass, and running the timber
+    # straight across left bands and a corner post standing in open air above
+    # that wing -- no wall behind them, no roof over them, so the right-hand
+    # third of the house read as a roofless open crate (reported 2026-08-06).
+    # Each mass is (center x, center y, width, depth, wall top, post sides).
+    if style == 3:
+        masses = ((-width * .15, 0.0, width * .68, depth,
+                   base_z + body_h, (-1,)),
+                  (width * .31, -.25, width * .38, depth * .78,
+                   base_z + 3.25, (1,)))
+    elif style == 1:
+        masses = ((0.0, 0.0, width, depth, base_z + 3.25, (-1, 1)),)
+    else:
+        masses = ((0.0, 0.0, width, depth, base_z + body_h, (-1, 1)),)
+    for mass_index, (mx, my, m_w, m_d, wall_top, post_sides) in enumerate(masses):
+        index, z = 0, base_z + .48
+        # Stop a course short of the eave so no band crosses the roofline.
+        while z <= wall_top - .34:
+            add_box(col, "river_log_band_%d_%02d" % (mass_index, index),
+                    m_w + .08, .10, .105, mx, my - m_d / 2 - .02, z, timber)
+            add_box(col, "river_rear_log_band_%d_%02d" % (mass_index, index),
+                    m_w + .08, .10, .105, mx, my + m_d / 2 + .02, z, timber)
+            index += 1
+            z += .46
+        for side in post_sides:
+            add_box(col, "river_corner_post", .12, m_d + .08,
+                    wall_top - base_z + .08, mx + side * (m_w / 2 + .02), my,
+                    base_z, timber)
 
     door_x = -width * .22 if style % 2 else width * .20
     _sub_door(col, "river_entry", door_x, front_y - .08, base_z + .04,
@@ -8574,6 +8596,85 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day36reveal":
+        # Day 36, 16 seconds, three beats and one unbroken move:
+        #   0-6s    locked off on the downtown skyline, ~42 degrees above the
+        #           horizontal looking down on it. Deliberately static -- the
+        #           only motion is the town's own traffic.
+        #   6-8.6s  one fast drone transfer, 700m south-east across the whole
+        #           town, to the new Heron Reach cul-de-sac in River Meadows.
+        #   8.6-16s a slow descending push while all 13 homes rise, ending
+        #           low enough to read the porches and the new street.
+        # Heron Reach is a single compact run of 13 homes, so unlike Day 35
+        # this needs no split -- one aim point frames the whole batch. The
+        # approach deliberately follows the street's own axis so the row of
+        # houses climbs the tall portrait frame instead of crossing it.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [b for b in buildings
+                        if b["type"] == "house" and b.get("day") == latest_day]
+        points = [build_pos(b) for b in newest_homes]
+        hx = sum(p[0] for p in points) / len(points) if points else 560.8
+        hy = sum(p[1] for p in points) / len(points) if points else -296.1
+        if len(points) >= 2:
+            ax, ay = points[-1][0] - points[0][0], points[-1][1] - points[0][1]
+            span = math.hypot(ax, ay)
+        else:
+            ax, ay, span = 69.0, -60.0, 91.5
+        ux, uy = (ax / span, ay / span) if span > 1.0 else (.755, -.656)
+
+        def perch(distance, degrees, lift=9.0):
+            """Camera `distance` back down the street axis, `degrees` above it."""
+            return (hx - ux * distance, hy - uy * distance,
+                    lift + distance * math.tan(math.radians(degrees)))
+
+        aim = bpy.data.objects.new("Day36RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day36RevealCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day36RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        # The opening reuses the framing Zach picked off the Day 35 reel: from
+        # the south-south-east above Fire Station 1, looking north-north-west
+        # up the Burj's spire with downtown filling the frame and a thin band
+        # of sky and far suburbs across the top. It is 30 degrees above the
+        # horizontal -- clearly a drone looking down, but not so steep that
+        # the skyline stops reading as a skyline.
+        #
+        # The hold is two identical keys, not one. Auto-clamped bezier handles
+        # keep an equal-valued pair perfectly flat, so the drone genuinely sits
+        # still for the full six seconds and only then accelerates away.
+        skyline_at = (92.8, -127.8, 118.4)
+        skyline_on = (25.0, 6.0, 42.0)
+        beats = (
+            (1, skyline_at, skyline_on),
+            (180, skyline_at, skyline_on),
+            # 6-8.6s: climb out, swing right off downtown, and run south-east
+            # across the whole town at roughly 150 m/s.
+            (212, (150.0, -170.0, 190.0), (260.0, -140.0, 25.0)),
+            (258, perch(115.0, 34.0), (hx, hy, 9.0)),
+            # 8.6-16s: settle in and keep descending while the homes come up.
+            (330, perch(100.0, 30.0), (hx, hy, 8.5)),
+            (405, perch(88.0, 27.0), (hx, hy, 8.0)),
+            (frame_end, perch(82.0, 25.0), (hx, hy, 8.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day34fire":
         # Day 34: spend five seconds on an angled downtown skyline where a
         # render-only fire response is readable but remains background action,
@@ -10181,7 +10282,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day35store":
+    if cfg.get("cam") == "day36reveal":
+        frame_end = max(frame_end, FPS * 16)
+    elif cfg.get("cam") == "day35store":
         frame_end = max(frame_end, FPS * 25)
     elif cfg.get("cam") == "day34fire":
         frame_end = max(frame_end, FPS * 16)
@@ -10222,7 +10325,16 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day34fire":
+    if cfg.get("cam") == "day36reveal":
+        # Nothing may rise until the drone has arrived at frame 258, and the
+        # last home must finish with time left to look at the finished street.
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(home_roots):
+            animate_rise(e, 268 + index * 9, dur=28)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 262)          # the new road/kerbs arrive first
+    elif cfg.get("cam") == "day34fire":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         millstone_roots = [e for e in home_roots
                            if int(e.get("nb_world_plan_id", 0)) <= 556]
