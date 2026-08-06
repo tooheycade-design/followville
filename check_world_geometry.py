@@ -39,6 +39,7 @@ from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, INTENTIONALLY_RAISED_ROADS,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
                           LANDMARK_FOOTPRINTS, LEVEL_WATER, RETAINED_PADS,
+                          DEFAULT_MAX_PAD_STAND, MAX_PAD_STAND,
                           SALMON_SHOP_APPROACH,
                           STORYBOOK_ACCESS, rafting_access_points,
                           weather_station_access_points,
@@ -283,8 +284,31 @@ def check_raised_pads_are_retained(state):
                  "%s stands %.2fm above the ground at its edge with nothing "
                  "declared to hold it up" % (kind, stands))
             return
-    notes.append("%d walk pads, raised ones all retained"
-                 % len(walk_surface_manifest(state)["pads"]))
+        # Being retained is not the same as being reasonable. A level pad on a
+        # sloping site perches itself as high as the site falls, and its road
+        # then has to ramp up to meet it -- which is how the Salmon Pro Shop
+        # ended up 4.21m in the air behind a 60m sweeping drive with nothing
+        # failing. Each deck declares how proud it may stand; a new one that
+        # exceeds the default is a building on the wrong site.
+        limit = MAX_PAD_STAND.get(kind, DEFAULT_MAX_PAD_STAND)
+        if stands > limit:
+            fail("deck perched above its site",
+                 "%s stands %.2fm proud at its most exposed edge, over its "
+                 "declared %.2fm. Level the site or move the building -- the "
+                 "pad cannot be lowered, because the terrain would rise "
+                 "through it. If this really is meant to be a terrace, raise "
+                 "its entry in world_layout.MAX_PAD_STAND and say why."
+                 % (kind, stands, limit))
+            return
+    pads = walk_surface_manifest(state)["pads"]
+    notes.append("%d walk pads, raised ones all retained (%s)"
+                 % (len(pads), ", ".join(
+                     "%s %.2fm" % (pad[5], max(pad[2] - terrain_height(x, y)
+                                               for x, y in [(pad[0] - pad[3], -pad[1] - pad[4]),
+                                                            (pad[0] + pad[3], -pad[1] - pad[4]),
+                                                            (pad[0] - pad[3], -pad[1] + pad[4]),
+                                                            (pad[0] + pad[3], -pad[1] + pad[4])]))
+                     for pad in pads)))
 
 
 def check_water_is_level(state):
@@ -427,6 +451,20 @@ def self_test():
             RETAINED_PADS.clear()
             RETAINED_PADS.update(kept)
     scenarios.append(("rafting terrace deck with no plinth", unretained_terrace))
+
+    # 4b. A landmark that perches itself on a sloping site. This is the Salmon
+    #     Pro Shop's actual defect: retained, declared, and still 4.21m in the
+    #     air behind a 60m ramp, with nothing failing. Dropping its allowance
+    #     to the default is exactly what a NEW landmark on that site would get.
+    def perched_deck():
+        kept = dict(MAX_PAD_STAND)
+        MAX_PAD_STAND.pop("salmon-pro-shop", None)
+        try:
+            return _run_isolated(check_raised_pads_are_retained, original)
+        finally:
+            MAX_PAD_STAND.clear()
+            MAX_PAD_STAND.update(kept)
+    scenarios.append(("landmark perched on a sloping site", perched_deck))
 
     # 5. The pond's level shelf aimed somewhere other than the pond, which is
     #    the state the water was in before the shelf existed at all.

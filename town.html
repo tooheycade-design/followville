@@ -4690,7 +4690,7 @@ function addLandmarkColliders(root){
   const configured=new Set();
   for(const building of worldBuildings){
     if(!["burjhouse","followmart","firestation","cityhall","constructionzone",
-         "movietheater","raftingstation","weatherstation"].includes(building.type))continue;
+         "movietheater","raftingstation","weatherstation","salmonproshop"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -4727,6 +4727,19 @@ function addLandmarkColliders(root){
                                           "landmark-weather-center"));
       colliders.push(rootLocalBoxCollider(visual,7.4,3.6,2.1,2.1,
                                           "landmark-weather-radar-tower"));
+    }else if(building.type==="salmonproshop"){
+      // Authored in world space from a downward-raycast survey of the export
+      // rather than in the root's local frame: the store's own objects are
+      // given a quarter turn inside build_salmon_pro_shop() while the pad and
+      // approach are not, so "local" means two different things inside this
+      // one root. Offsets are relative to the record's own position, so the
+      // colliders follow the building if it is ever moved; they do assume the
+      // quarter turn, which is what puts the shop front toward the city.
+      // The parking lot is deliberately left open -- it is meant to be walked
+      // across, and it is the walk pad that carries the player over it.
+      const [sx,sz]=buildingWorldXZ(building);
+      colliders.push(boxCollider(sx-5.0,sz,1,0,0,1,11.0,17.0,"landmark-salmon-store"));
+      colliders.push(boxCollider(sx+2.0,sz,1,0,0,1,5.5,6.2,"landmark-salmon-entry-tower"));
     }else{
       colliders.push(rootLocalBoxCollider(visual,-14,0,8,8.25,"landmark-cityhall-left"));
       colliders.push(rootLocalBoxCollider(visual,14,0,8,8.25,"landmark-cityhall-right"));
@@ -4739,6 +4752,7 @@ function addLandmarkColliders(root){
   const expected=["burjhouse","followmart","firestation","cityhall",destinationType];
   if(worldBuildings.some(b=>b.type==="raftingstation"))expected.push("raftingstation");
   if(worldBuildings.some(b=>b.type==="weatherstation"))expected.push("weatherstation");
+  if(worldBuildings.some(b=>b.type==="salmonproshop"))expected.push("salmonproshop");
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }

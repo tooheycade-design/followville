@@ -86,6 +86,30 @@ WEATHER_STATION_CENTER = (29.5, 106.0)
 WEATHER_STATION_HALF_EXTENTS = (15.5, 13.5)
 
 
+SALMON_SHOP_CENTER = (-128.0, -36.0)
+# The turned footprint: authored 25 x 28, a quarter turn puts 28 across x.
+SALMON_SHOP_HALF_EXTENTS = (28.0, 25.0)
+
+
+def salmon_shop_base_height():
+    """Level datum for the Salmon Pro Shop pad.
+
+    Must stay in lockstep with build_salmon_pro_shop()'s base_z. It is pinned
+    above the site's HIGHEST corner on purpose: the terrain mesh is generated
+    from terrain_height(), so a pad set any lower has the meadow rising
+    through its own car park. That is also why this site reads as perched --
+    it falls 4.05m across the pad, so the level deck stands up to 4.15m proud
+    at its low corner. See ELECTION_SETUP-style notes in TEAM_LOG; the fix is
+    a flatter site, not a lower pad.
+    """
+    from downtown_visual_plan import terrain_height
+    cx, cy = SALMON_SHOP_CENTER
+    hx, hy = SALMON_SHOP_HALF_EXTENTS
+    return max(terrain_height(cx + dx, cy + dy)
+               for dx in (-hx, 0.0, hx)
+               for dy in (-hy, 0.0, hy)) + .10
+
+
 def weather_station_base_height():
     """Level weather-campus datum, pinned above its highest terrain corner."""
     from downtown_visual_plan import terrain_height
@@ -182,6 +206,36 @@ RETAINED_PADS = {
     "fishing-dock": "steel piles in the pond",
     "weather-station-campus": "continuous concrete retaining wall",
 }
+
+# How proud each deck is allowed to stand at its most exposed edge, in metres.
+#
+# RETAINED_PADS says what holds a deck up but never how high it is, so a level
+# pad dropped on a sloping site could perch itself arbitrarily and still pass:
+# the Salmon Pro Shop's stands 4.21m at its low corner and needed a 60m
+# sweeping ramp to reach its own car park, and nothing failed. A deck that
+# exceeds its declared figure is a building on the wrong site, not a retaining
+# wall that needs to be taller -- the pad cannot simply be lowered, because
+# the terrain mesh comes from terrain_height() and the meadow would rise
+# through the car park.
+#
+# Anything not listed gets DEFAULT_MAX_PAD_STAND, so a NEW landmark that
+# perches itself is caught the first time it is built.
+MAX_PAD_STAND = {
+    "fishing-dock": 1.0,
+    # A river bank is steep and a terrace is the whole point of the outpost.
+    "rafting-terrace": 5.4,
+    "rafting-dock": 1.6,
+    "rafting-forecourt": 2.0,
+    "weather-station-campus": 1.8,
+    # KNOWN DEBT, not an endorsement. The site falls 4.05m across the pad and
+    # is boxed in by ~20 claimed houses, so it cannot be levelled with a
+    # terrain shelf without moving homes that must never move. Fixing it means
+    # relocating the shop to flatter ground or terracing the pad -- an owner
+    # decision. Recorded here so the number is visible on every run instead of
+    # passing silently.
+    "salmon-pro-shop": 4.3,
+}
+DEFAULT_MAX_PAD_STAND = 1.6
 
 # Road decks that are meant to be off the ground, and why. Rectangles in world
 # coordinates, as (name, x0, x1, y0, y1).
@@ -412,6 +466,20 @@ def walk_surface_manifest(state):
             stable_height(x), stable_height(-y),
             stable_height(weather_station_base_height() + .18),
             half_x, half_y, "weather-station-campus",
+        ])
+    salmon_shop = next((building for building in state.get("buildings", [])
+                        if building.get("type") == "salmonproshop"), None)
+    if salmon_shop:
+        x, y = transform_building_point(salmon_shop)
+        # The store's pad and its parking apron are one level deck. Without a
+        # pad declared here the browser had nothing to stand the player on and
+        # they fell through the lot to the meadow, exactly as happened at the
+        # weather station. Half-extents are the turned footprint from
+        # LANDMARK_FOOTPRINTS; the top is the lot surface (pad + 6cm asphalt).
+        pads.append([
+            stable_height(x), stable_height(-y),
+            stable_height(salmon_shop_base_height() + .06),
+            28.0, 25.0, "salmon-pro-shop",
         ])
     river_manifest = None
     if river_active:
