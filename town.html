@@ -4170,6 +4170,10 @@ function redesignSmoothstep(edge0,edge1,value){
    load (data-fishing-pond-datum) so they cannot drift apart. */
 const FISHING_POND_X = 78, FISHING_POND_Y = 114;
 const FISHING_POND_SHELF = [27, 58, 1.4];
+// Mirrors downtown_visual_plan.RIVER_BANK_FREEBOARD -- how far the river's
+// bank must stand above its own water before the water reads as flush with
+// the meadow rather than held inside a channel.
+const RIVER_BANK_FREEBOARD = 0.45;
 
 function redesignGaussian(x,z,cx,cz,sx,sz,height){
   return height*Math.exp(-.5*(Math.pow((x-cx)/sx,2)+Math.pow((z-cz)/sz,2)));
@@ -4232,6 +4236,20 @@ function regionalTerrainHeight(x,z){
   const pondDistance=Math.hypot((x-FISHING_POND_X)/FISHING_POND_SHELF[2],y-FISHING_POND_Y);
   height*=redesignSmoothstep(FISHING_POND_SHELF[0],FISHING_POND_SHELF[1],pondDistance);
   const riverDistance=Math.abs(x-riverCenterX(y));
+  // Faithful port of downtown_visual_plan.terrain_height's river bank. A river
+  // may not stand above its own meadow: riverWaterHeight is a pure function of
+  // latitude, while the Kaleidoscope Crest mask above reaches ~55m past the
+  // plateau and zeroes the ground across the water, which left the eastern
+  // meadow at 0.40m under a 2.50m water surface between y=0 and y=120.
+  // Only ever raises ground already below the waterline, and the Crest's own
+  // keep-out ellipse gates it out so its authored plateau -- and the ten
+  // founder houses standing on it -- never move.
+  const bankTop=riverWaterHeight(y)+RIVER_BANK_FREEBOARD;
+  if(height<bankTop){
+    let shelter=1-redesignSmoothstep(14+22,14+95,riverDistance);
+    shelter*=redesignSmoothstep(1.0,1.35,Math.hypot((x-305)/61,(y-60)/48));
+    height+=(bankTop-height)*shelter;
+  }
   const channel=riverWaterHeight(y)-.72;
   const bankBlend=redesignSmoothstep(14,34,riverDistance);
   height=channel+(height-channel)*bankBlend;

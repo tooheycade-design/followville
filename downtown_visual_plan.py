@@ -22,6 +22,9 @@ FISHING_POND_RY = 15.0
 # Level out to the core, natural meadow again by the feather.  The x axis is
 # stretched because the pond is wider than it is deep.
 FISHING_POND_SHELF = (27.0, 58.0, 1.4)
+# How far the river's bank must stand above its own water surface before the
+# water reads as flush with the meadow rather than held inside a channel.
+RIVER_BANK_FREEBOARD = 0.45
 
 
 def mounted_face_center(face, outward, thickness, visible_clearance):
@@ -153,10 +156,36 @@ def terrain_height(x, y):
     pond_distance = math.hypot((x-FISHING_POND_X)/pond_aspect, y-FISHING_POND_Y)
     height *= _smoothstep(pond_core, pond_feather, pond_distance)
 
+    distance = river_distance(x, y)
+
+    # A river may not stand above its own meadow, and between y=0 and y=120
+    # this one did. river_water_height() is a pure function of latitude and
+    # knows nothing about the land, while the Kaleidoscope Crest mask above
+    # reaches roughly 55m past the plateau -- across the water -- and
+    # multiplies the ground there to zero. Probing the built world at y=60
+    # found the eastern meadow at 0.40m with the water surface at 2.50m.
+    #
+    # Only the EAST bank is wrong. On the west the Crest's authored plateau
+    # already carries the ground at 2.80-2.94m, comfortably above the water, so
+    # the mask is doing its job there and the raw terrain underneath never
+    # shows. Lifting inside the plateau would move ten claimed founder houses
+    # by up to 3.08m, so the Crest's own keep-out ellipse gates the fix out.
+    #
+    # This only ever RAISES ground that sits below the waterline, and only near
+    # the channel, so the rest of the river -- where the valley floor already
+    # stands 3-16m above the water -- is untouched, as are the rafting outpost,
+    # Founders Crossing and the fishing pond.
+    bank_top = river_water_height(y)+RIVER_BANK_FREEBOARD
+    if height < bank_top:
+        shelter = 1.0-_smoothstep(RIVER_HALF_WIDTH+22.0,
+                                  RIVER_HALF_WIDTH+95.0, distance)
+        plateau = math.hypot((x-305.0)/61.0, (y-60.0)/48.0)
+        shelter *= _smoothstep(1.0, 1.35, plateau)
+        height += (bank_top-height)*shelter
+
     # Carve one continuous riverbed into the shared walk surface. The inner
     # channel sits below the water mesh; a twenty-metre feather creates broad,
     # walkable banks instead of vertical terrain walls.
-    distance = river_distance(x, y)
     channel = river_water_height(y)-.72
     bank_blend = _smoothstep(RIVER_HALF_WIDTH, RIVER_HALF_WIDTH+20.0, distance)
     height = channel+(height-channel)*bank_blend
