@@ -87,9 +87,30 @@ Two hard constraints, both measured, that will bite anyone moving this:
   where the arch shape is ~0, divides by almost nothing and lifts the deck 7m
   into the air.
 
-Related unfixed defect worth a look: **the river is perched above its meadow
-from about y=0 to y=134**, by up to 2.7m. `LEVEL_WATER` covers the fishing pond
-but nothing checks the river, so this is invisible to every current test.
+### The river's bank (fixed 2026-08-06)
+
+The river used to run **above its own meadow** between y=0 and y=120.
+`river_water_height()` is a pure function of latitude and knows nothing about
+the land, and the Crest plateau mask reaches ~55m past the plateau, across the
+water, zeroing the ground there. `terrain_height()` now lifts the corridor to a
+bank wherever a mask has dropped it below the waterline.
+
+Three things to know before touching it:
+
+- It **only raises** ground already below the water, and only near the channel.
+  Everywhere the valley floor is already above the water it is a no-op, which is
+  why the rafting outpost, Founders Crossing and the pond are unaffected.
+- **Only the east bank was wrong.** On the west, the Crest's authored plateau
+  already carries the ground at 2.80-2.94m over 2.50m water. A first attempt
+  that lifted both banks moved all ten claimed founder houses by up to 3.08m;
+  the plateau's keep-out ellipse now gates the lift out. **Re-run a
+  before/after terrain sweep over every building in `world_state.json` if you
+  change any of these numbers** -- that is what caught it.
+- `town.html`'s `regionalTerrainHeight` carries the same code. They were
+  verified equal at 1,144 points to 0.0000m. Change both or neither.
+
+Still unchecked: nothing audits the river the way `LEVEL_WATER` audits the
+pond, so a future edit to `river_water_height()` could re-perch it silently.
 
 ## Open the authoritative project
 

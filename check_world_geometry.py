@@ -34,7 +34,7 @@ import math
 import sys
 
 from downtown_visual_plan import terrain_height
-from neighborhood_plan import PLAN
+from neighborhood_plan import PLAN, RIVER_HALF_WIDTH
 from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, INTENTIONALLY_RAISED_ROADS,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
@@ -61,6 +61,11 @@ MAX_ROAD_FLOAT = 0.12
 # How far a walk pad's edge may stand above the ground before it needs to say
 # what is holding it up.
 MAX_UNRETAINED_PAD = 0.35
+# How far the river water may stand above its own bank before it reads as a
+# levee rather than a river. Small but not zero: the bank blends down to the
+# waterline at the shore by construction, and this is sampled just outside
+# that blend.
+MAX_RIVER_PERCH = 0.35
 # Clearances a landmark's built footprint must keep.
 ROAD_CLEARANCE = 2.0
 BUILDING_CLEARANCE = 6.0
@@ -342,6 +347,46 @@ def check_water_is_level(state):
                      % (building["type"], fall, tolerance))
 
 
+def check_river_sits_in_its_valley(state):
+    """A river may not run above the ground it flows through.
+
+    river_water_height() is a pure function of latitude and knows nothing about
+    the land, so a terrain mask can flatten the corridor out from under it. The
+    Kaleidoscope Crest plateau mask did exactly that between y=0 and y=120,
+    leaving the eastern bank at 0.40m under a 2.50m water surface -- the river
+    ran along a levee, and nothing here noticed.
+
+    Sampled where the riverbed carve has finished blending, so this reads the
+    bank the player actually stands on. Skipped where the Crest's authored
+    plateau supplies the surface instead: there the raw terrain is masked to
+    zero on purpose and never shows.
+    """
+    from downtown_visual_plan import river_center_x, river_water_height
+    worst, worst_at = 0.0, None
+    edge = RIVER_HALF_WIDTH + 24.0
+    for step in range(0, 176):
+        y = -340.0 + step * 5.0
+        water = river_water_height(y)
+        centre = river_center_x(y)
+        for side in (-1.0, 1.0):
+            x = centre + side * edge
+            # the plateau carries its own surface; the meadow does not
+            if math.hypot((x - 305.0) / 61.0, (y - 60.0) / 48.0) < 1.2:
+                continue
+            shortfall = water - terrain_height(x, y)
+            if shortfall > worst:
+                worst, worst_at = shortfall, (x, y)
+    if worst > MAX_RIVER_PERCH:
+        fail("river above its own meadow",
+             "the water surface stands %.2fm above the bank at (%.0f, %.0f), "
+             "limit %.2f. river_water_height() ignores the land, so a terrain "
+             "mask has flattened the corridor out from under the river."
+             % (worst, worst_at[0], worst_at[1], MAX_RIVER_PERCH))
+        return
+    notes.append("river bank holds its water (worst shortfall %.2fm, limit %.2f)"
+                 % (worst, MAX_RIVER_PERCH))
+
+
 MIN_INTERIOR_WALL_SETBACK = 0.05
 
 
@@ -380,6 +425,7 @@ ALL_CHECKS = (check_roads_sit_on_the_ground,
               check_landmarks_clear_roads_and_town,
               check_raised_pads_are_retained,
               check_water_is_level,
+              check_river_sits_in_its_valley,
               check_house_interiors_supported,
               check_house_interior_wall_clearance)
 
@@ -468,6 +514,18 @@ def self_test():
             MAX_PAD_STAND.clear()
             MAX_PAD_STAND.update(kept)
     scenarios.append(("landmark perched on a sloping site", perched_deck))
+
+    # 4c. The river back on its levee. Removing the bank freeboard disables
+    #     terrain_height's lift entirely, which is the state the world was in
+    #     until 2026-08-06: water at 2.50 over an eastern bank at 0.40.
+    def river_on_a_levee():
+        kept = downtown_visual_plan.RIVER_BANK_FREEBOARD
+        downtown_visual_plan.RIVER_BANK_FREEBOARD = -50.0
+        try:
+            return _run_isolated(check_river_sits_in_its_valley, original)
+        finally:
+            downtown_visual_plan.RIVER_BANK_FREEBOARD = kept
+    scenarios.append(("river back above its own meadow", river_on_a_levee))
 
     # 5. The pond's level shelf aimed somewhere other than the pond, which is
     #    the state the water was in before the shelf existed at all.
