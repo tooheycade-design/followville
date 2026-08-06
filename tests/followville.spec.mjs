@@ -749,34 +749,68 @@ test("First Alert Weather is a mapped, walkable, non-home landmark", async ({ pa
   await expect(page.locator("body")).toHaveAttribute("data-landmark-hitboxes","pass");
   await expect(page.locator("body")).toHaveAttribute(
     "data-landmark-hitboxes-mapped",/weatherstation/);
+  // Every declared pad must actually carry the player. This used to check only
+  // that the pad EXISTED in the manifest, which it always did — the browser
+  // was filtering it out by type, so the parking lot was a hole you fell
+  // through while the test stayed green.
+  await expect(page.locator("body")).toHaveAttribute("data-manifest-pads-walkable","pass");
   const audit=await page.evaluate(()=>{
     const qa=window.__followvilleTerrainQA;
     const pads=qa.surfaces().pads||[];
+    const campus=pads.find(pad=>pad[5]==="weather-station-campus");
     return {
       stationPads:pads.filter(pad=>pad[5]==="weather-station-campus").length,
       accessSegments:qa.surfaces().segments.filter(segment=>
         segment[0]>3&&segment[0]<24&&segment[1]<-83&&segment[1]>-109).length,
+      // stand in the middle of the parking lot, and half way out toward its edge
+      lotCentre:campus?qa.walkSurfaceHeight(campus[0],campus[1]):null,
+      lotEdge:campus?qa.walkSurfaceHeight(campus[0]+campus[3]*.6,campus[1]+campus[4]*.6):null,
+      padTop:campus?campus[2]:null,
+      groundUnder:campus?qa.regionalTerrainHeight(campus[0],campus[1]):null,
     };
   });
   expect(audit.stationPads).toBe(1);
   expect(audit.accessSegments).toBeGreaterThanOrEqual(4);
+  expect(audit.lotCentre).toBeGreaterThanOrEqual(audit.padTop-0.02);
+  expect(audit.lotEdge).toBeGreaterThanOrEqual(audit.padTop-0.02);
+  expect(audit.padTop).toBeGreaterThan(audit.groundUnder+0.1);  // it really is raised
   expect(errors).toEqual([]);
 });
 
 test.describe("mobile town", () => {
   test.use(mobileDevice);
 
-  test("portrait fallback and transient mobile chat stay compact", async ({ page }) => {
+  // Portrait plays directly — the old "turn your phone sideways" gate was
+  // removed 2026-08-06 because most visitors arrive from Instagram, whose
+  // in-app browser can refuse to rotate at all.
+  test("portrait walks straight in, with controls clear of each other", async ({ page }) => {
     test.setTimeout(300_000);
     await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
-    await expect(page.locator("#orientationGate")).toBeVisible();
-    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-blocked");
-    await expect(page.locator("#joystickZone")).toBeHidden();
-    await expect(page.getByRole("button", { name:"open in browser" })).toBeHidden();
-    await page.getByRole("button", { name:"keep playing here" }).click();
-    await expect(page.locator("#orientationGate")).toBeHidden();
-    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait-bypassed");
     await waitForTown(page);
+    await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "portrait");
+    await expect(page.locator("#orientationGate")).toHaveCount(0);
+    // walking, with no gate to dismiss first
+    await expect(page.locator("#joystickZone")).toBeVisible();
+    await expect(page.locator("#runBtn")).toBeVisible();
+    await expect(page.locator("#jumpBtn")).toBeVisible();
+
+    // the hint must not sit under the thumb controls
+    const boxes = await page.evaluate(() => {
+      const rect = id => { const r = document.getElementById(id).getBoundingClientRect();
+        return { top:r.top, bottom:r.bottom, left:r.left, right:r.right }; };
+      return { hint:rect("hint"), joy:rect("joystickZone"), run:rect("runBtn") };
+    });
+    for (const control of [boxes.joy, boxes.run]){
+      const overlapX = Math.min(boxes.hint.right, control.right) - Math.max(boxes.hint.left, control.left);
+      const overlapY = Math.min(boxes.hint.bottom, control.bottom) - Math.max(boxes.hint.top, control.top);
+      expect(overlapX > 4 && overlapY > 4).toBe(false);
+    }
+
+    // a phone has no Escape key, so the menu button is the only way to pause
+    await page.locator("#menuBtn").tap();
+    await expect(page.locator("#pauseMenu")).toBeVisible();
+    await page.getByRole("button", { name:"resume" }).tap();
+    await expect(page.locator("#pauseMenu")).toBeHidden();
     await expect(page.locator("#joystickZone")).toBeVisible();
     await page.locator("#chatMessages").evaluate(messages => {
       messages.replaceChildren();
@@ -795,7 +829,6 @@ test.describe("mobile town", () => {
     expect(portraitChatBox.width).toBeLessThanOrEqual(282);
     expect(portraitChatBox.height).toBeLessThan(100);
     await page.setViewportSize({ width:844, height:390 });
-    await expect(page.locator("#orientationGate")).toBeHidden();
     await expect(page.locator("body")).toHaveAttribute("data-mobile-orientation", "landscape");
     const chatBox=await page.locator("#chatPanel").boundingBox();
     expect(chatBox.width).toBeLessThan(270);
@@ -877,12 +910,18 @@ test.describe("Instagram mobile town", () => {
     userAgent:`${mobileDevice.userAgent} Instagram 390.0.0.0`
   });
 
-  test("shows the external-browser option without trapping portrait visitors", async ({ page }) => {
+  // The escape hatch survives, but as an option inside the pause menu rather
+  // than a wall in front of the town.
+  test("offers the external-browser escape without blocking the town", async ({ page }) => {
+    test.setTimeout(300_000);
     await page.goto("/town.html#walk", { waitUntil:"domcontentloaded" });
+    await waitForTown(page);
     await expect(page.locator("body")).toHaveAttribute("data-in-app-browser", "true");
-    await expect(page.locator("#orientationGate")).toBeVisible();
+    // never blocked: walking is already live in portrait inside Instagram
+    await expect(page.locator("#joystickZone")).toBeVisible();
+    await expect(page.locator("#orientationGate")).toHaveCount(0);
+    await page.locator("#menuBtn").tap();
     await expect(page.getByRole("button", { name:"open in browser" })).toBeVisible();
-    await expect(page.getByRole("button", { name:"keep playing here" })).toBeVisible();
   });
 });
 
@@ -1025,4 +1064,28 @@ test("the vote page settles into a public state and never leaks a ballot", async
     await expect(page.locator("#becomeCitizen")).toHaveAttribute("href", "town.html#claim");
   }
   expect(errors).toEqual([]);
+});
+
+test.describe("vote page on a phone", () => {
+  test.use(mobileDevice);
+
+  test("fits a phone screen without sideways scrolling", async ({ page }) => {
+    const errors = watchPageErrors(page);
+    await page.goto("/vote.html");
+    await expect
+      .poll(() => page.locator("body").getAttribute("data-vote-state"), { timeout: 20_000 })
+      .not.toBe("loading");
+    const audit = await page.evaluate(() => {
+      const de = document.documentElement;
+      return { clientWidth: de.clientWidth, scrollWidth: de.scrollWidth,
+        // every tap target has to clear the usual 40px minimum
+        smallTargets: [...document.querySelectorAll("button,a")]
+          .filter(el => { const r = el.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && r.height < 40; })
+          .map(el => el.id || el.className || el.tagName) };
+    });
+    expect(audit.scrollWidth).toBeLessThanOrEqual(audit.clientWidth + 1);
+    expect(audit.smallTargets).toEqual([]);
+    expect(errors).toEqual([]);
+  });
 });

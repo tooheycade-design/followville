@@ -167,11 +167,14 @@ workflow.
   browser flows passed. Day 16 / 272 / 275, addresses, all claims/owners,
   `world_state.json`, and Supabase are unchanged.
 
-- Phone play inside the 3D town is landscape-only. Portrait phones receive a
-  polished rotate prompt, movement pauses, and an interrupted walk resumes
-  automatically after rotation. The landscape passive chat feed is compact;
-  tapping it expands the existing composer. This does not affect the
-  portrait-friendly homepage or desktop play.
+- Phone play inside the 3D town works in **both orientations** as of
+  2026-08-06. The landscape-only rotate prompt was removed by owner
+  instruction — most visitors come from Instagram, whose in-app browser can
+  refuse to rotate, so it blocked play outright. **Do not reintroduce it.**
+  Portrait has a dedicated control layout, and `#menuBtn` is the only way to
+  reach the pause menu on touch (there is no Escape key). The "open in browser"
+  escape for in-app browsers now lives inside that pause menu. The landscape
+  passive chat feed is compact; tapping it expands the existing composer.
 
 - Zach's downtown/terrain design package is integrated on Day 16 without a
   growth run. Downtown lots are thirteen metres wide and now have authored

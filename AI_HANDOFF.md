@@ -34,11 +34,14 @@ That finish pass rebuilt the town in replay mode only; its then-current Day 16
 state, addresses, claims, owners, `world_state.json`, and Supabase did not
 change.
 
-Phone gameplay is landscape-only in `town.html`: a coarse-pointer phone in
-portrait shows the rotation gate and pauses movement, then automatically
-resumes the interrupted walk in landscape. The passive landscape chat feed is
-smaller than the opened composer. Do not apply this gate to `index.html`; the
-homepage intentionally remains portrait-friendly.
+Phone gameplay works in **both orientations** in `town.html` (changed
+2026-08-06). The old landscape-only rotation gate is gone: most visitors arrive
+from Instagram, whose in-app browser can refuse to rotate at all, so the gate
+was a wall rather than a nudge. **Do not reintroduce it.** Portrait has its own
+control layout under `@media (any-pointer:coarse) and (orientation:portrait)`.
+Touch has no Escape key, so `#menuBtn` is the only route to the pause menu on a
+phone — keep it reachable. The passive landscape chat feed is smaller than the
+opened composer.
 
 ## Asset intake and Blender MCP (2026-08-03)
 

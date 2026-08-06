@@ -12,11 +12,11 @@
   Followville town hall — the 48-hour mayoral election.
 
   This page is public, but the BALLOT is not. election_state() decides what a
-  caller may see: a signed-out visitor (or one still waiting on Cade's
-  approval) gets only the teaser — title, closing time, how many are running.
-  Names and tallies come back only for verification_status = 'verified'.
-  "Citizen" is not a new concept: it is exactly that existing flag, set when
-  Cade approves an Instagram DM code on admin.html.
+  caller may see: a signed-out visitor (or one still awaiting approval) gets
+  only the teaser — title, closing time, how many are running. Names and
+  tallies come back only for verification_status = 'verified'.
+  "Citizen" is not a new concept: it is exactly that existing flag, set when an
+  admin approves an Instagram DM code on admin.html.
 
   Nothing here is the security boundary. One-vote-per-citizen is a primary key
   in Postgres, and cast_vote() re-checks citizenship and the poll window
@@ -142,6 +142,12 @@
     background:linear-gradient(180deg, rgba(13,29,44,0) 0%, rgba(13,29,44,.94) 26%, rgba(13,29,44,.98) 100%);
   }
   .tally-panel{ position:sticky; top:20px; }
+  .tally-more{
+    display:none; width:100%; margin-top:12px; padding:11px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.34); border-radius:2px; background:transparent;
+    color:#fff; font:700 12px/1 inherit; font-family:inherit;
+  }
+  .tally-more:hover{ background:rgba(255,255,255,.08); }
   .tally-list{ max-height:calc(100vh - 250px); overflow-y:auto; padding-right:5px; scrollbar-gutter:stable; }
   .candidate{
     display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
@@ -212,9 +218,14 @@
     h1{ font-size:25px; }
     .panel{ padding:19px 17px 17px; }
     .vote-grid{ grid-template-columns:1fr; }
-    /* one column: sticky panels and capped lists just get in the way */
+    /* one column: sticky panels and nested scrollboxes just get in the way.
+       Instead the live count shows the top 10 and expands on request — with 30
+       candidates the full board would otherwise double the page's scroll
+       length on a phone for information most voters glance at. */
     .tally-panel{ position:static; }
     .tally-list{ max-height:none; overflow-y:visible; }
+    .tally-list:not(.expanded) .standing:nth-child(n+11){ display:none; }
+    .tally-more{ display:block; }
     .status-strip .clock{ font-size:18px; }
     .brand-back{ display:none; }
   }
@@ -267,6 +278,7 @@ const turnoutEl = document.getElementById("turnoutMeta");
 let sb = null;
 let state = null;
 let selectedCandidate = null;   // chosen in the UI, not yet cast
+let tallyExpanded = false;      // phone only: the live count starts at the top 10
 let confirming = false;
 let casting = false;
 let clockOffsetMs = 0;          // server now minus browser now; the browser clock is not trusted
@@ -342,11 +354,11 @@ function renderGate(){
     panel(`
       <h2>You need to be a citizen to vote</h2>
       <p>Followville's mayor is chosen by its residents. Voting is open to
-      <b>citizens</b> &mdash; accounts Cade has approved &mdash; so the ballot and the
+      <b>citizens</b> &mdash; approved accounts &mdash; so the ballot and the
       running count stay hidden until you're one of them.</p>
       <p class="quiet">Becoming a citizen takes three steps: create an account with your
-      Instagram handle, DM the code it gives you to <b>@followville</b>, and wait for Cade
-      to approve you by hand. Then come back here and vote.</p>
+      Instagram handle, DM the code it gives you to <b>@followville</b>, and wait to be
+      approved by hand. Then come back here and vote.</p>
       ${closing}
       <div class="cta-row">
         <a class="cta" id="becomeCitizen" href="town.html#claim">become a citizen &rarr;</a>
@@ -370,7 +382,7 @@ function renderGate(){
          Finish that and you can be approved as a citizen.</p>
          <div class="cta-row"><a class="cta" href="town.html#claim">finish setting up &rarr;</a></div>`
       : `<h2>Your citizenship is pending</h2>
-         <p>Cade approves every citizen by hand. DM your verification code to
+         <p>Every citizen is approved by hand. DM your verification code to
          <b>@followville</b> on Instagram if you haven't already &mdash; you'll find it in your
          account panel in the town.</p>
          <p class="quiet">The ballot and the live count appear here the moment you're approved.
@@ -489,7 +501,12 @@ function renderCitizenView(){
         <b>${state.total_votes}</b>
         <small>${state.total_votes === 1 ? "ballot cast" : "ballots cast"} so far</small>
       </div>
-      <div class="tally-list">${standingsMarkup()}</div>
+      <div class="tally-list ${tallyExpanded ? "expanded" : ""}">${standingsMarkup()}</div>
+      ${(state.candidates || []).length > 10
+        ? `<button type="button" class="tally-more" id="tallyMore">${
+            tallyExpanded ? "show top 10 only"
+                          : `show all ${(state.candidates || []).length} candidates`}</button>`
+        : ""}
     </div>`;
 
   const left = votedFor
@@ -516,6 +533,9 @@ function renderCitizenView(){
   view.innerHTML = `<div class="vote-grid">${left}${leaderboard}</div>`;
   const tally = view.querySelector(".tally-list");
   if (tally) tally.scrollTop = tallyScroll;
+  // wired before the early return: the live count is on screen either way
+  const tallyMore = view.querySelector("#tallyMore");
+  if (tallyMore) tallyMore.onclick = () => { tallyExpanded = !tallyExpanded; renderCitizenView(); };
   if (votedFor) return;
 
   view.querySelectorAll("[data-candidate-id]").forEach(button => {

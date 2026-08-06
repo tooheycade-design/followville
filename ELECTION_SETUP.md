@@ -1,7 +1,7 @@
 # Followville — the mayoral election
 
 A 48-hour town-wide vote for mayor, run from the website. Built 2026-08-05
-(Cade's Windows Claude, Opus 5).
+(Windows Claude, Opus 5).
 
 **One sentence:** citizens you've already approved get exactly one final vote
 each, the ballot is a list of handles you type in yourself, and everyone

@@ -38,44 +38,14 @@
   body.preview-mode #townMapPanel,
   body.preview-mode #pauseMenu,
   body.preview-mode #chatToggle,
-  body.preview-mode #chatPanel,
-  body.preview-mode #orientationGate { display:none !important; }
+  body.preview-mode #chatPanel { display:none !important; }
 
-  /* Phone play is landscape-only. The homepage remains portrait-friendly;
-     this gate applies only inside the 3D town. */
-  #orientationGate {
-    position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center;
-    padding:calc(24px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right))
-      calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
-    background:#f4efe5; color:#17273d; text-align:center; touch-action:auto;
-  }
-  #orientationGate.open { display:flex; }
-  #orientationGateCard { width:min(330px,100%); }
-  #orientationPhone {
-    width:92px; height:54px; margin:0 auto 24px; border:4px solid #17273d;
-    border-radius:14px; position:relative; transform:rotate(-8deg);
-    box-shadow:0 12px 30px rgba(23,39,61,.14);
-  }
-  #orientationPhone::before {
-    content:""; position:absolute; top:50%; right:7px; width:5px; height:5px;
-    border-radius:50%; background:#d66f51; transform:translateY(-50%);
-  }
-  #orientationPhone::after {
-    content:""; position:absolute; left:50%; bottom:-23px; width:34px; height:2px;
-    border-radius:2px; background:#d66f51; transform:translateX(-50%) rotate(8deg);
-  }
-  #orientationGate strong {
-    display:block; font-family:Georgia,"Times New Roman",serif; font-size:28px;
-    line-height:1.08; letter-spacing:-.45px;
-  }
-  #orientationGate p { margin:10px auto 0; max-width:290px; color:#66707b; font-size:14px; line-height:1.5; }
-  #orientationGateActions { display:grid; gap:8px; margin:22px auto 0; max-width:260px; }
-  #orientationContinue, #orientationOpenBrowser {
-    min-height:44px; border-radius:8px; padding:10px 14px; font:700 13px/1.2 inherit; cursor:pointer;
-  }
-  #orientationContinue { border:0; background:#17273d; color:#fff; }
-  #orientationOpenBrowser { border:1px solid #aeb4ba; background:transparent; color:#17273d; }
-  #orientationGate:not(.in-app) #orientationOpenBrowser { display:none; }
+  /* Portrait phone play is fully supported (2026-08-06). The town used to sit
+     behind a blocking "turn your phone sideways" gate; most visitors arrive
+     from Instagram, whose in-app browser can refuse to rotate at all, so that
+     gate was a wall rather than a nudge. Portrait now gets its own control
+     layout below instead. The escape hatch for in-app browsers survives as a
+     non-blocking entry in the pause menu. */
 
   #cinematicGrade {
     position:fixed; inset:0; z-index:3; display:none; pointer-events:none;
@@ -226,6 +196,29 @@
     font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
     text-shadow:0 1px 4px rgba(0,0,0,.5); backdrop-filter:blur(7px);
   }
+  /* Touch has no Escape key, so before this the pause menu — and with it the
+     map, avatar, "manage my home", "open in browser" and "leave town" — was
+     simply unreachable on a phone. Desktop keeps using Escape and never shows
+     this button. */
+  #menuBtn {
+    position:fixed; top:216px; right:14px; z-index:6; display:none;
+    border:1px solid rgba(255,255,255,.28); color:#fff; background:rgba(12,27,43,.55);
+    padding:8px 14px; border-radius:20px; font-family:inherit; font-size:12px;
+    font-weight:800; cursor:pointer; text-shadow:0 1px 4px rgba(0,0,0,.5);
+    backdrop-filter:blur(7px); touch-action:manipulation;
+  }
+  body[data-mobile-orientation="portrait"] #menuBtn,
+  body[data-mobile-orientation="landscape"] #menuBtn { display:block; }
+  body.preview-mode #menuBtn { display:none !important; }
+
+  /* A phone has no keyboard, so the shortcut letters on these buttons are
+     noise. The letters are aria-hidden already, so hiding them changes no
+     accessible name. */
+  @media (any-pointer:coarse){
+    #mapToggle span[aria-hidden="true"],
+    #avatarToggle span[aria-hidden="true"] { display:none; }
+  }
+
   #townMapPanel {
     position:fixed; inset:0; z-index:45; display:none; align-items:center; justify-content:center;
     padding:clamp(10px,2vw,24px); background:rgba(7,16,28,.72); backdrop-filter:blur(8px);
@@ -802,6 +795,7 @@
   #avatarSaveStatus { grid-column:1 / -1; min-height:14px; margin-top:-3px; color:#576474; text-align:right; font-size:10.5px; }
   @media (max-width:760px){
     #avatarToggle { top:172px; right:10px; }
+    #menuBtn { top:212px; right:10px; }
     #avatarStudio { padding:0; align-items:stretch; }
     #avatarStudioShell { height:100%; border-radius:0; grid-template-columns:1fr; grid-template-rows:minmax(220px,37%) minmax(0,63%); }
     #avatarPreviewPane { border-right:0; border-bottom:1px solid rgba(28,43,69,.12); }
@@ -1089,6 +1083,37 @@
     #chatPanel.feed-visible:not(.open) { width:min(280px,calc(100vw - 20px)); }
     #chatMessages { max-height:145px; }
   }
+  /* Portrait phones: the control cluster owns the bottom ~160px, so the hint
+     sits above it instead of underneath the joystick and RUN button, and the
+     joystick shrinks a little so a 390px-wide screen isn't mostly controls. */
+  @media (any-pointer:coarse) and (orientation:portrait) {
+    /* The right-hand pills stack six deep on a phone. Nothing is hidden — a
+       phone player still gets the map and avatar in one tap — but they share a
+       right edge and tighter spacing so they read as one column instead of a
+       ragged staircase down a third of the screen. */
+    #accountBtn { top:52px; right:10px; padding:6px 12px; font-size:12px; }
+    #multiplayerStatus { top:89px; right:10px; padding:6px 11px; font-size:11px; }
+    #mapToggle { top:126px; right:10px; padding:7px 12px; }
+    #avatarToggle { top:164px; right:10px; padding:7px 12px; }
+    #menuBtn { top:202px; right:10px; padding:7px 12px; }
+    #hint {
+      bottom:calc(180px + env(safe-area-inset-bottom));
+      max-width:86vw; font-size:11.5px; text-align:center;
+    }
+    #joystickZone {
+      left:max(18px,env(safe-area-inset-left));
+      bottom:calc(26px + env(safe-area-inset-bottom)); width:120px; height:120px;
+    }
+    #joystickNub { width:50px; height:50px; }
+    #runBtn {
+      right:max(20px,env(safe-area-inset-right));
+      bottom:calc(30px + env(safe-area-inset-bottom)); width:72px; height:72px;
+    }
+    #jumpBtn {
+      right:calc(max(20px,env(safe-area-inset-right)) + 80px);
+      bottom:calc(36px + env(safe-area-inset-bottom)); width:58px; height:58px;
+    }
+  }
   @media (any-pointer:coarse) and (orientation:landscape) {
     #chatToggle {
       left:max(10px,env(safe-area-inset-left)); top:max(54px,env(safe-area-inset-top));
@@ -1122,18 +1147,6 @@
 </head>
 <body>
 
-<section id="orientationGate" role="dialog" aria-modal="true" aria-labelledby="orientationGateTitle" aria-hidden="true">
-  <div id="orientationGateCard">
-    <div id="orientationPhone" aria-hidden="true"></div>
-    <strong id="orientationGateTitle">Turn your phone sideways</strong>
-    <p id="orientationGateCopy">Followville plays in landscape so the town, camera, controls, and chat all have room.</p>
-    <div id="orientationGateActions">
-      <button id="orientationContinue" type="button">keep playing here</button>
-      <button id="orientationOpenBrowser" type="button">open in browser</button>
-    </div>
-  </div>
-</section>
-
 <div id="loading">loading followville…</div>
 
 <a id="homeLink" href="index.html">← Followville</a>
@@ -1166,6 +1179,7 @@
       <button class="pause-secondary" id="pauseMapBtn" type="button">open town map</button>
       <button class="pause-secondary" id="pauseAvatarBtn" type="button">edit avatar</button>
       <button class="pause-secondary" id="pauseHomesBtn" type="button" style="display:none;">manage my home</button>
+      <button class="pause-secondary" id="pauseOpenBrowserBtn" type="button" style="display:none;">open in browser</button>
     </div>
     <button id="pauseExitBtn" type="button">leave town</button>
   </div>
@@ -1179,6 +1193,7 @@
 <button id="accountBtn"></button>
 <button id="mapToggle" type="button">town map <span aria-hidden="true">M</span></button>
 <button id="avatarToggle" type="button">avatar <span aria-hidden="true">V</span></button>
+<button id="menuBtn" type="button" aria-label="Open menu">menu</button>
 <div id="claimPrompt"><span class="key">E</span><span id="claimPromptText">claim this house</span></div>
 <button id="fishPrompt" type="button"><span class="key">E</span><span id="fishPromptText">fish from the dock</span></button>
 <button id="houseEnterPrompt" type="button"><span id="houseEnterRing"></span><span class="key">E</span><span id="houseEnterText">enter home</span></button>
@@ -3001,10 +3016,6 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatSend = document.getElementById("chatSend");
 const chatNote = document.getElementById("chatNote");
-const orientationGate = document.getElementById("orientationGate");
-const orientationGateCopy = document.getElementById("orientationGateCopy");
-const orientationContinue = document.getElementById("orientationContinue");
-const orientationOpenBrowser = document.getElementById("orientationOpenBrowser");
 const mapToggle = document.getElementById("mapToggle");
 const startMapBtn = document.getElementById("startMapBtn");
 const townMapPanel = document.getElementById("townMapPanel");
@@ -3064,11 +3075,22 @@ let resumeWalkingAfterChat = false;
 let resumeWalkingAfterMap = false;
 let pauseOpenedAt = -Infinity;
 let chatFeedTimer = null;
-let resumeWalkingAfterOrientation = false;
-let orientationBypassed = false;
 const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|wv\)|Twitter/i.test(navigator.userAgent || "");
-orientationGate.classList.toggle("in-app", inAppBrowser);
 document.body.dataset.inAppBrowser = inAppBrowser ? "true" : "false";
+// Instagram's webview is slower and can refuse to rotate, so the way out still
+// exists — but as an option in the pause menu, never as a wall in front of the
+// town. Only in-app browsers ever see it.
+const pauseOpenBrowserBtn = document.getElementById("pauseOpenBrowserBtn");
+if (inAppBrowser){
+  pauseOpenBrowserBtn.style.display = "";
+  pauseOpenBrowserBtn.addEventListener("click", () => {
+    navigator.clipboard?.writeText(location.href).catch(() => {});
+    const opened = window.open(location.href, "_blank", "noopener,noreferrer");
+    pauseOpenBrowserBtn.textContent = opened
+      ? "opening — or use Instagram's ⋯ menu"
+      : "link copied — use Instagram's ⋯ menu";
+  });
+}
 // The public Walk link uses an explicit route so it can enter the rendered town
 // without briefly reviving the older in-town start screen.
 const directWalkRoute = location.hash === "#walk";
@@ -3099,11 +3121,6 @@ document.addEventListener("visibilitychange", () => {
 });
 
 function beginWalking(){
-  if (phonePortraitViewport() && !orientationBypassed){
-    resumeWalkingAfterOrientation = true;
-    applyMobileOrientation();
-    return;
-  }
   gameRunning = true;
   pauseMenu.classList.remove("open");
   pauseMenu.setAttribute("aria-hidden", "true");
@@ -3120,43 +3137,19 @@ function beginWalking(){
   updateThirdPersonCamera(true);
 }
 
+// Portrait is a supported way to play, not a state to recover from. This only
+// records the current orientation so CSS and the tests can lay the controls out
+// for the shape of screen in front of the player.
 function applyMobileOrientation(){
-  const portraitViewport = phonePortraitViewport();
-  const portraitBlocked = portraitViewport && !orientationBypassed;
-  orientationGate.classList.toggle("open", portraitBlocked);
-  orientationGate.setAttribute("aria-hidden", String(!portraitBlocked));
-  document.body.dataset.mobileOrientation = portraitBlocked
-    ? "portrait-blocked"
-    : (portraitViewport ? "portrait-bypassed" : (isTouch ? "landscape" : "desktop"));
-  orientationGateCopy.textContent = inAppBrowser
-    ? "Instagram can block rotation. Turn your phone, open this page in your regular browser, or keep playing here."
-    : "Followville plays in landscape so the town, camera, controls, and chat all have room.";
-  if (portraitBlocked && gameRunning){
-    resumeWalkingAfterOrientation = true;
-    clearMovementInput();
-    gameRunning = false;
-    hint.style.display = "none";
-    lookZone.style.display = "none";
-    joystickZone.style.display = "none";
-    runBtn.style.display = "none";
-    jumpBtn.style.display = "none";
-  } else if (!portraitBlocked && resumeWalkingAfterOrientation){
-    resumeWalkingAfterOrientation = false;
-    beginWalking();
-  }
+  document.body.dataset.mobileOrientation = !isTouch
+    ? "desktop"
+    : (phonePortraitViewport() ? "portrait" : "landscape");
 }
-orientationContinue.addEventListener("click", () => {
-  orientationBypassed = true;
-  applyMobileOrientation();
-});
-orientationOpenBrowser.addEventListener("click", () => {
-  navigator.clipboard?.writeText(location.href).catch(() => {});
-  const opened = window.open(location.href, "_blank", "noopener,noreferrer");
-  orientationGateCopy.textContent = opened
-    ? "If this stays inside Instagram, use the menu above and choose Open in external browser."
-    : "Link copied. Use Instagram's menu above and choose Open in external browser.";
-});
 applyMobileOrientation();
+document.getElementById("menuBtn").addEventListener("click", e => {
+  e.stopPropagation();
+  if (pauseMenuOpen()) resumeFromPause(); else openPauseMenu();
+});
 function resumeDesktopWalking(){
   beginWalking();
 }
@@ -4335,12 +4328,18 @@ function civicCampusSurfaceHeight(x,z){
   return height;
 }
 
-function fishingDockSurfaceHeight(x,z){
+/* Every raised deck the generator declares in the walk-surface manifest.
+   This used to filter to a hard-coded list of four dock/terrace types, which
+   meant a pad the generator exported correctly was silently thrown away here:
+   the weather station's campus pad has been in the manifest all along, and
+   walking onto its parking lot dropped you through it to the meadow below.
+   The manifest is the contract — honour all of it, so a new landmark becomes
+   walkable by declaring a pad in world_layout.py with no browser change. */
+function manifestPadSurfaceHeight(x,z){
   let height=0;
   for(const pad of localWalkSurfaces.pads||[]){
-    const [cx,cz,top,hx,hz,type]=pad;
-    if(["fishing-dock","rafting-dock","rafting-terrace","rafting-forecourt"].includes(type)&&
-       Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
+    const [cx,cz,top,hx,hz]=pad;
+    if(Math.abs(x-cx)<=hx&&Math.abs(z-cz)<=hz)
       height=Math.max(height,top);
   }
   return height;
@@ -4378,6 +4377,16 @@ function auditFishingDockSurface(){
   // the pond, and check the two still agree -- drift puts the water back on
   // the meadow's 9% ramp, standing proud of its own bank. Same reason as
   // above for not asking worldBuildings: this runs before it exists.
+  // Every pad the generator ships must actually carry the player. Probing
+  // walkSurfaceHeight (not the pad list) is the point: it fails the moment
+  // anyone reintroduces a type allow-list in front of the manifest, which is
+  // what made the weather station's parking lot a hole you fell through.
+  const unwalkablePads=(localWalkSurfaces.pads||[]).filter(pad =>
+    walkSurfaceHeight(pad[0],pad[1]) < pad[2]-0.02).map(pad => pad[5]);
+  document.body.dataset.manifestPadsWalkable =
+    !(localWalkSurfaces.pads||[]).length ? "missing"
+      : unwalkablePads.length ? "fail:"+unwalkablePads.join(",") : "pass";
+
   const fishingPad=(localWalkSurfaces.pads||[]).find(pad=>pad[5]==="fishing-dock");
   document.body.dataset.fishingPondDatum = !fishingPad ? "missing" :
     Math.abs(fishingPad[0]-(FISHING_POND_X-10.8))<.01 &&
@@ -4410,13 +4419,13 @@ function walkSurfaceHeight(x,z){
   return Math.max(0,regionalTerrainHeight(x,z),
                   downtownBuiltSurfaceHeight(x,z),suburbanRoadSurfaceHeight(x,z),
                   storybookHillSurfaceHeight(x,z),storybookAccessSurfaceHeight(x,z),
-                  civicCampusSurfaceHeight(x,z),fishingDockSurfaceHeight(x,z),
+                  civicCampusSurfaceHeight(x,z),manifestPadSurfaceHeight(x,z),
                   houseInteriorSurfaceHeight(x,z));
 }
 if(localDesignPreview){
   window.__followvilleTerrainQA={walkSurfaceHeight,regionalTerrainHeight,
     downtownBuiltSurfaceHeight,suburbanRoadSurfaceHeight,civicCampusSurfaceHeight,
-    fishingDockSurfaceHeight,CIVIC_WALK,civicWalkPads:()=>civicWalkPads,
+    manifestPadSurfaceHeight,CIVIC_WALK,civicWalkPads:()=>civicWalkPads,
     surfaces:()=>localWalkSurfaces,
     // What is actually on top at (x,z), by exported GLB node name, nearest
     // first. The walk-surface helpers above answer "how high is the ground
@@ -4822,7 +4831,7 @@ function resolvePlayerCollision(position, collider){
   if(collider.label==="river-water" &&
      (suburbanRoadSurfaceHeight(position.x,position.z)-
         regionalTerrainHeight(position.x,position.z)>1.25 ||
-      fishingDockSurfaceHeight(position.x,position.z)>
+      manifestPadSurfaceHeight(position.x,position.z)>
         regionalTerrainHeight(position.x,position.z)+.15))return;
   if (collider.kind === "circle"){
     let dx = position.x-collider.x, dz = position.z-collider.z;
@@ -5658,7 +5667,7 @@ const HOME_OPTIONS = {
     ["flag", "flag", "&#128681;"]
   ]
 };
-// Paused 2026-07-15 at Cade's request. Keep normalized saved choices intact so
+// Paused 2026-07-15 by owner request. Keep normalized saved choices intact so
 // a future redesign can restore them without deleting homeowner data.
 const YARD_DECORATIONS_ENABLED = false;
 const HOME_DEFAULTS = { version:2, wall:"original", roof:"original", door:"original", yard:"none" };
