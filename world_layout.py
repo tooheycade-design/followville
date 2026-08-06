@@ -79,6 +79,120 @@ RAFTING_ACCESS_SPINE = [
     (318.0, -22.5), (323.0, -23.5),
 ]
 
+# ── Timber Bend Crossing ────────────────────────────────────────────────────
+# A second river crossing, linking the eastern log-house districts straight to
+# the main town instead of sending every trip 500m south to Founders Crossing.
+#
+# The latitude is not a preference, it is the only one that works. Survey of
+# the whole reach:
+#   * south of y~140 the river runs PERCHED above its own meadow -- up to 2.7m
+#     at y=60-100 -- so a bridge there would span water standing higher than
+#     the land on either side.
+#   * north of y~150 the west bank becomes a bluff: 36% at y=150, 61% at y=170,
+#     113% at y=270. No approach road can climb that.
+#   * y=143 is the one place where the river sits in its valley (0.35m below
+#     grade) AND both banks are gentle (16% west, 15% east).
+#
+# The east junction is Timber Bend Road at (502.9, 125.9). It is NOT taken at
+# the obvious y=143 because houses 679/681 flank the road there and a spur
+# would have run through one of them; the y=118-128 stretch is house-free, so
+# the approach meets the road there and runs north-west to the water.
+#
+# The west junction is the Kaleidoscope Crest access road at (236, 72), the
+# last point on that road still at grade before it climbs onto the plateau.
+# The approach keeps outside the plateau keep-out ellipse the whole way.
+# The west approach deliberately holds y~141 as it nears the water. The ground
+# there climbs hard with latitude -- 0.0m at y=120, 2.6m at y=140, 6.4m at
+# y=150 -- so a line that dips even 6m south drops into a hollow and the deck
+# would have to bridge the approach as well as the river.
+# The west hillside gains about 0.24m of height for every metre of latitude, so
+# the approach earns its height on a long diagonal rather than turning north
+# near the bank: a line that gained the same 3m in 10m of y read as a 21% ramp.
+TIMBER_CROSSING_SPINE = [
+    (236.0, 72.0), (250.0, 86.0), (266.0, 100.0), (280.0, 112.0),
+    (290.0, 122.0), (298.0, 129.0), (312.0, 134.0), (323.0, 137.5),
+    (334.0, 141.0),
+    (348.0, 142.0), (362.0, 142.5), (378.0, 142.8), (390.0, 142.6),
+    (398.0, 142.0),
+    (412.0, 138.0), (424.0, 135.0), (449.0, 129.0), (472.0, 124.0),
+    (490.0, 122.5), (502.9, 125.9),
+]
+# The stretch carried on the deck rather than on the ground, as an x range.
+TIMBER_CROSSING_DECK = (334.0, 398.0)
+# Minimum daylight between the underside of the deck and the water.
+TIMBER_CROSSING_FREEBOARD = 0.90
+
+
+def timber_crossing_points(step=3.0):
+    """The crossing's centreline as authored (x, y, z).
+
+    The approaches follow the ground. Between the abutments the deck lifts into
+    a shallow arch, because a straight chord from bank to bank would pass under
+    the water surface: the river's carve pulls the ground down to the channel
+    bed for 34m either side, so both abutments stand lower than the water they
+    are meant to bridge.
+    """
+    import math
+    from downtown_visual_plan import (terrain_height, river_water_height,
+                                      river_distance)
+
+    dense = []
+    for a, b in zip(TIMBER_CROSSING_SPINE, TIMBER_CROSSING_SPINE[1:]):
+        count = max(1, int(math.ceil(math.hypot(b[0] - a[0], b[1] - a[1]) / step)))
+        for index in range(count):
+            t = index / count
+            dense.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    dense.append(TIMBER_CROSSING_SPINE[-1])
+
+    x0, x1 = TIMBER_CROSSING_DECK
+    # Landings sit flush with the approach road (+.08), not proud of it: a
+    # 0.22m lip at the abutment read as a 29% ramp one step long.
+    west_z = terrain_height(x0, _spine_y(x0)) + .08
+    east_z = terrain_height(x1, _spine_y(x1)) + .08
+
+    def chord_at(x):
+        return west_z + (east_z - west_z) * ((x - x0) / (x1 - x0))
+
+    # Size the arch from the worst shortfall anywhere on the span, not from the
+    # abutment heights: the chord can clear one bank comfortably and still pass
+    # under the water in the middle, which is exactly what a straight deck did
+    # here (0.44m below the surface at x=347).
+    from neighborhood_plan import RIVER_HALF_WIDTH
+    lift = 0.0
+    for x, y in dense:
+        # Only over the water itself. Applying the freeboard near an abutment,
+        # where the arch shape is ~0, divides by almost nothing and lifts the
+        # whole deck seven metres into the air.
+        if not (x0 <= x <= x1) or river_distance(x, y) > RIVER_HALF_WIDTH:
+            continue
+        t = (x - x0) / (x1 - x0)
+        shape = math.sin(math.pi * t)
+        if shape < .05:
+            continue
+        need = river_water_height(y) + TIMBER_CROSSING_FREEBOARD - chord_at(x)
+        if need > 0:
+            lift = max(lift, need / shape)
+
+    points = []
+    for x, y in dense:
+        if x0 <= x <= x1:
+            t = (x - x0) / (x1 - x0)
+            points.append((x, y, chord_at(x) + lift * math.sin(math.pi * t)))
+        else:
+            points.append((x, y, terrain_height(x, y) + .08))
+    return points
+
+
+def _spine_y(x):
+    """The spine's y where it crosses a given x (the run is monotonic in x)."""
+    pts = TIMBER_CROSSING_SPINE
+    for a, b in zip(pts, pts[1:]):
+        if a[0] <= x <= b[0]:
+            t = (x - a[0]) / (b[0] - a[0]) if b[0] != a[0] else 0.0
+            return a[1] + (b[1] - a[1]) * t
+    return pts[-1][1]
+
+
 # Followville First Alert Weather sits on a retained terrace immediately north
 # of the legacy grid. Its diagonal drive climbs from the north edge street
 # without extending the flat downtown road grid into the surrounding hillside.
@@ -243,6 +357,11 @@ INTENTIONALLY_RAISED_ROADS = [
     ("Founders Crossing bridge deck", 275.0, 415.0, -230.0, -195.0),
     ("rafting launch boardwalk", 332.0, 360.0, -34.0, -26.0),
     ("First Alert Weather access ramp", 16.5, 22.5, 84.0, 108.0),
+    # Timber Bend Crossing's deck. It has to stand off the ground: the river's
+    # carve pulls the bank down to the channel bed for 34m either side, so the
+    # abutments sit lower than the water between them and the span is arched to
+    # keep 0.90m of daylight over it.
+    ("Timber Bend Crossing deck", 332.0, 400.0, 137.0, 147.0),
 ]
 
 # Water surfaces that must be level, with how far their rim may fall across
@@ -331,7 +450,8 @@ def walk_surface_manifest(state):
     """Exact revealed suburban road decks for browser walking/collision QA."""
     import math
 
-    from downtown_visual_plan import terrain_height, river_water_height
+    from downtown_visual_plan import (terrain_height, river_water_height,
+                                      river_distance)
     from neighborhood_plan import PLAN
 
     active = max((building.get("plan_id", 0)
@@ -467,6 +587,11 @@ def walk_surface_manifest(state):
             stable_height(weather_station_base_height() + .18),
             half_x, half_y, "weather-station-campus",
         ])
+    # Timber Bend Crossing appears with the district it serves.
+    if any(building.get("district") == "Timber Bend"
+           for building in state.get("buildings", [])):
+        append_graded_road(timber_crossing_points(), 3.25)
+
     salmon_shop = next((building for building in state.get("buildings", [])
                         if building.get("type") == "salmonproshop"), None)
     if salmon_shop:

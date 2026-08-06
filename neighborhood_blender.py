@@ -5756,6 +5756,80 @@ def build_river_chapter(world_col, buildings, m):
         world_col, "rivergate_sign_text", "RIVERGATE", .58, .045,
         405.36, -214.0, sign_z+3.36, m["dash"],
         rotation=(math.pi/2, 0, -math.pi/2)))
+
+    created.extend(build_timber_bend_crossing(world_col, buildings, m,
+                                              concrete, rail_mat))
+    return [obj for obj in created if obj is not None]
+
+
+def build_timber_bend_crossing(world_col, buildings, m, concrete, rail_mat):
+    """The second crossing: Timber Bend straight into town.
+
+    Everything east of the river used to reach the town only by running 500m
+    south to Founders Crossing. This carries the log-house districts west to
+    the Kaleidoscope Crest access road instead.
+
+    The centreline, including the arch over the water, comes from
+    world_layout.timber_crossing_points() so that the geometry here, the
+    browser's walk surface and check_world_geometry all read one description of
+    the road rather than three copies that can drift apart.
+    """
+    if not any(b.get("district") == "Timber Bend" for b in buildings):
+        return []
+    from world_layout import timber_crossing_points, TIMBER_CROSSING_DECK
+
+    created = []
+    points = timber_crossing_points()
+    x0, x1 = TIMBER_CROSSING_DECK
+    west = [p for p in points if p[0] <= x0]
+    deck = [p for p in points if x0 <= p[0] <= x1]
+    east = [p for p in points if p[0] >= x1]
+
+    for name, run in (("timber_crossing_west_approach", west),
+                      ("timber_crossing_east_approach", east)):
+        if len(run) < 2:
+            continue
+        created.append(_add_road_strip(
+            world_col, name, run, m["road"], width=6.5,
+            bottom_offset=-.06, top_offset=.08, terrain_conform=True))
+
+    if len(deck) < 2:
+        return [obj for obj in created if obj is not None]
+
+    # Deck: a structural slab with the running surface laid on top of it.
+    created.append(_add_road_strip(
+        world_col, "timber_crossing_structure", deck, concrete,
+        width=7.6, bottom_offset=-.62, top_offset=.02, terrain_conform=False))
+    created.append(_add_road_strip(
+        world_col, "timber_crossing_road", deck, m["road"],
+        width=6.5, bottom_offset=.025, top_offset=.13, terrain_conform=False))
+
+    # Continuous guard rails, because this is walked in first person.
+    for side in (-1, 1):
+        top_rail, mid_rail = [], []
+        for x, y, z in deck:
+            top_rail.append((x, y+side*3.55, z+1.18))
+            mid_rail.append((x, y+side*3.55, z+.64))
+        created.append(_add_connected_tube(
+            world_col, "timber_crossing_top_rail", top_rail, .10, rail_mat, sides=8))
+        created.append(_add_connected_tube(
+            world_col, "timber_crossing_mid_rail", mid_rail, .07, rail_mat, sides=8))
+        for index in range(0, len(deck), 2):
+            x, y, z = deck[index]
+            created.append(_add_connected_tube(
+                world_col, "timber_crossing_post",
+                ((x, y+side*3.55, z+.10), (x, y+side*3.55, z+1.21)), .07,
+                rail_mat, sides=7))
+
+    # Piers only where the deck actually stands clear of the ground.
+    for index in range(0, len(deck), 4):
+        x, y, z = deck[index]
+        ground = terrain_height(x, y)
+        clear = z-ground-.62
+        if clear < .55:
+            continue
+        created.append(add_box(world_col, "timber_crossing_pier", 1.3, 4.6,
+                               clear, x, y, ground, concrete))
     return [obj for obj in created if obj is not None]
 
 
