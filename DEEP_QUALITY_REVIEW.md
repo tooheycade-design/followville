@@ -26,7 +26,7 @@ Local experiment only. No canon, identity, claim, address, population, or produc
   with regional terrain elevation even when its inputs were local coordinates
   inside the Kaleidoscope Crest asset. The later parent transform applied a
   second spatial offset, producing the long skyline beam and malformed pink
-  access road shown in the collaborator's 10:20 screenshots.
+  access road shown in Zach's 10:20 screenshots.
 - The road helper now has an explicit `terrain_conform` mode. Only world-space
   suburban roads and paths enable it; the feature access road preserves its
   authored 0–2.74 m local grade.
@@ -39,7 +39,7 @@ Local experiment only. No canon, identity, claim, address, population, or produc
 - Wide Chrome views matching the failure areas passed for Kaleidoscope Crest,
   the downtown perimeter skyline, and the oblique storefront façade.
 
-## Root-cause findings from the collaborator's screenshots
+## Root-cause findings from Zach's screenshots
 
 1. The salmon block in the road was a redundant second parked-car system. Its batched body exported, but its supporting silhouette read poorly at street level. The original project already had better cars. The entire redundant system was removed.
 2. First-floor glass was layered directly over a solid wall. Transparency could only tint the wall, never show a room. Downtown homes now use a real ground-floor shell with an open front, side/rear structure, floor, ceiling, transparent glazing, counter, shelves, display objects, lighting, hardware, and framing.

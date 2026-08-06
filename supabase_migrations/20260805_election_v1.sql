@@ -3,7 +3,7 @@
 --
 -- Adds a 48-hour town election on top of the EXISTING citizenship system.
 -- There is deliberately no new account concept: a "citizen" is exactly a
--- profile with verification_status = 'verified', i.e. someone the owner approved
+-- profile with verification_status = 'verified', i.e. someone Cade approved
 -- from an Instagram DM code. This migration adds no column to profiles and
 -- changes no existing table, function, claim, or house row.
 --
@@ -115,7 +115,7 @@ revoke all on table public.election_votes      from public, anon, authenticated;
 --   * signed out / pending / rejected  -> election teaser only (title, window,
 --     candidate count). No names, no tallies, no ballot.
 --   * verified citizen -> the full ballot with live counts and their own vote.
--- Counts are public-to-citizens on purpose: The owner chose a live leaderboard.
+-- Counts are public-to-citizens on purpose: Cade chose a live leaderboard.
 create or replace function public.election_state()
 returns json
 language plpgsql stable security definer set search_path = ''
@@ -288,7 +288,7 @@ begin
   return row_to_json(v_row);
 end $$;
 
--- One button for the thing the owner actually does: start the 48-hour poll now.
+-- One button for the thing Cade actually does: start the 48-hour poll now.
 create or replace function public.admin_election_open_48h(p_election_id bigint)
 returns json
 language plpgsql security definer set search_path = ''

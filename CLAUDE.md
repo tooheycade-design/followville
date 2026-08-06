@@ -1,6 +1,6 @@
 # FOLLOWVILLE — how to work on this project
 
-The owner's Instagram project: a persistent 3D low-poly town in Blender. Every
+Cade's Instagram project: a persistent 3D low-poly town in Blender. Every
 follower is a house. Daily reels show the town growing.
 
 **`world_state.json` is the city's only memory.** Never edit or delete it
@@ -313,7 +313,7 @@ The same verified/pending/rejected flag is what the mayoral election calls
 lets them vote; there is no second approval and no second account concept.
 
 Followers sign up, verify their Instagram handle (DM code, manually approved by
-The owner), and claim one house. Backend is Supabase; schema in
+Cade), and claim one house. Backend is Supabase; schema in
 `supabase_schema.sql`. One-house-per-account and one-account-per-house are
 enforced by DB constraints via the `claim_house()` RPC.
 
@@ -337,7 +337,7 @@ enforced by DB constraints via the `claim_house()` RPC.
 
 ## Collaboration
 
-The maintainers both work this project, each with an AI (Claude and/or Codex, on
+Cade and Zach both work this project, each with an AI (Claude and/or Codex, on
 Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 
 - **Codex and Claude sometimes run on the same task at the same time.** Before
@@ -395,4 +395,4 @@ before touching the room, furnishing catalog, persistence or builder),
 
 `condense_day9.py`, the `render_day9_*.command` scripts and the assorted
 Windows `.bat`/`.txt` scratch files are superseded paper trail. **Nobody
-deletes them without asking the owner** — the standing rule at the top of this file.
+deletes them without asking Cade** — the standing rule at the top of this file.

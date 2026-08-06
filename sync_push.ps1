@@ -5,7 +5,7 @@
 # blindly copy every git-tracked file from the iCloud folder over the repo
 # clone, then commit and push whatever resulted -- no check for whether
 # someone else had changed that same file since this machine last synced. On
-# 2026-07-10 this silently dropped a profile-picture feature the owner had added
+# 2026-07-10 this silently dropped a profile-picture feature Cade had added
 # to town.html: his local edit was never committed anywhere, and a later
 # blind-copy push from the other side overwrote it with no warning at all.
 # See sync_lib.sh (the Mac equivalent) for the full writeup and the same fix,
@@ -58,7 +58,7 @@ try {
     Write-Host "-- git fetch --"
     Invoke-Git @('fetch', 'origin') | Out-Null
 
-    # 2026-07-10 BUGFIX (see sync_lib.sh's matching note -- this hit the collaborator's
+    # 2026-07-10 BUGFIX (see sync_lib.sh's matching note -- this hit Zach's
     # Mac the same day this script was written): must be this clone's own
     # LOCAL $Branch ref, captured after fetch but before the checkout/reset
     # below -- NOT `git rev-parse HEAD` taken right after clone, which lands
@@ -147,7 +147,7 @@ try {
             # upstream changed it, we did not -- take upstream's version, and
             # refresh our local iCloud copy so it stops being stale. Do NOT
             # overwrite the repo with our stale local copy -- this exact step
-            # is what silently dropped the owner's profile-picture feature before
+            # is what silently dropped Cade's profile-picture feature before
             # this fix.
             Copy-Item -LiteralPath $repoPath -Destination $srcPath -Force
             $RefreshedFiles += $f

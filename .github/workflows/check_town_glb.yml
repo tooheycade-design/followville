@@ -33,7 +33,7 @@ jobs:
 
       # check_town_glb.py proves the export is complete and matches state; it
       # says nothing about whether anything is anywhere sensible. On
-      # 2026-07-31 the owner walked the town and found four landmarks off the
+      # 2026-07-31 Cade walked the town and found four landmarks off the
       # ground, on roads, or in the street, none of which any check could see.
       - name: Validate that the world sits on the ground
         run: python check_world_geometry.py world_state.json

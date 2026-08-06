@@ -532,7 +532,7 @@ Kept here (rather than just in chat) so it survives across sessions.
   own stale defaults, on top of (or instead of) the correct external-script
   rebuild.
 - **UPDATE 2026-07-07 (via Windows Claude, Cowork computer-use):** verified this
-  directly — Blender 5.1 turns out to be installed on the owner's Windows PC, so this
+  directly — Blender 5.1 turns out to be installed on Cade's Windows PC, so this
   session could actually open the GUI and click around (screenshots + mouse/
   keyboard control), unlike the Mac sessions which only ever drove Blender
   headlessly through `grow.sh`. Opened `neighborhood.blend`, clicked "Ignore" on
@@ -773,7 +773,7 @@ Kept here (rather than just in chat) so it survives across sessions.
   entry canopies and porch covers.
 - Tight yards now scale only the piece's front-to-back depth. Width and height
   remain intact, preventing miniature benches and flags or tiny collapsed trees.
-- Rendered and reviewed bench, flag, and tree placements at the owner's claimed
+- Rendered and reviewed bench, flag, and tree placements at Cade's claimed
   castle. Re-ran the 904-case placement audit: every decoration retained positive
   façade and curb clearance, including all corner/founder homes. Module parse,
   GLB sanity, and the full 366-address audit still pass. Web-only; no state,
@@ -822,7 +822,7 @@ Kept here (rather than just in chat) so it survives across sessions.
 ## 23. Yard decorations temporarily disabled
 
 - Added the `YARD_DECORATIONS_ENABLED` feature gate and set it to false at
-  The owner's request. Saved flowers, trees, benches, and flags no longer render,
+  Cade's request. Saved flowers, trees, benches, and flags no longer render,
   including previously saved homeowner pieces.
 - Removed the yard-piece section from Homeowner Mode and updated its copy to
   describe color customization only. Exterior, roof/accent, and door previews

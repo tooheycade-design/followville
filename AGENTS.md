@@ -17,7 +17,7 @@ for anything missing:
 ```
 
 Sign your `TEAM_LOG.md` line with which AI and machine made the change, e.g.
-"the owner (via Windows Codex)". A session that only read things does not need a log
+"Cade (via Windows Codex)". A session that only read things does not need a log
 entry — the log is who changed what.
 
 ---

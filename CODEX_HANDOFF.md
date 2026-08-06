@@ -1,12 +1,16 @@
 # Codex handoff -- current through Day 35
 
-Updated 2026-08-06. Anonymity rule (2026-08-06): **no real names anywhere**,
-and with force in anything that ships publicly. Use "Owner" / "Collaborator"
-plus the machine and AI.
+Updated 2026-08-06 for Cade and Zach's next Claude/Codex session.
 
-## Read this first -- 2026-08-06 session (Windows Claude)
+## Read this first -- 2026-08-06 session (Cade, via Windows Claude)
 
-Four things changed that will bite you if you assume the old behaviour.
+Five things changed that will bite you if you assume the old behaviour.
+
+0. **No real names on the public website.** Cade and Zach are anonymous to
+   visitors. `index.html`, `town.html`, `vote.html` and `admin.html` must not
+   carry either name in visible copy -- `/vote` shipped saying "accounts Cade
+   has approved" until it was caught. Inside the repo (this file, TEAM_LOG,
+   HISTORY, code comments) names are fine and are staying.
 
 1. **Phone play is no longer landscape-only.** The "turn your phone sideways"
    gate is gone and must not come back: most visitors arrive from Instagram,
@@ -36,7 +40,7 @@ Four things changed that will bite you if you assume the old behaviour.
    **no colliders at all** -- that is how the Salmon Pro Shop ended up
    walk-through. Add new landmark types there.
 
-### Known debt: the Salmon Pro Shop site (needs an owner decision)
+### Known debt: the Salmon Pro Shop site (needs Cade's decision)
 
 Its site falls **4.05m across the pad**, so the level deck stands 4.21m proud
 at its low corner and needs a 60m sweeping approach to reach its own car park.
@@ -52,8 +56,8 @@ pad in steps. Do not "fix" it by raising its `MAX_PAD_STAND` entry.
 
 ### Not started: a road from Timber Bend to the main town
 
-The owner asked for "a quality road from the log houses with the bridge, over
-to the main area". Findings, so it can be picked up cleanly:
+Cade asked for "a quality road from the log houses with the bridge, over to the
+main area". Findings, so it can be picked up cleanly:
 
 - The "log houses" are **Timber Bend** (`Lodgepole Loop`, `Timber Bend Road`),
   blender x 481..596, y 132..297.
@@ -103,7 +107,7 @@ workflow.
   skyline with an unclaimed building fire and responding engine, a fast river
   transfer, and all 31 homes rising in one held composition. Fire, smoke,
   engine, hose, lights, and water are render-only and excluded from state and
-  web exports. The MP4 is in shared iCloud renders and on the owner's Desktop.
+  web exports. The MP4 is in shared iCloud renders and on Cade's Desktop.
 
 - Day 33 is live at population 689 with 751 total records and 34 streamed
   chunks. One guarded +33 growth consumed plan IDs 513-545 / seeds 719-751:
@@ -122,7 +126,7 @@ workflow.
   seamless tiled rain, two lightning beats, and a final weather-station rise.
   Rain, lightning and the station's repeat rise are render-only and excluded
   from GLBs. This v2 supersedes the original closer render; it is in the shared
-  iCloud `renders` folder and on the owner's Desktop.
+  iCloud `renders` folder and on Cade's Desktop.
 
 - The local project now has a safe CC0 asset intake shelf documented in
   `ASSET_PIPELINE.md`: a provenance registry, deterministic hash/model manifest,
@@ -191,7 +195,7 @@ workflow.
   is retired. The Day 25 delivery is one reviewed 18-second daytime portrait
   drone film moving from the city through all 39 home rises to the pond.
 
-- Day 19 is population 331 with 334 total buildings. The collaborator's guarded Mac +10
+- Day 19 is population 331 with 334 total buildings. Zach's guarded Mac +10
   growth consumed plan IDs 178-187: seeds 325-331 completed Lantern Court and
   Twin Oaks, while seeds 332-334 opened Meadow Run. The insert-only houses sync
   added all 10 claimable rows. Full and seven-district assets report exact Day
@@ -202,7 +206,7 @@ workflow.
   frames every home on split-district growth days; `--cam dronehover` is a
   reusable completed-town replay camera.
 
-- Day 18 is population 321 with 324 total buildings. The collaborator's guarded Mac +20
+- Day 18 is population 321 with 324 total buildings. Zach's guarded Mac +20
   growth consumed Twin Oaks plan IDs 158-177: seeds 305-308 finished Acorn
   Court and seeds 309-324 opened Lantern Court. The insert-only houses sync
   added all 20 claimable rows. Full and six-district web assets report exact
@@ -251,7 +255,7 @@ workflow.
   escape for in-app browsers now lives inside that pause menu. The landscape
   passive chat feed is compact; tapping it expands the existing composer.
 
-- The collaborator's downtown/terrain design package is integrated on Day 16 without a
+- Zach's downtown/terrain design package is integrated on Day 16 without a
   growth run. Downtown lots are thirteen metres wide and now have authored
   sidewalks, curbs, crossings, storefronts, public furniture, stronger
   massing, regional terrain, terrain-following suburban roads, and foundation
@@ -334,7 +338,7 @@ workflow.
   street-level tour with every home present from frame one. Keep the 10m near
   plane on all aerial cameras: it fixed the prior moving-shot road/pond
   flashing caused by depth-precision loss. All three were visually reviewed
-  and emailed as separate MP4 attachments to the maintainers.
+  and emailed as separate MP4 attachments to Cade and Zach.
 - Kaleidoscope Crest received a post-delivery finish pass without changing any
   building record or claim. `storybookhouse` collisions are now derived only
   from `NB_story_wall*` material vertices at player height, excluding the
@@ -425,7 +429,7 @@ workflow.
   unaffected. Keep repo-based daily work on `main`.
 - Homeowner yard decorations are temporarily disabled. `town.html` does not
   render flowers/trees/benches/flags and does not show their chooser. Keep
-  `YARD_DECORATIONS_ENABLED = false` until the owner approves a redesign. Existing
+  `YARD_DECORATIONS_ENABLED = false` until Cade approves a redesign. Existing
   stored `customization.yard` values remain normalized and preserved so this
   pause does not destroy homeowner data; exterior/roof/door colors still work.
 - Founder house #29's structure is now authored 1.3m farther back, with its

@@ -158,7 +158,7 @@ def weather_station_access_points(step=2.5):
 #
 # Every entry below is a claim about the world that a person made on purpose.
 # The checker's job is to notice when the world stops matching them. All four
-# defects the owner found by walking on 2026-07-31 are expressible here, and none
+# defects Cade found by walking on 2026-07-31 are expressible here, and none
 # of them were expressible anywhere before.
 
 # Off-grid landmarks, as the rectangle their built geometry actually occupies

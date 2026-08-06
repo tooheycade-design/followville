@@ -3,7 +3,7 @@
 
 check_town_glb.py already proves the export is complete and matches state --
 right building count, right hashes, nothing squashed flat. It says nothing
-about whether the buildings are anywhere sensible, and on 2026-07-31 the owner
+about whether the buildings are anywhere sensible, and on 2026-07-31 Cade
 walked the town and found four places where they were not:
 
   * the rafting terrace, walled on its river face only, its downhill corners
@@ -397,7 +397,7 @@ def self_test():
     """Put each of the four 2026-07-31 defects back and confirm it is caught.
 
     A checker nobody has watched fail is a checker nobody knows works. These
-    re-create the exact conditions the owner walked into, from the values that were
+    re-create the exact conditions Cade walked into, from the values that were
     in the repository that morning, and require this file to notice each one.
     """
     import copy

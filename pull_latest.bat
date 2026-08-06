@@ -2,21 +2,21 @@
 REM STATUS 2026-07-17: HANDOFF/RECOVERY ONLY. Git is authoritative. This may
 REM restore plain-name mirrors into iCloud, but never makes iCloud a growth
 REM source and never replaces the guarded repo growth launcher.
-REM Followville -- bring the collaborator's (or your own past session's) latest work from
+REM Followville -- bring Zach's (or your own past session's) latest work from
 REM GitHub into this iCloud folder. Run this FIRST, every session, before
 REM editing anything. Companion to deploy_website.bat (pushes the other
 REM direction, to main) and share_progress.bat (pushes WIP without deploying).
 REM
 REM Why this exists (2026-07-10): editing files directly in this iCloud
-REM folder and trusting iCloud Drive itself to sync them to the collaborator's machine is
+REM folder and trusting iCloud Drive itself to sync them to Zach's machine is
 REM exactly what caused the repeated "numbered conflict copy" bugs documented
 REM in CLAUDE.md, plus a nastier one on 2026-07-09: this folder's own .git
-REM (on the collaborator's Mac) got corrupted by stale lock files that iCloud even synced
+REM (on Zach's Mac) got corrupted by stale lock files that iCloud even synced
 REM onto another machine. This script sidesteps all of that by using GitHub
 REM as the sync layer instead of iCloud: it updates a plain, non-iCloud-synced
 REM local clone (C:\Users\cadet\followville_repo, same one deploy_website.bat
 REM uses) and copies the result INTO this folder. iCloud still syncs this
-REM folder to the collaborator as always, but "did I get the collaborator's real latest work" is now
+REM folder to Zach as always, but "did I get Zach's real latest work" is now
 REM answered by git/GitHub, never by hoping iCloud's file rename won.
 REM
 REM Run via double-click (pulls "main"), or Win+R with an argument to pull a

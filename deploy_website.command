@@ -32,7 +32,7 @@ git checkout main
 git fetch origin
 
 STEP="git identity"
-git config user.name  >/dev/null 2>&1 || git config user.name  "the collaborator Kehler"
+git config user.name  >/dev/null 2>&1 || git config user.name  "Zach Kehler"
 git config user.email >/dev/null 2>&1 || git config user.email "zachkehler@gmail.com"
 
 # 2026-07-10 BUGFIX (see sync_lib.sh and share_progress.command's matching
@@ -65,7 +65,7 @@ if git diff --cached --quiet; then
   echo "NOCHANGES -- repo already matches this folder"
 else
   DAY=$(python3 -c "import json;s=json.load(open('world_state.json'));print('Day %d: population %d, %d buildings'%(s['day'],s['pop'],len(s['buildings'])))")
-  git commit -m "$DAY -- circular park district, lighting upgrade (pushed from the collaborator's Mac)"
+  git commit -m "$DAY -- circular park district, lighting upgrade (pushed from Zach's Mac)"
   STEP="push (may need one-time GitHub sign-in)"
   git push origin main
   echo "PUSHED -- Vercel will redeploy followville-kappa.vercel.app in ~1 minute"

@@ -5,7 +5,7 @@
 # share_progress.command — pushes your current work to the shared "wip"
 # branch on GitHub WITHOUT deploying it to the live site (that's what
 # deploy_website.command is for, and it only ever touches "main"). Run this
-# whenever you want the owner (or his AI) to be able to pull_latest.command and
+# whenever you want Cade (or his AI) to be able to pull_latest.command and
 # see/build on what you've got so far, before it's ready to go live.
 #
 # Same underlying machinery as deploy_website.command and pull_latest.command
@@ -31,7 +31,7 @@ cd "$REPO"
 git fetch origin
 
 STEP="git identity"
-git config user.name  >/dev/null 2>&1 || git config user.name  "the collaborator Kehler"
+git config user.name  >/dev/null 2>&1 || git config user.name  "Zach Kehler"
 git config user.email >/dev/null 2>&1 || git config user.email "zachkehler@gmail.com"
 
 # 2026-07-10 BUGFIX: this used to capture HEAD right after clone/before
@@ -67,7 +67,7 @@ echo "copied $COPIED tracked files"
 [ -n "$REFRESHED_FILES" ] && echo "REFRESHED_FROM_UPSTREAM:$REFRESHED_FILES (your local copy was stale and unchanged by you -- updated it from the newer shared version instead of overwriting the shared version with your stale copy)"
 if [ -n "$CONFLICT_FILES" ]; then
   echo "CONFLICTS_DETECTED:$CONFLICT_FILES"
-  echo "The file(s) above were changed on BOTH sides since your last sync and could not be auto-merged (either they're binary, or the edits genuinely overlap). They were left OUT of this push so nobody's work gets silently overwritten -- exactly what happened to the owner's profile-picture feature before this fix. Compare $SRC/<file> against $REPO/<file>, decide what the merged result should be, save it to both, then re-run this script."
+  echo "The file(s) above were changed on BOTH sides since your last sync and could not be auto-merged (either they're binary, or the edits genuinely overlap). They were left OUT of this push so nobody's work gets silently overwritten -- exactly what happened to Cade's profile-picture feature before this fix. Compare $SRC/<file> against $REPO/<file>, decide what the merged result should be, save it to both, then re-run this script."
 fi
 
 # 2026-07-10: sync_lib.sh itself isn't tracked yet on a machine's first run
@@ -85,9 +85,9 @@ if git diff --cached --quiet; then
   echo "NOCHANGES -- wip already matches this folder"
 else
   DAY=$(python3 -c "import json;s=json.load(open('world_state.json'));print('Day %d: population %d, %d buildings'%(s['day'],s['pop'],len(s['buildings'])))" 2>/dev/null || echo "WIP update")
-  git commit -m "$DAY (wip, pushed from the collaborator's Mac, not deployed)"
+  git commit -m "$DAY (wip, pushed from Zach's Mac, not deployed)"
   STEP="push"
   git push origin "$BRANCH"
-  echo "PUSHED to $BRANCH -- NOT live, the owner can pull_latest.command wip to see it"
+  echo "PUSHED to $BRANCH -- NOT live, Cade can pull_latest.command wip to see it"
 fi
 echo "ALL_DONE"

@@ -9,7 +9,7 @@ REM blind file-copy loop (world_state.json/town.glb excluded on purpose, see
 REM below). Rewritten to call sync_push.ps1, which does the same
 REM conflict-aware 3-way comparison as sync_lib.sh (the Mac equivalent)
 REM instead of blindly overwriting -- see sync_push.ps1's own comments for
-REM why (it's what silently dropped the owner's profile-picture feature before
+REM why (it's what silently dropped Cade's profile-picture feature before
 REM this fix).
 REM
 REM Run via double-click, or Win+R with this file's full path -- no arguments
