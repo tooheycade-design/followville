@@ -10,7 +10,7 @@ Friendly low-poly Instagram town. Readable on a phone. Colorful, clean, walkable
 4. **School (seed 172)** SW civic anchor at lots `(-6,-6)` block `(-2,-2)`.
 5. **Follow Mart (seed 335)** sits at the **opposite corner of the middle grid** from the school:
    - School SW → Mart **NE** at lots `(3,3)` block `(1,1)` (flat downtown platform).
-6. **Castle (seed 5)** and all claimable homes stay unless Zach/Cade explicitly say otherwise.
+6. **Castle (seed 5)** and all claimable homes stay unless the collaborator/the owner explicitly say otherwise.
 7. **Procedural massing towers** only on truly empty blocks; placing Mart removes that block’s tower.
 8. **Forest** = edge district only (`North Woods`), not random street trees.
 

@@ -1,6 +1,6 @@
 # Followville
 
-Followville is Cade and Zach's persistent Blender town: one follower equals one
+Followville is the maintainers' persistent Blender town: one follower equals one
 home.
 
 - **`CLAUDE.md`** — the manual. Instructions only; read this first.

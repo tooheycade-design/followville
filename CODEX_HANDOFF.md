@@ -1,6 +1,81 @@
-# Codex handoff -- current through Day 34
+# Codex handoff -- current through Day 35
 
-Updated 2026-08-04 for Cade and Zach's next Claude/Codex session.
+Updated 2026-08-06. Anonymity rule (2026-08-06): **no real names anywhere**,
+and with force in anything that ships publicly. Use "Owner" / "Collaborator"
+plus the machine and AI.
+
+## Read this first -- 2026-08-06 session (Windows Claude)
+
+Four things changed that will bite you if you assume the old behaviour.
+
+1. **Phone play is no longer landscape-only.** The "turn your phone sideways"
+   gate is gone and must not come back: most visitors arrive from Instagram,
+   whose in-app browser can refuse to rotate, so it blocked play outright.
+   Portrait has its own layout under
+   `@media (any-pointer:coarse) and (orientation:portrait)`. Touch has no
+   Escape key, so `#menuBtn` is the ONLY route to the pause menu -- keep it
+   reachable. `data-mobile-orientation` is now `portrait|landscape|desktop`
+   (the old `portrait-blocked` / `portrait-bypassed` values are gone).
+
+2. **The walk-surface manifest is the contract for raised decks.**
+   `walkSurfaceHeight()` used to filter `walk_surfaces.pads` to a hard-coded
+   list of four dock types, silently discarding any other pad the generator
+   exported -- which is why the weather station's parking lot was a hole you
+   fell through. It now honours every pad. **To make a new landmark walkable,
+   declare a pad in `world_layout.walk_surface_manifest()`; no browser change
+   is needed.** `data-manifest-pads-walkable` fails if anyone puts an
+   allow-list back in front of it.
+
+3. **A level pad may no longer perch itself.** `RETAINED_PADS` says what holds
+   a deck up; new `MAX_PAD_STAND` says how proud it may stand (1.60m default).
+   A new landmark on a sloping site now FAILS `check_world_geometry.py` rather
+   than shipping behind a long ramp. `--self-test` covers 8 regressions now.
+
+4. **Landmark hitboxes are still a hard-coded list.** `addLandmarkColliders()`
+   in `town.html` gates on an explicit type array. A landmark not in it gets
+   **no colliders at all** -- that is how the Salmon Pro Shop ended up
+   walk-through. Add new landmark types there.
+
+### Known debt: the Salmon Pro Shop site (needs an owner decision)
+
+Its site falls **4.05m across the pad**, so the level deck stands 4.21m proud
+at its low corner and needs a 60m sweeping approach to reach its own car park.
+This is not a retaining-wall problem and the pad cannot simply be lowered: the
+terrain mesh is generated from `terrain_height()`, so a lower pad has the
+meadow rising through the asphalt.
+
+**A terrain shelf is not available here.** Measured: the gentlest shelf that
+covers the pad moves 20 already-built houses by up to 2m vertically, and
+existing geometry never moves. Fixing it properly means relocating the shop to
+flatter ground (the meadow is at grade 0 east of about x=-100) or terracing the
+pad in steps. Do not "fix" it by raising its `MAX_PAD_STAND` entry.
+
+### Not started: a road from Timber Bend to the main town
+
+The owner asked for "a quality road from the log houses with the bridge, over
+to the main area". Findings, so it can be picked up cleanly:
+
+- The "log houses" are **Timber Bend** (`Lodgepole Loop`, `Timber Bend Road`),
+  blender x 481..596, y 132..297.
+- The river runs north-south at x roughly 350..388
+  (`neighborhood_plan.RIVER_CENTERLINE`, half width 14).
+- The **only** crossing is Founders Crossing at y ~= -215
+  (`RIVER_BRIDGE`), which is 350-500m south of Timber Bend. Rivergate and
+  River Meadows use it; the northern east-bank districts effectively have no
+  route to town.
+- So this needs two authored roads: an east-bank arterial from Timber Bend
+  south to the bridge landing at (400, -215), and a west-side link from the
+  bridge approach (276, -217) to the North Ridge connector, which ends at
+  (133, -123).
+- Whatever is built must be added to `world_layout` so
+  `check_world_geometry.py` can see it (an unknown road is not audited), use
+  control points every ~3m (`_add_road_strip` subdivides to 2m internally but
+  `walk_surface_manifest` uses the points as given), and go through
+  `append_graded_road` so the browser gets the walk surface for free.
+- A second bridge would need an `INTENTIONALLY_RAISED_ROADS` entry.
+
+Left undone deliberately: a new river crossing is a large, highly visible world
+change that wanted visual review at a scale that was not available unattended.
 
 ## Open the authoritative project
 
@@ -28,7 +103,7 @@ workflow.
   skyline with an unclaimed building fire and responding engine, a fast river
   transfer, and all 31 homes rising in one held composition. Fire, smoke,
   engine, hose, lights, and water are render-only and excluded from state and
-  web exports. The MP4 is in shared iCloud renders and on Cade's Desktop.
+  web exports. The MP4 is in shared iCloud renders and on the owner's Desktop.
 
 - Day 33 is live at population 689 with 751 total records and 34 streamed
   chunks. One guarded +33 growth consumed plan IDs 513-545 / seeds 719-751:
@@ -47,7 +122,7 @@ workflow.
   seamless tiled rain, two lightning beats, and a final weather-station rise.
   Rain, lightning and the station's repeat rise are render-only and excluded
   from GLBs. This v2 supersedes the original closer render; it is in the shared
-  iCloud `renders` folder and on Cade's Desktop.
+  iCloud `renders` folder and on the owner's Desktop.
 
 - The local project now has a safe CC0 asset intake shelf documented in
   `ASSET_PIPELINE.md`: a provenance registry, deterministic hash/model manifest,
@@ -116,7 +191,7 @@ workflow.
   is retired. The Day 25 delivery is one reviewed 18-second daytime portrait
   drone film moving from the city through all 39 home rises to the pond.
 
-- Day 19 is population 331 with 334 total buildings. Zach's guarded Mac +10
+- Day 19 is population 331 with 334 total buildings. The collaborator's guarded Mac +10
   growth consumed plan IDs 178-187: seeds 325-331 completed Lantern Court and
   Twin Oaks, while seeds 332-334 opened Meadow Run. The insert-only houses sync
   added all 10 claimable rows. Full and seven-district assets report exact Day
@@ -127,7 +202,7 @@ workflow.
   frames every home on split-district growth days; `--cam dronehover` is a
   reusable completed-town replay camera.
 
-- Day 18 is population 321 with 324 total buildings. Zach's guarded Mac +20
+- Day 18 is population 321 with 324 total buildings. The collaborator's guarded Mac +20
   growth consumed Twin Oaks plan IDs 158-177: seeds 305-308 finished Acorn
   Court and seeds 309-324 opened Lantern Court. The insert-only houses sync
   added all 20 claimable rows. Full and six-district web assets report exact
@@ -176,7 +251,7 @@ workflow.
   escape for in-app browsers now lives inside that pause menu. The landscape
   passive chat feed is compact; tapping it expands the existing composer.
 
-- Zach's downtown/terrain design package is integrated on Day 16 without a
+- The collaborator's downtown/terrain design package is integrated on Day 16 without a
   growth run. Downtown lots are thirteen metres wide and now have authored
   sidewalks, curbs, crossings, storefronts, public furniture, stronger
   massing, regional terrain, terrain-following suburban roads, and foundation
@@ -259,7 +334,7 @@ workflow.
   street-level tour with every home present from frame one. Keep the 10m near
   plane on all aerial cameras: it fixed the prior moving-shot road/pond
   flashing caused by depth-precision loss. All three were visually reviewed
-  and emailed as separate MP4 attachments to Cade and Zach.
+  and emailed as separate MP4 attachments to the maintainers.
 - Kaleidoscope Crest received a post-delivery finish pass without changing any
   building record or claim. `storybookhouse` collisions are now derived only
   from `NB_story_wall*` material vertices at player height, excluding the
@@ -350,7 +425,7 @@ workflow.
   unaffected. Keep repo-based daily work on `main`.
 - Homeowner yard decorations are temporarily disabled. `town.html` does not
   render flowers/trees/benches/flags and does not show their chooser. Keep
-  `YARD_DECORATIONS_ENABLED = false` until Cade approves a redesign. Existing
+  `YARD_DECORATIONS_ENABLED = false` until the owner approves a redesign. Existing
   stored `customization.yard` values remain normalized and preserved so this
   pause does not destroy homeowner data; exterior/roof/door colors still work.
 - Founder house #29's structure is now authored 1.3m farther back, with its

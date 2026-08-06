@@ -198,7 +198,7 @@ def find_feature_road_outliers(gltf):
 
     Kaleidoscope Crest is built around local z=0..3 and then instanced at its
     world position. Applying the regional terrain function before that parent
-    transform produces the long floating beam captured in Zach's screenshots.
+    transform produces the long floating beam captured in the collaborator's screenshots.
     """
     outliers = []
     seen_materials = set()

@@ -22,7 +22,7 @@ Status: released to production from `codex/interior-builder-polish` on
 - Desktop uses pointer placement; landscape phones use touch placement without
   camera-look stealing the gesture. Normal movement pauses while building.
 - Saved rooms are shared, not local decoration: visitors to the same house see
-  the owner's current layout through the existing claim Realtime flow.
+  The owner's current layout through the existing claim Realtime flow.
 
 ## Runtime architecture
 

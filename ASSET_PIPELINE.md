@@ -82,5 +82,5 @@ The visible Blender GUI must be open and **Connect to MCP server** must be activ
 Restart Codex after changing MCP configuration so its tool registry refreshes.
 
 Finalize useful MCP experiments as deterministic scripts or committed source
-assets. That keeps Cade, Zach, Codex and Claude able to reproduce the same
+assets. That keeps the owner, the collaborator, Codex and Claude able to reproduce the same
 result without depending on one interactive session.

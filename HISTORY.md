@@ -17,7 +17,7 @@ Anything in this file that contradicts `CLAUDE.md` is out of date, and
 
 # FOLLOWER NEIGHBORHOOD — project memory (read me first)
 
-Cade's Instagram project: a persistent 3D low-poly town in Blender. Every follower = a house.
+The owner's Instagram project: a persistent 3D low-poly town in Blender. Every follower = a house.
 Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEVER edit/delete
 it casually; back it up before risky operations. **As of 2026-07-09, on Windows this file (and
 town.glb) live in the git repo clone (`C:\Users\cadet\followville_repo`), NOT in this iCloud
@@ -26,8 +26,8 @@ you go looking for it here.**
 
 ## Downtown + terrain release (2026-07-17)
 
-Zach's approved local downtown/terrain source package was semantically merged
-onto Cade's current Day 16 branch and rebuilt from the authoritative iCloud
+The collaborator's approved local downtown/terrain source package was semantically merged
+onto the owner's current Day 16 branch and rebuilt from the authoritative iCloud
 Blend in replay mode. The town now uses a thirteen-metre downtown lot grid,
 continuous authored sidewalks/curbs/crossings, storefront interiors and civic
 street furniture, stronger downtown massing, rolling regional terrain,
@@ -99,7 +99,7 @@ later in this file.
 
 ## Looking at the world, and checking it (read before diagnosing a defect)
 
-**Cade reports defects as coordinates** (three.js world space: x right, y up,
+**the owner reports defects as coordinates** (three.js world space: x right, y up,
 z depth; `three z = -blender y`). Two tools exist so acting on one is cheap.
 
 **To go and look**, no code changes, no patched copies:
@@ -135,7 +135,7 @@ defend it (an undeclared landmark is reported as unaudited, not failed).
 caught, so the checker cannot rot into something that passes everything.
 
 ## Current canon (update this section each day!)
-- 2026-07-31 walked-the-world geometry pass (Cade via Windows Claude): four
+- 2026-07-31 walked-the-world geometry pass (the owner via Windows Claude): four
   landmark defects found by walking to them, all fixed without changing Day 29,
   population 559, the 620 records, claims, addresses, or Supabase.
   * The rafting terrace was pinned to the highest corner of its pad but walled
@@ -172,7 +172,7 @@ caught, so the checker cannot rot into something that passes everything.
     mid-block. Scatter now also clears the approach and the outpost lane.
   Full and streamed assets were regenerated together, `check_town_glb.py`
   passed, and all 17 browser stories passed.
-- 2026-07-31 follow-up, so the next four cost less (Cade via Windows Claude):
+- 2026-07-31 follow-up, so the next four cost less (the owner via Windows Claude):
   added `check_world_geometry.py` and the `?view=free` audit camera above.
   Every one of the four defects was arithmetic on data the repo already had,
   and none was expressible in any existing check. `CITY_HALL_APPROACH` and
@@ -186,7 +186,7 @@ caught, so the checker cannot rot into something that passes everything.
   3m. Blender python is `"C:\Program Files\Blender Foundation\Blender 5.1\5.1\python\bin\python.exe"`
   (the `python` on PATH is a Store stub), and Playwright from PowerShell needs
   `$env:PATH = "C:\Program Files\nodejs;$env:PATH"` or its web server dies.
-- Day 26, population 464, 524 records (grown/corrected 2026-07-27 via Zach's Mac
+- Day 26, population 464, 524 records (grown/corrected 2026-07-27 via the collaborator's Mac
   Codex). Seeds 498-522 are 25 claimable homes at addresses 296-320, finishing
   Juniper Court, filling Hemlock Court, and opening North Ridge/Ridgeview
   Drive. Seed 523 is the permanent East Woods terrain-conforming forest biome
@@ -199,7 +199,7 @@ caught, so the checker cannot rot into something that passes everything.
   and 28 preload-all chunk assets, all 14 local browser stories, live smoke tests,
   and the reviewed 18-second golden-hour portrait reveal passed. Both Blend
   copies are saved at the finished Day 26 frame.
-- 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
+- 2026-07-26 downtown walking/performance pass (the owner via Windows Codex): the
   pale building apron no longer competes with the bottom of downtown facades;
   the browser pushes the current exported apron behind opaque walls, while the
   source apron is now a thin flat strip with a 30cm facade gap for the next
@@ -214,7 +214,7 @@ caught, so the checker cannot rot into something that passes everything.
   authoritative Blend and exact 457-building/hash/state validation passed.
   Day 24, population 400, world state, claims, ownership, Supabase, curbs, and
   both Blend copies are unchanged.
-- Day 19, population 331, 334 buildings (grown 2026-07-20 via Zach's Mac
+- Day 19, population 331, 334 buildings (grown 2026-07-20 via the collaborator's Mac
   Codex: +10 ordinary claimable homes). Seeds 325-331 completed Lantern Court
   and Twin Oaks at planned addresses 178-184; seeds 332-334 opened Meadow Run
   at addresses 185-187. The insert-only Supabase sync added all 10 rows, and
@@ -223,7 +223,7 @@ caught, so the checker cannot rot into something that passes everything.
   reviewed delivery is two standalone daytime portrait MP4s: a split-district
   rise shot framing all 10 new homes and a reusable 12-second `dronehover`
   crescent flight across downtown and the expanding neighborhoods.
-- Day 18, population 321, 324 buildings (grown 2026-07-19 via Zach's Mac
+- Day 18, population 321, 324 buildings (grown 2026-07-19 via the collaborator's Mac
   Codex: +20 ordinary claimable homes). Seeds 305-308 finished Acorn Court at
   planned addresses 158-161; seeds 309-324 opened Lantern Court at addresses
   162-177. All 20 rows were added by the insert-only Supabase sync and address
@@ -235,7 +235,7 @@ caught, so the checker cannot rot into something that passes everything.
   completed whole-city sky view; and a fast drone dive/sweep/pullback. New
   `cinematic` and `dronezoom` cameras are reusable replay modes. `--godzilla`
   is strictly render-only and never changes world state, GLBs, or the Blend.
-- Day 17, population 301, 304 buildings (grown 2026-07-18 via Cade's
+- Day 17, population 301, 304 buildings (grown 2026-07-18 via the owner's
   Windows Codex: +29 ordinary claimable homes). Seeds 276-285 continued Twin
   Oaks Drive at planned addresses 129-138; seeds 286-304 opened Acorn Court at
   addresses 139-157. All 29 Supabase rows are present and claimable. The exact
@@ -249,7 +249,7 @@ caught, so the checker cannot rot into something that passes everything.
   `wholeoverhead` now keeps Twin Oaks and Kaleidoscope Crest inside the portrait
   frame throughout its orbit. The camera-only generator change was refreshed
   into the authoritative iCloud Blend and synchronized to the repo mirror.
-- Day 16, population 272, 275 buildings (grown 2026-07-17 via Cade's
+- Day 16, population 272, 275 buildings (grown 2026-07-17 via the owner's
   Windows Codex: +13 ordinary claimable homes). Seed 263 completed Willow
   Hills at Overlook Circle planned address 116; seeds 264-275 opened Twin
   Oaks at Twin Oaks Drive addresses 117-128. The growth created and published
@@ -261,7 +261,7 @@ caught, so the checker cannot rot into something that passes everything.
   homes appear. Both were frame-sampled before delivery. Full/streamed GLB
   validation passed; all eight Playwright stories passed, with the two longest
   local stories rerun successfully using a 180-second allowance.
-- 2026-07-17 maintenance pass (Cade via Windows Codex): the
+- 2026-07-17 maintenance pass (the owner via Windows Codex): the
   guarded growth/refresh workflow now treats Git as the only executable source
   and iCloud `neighborhood.blend` as the shared scene, rejects retired
   iCloud-only/`--no-git` paths, and locks direct GUI growth when the embedded
@@ -271,7 +271,7 @@ caught, so the checker cannot rot into something that passes everything.
   The complete before/after claim snapshot was identical: 30 claims across 29
   accounts, with no owner or customization change. World state, town geometry,
   population 259, all 262 buildings, and generated web assets did not change.
-- 2026-07-16 scalable town delivery (Cade via Windows Codex): the canonical
+- 2026-07-16 scalable town delivery (the owner via Windows Codex): the canonical
   Blender world now exports a hashed `town_manifest.json`, a compressed shared
   `town_chunks/base.glb`, and five district GLBs in addition to the complete
   `town.glb` safety copy. The browser starts with 2,800,996 bytes of detailed
@@ -285,7 +285,7 @@ caught, so the checker cannot rot into something that passes everything.
   fallback, touch controls, and all existing navigation. Day 15, population
   259, buildings, addresses, claims, ownership, and visible Blender content
   did not change.
-- Day 15, population 259, 262 buildings (grown 2026-07-16 via Cade's
+- Day 15, population 259, 262 buildings (grown 2026-07-16 via the owner's
   Windows Codex: +15 claimable homes). Seeds 248-257 are ten original
   `storybookhouse` designs around Wanderlight Loop in the new Kaleidoscope
   Crest feature district; seeds 258-262 are ordinary houses at planned
@@ -304,8 +304,8 @@ caught, so the checker cannot rot into something that passes everything.
   finished` with every feature home present from frame one. Aerial cameras use
   a 10m near clip to prevent thin roads and ponds flashing from lost depth
   precision; do not restore Blender's 0.1m default for aerial modes. All three
-  files were reviewed and emailed as separate attachments to Cade and Zach.
-- 2026-07-16 Kaleidoscope Crest finish pass (Cade via Windows Codex): the ten
+  files were reviewed and emailed as separate attachments to the maintainers.
+- 2026-07-16 Kaleidoscope Crest finish pass (the owner via Windows Codex): the ten
   `storybookhouse` player hitboxes now read only their wall-material geometry
   at body height, so lawns, paths, flowers, fences, and mailboxes are walkable.
   The uphill access markings are purpose-built surface meshes sampled at both
@@ -321,7 +321,7 @@ caught, so the checker cannot rot into something that passes everything.
   five Playwright flows, and in-browser runtime audits passed. Blender/GLB and
   web collision code changed; day, population, 262 building records, addresses,
   ownership, and all 15 Day 15 claimable rows did not change.
-- 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
+- 2026-07-16 growing-town mountain clearance (the owner via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until
   its full conservative footprint has at least 18m clearance from every current
@@ -329,7 +329,7 @@ caught, so the checker cannot rot into something that passes everything.
   around Overlook Circle. A runtime `data-hill-clearance="pass"` audit is now
   covered by Playwright. Web-only; Blender terrain, GLB, world state, addresses,
   population, claims, and house positions did not change.
-- 2026-07-16 roleplay-ready public places (Cade via Codex): the homepage now
+- 2026-07-16 roleplay-ready public places (the owner via Codex): the homepage now
   has a self-updating `Today in Followville` activity derived from the newest
   build day in `world_state.json`. `/today` opens those homes in the live 3D
   map, highlights them, summarizes their current district/streets, and lets a
@@ -342,7 +342,7 @@ caught, so the checker cannot rot into something that passes everything.
   tables or hard-coded coordinates. Five Playwright browser regressions now run
   in CI for homepage data, Today, house share/visit, invalid addresses, and the
   chat/map/Escape walking flow. Run `pnpm test:e2e` after public navigation work.
-- 2026-07-15 organized homepage (Cade via Codex): `index.html` is now a
+- 2026-07-15 organized homepage (the owner via Codex): `index.html` is now a
   destination dashboard instead of a vertical button stack. Desktop places
   Walk/Claim navigation beside a large live isometric town preview; mobile
   keeps the preview and two actions compact above the fold. The preview is a
@@ -363,7 +363,7 @@ caught, so the checker cannot rot into something that passes everything.
   those overlays. Signed-in owners can reach the existing confirmed
   per-house unclaim flow from clear `manage my home(s) / unclaim` entry points
   on the town/start screen and from the pause menu.
-- 2026-07-16 live 3D town map (Cade via Codex): the homepage has an
+- 2026-07-16 live 3D town map (the owner via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start
   screen, the in-town button, or desktop `M`. Homepage map deep-links return to
@@ -385,7 +385,7 @@ caught, so the checker cannot rot into something that passes everything.
   exact owner search.
   Web-only: Blender, GLB, state, population, buildings, and claims did not
   change.
-- 2026-07-15 landing experience (Cade via Codex): `index.html` and the
+- 2026-07-15 landing experience (the owner via Codex): `index.html` and the
   `town.html` loading/start screen use a lightweight looping Day 14 sidewalk
   shot aimed at a current Overlook Circle house, with two staggered passing
   cars. `--cam housefront` generates this render-only 12-second view without
@@ -393,7 +393,7 @@ caught, so the checker cannot rot into something that passes everything.
   data-saver visitors; the town intro pauses while walking or while the tab is
   hidden. No permanent car, house, road, claim, population, GLB, or blend
   content was added by this website background.
-- Day 14, population 244, 247 buildings (grown 2026-07-15 via Cade's
+- Day 14, population 244, 247 buildings (grown 2026-07-15 via the owner's
   Codex: +18 ordinary houses at planned addresses 93-110). The final three
   Foxglove Court homes completed that cul-de-sac and 15 homes began Overlook
   Circle; its future turnaround remains hidden. Supabase contains all 18 new
@@ -405,13 +405,13 @@ caught, so the checker cannot rot into something that passes everything.
   messages to stay below Gmail's attachment limit. Repo-launched Windows growth now skips the legacy iCloud `wip`
   auto-share step so a successful `main` growth cannot leave the clone on a
   stale branch.
-- 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,
+- 2026-07-15 yard decorations paused (the owner via Codex): homeowner flowers,
   trees, benches, and flags are not rendered and the yard-piece chooser is
   hidden. Existing normalized `claims.customization.yard` values are preserved
   in Supabase for a future redesign; house colors, claims, Blender, GLB, state,
   day, population, and buildings are unchanged. `YARD_DECORATIONS_ENABLED` in
   `town.html` is the single intentional feature gate.
-- 2026-07-15 final house #29 lot correction (Cade via Codex): founder house 29's
+- 2026-07-15 final house #29 lot correction (the owner via Codex): founder house 29's
   structure is authored 1.3m farther back while its driveway and walk remain
   connected to the curb. The web clearance pass now measures only the actual
   structural material triangles inside each optimized multi-material house mesh;
@@ -422,15 +422,15 @@ caught, so the checker cannot rot into something that passes everything.
   Street renders and all 904 house/decoration cases passed with zero house,
   curb, or lot-edge violations. Blender + web model changed; day/population,
   229 buildings, seeds, and claims are unchanged.
-- 2026-07-15 yard-decoration presentation correction (Cade via Codex): pieces
+- 2026-07-15 yard-decoration presentation correction (the owner via Codex): pieces
   now use a side-lawn planting zone instead of the front-door centerline.
   Founder doors and normal-house garage sides steer the piece to the clear side;
   corner lots steer away from their second road. Benches rotate 180 degrees to
   face the street and flags sit curbward so poles clear porch covers. Tight lots
-  compress only front-to-back, preserving normal decoration height/width. Cade's
+  compress only front-to-back, preserving normal decoration height/width. The owner's
   castle bench/flag/tree were rendered and visually checked; all 904 current
   house/decoration combinations still clear both façade and curb. Web-only.
-- 2026-07-15 front-yard placement + accurate web collisions (Cade via Codex):
+- 2026-07-15 front-yard placement + accurate web collisions (the owner via Codex):
   homeowner decorations now read each GLB home's real facing and façade, then
   fit between the building and its curb. Tight founder lots constrain the
   piece's depth instead of crossing the street; corner lots cannot offset toward a
@@ -439,7 +439,7 @@ caught, so the checker cannot rot into something that passes everything.
   and only the actual cylinders of 77 existing tree trunks (plus customized
   yard-tree trunks), never foliage. Runtime QA tested all four decorations on
   all 226 homes with no house/curb overlap. Web-only: Blender/state/GLB unchanged.
-- 2026-07-15 admin two-home allowance (Cade via Codex):
+- 2026-07-15 admin two-home allowance (the owner via Codex):
   trusted `profiles.is_admin` accounts may own two houses while every normal
   account remains capped at one. The live admins are `cade.toohey` and
   `stellar.kehler`. The account panel shows 1/2 or 2/2 homes and lets an admin
@@ -447,7 +447,7 @@ caught, so the checker cannot rot into something that passes everything.
   the limit with a profile-row lock plus a claims trigger, and the RPCs target
   an explicit owned house ID. All 27 claims stayed unchanged. This is
   web/backend-only; Blender/state/GLB were not modified.
-- 2026-07-15 Homeowner Mode (Cade via Codex): every signed-in claimed-house
+- 2026-07-15 Homeowner Mode (the owner via Codex): every signed-in claimed-house
   owner can now open `customize my home`, choose an exterior color, roof/accent
   color, door color, and one lightweight yard piece (flowers, tree, bench, or
   flag), preview the result, and save it. The approved palette IDs live in the
@@ -457,7 +457,7 @@ caught, so the checker cannot rot into something that passes everything.
   make saved looks visible to all visitors. Web materials are cloned per house
   before recoloring so shared Blender materials cannot recolor neighbors.
   All 27 existing claims remain unchanged and no Blender/state/GLB data moved.
-- Day 13, population 226, 229 buildings (grown 2026-07-14 via Cade's
+- Day 13, population 226, 229 buildings (grown 2026-07-14 via the owner's
   Codex: +40 ordinary houses at planned addresses 53-92). Creekside Bend
   completed with the final two Pebble Court homes; Willow Hills began with
   20 homes on Willow Rise and 18 on Foxglove Court. Only the road sections
@@ -469,7 +469,7 @@ caught, so the checker cannot rot into something that passes everything.
   suburban roads, cul-de-sacs, and occupied planned lots. The final GLB passed
   validation, all 40 database rows matched Supabase, and the three videos were
   emailed to `zachkehler@gmail.com`.
-- 2026-07-14 website multiplayer (Cade via Codex): `town.html` now uses
+- 2026-07-14 website multiplayer (the owner via Codex): `town.html` now uses
   Supabase Realtime Presence for online players and Broadcast for live movement.
   Visitors see lightweight player markers and name labels; signed-in followers
   can send persistent town chat with speech bubbles. Admins can review current
@@ -482,7 +482,7 @@ caught, so the checker cannot rot into something that passes everything.
   showing the start screen; Enter sends and immediately restores walking.
   Remote markers have a forward-facing 3D smiley, and the admin page is split
   into Accounts/Claims and Multiplayer/Chat tabs with compact scrolling lists.
-- 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
+- 2026-07-13 suburban-house replacement (the owner via Codex): every ordinary
   `house` and `ringhouse` now draws from one optimized library of 15
   distinct suburban designs and six coordinated color palettes (90 stable
   variants). Houses include their own driveway, walk, mailbox, porch/stoop,
@@ -495,7 +495,7 @@ caught, so the checker cannot rot into something that passes everything.
   Follow-up fix: `side_garage_two` now has a full-width two-story body and
   main roof; its former offset 70% body left the third upstairs window over
   empty space and looked like half the house had failed to load.
-- Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
+- Day 12, population 186, 189 buildings (grown 2026-07-13 via the owner's Codex:
   +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
   non-population Followville Elementary School). Heron Court completed and
   Pebble Court began with only their required continuous road ribbons. The
@@ -510,7 +510,7 @@ caught, so the checker cannot rot into something that passes everything.
   protruding outside the body. Both sides of an isolated car and two playground
   angles passed visual review. The full Day 12 video set was rerendered from
   this corrected world and emailed to tooheycade@gmail.com.
-- Day 11, population 169, 171 buildings (grown 2026-07-12 via Cade's Codex:
+- Day 11, population 169, 171 buildings (grown 2026-07-12 via the owner's Codex:
   +14 ordinary houses, planned addresses 22-35 in Creekside Bend). The winding
   street extended only as far as today's houses. Growth/loading and finished
   overhead videos rendered and passed visual review; town.glb validated clean;
@@ -525,19 +525,19 @@ caught, so the checker cannot rot into something that passes everything.
   Road upgrade on 2026-07-13: staged suburban streets now build as continuous
   mitered meshes instead of separate rotated boxes, eliminating turn gaps, and
   use the same width/material/center-dash rhythm as established town roads.
-- Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
+- Day 10, population 155, 157 buildings (grown 2026-07-11 via the owner's Codex:
   +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
   curving entrance road and first cul-de-sac appeared only as required by the
   new houses. Growth/loading and finished overhead videos were rendered and
   approved; town.glb validated clean; all 21 houses synced to Supabase.
-- 2026-07-11 structural reserve (Cade via Codex): `neighborhood_plan.py`
+- 2026-07-11 structural reserve (the owner via Codex): `neighborhood_plan.py`
   deterministically plans the next 366 ordinary houses (population 135-500)
   across six curved-road districts with 18 cul-de-sacs. Undeveloped hills,
   meadows, and ponds are visible now; planned roads and houses create no object
   until ordinary +N growth consumes their exact addresses. Existing geometry
   never moves. See `NEIGHBORHOOD_EXPANSION_PLAN.md`. The legacy pop-500 plaza
   is intentionally suppressed when this houses-only reserve completes.
-- Day 9, population 134, 136 buildings (grown 2026-07-10 via Zach's Mac Claude: +64 houses,
+- Day 9, population 134, 136 buildings (grown 2026-07-10 via the collaborator's Mac Claude: +64 houses,
   regular grid only -- no new custom house type or feature flag this time). LIVE on the
   website as of 2026-07-10 (deploy_website.command, commit `c2ab97e` on `main`, confirmed
   by reading world_state.json straight off followville-kappa.vercel.app). Three things
@@ -546,17 +546,17 @@ caught, so the checker cannot rot into something that passes everything.
   * **Landlocked-house bug fixed** in `find_free_lots()`: every 3x3 block's dead-center
     lot (`ix==1, iy==1` within the block) has zero road frontage on any side, but the
     lot-picker was still handing it to regular houses, stranding them with no street
-    access -- Cade flagged this with screenshots ("house in the middle of the square, you
+    access -- the owner flagged this with screenshots ("house in the middle of the square, you
     can't get access to it from the street"). Fixed by skipping that lot in the `size==1`
     branch. One PRE-EXISTING landlocked building was deliberately left alone (the day-7
     pond, built before this fix existed) -- don't "fix" it later without checking with
-    Cade first, since moving it could disturb its neighboring day-7 houses too. Also:
+    The owner first, since moving it could disturb its neighboring day-7 houses too. Also:
     never hand-place a building on a dead-center lot via `--special TYPE@gx,gy` either.
   * **Camera framing retuned** in `build_stage()` -- the default/overhead orbit distance
     and angle, the separate `--hero` close-up formula (`hdist`), and the `--cam street`
     window (now a FIXED founder-centered span instead of the whole grid width, so it
     doesn't slow down as the town keeps growing) were all tightened for a more cinematic
-    look, at Zach's request ("make sure you see everything... make it look cinematic",
+    look, at the collaborator's request ("make sure you see everything... make it look cinematic",
     "don't go absurdly slow, make sure you see cool stuff"). These are the new defaults
     going forward -- nothing else needs to change them again. If you DO retune any of
     these, compare a frame against `day_009_hero_fixed`/`day_009_overhead_condensed` on
@@ -564,14 +564,14 @@ caught, so the checker cannot rot into something that passes everything.
   * **Layout condensed for day 9's batch** -- by day 9 several older blocks had gone
     sparse (one house plus some trees, lots of empty grass) because `find_free_lots()`'s
     lot order used to be pure radial distance from the city center, which scatters
-    rather than fills block-by-block. Zach asked for this cleaned up, but ONLY for that
+    rather than fills block-by-block. The collaborator asked for this cleaned up, but ONLY for that
     day's 64 new houses -- no founder home, no pre-day-9 house, no pond/park/ringhouse
     was allowed to move (his explicit call: "if you own that house, it doesn't change").
     Done via a standalone one-off script, `condense_day9.py` (kept in this folder for
     reference), which re-laid-out just that day's batch in block-filling spiral order
     into free lots, skipping the dead-center lot and every occupied/protected footprint.
   * **UPDATE, later the same day (2026-07-10):** block-fill is now the PERMANENT default
-    lot order, not a one-off -- Zach asked for the condensed look to happen automatically
+    lot order, not a one-off -- the collaborator asked for the condensed look to happen automatically
     from now on instead of needing a manual script each time. `find_free_lots()` gained a
     `fill_mode` param; the new `sorted_lots_filling()` (blocks in spiral order from the
     city center, filling each block's lots before moving to the next -- basically
@@ -585,19 +585,19 @@ caught, so the checker cannot rot into something that passes everything.
     collisions, no dead-center placements, custom-home blocks still respected. condense_day9.py
     itself is now mostly historical (kept for reference) since the pipeline does this
     automatically going forward.
-  * Fireworks deliberately left OUT of the final day-9 videos (Zach: "you still have
+  * Fireworks deliberately left OUT of the final day-9 videos (the collaborator: "you still have
     fireworks going off..."); `--celebrate` itself is unchanged and still works if a
     future day wants fireworks again.
-  * Three final videos rendered and approved by Zach, each with its own `--tag` so they
+  * Three final videos rendered and approved by the collaborator, each with its own `--tag` so they
     sit on the Desktop alongside earlier days' videos instead of overwriting them:
     `day_009_hero_fixed` (angled establishing shot), `day_009_street_walkin` (first-person
     walk down the founder-district street, `--cam street`), `day_009_overhead_condensed`
     (calm overhead showcase of the finished, condensed town -- rendered with `+0`, not
-    `replay`, specifically so the houses-rising animation does NOT play: Zach is cutting
+    `replay`, specifically so the houses-rising animation does NOT play: The collaborator is cutting
     this into a longer video and didn't want a "growth reveal" moment in this shot).
-- **2026-07-10, later still (Cade's Windows Claude Cowork session) -- a THIRD, independent
+- **2026-07-10, later still (the owner's Windows Claude Cowork session) -- a THIRD, independent
   instance of the git-internal-file iCloud race, complementary to the `refs/remotes/origin/main`
-  one Zach's session already found and fixed the same day (see Collaboration section):** this
+  one the collaborator's session already found and fixed the same day (see Collaboration section):** this
   iCloud folder's own `.git` was completely non-functional from this session's sandboxed bash
   ("not a git repository") because its plain `HEAD` and `config` files, `refs/heads/main`, the
   `index`, and `FETCH_HEAD` had ALL been hit by the same rename-to-numbered-copy race that hits
@@ -614,14 +614,14 @@ caught, so the checker cannot rot into something that passes everything.
   `TEAM_LOG.md`, and `world_state.json` filenames in this iCloud folder had themselves been renamed
   away (again) at the very start of that session, before any of the above. **Near-miss worth
   knowing about:** a first attempt to push a LOCAL, STALE copy of `CLAUDE.md`/`TEAM_LOG.md` (from
-  before Zach's day-9 doc updates existed) almost overwrote everything in this Day 9 canon entry
+  before the collaborator's day-9 doc updates existed) almost overwrote everything in this Day 9 canon entry
   and the Collaboration section below -- avoided only because the copy step happened to fail
   ("system cannot find the file specified", the SAME iCloud race striking a third time, on the
   real Windows machine this time, not just the sandbox). Lesson for any future doc-repair session:
   always refresh your local copy from the repo clone (`copy /y C:\Users\cadet\followville_repo\CLAUDE.md ...`)
   immediately before editing, not just once at the start -- don't trust that a local copy made
   even a few minutes earlier is still the latest, on either side of this project.
-- Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Claude: +41 houses
+- Day 8, population 70, 72 buildings (grown 2026-07-09 via the collaborator's Mac Claude: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
   * `--parkring` flag: gained houses become "ringhouse" buildings laid out on two rings
@@ -637,18 +637,18 @@ caught, so the checker cannot rot into something that passes everything.
   * Lighting upgrade (all time-of-day moods): softer sun shadow edges,
     a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
     setup_render (all best-effort try/except). LIGHTING SAGA, final numbers (set on
-    Cade's PC the same night, after the Mac-rendered videos still looked washed out):
+    The owner's PC the same night, after the Mac-rendered videos still looked washed out):
     sun 1.0x @ 4.5 deg, fill 0.07x, sky 1.0x -- i.e. back to the approved day-7 look
     plus a subtle shaded-side lift. Don't re-boost any of these without comparing a
     frame against day_007_hero on the same machine first.
-  * CORRECTION to the para above (Cade's Windows Claude, same night): Zach's Mac run
+  * CORRECTION to the para above (the owner's Windows Claude, same night): The collaborator's Mac run
     never actually produced the reshoot -- all three videos on his Desktop were replay
     (everything rising) + bright lighting, and his --cam park path orbited at r~29.5,
     straight THROUGH the inner ring houses (r=30.5) -- that was the "camera clipping"
-    Cade reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
+    The owner reported. Fixed park cam: r=20, h=8.5 (between park trees <=13.8 and the
     houses). Fireworks made daylight-visible (emission 9->30, bigger particles). The
     real final videos (hero rising+fireworks, park + overhead calm +0 showcases) were
-    rendered on Cade's PC via day8_shots.bat. His day-8 state itself was great and was
+    rendered on the owner's PC via day8_shots.bat. His day-8 state itself was great and was
     published through the git-backed flow (his Mac had run without NEIGHBORHOOD_REPO_DIR,
     so day 8 initially existed only in iCloud). Claiming-side follow-ups: parkdistrict
     set non-claimable (both sync scripts' type lists updated), and town.html claiming
@@ -689,7 +689,7 @@ grow_windows.bat +N --render
 
 Mac: set `FOLLOWVILLE_REPO_DIR` to the local Git clone, then run the guarded
 `grow.sh`. It refuses to use iCloud-only state. Run `--preflight-only` first on
-Zach's first use after any workflow change.
+The collaborator's first use after any workflow change.
 
 Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
        --cam overhead|street|park --tag NAME --time day|sunset|night --season X --still
@@ -814,7 +814,7 @@ red. Verify it's working by checking the Actions tab on the GitHub repo after an
 
 ## Claimable homes (accounts) — built 2026-07-09, see CLAIMING_SETUP.md
 Followers can sign up on the site, verify their Instagram handle (DM-code, manually
-approved by Cade until Meta app review), and claim exactly ONE house. Backend:
+approved by the owner until Meta app review), and claim exactly ONE house. Backend:
 Supabase (Postgres+Auth+Realtime) — schema in `supabase_schema.sql`, run once in the
 Supabase SQL editor. One-house-per-account and one-account-per-house are enforced by
 DB unique constraints via the `claim_house()` RPC (first commit wins, loser gets a
@@ -826,14 +826,14 @@ sync new world_state.json buildings into the Supabase `houses` table after each
 growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored,
 NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
-incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas/schools.
+incl. founder houses (the owner's call, 2026-07-09) except ponds/parks/plazas/schools.
 Admin (verify/reject/revoke) = the "Admin" button on the LIVE homepage (visible
 only to accounts with profiles.is_admin = true — currently cade.toohey and
 stellar.kehler; every action is re-checked server-side inside the SQL functions,
 so the page itself is safe to be public). admin.bat still works locally too
 (same admin.html, service key from supabase_sync.env). See CLAIMING_SETUP.md §3.
 Setup status: LIVE as of 2026-07-09. Supabase project "followville"
-(ref bposhxtidoyulallvhdp, in Cade's "The Human Archive" org) created, schema run,
+(ref bposhxtidoyulallvhdp, in the owner's "The Human Archive" org) created, schema run,
 email-confirmation OFF, legacy anon key pasted into town.html (deployed, commit
 c180164), service-role key in supabase_sync.env (local only), all 30 buildings
 backfilled into `houses`. Verified end to end: anon REST reads houses (30 rows),
@@ -892,7 +892,7 @@ The following records how the former iCloud-to-`wip` workflow evolved. Keep it
 for incident history, but use the authoritative 2026-07-17 workflow at the top
 of this file for all current work.
 
-**As of 2026-07-10, GitHub is the real sync mechanism between Cade and Zach, not iCloud
+**As of 2026-07-10, GitHub is the real sync mechanism between the maintainers, not iCloud
 Drive's file sync.** This folder still lives in an iCloud Drive synced folder shared
 between them, and iCloud still syncs it as before — but relying on that sync alone to
 hand work between machines is exactly what caused the repeated "numbered conflict copy"
@@ -932,19 +932,19 @@ auto-share only pushes the OTHER tracked files (docs/code) — `world_state.json
 are already pushed straight to `main` by the existing `NEIGHBORHOOD_STATE_DIR` mechanism a
 few steps earlier in the same run, and `share_progress.bat` was fixed the same day to skip
 those two files so it can't undo that push with a stale iCloud copy (see its own comments).
-**Not yet verified on Cade's actual Windows PC** — built and reasoned through the same way
+**Not yet verified on the owner's actual Windows PC** — built and reasoned through the same way
 the rest of the Windows tooling was, but the first real `+N`/`-N` growth day after this
 change should be treated as a test of the auto-share step specifically.
 
 **2026-07-10, later the same day: share_progress/deploy_website stopped blind-copying files.**
 Both scripts used to just `cp` every tracked file from this iCloud folder over the repo
 clone and commit whatever resulted — no check for whether the OTHER person had changed
-that same file since this machine last synced. That's exactly how Cade's profile-picture
+that same file since this machine last synced. That's exactly how the owner's profile-picture
 feature got silently dropped: it only ever existed as a local, uncommitted edit to
-`town.html` on his end, and a later push from Zach's side (based on an older pull) blindly
+`town.html` on his end, and a later push from the collaborator's side (based on an older pull) blindly
 overwrote it — no conflict, no warning, it just vanished. Checked the full git history
 (all commits, reflog, dangling objects) to confirm it was never captured anywhere; likely
-recoverable from `.pull_backups/` on Cade's PC if he ran `pull_latest.bat` after making
+recoverable from `.pull_backups/` on the owner's PC if he ran `pull_latest.bat` after making
 that edit. Fix: `sync_lib.sh` (Mac, sourced by share_progress.command/deploy_website.command)
 and `sync_push.ps1` (Windows, called by share_progress.bat/deploy_website.bat, which are now
 thin wrappers around it — same reasoning as `grow_windows.bat` wrapping `grow_windows.ps1`)
@@ -979,12 +979,12 @@ the bug only affected the separate clone + this iCloud folder's copies). Also ga
 `deploy_website.command` the same explicit `git checkout main` safety net
 `deploy_website.bat` already had, since it never got that fix on the Mac side.
 
-**Tag every TEAM_LOG entry with what it touched — added 2026-07-10 (Cade's Windows Claude
+**Tag every TEAM_LOG entry with what it touched — added 2026-07-10 (the owner's Windows Claude
 Cowork session).** Start each entry with `[WORLD]`, `[WEB]`, or `[BOTH]`: `[WORLD]` = changed
 something Blender-authoritative (world_state.json, neighborhood_blender.py, anything that
 should show up identically in both the rendered videos and town.glb); `[WEB]` = website-only
 presentation (UI, controls, decorative additions made directly in index.html/town.html that
-were never added to Blender, e.g. the backdrop mountains/clouds Zach's Codex session added
+were never added to Blender, e.g. the backdrop mountains/clouds the collaborator's Codex session added
 2026-07-09 -- purely visual on the site, don't expect to find them in a render or in
 neighborhood_blender.py); `[BOTH]` = touched both. This exists because of exactly that
 mountains/clouds case: a website-only change shipped with no way for the next AI to know it
@@ -994,7 +994,7 @@ Blender (WORLD collection) so export_web.py carries it over automatically -- res
 `[WEB]` changes for things that could never make sense in a rendered video anyway (name tags,
 claim UI, touch controls, session-aware buttons).
 
-**Clarified by Cade, 2026-07-10: "same world" means same geometry, NOT same visual quality.**
+**Clarified by the owner, 2026-07-10: "same world" means same geometry, NOT same visual quality.**
 The Blender-rendered videos are allowed -- expected -- to look noticeably better than the
 website: richer materials, real lighting/shadows/AO, depth of field, post-processing, all the
 things EEVEE/Cycles can afford that a real-time in-browser Three.js scene can't. What must stay
@@ -1028,18 +1028,18 @@ Take turns as before (don't both have neighborhood.blend open at the same time),
 "did I actually get the other person's latest work" question is now answered by step 1
 above, not by eyeballing whether iCloud's sync icon looks done.
 
-### Third AI: "Cade Claude on Windows" (Cowork)
-As of 2026-07-07, Cade also works this project from a Windows PC, via Claude in Cowork mode.
-That session is a THIRD AI with access to this same folder — alongside Cade's Mac Claude and
-Zach's Mac Claude. It reaches the project through the same iCloud Drive sync (folder path on
+### Third AI: "the owner Claude on Windows" (Cowork)
+As of 2026-07-07, the owner also works this project from a Windows PC, via Claude in Cowork mode.
+That session is a THIRD AI with access to this same folder — alongside the owner's Mac Claude and
+The collaborator's Mac Claude. It reaches the project through the same iCloud Drive sync (folder path on
 this machine: `C:\Users\cadet\iCloudDrive\neighborhood`), so the same rules apply: take turns,
 check iCloud is fully synced before starting, add a TEAM_LOG.md line before handing off (sign
-it "Cade (via Windows Claude)" so it's clear which AI/machine made the change).
+it "the owner (via Windows Claude)" so it's clear which AI/machine made the change).
 
 **What's different about the Windows session — corrected 2026-07-07:** its file/bash tools
 run inside a sandboxed Linux shell that only sees this mounted folder (no Blender there,
 no path to launch one) — but this machine ALSO has a separate screen-control tool
-(computer-use) that, once Cade grants access, can see the real Windows desktop and drive
+(computer-use) that, once the owner grants access, can see the real Windows desktop and drive
 it with actual clicks/keystrokes. **Blender 5.1 is installed on this PC.** Verified
 2026-07-07: with that access granted, this session opened `neighborhood.blend` in the real
 Blender GUI, used the Scripting tab to inspect the embedded generator script, and closed
@@ -1061,7 +1061,7 @@ back out without saving. So:
   practical way to pass arguments without a human at the keyboard. **Verified working
   2026-07-07** with a real `replay` run (safe — never touches `world_state.json`/the
   `.blend` by design): got `ALL_DONE`, `town.glb` refreshed, state file untouched (checked
-  by hash). Still get Cade's go-ahead before the first real `+N`/`-N`/`=N` growth day from
+  by hash). Still get the owner's go-ahead before the first real `+N`/`-N`/`=N` growth day from
   here. Two gotchas already hit and fixed: (1) keep both files plain ASCII — Windows
   PowerShell 5.1 misreads em-dashes/curly quotes in a BOM-less `.ps1` and can crash
   mid-string; (2) `$ErrorActionPreference = "Stop"` plus `2>&1` on the Blender call turns
@@ -1076,12 +1076,12 @@ back out without saving. So:
   (200 OK) — confirms the Blender-to-website pipeline is intact from Windows.
 - It CAN safely do everything else: edit/read docs (README, CLAUDE.md, AI_HANDOFF.md,
   TEAM_LOG.md, WEB_VIEWER_CHANGELOG.md), tweak the web viewer (`index.html`, `town.html`),
-  inspect `world_state.json` and `town.glb` (read-only unless Cade explicitly asks for a
+  inspect `world_state.json` and `town.glb` (read-only unless the owner explicitly asks for a
   hand-edit — see the "never edit/delete casually" rule at the top of this file), open
   Blender read-only for diagnosis (always "Ignore"/"Don't Save" on any prompt), and general
   planning/writing tasks.
 - If asked to "grow the town" or render a video, it should say so and offer either: point
-  Cade to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
+  The owner to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
   rather than attempting the GUI-clicking approach for a real growth day.
 - **Deploying to the live site** (see "Deploying the live site" section above for why this
   matters — growing the town alone does NOT push). **`deploy_website.bat` now exists**
@@ -1096,7 +1096,7 @@ back out without saving. So:
   C:\Users\cadet\followville_repo`. First real push (2026-07-07, the day 6 + street-cam
   update) needed a one-time `git config --global user.name/user.email` (now set) and one
   interactive GitHub sign-in via the browser (Git Credential Manager popped up a normal
-  github.com login page for Cade to complete himself — this session never sees or handles
+  github.com login page for the owner to complete himself — this session never sees or handles
   the credentials). Later pushes should be silent unless that browser login expires.
   Verified working end to end: pushed day 6/pop 26 + the new street-cam feature, confirmed
   live on `followville-kappa.vercel.app` within about a minute (stats and `town.glb` both
@@ -1159,7 +1159,7 @@ back out without saving. So:
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
 grow.sh (CLI) | world_state.json (THE CITY) | renders/ (videos) | AI_HANDOFF.md (cheap-model manual)
-TEAM_LOG.md (plain-English "who changed what" between Cade & Zach, see Collaboration section)
+TEAM_LOG.md (plain-English "who changed what" between the owner & the collaborator, see Collaboration section)
 world_state_*_backup.json = old test states, ignorable.
 
 Windows-only tooling (permanent, keep): grow_windows.bat/.ps1, preview_website.bat/.ps1,
@@ -1206,7 +1206,7 @@ GitHub Action source file, kept here for reference — the live copy that matter
 already pushed to `.github/workflows/check_town_glb.yml` inside the git repo clone),
 check_town_glb_setup_note.txt (Fable-written setup note for the above, safe to ignore once read).
 Nobody has deleted these per the "never delete without approval" rule at the top of this
-file — ask Cade before cleaning them up.
+file — ask the owner before cleaning them up.
 
 Numbered/parenthesized conflict copies (`world_state 2.json`, `CLAUDE(1).md`, etc.) are
 iCloud sync artifacts, not intentional files — see the race-condition gotcha in the Third AI
@@ -1228,7 +1228,7 @@ mandatory visible-surface depth rule, was promoted into `CLAUDE.md` proper.
 
 # FOLLOWER NEIGHBORHOOD — project memory (read me first)
 
-Cade's Instagram project: a persistent 3D low-poly town in Blender. Every follower = a house.
+The owner's Instagram project: a persistent 3D low-poly town in Blender. Every follower = a house.
 Daily reels show the town growing. THE CITY'S MEMORY IS world_state.json — NEVER edit/delete
 it casually; back it up before risky operations. **As of 2026-07-09, on Windows this file (and
 town.glb) live in the git repo clone (`C:\Users\cadet\followville_repo`), NOT in this iCloud
@@ -1237,8 +1237,8 @@ you go looking for it here.**
 
 ## Downtown + terrain release (2026-07-17)
 
-Zach's approved local downtown/terrain source package was semantically merged
-onto Cade's current Day 16 branch and rebuilt from the authoritative iCloud
+The collaborator's approved local downtown/terrain source package was semantically merged
+onto the owner's current Day 16 branch and rebuilt from the authoritative iCloud
 Blend in replay mode. The town now uses a thirteen-metre downtown lot grid,
 continuous authored sidewalks/curbs/crossings, storefront interiors and civic
 street furniture, stronger downtown massing, rolling regional terrain,
@@ -1314,7 +1314,7 @@ later in this file.
   can remain hidden until the camera moves.
 
 ## Current canon (update this section each day!)
-- 2026-07-30 regional-ground depth correction (Zach via Mac Codex): the
+- 2026-07-30 regional-ground depth correction (the collaborator via Mac Codex): the
   square grass flicker seen in the Day 29 aerial was genuine coplanar
   geometry, not sun-shadow precision. The legacy 4,000m background ground box
   ended at `z=0` underneath the entire city while broad areas of the
@@ -1327,7 +1327,7 @@ later in this file.
   plus streamed GLB validation passed; corrected web assets were pushed
   without rerendering the already-used video. Population 559, all 620 records,
   `world_state.json`, claims, ownership, and Supabase rows are unchanged.
-- Day 29, population 559, 620 building records (grown 2026-07-30 via Zach's
+- Day 29, population 559, 620 building records (grown 2026-07-30 via the collaborator's
   Mac Codex: +31 ordinary claimable homes plus River Run Outfitters). The
   exact growth from population 528 to 559 consumed
   Rivergate plan IDs 385-414 on Rivergate Drive and Cedarbank plan ID 415 on
@@ -1342,15 +1342,15 @@ later in this file.
   16 browser stories passed. Guarded production growth, insert-only database
   sync, full/streamed asset publication, and live verification succeeded. The
   approved delivery is one 18.000-second, 1080x1920, 30fps, 540-frame daytime
-  portrait MP4, emailed to Cade.
-- Day 28, population 528, 588 building records (grown 2026-07-29 via Zach's
+  portrait MP4, emailed to the owner.
+- Day 28, population 528, 588 building records (grown 2026-07-29 via the collaborator's
   Mac Codex: +28 ordinary claimable homes). Ten Summit Court homes completed
   the original population-500 reserve and eighteen timber/log homes opened
   Rivergate at addresses 367-384. The first Rivergate home permanently
   revealed the carved north/south river valley, Founders Crossing viaduct,
   riverwalks, riparian planting, and the first eight-design river-house
   library. Full and streamed GLBs were rebuilt and the website was published.
-- 2026-07-29 Day 28 river chapter preparation (Zach via Mac Codex): the
+- 2026-07-29 Day 28 river chapter preparation (the collaborator via Mac Codex): the
   deterministic ordinary-house reserve was extended from
   address 366 through address 616, planning population 501-750 across
   Rivergate, Cedarbank, Timber Bend, Eastbank Village, and River Meadows.
@@ -1363,7 +1363,7 @@ later in this file.
   growth reached Day 28 / population 528 / 588 records successfully before
   the guarded release. Read `RIVER_EXPANSION_PLAN.md` before changing this
   chapter.
-- Day 27, population 500, 560 buildings (grown 2026-07-28 via Zach's Mac
+- Day 27, population 500, 560 buildings (grown 2026-07-28 via the collaborator's Mac
   Codex: +36 ordinary claimable homes). Planned addresses 321-356 complete
   North Ridge: 14 homes on Ridgeview Drive, 16 on Bluebird Court, and six on
   Summit Court. The canonical Day 26 construction vote site at seed 524 was
@@ -1379,7 +1379,7 @@ later in this file.
   Ridge home-rise sequence, and a final downtown transfer into the cinema
   rise. The authoritative iCloud Blend was rebuilt at the final frame and
   synchronized to Git after the growth.
-- 2026-07-28 terrain readability pass (Zach via Mac Codex): the continuous
+- 2026-07-28 terrain readability pass (the collaborator via Mac Codex): the continuous
   regional terrain now uses exported vertex color derived from actual
   elevation, slope, and broad deterministic land variation. Sheltered
   lowlands stay cooler meadow green, uplands warm toward olive, and genuinely
@@ -1390,7 +1390,7 @@ later in this file.
   were regenerated together; manifest hashes, exported `COLOR_0`, walking and
   free-drone reviews, 60 FPS local play, and all 14 browser stories passed.
 - Day 26, population 464, 524 building records (grown and corrected 2026-07-27
-  via Zach's Mac Codex: +25 ordinary claimable homes, East Woods, and a
+  via the collaborator's Mac Codex: +25 ordinary claimable homes, East Woods, and a
   non-claimable downtown construction vote site). Seeds
   498-522 consumed planned addresses 296-320: Juniper Court finished, Hemlock
   Court filled, and North Ridge opened on Ridgeview Drive. Seed 523 owns the
@@ -1409,7 +1409,7 @@ later in this file.
   passed with the resident-chunk contract. The delivery is one reviewed 18.000-
   second 1080x1920 golden-hour portrait drone film: full city, all 25 home
   rises, then the construction-site rise and settled vote-site hold.
-- Day 25, population 439, 497 building records (grown 2026-07-26 via Zach's
+- Day 25, population 439, 497 building records (grown 2026-07-26 via the collaborator's
   Mac Codex: +39 ordinary claimable homes plus the non-population Followville
   Fishing Pond). Seeds 458-496 consumed planned addresses 257-295, completing
   Meadow Run's Sunset Court, continuing Pine Hollow Road, and opening Juniper
@@ -1424,7 +1424,7 @@ later in this file.
   browser fishing regression, and visual QA passed. The approved delivery is
   one continuous 18-second daytime portrait drone film moving from the city to
   all 39 home rises and then the pond.
-- 2026-07-26 final townhouse side-edge correction (Zach via Mac Codex): the
+- 2026-07-26 final townhouse side-edge correction (the collaborator via Mac Codex): the
   remaining faint vertical shimmer shown around website `(-9,48)` came from
   urban-townhouse storefront corner piers and structural side walls ending on
   the same X planes. Every left/right corner pier now owns its exposed edge
@@ -1436,8 +1436,8 @@ later in this file.
   close browser review passed. Both Blend copies carry the corrected source
   geometry. Day 24, population 400, 457 records, claims, ownership, state, and
   Supabase are unchanged.
-- 2026-07-26 final downtown facade rebuild (Zach via Mac Codex): the complete
-  Day 24 town and all 23 streamed chunks were replayed after Cade's curb,
+- 2026-07-26 final downtown facade rebuild (the collaborator via Mac Codex): the complete
+  Day 24 town and all 23 streamed chunks were replayed after the owner's curb,
   apron, storefront, wall-shader, camera, hitbox, and block-streaming fixes.
   Downtown podium glazing and horizontal facade frames now use one shared
   mounting rule: each remains anchored 1cm inside its supporting wall while
@@ -1448,7 +1448,7 @@ later in this file.
   generator and both Blend copies were synchronized to the rebuilt geometry.
   Day 24, population 400, all 457 building records, addresses, claims,
   ownership, `world_state.json`, and Supabase are unchanged.
-- 2026-07-26 downtown walking/performance pass (Cade via Windows Codex): the
+- 2026-07-26 downtown walking/performance pass (the owner via Windows Codex): the
   pale building apron no longer competes with the bottom of downtown facades;
   the browser pushes the current exported apron behind opaque walls, while the
   source apron is now a thin flat strip with a 30cm facade gap for the next
@@ -1463,7 +1463,7 @@ later in this file.
   authoritative Blend and exact 457-building/hash/state validation passed.
   Day 24, population 400, world state, claims, ownership, Supabase, curbs, and
   both Blend copies are unchanged.
-- 2026-07-25 walking depth-stability fix (Cade via Windows Codex): Day 24's
+- 2026-07-25 walking depth-stability fix (the owner via Windows Codex): Day 24's
   public viewer now applies a narrow polygon depth preference to exported curb
   and facade-detail materials, stopping their coplanar faces from flickering as
   the walking camera moves. A wall-specific follow-up removed the ultra
@@ -1481,7 +1481,7 @@ later in this file.
   and the focused full walking-camera story for the wall follow-up passed.
   Day 24, population 400, 457 building records, claims, ownership, Supabase,
   `world_state.json`, current GLBs, and both Blend copies are unchanged.
-- Day 24, population 400, 457 buildings (grown 2026-07-25 via Zach's Mac
+- Day 24, population 400, 457 buildings (grown 2026-07-25 via the collaborator's Mac
   Codex: +29 ordinary claimable homes plus permanent non-population Civic
   Square). Seed 428 is the non-claimable square at Blender `(43,-134)` /
   website `(43,134)`, beside City Hall; seeds 429-457 consumed plan IDs
@@ -1498,7 +1498,7 @@ later in this file.
   election joke and colored fireworks. The 400 display, crowd, signs, podiums,
   balloons, and fireworks are video-only. Both Blend copies are saved at
   finished frame 600.
-- Day 23, population 371, 427 buildings (grown 2026-07-24 via Zach's Mac
+- Day 23, population 371, 427 buildings (grown 2026-07-24 via the collaborator's Mac
   Codex: +19 ordinary claimable homes plus the non-population City Hall and
   its separately animated civic road). Seeds 407-408 are the non-claimable
   terrain-following road and City Hall at Blender `(-3,-134)` / website
@@ -1515,7 +1515,7 @@ later in this file.
   16.000-second, 1080x1920, 30fps portrait MP4 using `--cam day23reveal`:
   skyline, all 19 homes rising, civic road extending, then City Hall rising.
   Both Blend copies are saved at finished frame 480.
-- Day 22, population 352, 406 buildings (grown 2026-07-23 via Zach's Mac
+- Day 22, population 352, 406 buildings (grown 2026-07-23 via the collaborator's Mac
   Codex: +10 ordinary claimable homes plus one non-population fire station).
   Fire Station 1 is seed 396, a non-claimable full 3x3 civic campus centered
   at Blender `(64.5,-70.5)` / website `(64.5,70.5)`, replacing the procedural
@@ -1530,14 +1530,14 @@ later in this file.
   `--cam day22reveal`: completed skyline, flight to all ten homes rising, then
   flight to the empty civic block before Station 1 rises. The authoritative
   and repo Blend copies are saved at the finished Day 22 frame.
-- Day 21, population 342, 395 buildings (grown 2026-07-22 via Zach's Mac
+- Day 21, population 342, 395 buildings (grown 2026-07-22 via the collaborator's Mac
   Codex: +5 ordinary claimable homes and one non-population coffee truck).
   Seed 390 is the non-claimable street-facing coffee truck beside Follow Mart;
   seeds 391-395 are Meadow Run plan IDs 194-198. Full/streamed web assets were
   regenerated and pushed. The approved delivery is three separate 8-second
   portrait MP4s: coffee truck plus homes appearing, a finished-city drone
   flight, and an angled skyline push.
-- Day 19, population 331, 334 buildings (grown 2026-07-20 via Zach's Mac
+- Day 19, population 331, 334 buildings (grown 2026-07-20 via the collaborator's Mac
   Codex: +10 ordinary claimable homes). Seeds 325-331 completed Lantern Court
   and Twin Oaks at planned addresses 178-184; seeds 332-334 opened Meadow Run
   at addresses 185-187. The insert-only Supabase sync added all 10 rows, and
@@ -1546,7 +1546,7 @@ later in this file.
   reviewed delivery is two standalone daytime portrait MP4s: a split-district
   rise shot framing all 10 new homes and a reusable 12-second `dronehover`
   crescent flight across downtown and the expanding neighborhoods.
-- Day 18, population 321, 324 buildings (grown 2026-07-19 via Zach's Mac
+- Day 18, population 321, 324 buildings (grown 2026-07-19 via the collaborator's Mac
   Codex: +20 ordinary claimable homes). Seeds 305-308 finished Acorn Court at
   planned addresses 158-161; seeds 309-324 opened Lantern Court at addresses
   162-177. All 20 rows were added by the insert-only Supabase sync and address
@@ -1558,14 +1558,14 @@ later in this file.
   completed whole-city sky view; and a fast drone dive/sweep/pullback. New
   `cinematic` and `dronezoom` cameras are reusable replay modes. `--godzilla`
   is strictly render-only and never changes world state, GLBs, or the Blend.
-- 2026-07-18 mobile landscape play (Cade via Windows Codex): the 3D town now
+- 2026-07-18 mobile landscape play (the owner via Windows Codex): the 3D town now
   pauses behind a dedicated rotate-phone screen on coarse-pointer phones in
   portrait and resumes automatically in landscape. The passive mobile chat
   feed is narrower/shorter in landscape, while tapping it still opens the full
   composer. The portrait homepage remains available. Web-only; Day 17,
   population 301, 304 buildings, claims, ownership, state, GLBs, Blender, and
   Supabase are unchanged.
-- Day 17, population 301, 304 buildings (grown 2026-07-18 via Cade's
+- Day 17, population 301, 304 buildings (grown 2026-07-18 via the owner's
   Windows Codex: +29 ordinary claimable homes). Seeds 276-285 continued Twin
   Oaks Drive at planned addresses 129-138; seeds 286-304 opened Acorn Court at
   addresses 139-157. All 29 Supabase rows are present and claimable. The exact
@@ -1579,7 +1579,7 @@ later in this file.
   `wholeoverhead` now keeps Twin Oaks and Kaleidoscope Crest inside the portrait
   frame throughout its orbit. The camera-only generator change was refreshed
   into the authoritative iCloud Blend and synchronized to the repo mirror.
-- 2026-07-18 web/city finish pass (Cade via Windows Codex): third-person
+- 2026-07-18 web/city finish pass (the owner via Windows Codex): third-person
   camera pitch now reaches near-vertical views in both directions without the
   ground acting like an occluding wall; the camera shortens along the ground
   instead of losing the player. Claimed-home labels and the active claim marker
@@ -1592,7 +1592,7 @@ later in this file.
   focused desktop/fallback/teleport browser flows passed. Day 16 / population
   272 / 275 buildings, `world_state.json`, addresses, claims, ownership, and
   Supabase data did not change.
-- Day 16, population 272, 275 buildings (grown 2026-07-17 via Cade's
+- Day 16, population 272, 275 buildings (grown 2026-07-17 via the owner's
   Windows Codex: +13 ordinary claimable homes). Seed 263 completed Willow
   Hills at Overlook Circle planned address 116; seeds 264-275 opened Twin
   Oaks at Twin Oaks Drive addresses 117-128. The growth created and published
@@ -1604,7 +1604,7 @@ later in this file.
   homes appear. Both were frame-sampled before delivery. Full/streamed GLB
   validation passed; all eight Playwright stories passed, with the two longest
   local stories rerun successfully using a 180-second allowance.
-- 2026-07-17 maintenance pass (Cade via Windows Codex): the
+- 2026-07-17 maintenance pass (the owner via Windows Codex): the
   guarded growth/refresh workflow now treats Git as the only executable source
   and iCloud `neighborhood.blend` as the shared scene, rejects retired
   iCloud-only/`--no-git` paths, and locks direct GUI growth when the embedded
@@ -1614,7 +1614,7 @@ later in this file.
   The complete before/after claim snapshot was identical: 30 claims across 29
   accounts, with no owner or customization change. World state, town geometry,
   population 259, all 262 buildings, and generated web assets did not change.
-- 2026-07-16 scalable town delivery (Cade via Windows Codex): the canonical
+- 2026-07-16 scalable town delivery (the owner via Windows Codex): the canonical
   Blender world now exports a hashed `town_manifest.json`, a compressed shared
   `town_chunks/base.glb`, and five district GLBs in addition to the complete
   `town.glb` safety copy. The browser starts with 2,800,996 bytes of detailed
@@ -1628,7 +1628,7 @@ later in this file.
   fallback, touch controls, and all existing navigation. Day 15, population
   259, buildings, addresses, claims, ownership, and visible Blender content
   did not change.
-- Day 15, population 259, 262 buildings (grown 2026-07-16 via Cade's
+- Day 15, population 259, 262 buildings (grown 2026-07-16 via the owner's
   Windows Codex: +15 claimable homes). Seeds 248-257 are ten original
   `storybookhouse` designs around Wanderlight Loop in the new Kaleidoscope
   Crest feature district; seeds 258-262 are ordinary houses at planned
@@ -1647,8 +1647,8 @@ later in this file.
   finished` with every feature home present from frame one. Aerial cameras use
   a 10m near clip to prevent thin roads and ponds flashing from lost depth
   precision; do not restore Blender's 0.1m default for aerial modes. All three
-  files were reviewed and emailed as separate attachments to Cade and Zach.
-- 2026-07-16 Kaleidoscope Crest finish pass (Cade via Windows Codex): the ten
+  files were reviewed and emailed as separate attachments to the maintainers.
+- 2026-07-16 Kaleidoscope Crest finish pass (the owner via Windows Codex): the ten
   `storybookhouse` player hitboxes now read only their wall-material geometry
   at body height, so lawns, paths, flowers, fences, and mailboxes are walkable.
   The uphill access markings are purpose-built surface meshes sampled at both
@@ -1664,7 +1664,7 @@ later in this file.
   five Playwright flows, and in-browser runtime audits passed. Blender/GLB and
   web collision code changed; day, population, 262 building records, addresses,
   ownership, and all 15 Day 15 claimable rows did not change.
-- 2026-07-16 growing-town mountain clearance (Cade via Codex): the website's
+- 2026-07-16 growing-town mountain clearance (the owner via Codex): the website's
   decorative `FV_distant_hills` no longer use a fixed ring that can be reached
   by new suburbs. Each hill keeps its preferred bearing but moves outward until
   its full conservative footprint has at least 18m clearance from every current
@@ -1672,7 +1672,7 @@ later in this file.
   around Overlook Circle. A runtime `data-hill-clearance="pass"` audit is now
   covered by Playwright. Web-only; Blender terrain, GLB, world state, addresses,
   population, claims, and house positions did not change.
-- 2026-07-16 roleplay-ready public places (Cade via Codex): the homepage now
+- 2026-07-16 roleplay-ready public places (the owner via Codex): the homepage now
   has a self-updating `Today in Followville` activity derived from the newest
   build day in `world_state.json`. `/today` opens those homes in the live 3D
   map, highlights them, summarizes their current district/streets, and lets a
@@ -1685,7 +1685,7 @@ later in this file.
   tables or hard-coded coordinates. Five Playwright browser regressions now run
   in CI for homepage data, Today, house share/visit, invalid addresses, and the
   chat/map/Escape walking flow. Run `pnpm test:e2e` after public navigation work.
-- 2026-07-15 organized homepage (Cade via Codex): `index.html` is now a
+- 2026-07-15 organized homepage (the owner via Codex): `index.html` is now a
   destination dashboard instead of a vertical button stack. Desktop places
   Walk/Claim navigation beside a large live isometric town preview; mobile
   keeps the preview and two actions compact above the fold. The preview is a
@@ -1706,7 +1706,7 @@ later in this file.
   those overlays. Signed-in owners can reach the existing confirmed
   per-house unclaim flow from clear `manage my home(s) / unclaim` entry points
   on the town/start screen and from the pause menu.
-- 2026-07-16 live 3D town map (Cade via Codex): the homepage has an
+- 2026-07-16 live 3D town map (the owner via Codex): the homepage has an
   `Explore the map` route and `town.html` has a lightweight isometric map with
   rotate, pan, zoom, and fit-to-town controls. It opens from the town start
   screen, the in-town button, or desktop `M`. Homepage map deep-links return to
@@ -1728,7 +1728,7 @@ later in this file.
   exact owner search.
   Web-only: Blender, GLB, state, population, buildings, and claims did not
   change.
-- 2026-07-15 landing experience (Cade via Codex): `index.html` and the
+- 2026-07-15 landing experience (the owner via Codex): `index.html` and the
   `town.html` loading/start screen use a lightweight looping Day 14 sidewalk
   shot aimed at a current Overlook Circle house, with two staggered passing
   cars. `--cam housefront` generates this render-only 12-second view without
@@ -1736,7 +1736,7 @@ later in this file.
   data-saver visitors; the town intro pauses while walking or while the tab is
   hidden. No permanent car, house, road, claim, population, GLB, or blend
   content was added by this website background.
-- Day 14, population 244, 247 buildings (grown 2026-07-15 via Cade's
+- Day 14, population 244, 247 buildings (grown 2026-07-15 via the owner's
   Codex: +18 ordinary houses at planned addresses 93-110). The final three
   Foxglove Court homes completed that cul-de-sac and 15 homes began Overlook
   Circle; its future turnaround remains hidden. Supabase contains all 18 new
@@ -1748,13 +1748,13 @@ later in this file.
   messages to stay below Gmail's attachment limit. Repo-launched Windows growth now skips the legacy iCloud `wip`
   auto-share step so a successful `main` growth cannot leave the clone on a
   stale branch.
-- 2026-07-15 yard decorations paused (Cade via Codex): homeowner flowers,
+- 2026-07-15 yard decorations paused (the owner via Codex): homeowner flowers,
   trees, benches, and flags are not rendered and the yard-piece chooser is
   hidden. Existing normalized `claims.customization.yard` values are preserved
   in Supabase for a future redesign; house colors, claims, Blender, GLB, state,
   day, population, and buildings are unchanged. `YARD_DECORATIONS_ENABLED` in
   `town.html` is the single intentional feature gate.
-- 2026-07-15 final house #29 lot correction (Cade via Codex): founder house 29's
+- 2026-07-15 final house #29 lot correction (the owner via Codex): founder house 29's
   structure is authored 1.3m farther back while its driveway and walk remain
   connected to the curb. The web clearance pass now measures only the actual
   structural material triangles inside each optimized multi-material house mesh;
@@ -1765,15 +1765,15 @@ later in this file.
   Street renders and all 904 house/decoration cases passed with zero house,
   curb, or lot-edge violations. Blender + web model changed; day/population,
   229 buildings, seeds, and claims are unchanged.
-- 2026-07-15 yard-decoration presentation correction (Cade via Codex): pieces
+- 2026-07-15 yard-decoration presentation correction (the owner via Codex): pieces
   now use a side-lawn planting zone instead of the front-door centerline.
   Founder doors and normal-house garage sides steer the piece to the clear side;
   corner lots steer away from their second road. Benches rotate 180 degrees to
   face the street and flags sit curbward so poles clear porch covers. Tight lots
-  compress only front-to-back, preserving normal decoration height/width. Cade's
+  compress only front-to-back, preserving normal decoration height/width. The owner's
   castle bench/flag/tree were rendered and visually checked; all 904 current
   house/decoration combinations still clear both façade and curb. Web-only.
-- 2026-07-15 front-yard placement + accurate web collisions (Cade via Codex):
+- 2026-07-15 front-yard placement + accurate web collisions (the owner via Codex):
   homeowner decorations now read each GLB home's real facing and façade, then
   fit between the building and its curb. Tight founder lots constrain the
   piece's depth instead of crossing the street; corner lots cannot offset toward a
@@ -1782,7 +1782,7 @@ later in this file.
   and only the actual cylinders of 77 existing tree trunks (plus customized
   yard-tree trunks), never foliage. Runtime QA tested all four decorations on
   all 226 homes with no house/curb overlap. Web-only: Blender/state/GLB unchanged.
-- 2026-07-15 admin two-home allowance (Cade via Codex):
+- 2026-07-15 admin two-home allowance (the owner via Codex):
   trusted `profiles.is_admin` accounts may own two houses while every normal
   account remains capped at one. The live admins are `cade.toohey` and
   `stellar.kehler`. The account panel shows 1/2 or 2/2 homes and lets an admin
@@ -1790,7 +1790,7 @@ later in this file.
   the limit with a profile-row lock plus a claims trigger, and the RPCs target
   an explicit owned house ID. All 27 claims stayed unchanged. This is
   web/backend-only; Blender/state/GLB were not modified.
-- 2026-07-15 Homeowner Mode (Cade via Codex): every signed-in claimed-house
+- 2026-07-15 Homeowner Mode (the owner via Codex): every signed-in claimed-house
   owner can now open `customize my home`, choose an exterior color, roof/accent
   color, door color, and one lightweight yard piece (flowers, tree, bench, or
   flag), preview the result, and save it. The approved palette IDs live in the
@@ -1800,7 +1800,7 @@ later in this file.
   make saved looks visible to all visitors. Web materials are cloned per house
   before recoloring so shared Blender materials cannot recolor neighbors.
   All 27 existing claims remain unchanged and no Blender/state/GLB data moved.
-- Day 13, population 226, 229 buildings (grown 2026-07-14 via Cade's
+- Day 13, population 226, 229 buildings (grown 2026-07-14 via the owner's
   Codex: +40 ordinary houses at planned addresses 53-92). Creekside Bend
   completed with the final two Pebble Court homes; Willow Hills began with
   20 homes on Willow Rise and 18 on Foxglove Court. Only the road sections
@@ -1812,7 +1812,7 @@ later in this file.
   suburban roads, cul-de-sacs, and occupied planned lots. The final GLB passed
   validation, all 40 database rows matched Supabase, and the three videos were
   emailed to `zachkehler@gmail.com`.
-- 2026-07-14 website multiplayer (Cade via Codex): `town.html` now uses
+- 2026-07-14 website multiplayer (the owner via Codex): `town.html` now uses
   Supabase Realtime Presence for online players and Broadcast for live movement.
   Visitors see lightweight player markers and name labels; signed-in followers
   can send persistent town chat with speech bubbles. Admins can review current
@@ -1825,7 +1825,7 @@ later in this file.
   showing the start screen; Enter sends and immediately restores walking.
   Remote markers have a forward-facing 3D smiley, and the admin page is split
   into Accounts/Claims and Multiplayer/Chat tabs with compact scrolling lists.
-- 2026-07-13 suburban-house replacement (Cade via Codex): every ordinary
+- 2026-07-13 suburban-house replacement (the owner via Codex): every ordinary
   `house` and `ringhouse` now draws from one optimized library of 15
   distinct suburban designs and six coordinated color palettes (90 stable
   variants). Houses include their own driveway, walk, mailbox, porch/stoop,
@@ -1838,7 +1838,7 @@ later in this file.
   Follow-up fix: `side_garage_two` now has a full-width two-story body and
   main roof; its former offset 70% body left the third upstairs window over
   empty space and looked like half the house had failed to load.
-- Day 12, population 186, 189 buildings (grown 2026-07-13 via Cade's Codex:
+- Day 12, population 186, 189 buildings (grown 2026-07-13 via the owner's Codex:
   +17 ordinary houses at planned addresses 36-52 in Creekside Bend, plus the
   non-population Followville Elementary School). Heron Court completed and
   Pebble Court began with only their required continuous road ribbons. The
@@ -1853,7 +1853,7 @@ later in this file.
   protruding outside the body. Both sides of an isolated car and two playground
   angles passed visual review. The full Day 12 video set was rerendered from
   this corrected world and emailed to tooheycade@gmail.com.
-- Day 11, population 169, 171 buildings (grown 2026-07-12 via Cade's Codex:
+- Day 11, population 169, 171 buildings (grown 2026-07-12 via the owner's Codex:
   +14 ordinary houses, planned addresses 22-35 in Creekside Bend). The winding
   street extended only as far as today's houses. Growth/loading and finished
   overhead videos rendered and passed visual review; town.glb validated clean;
@@ -1868,19 +1868,19 @@ later in this file.
   Road upgrade on 2026-07-13: staged suburban streets now build as continuous
   mitered meshes instead of separate rotated boxes, eliminating turn gaps, and
   use the same width/material/center-dash rhythm as established town roads.
-- Day 10, population 155, 157 buildings (grown 2026-07-11 via Cade's Codex:
+- Day 10, population 155, 157 buildings (grown 2026-07-11 via the owner's Codex:
   +21 ordinary houses, planned addresses 1-21 in Creekside Bend). The staged
   curving entrance road and first cul-de-sac appeared only as required by the
   new houses. Growth/loading and finished overhead videos were rendered and
   approved; town.glb validated clean; all 21 houses synced to Supabase.
-- 2026-07-11 structural reserve (Cade via Codex): `neighborhood_plan.py`
+- 2026-07-11 structural reserve (the owner via Codex): `neighborhood_plan.py`
   deterministically plans the next 366 ordinary houses (population 135-500)
   across six curved-road districts with 18 cul-de-sacs. Undeveloped hills,
   meadows, and ponds are visible now; planned roads and houses create no object
   until ordinary +N growth consumes their exact addresses. Existing geometry
   never moves. See `NEIGHBORHOOD_EXPANSION_PLAN.md`. The legacy pop-500 plaza
   is intentionally suppressed when this houses-only reserve completes.
-- Day 8, population 70, 72 buildings (grown 2026-07-09 via Zach's Mac Codex: +41 houses
+- Day 8, population 70, 72 buildings (grown 2026-07-09 via the collaborator's Mac Codex: +41 houses
   around a NEW CIRCULAR PARK DISTRICT east of town + fireworks + a lighting upgrade).
   New that day, all in neighborhood_blender.py:
   * `--parkring` flag: gained houses become "ringhouse" buildings laid out on two rings
@@ -1896,7 +1896,7 @@ later in this file.
   * Lighting upgrade (all time-of-day moods): softer sun shadow edges (angle 4->6.5 deg),
     a weak shadow-free sky-colored fill sun, higher-res shadows/AO/samples in
     setup_render (all best-effort try/except). NOTE: the first cut also boosted sun
-    +12%/sky +15% -- Zach reviewed the videos and it washed the town out, so the
+    +12%/sky +15% -- the collaborator reviewed the videos and it washed the town out, so the
     boosts were removed same day (sun now 0.95x, sky 1.0x, fill 0.15x). Final day-8
     videos: hero = houses+park rising; overhead + park shots reshot as 12s static
     showcases of the finished town (`+0 --cam overhead|park`), fireworks in all three
@@ -1938,7 +1938,7 @@ grow_windows.bat +N --render
 
 Mac: set `FOLLOWVILLE_REPO_DIR` to the local Git clone, then run the guarded
 `grow.sh`. It refuses to use iCloud-only state. Run `--preflight-only` first on
-Zach's first use after any workflow change.
+The collaborator's first use after any workflow change.
 
 Flags: --special TYPEhouse[@gx,gy] --followers N --hero --celebrate --parkring
        --cam overhead|street|park --tag NAME --time day|sunset|night --season X --still
@@ -2056,7 +2056,7 @@ red. Verify it's working by checking the Actions tab on the GitHub repo after an
 
 ## Claimable homes (accounts) — built 2026-07-09, see CLAIMING_SETUP.md
 Followers can sign up on the site, verify their Instagram handle (DM-code, manually
-approved by Cade until Meta app review), and claim exactly ONE house. Backend:
+approved by the owner until Meta app review), and claim exactly ONE house. Backend:
 Supabase (Postgres+Auth+Realtime) — schema in `supabase_schema.sql`, run once in the
 Supabase SQL editor. One-house-per-account and one-account-per-house are enforced by
 DB unique constraints via the `claim_house()` RPC (first commit wins, loser gets a
@@ -2068,14 +2068,14 @@ sync new world_state.json buildings into the Supabase `houses` table after each
 growth — insert-only/idempotent, needs `supabase_sync.env` (SECRET, gitignored,
 NOT in the deploy whitelist) next to the scripts. Log lines: HOUSES_SYNC_OK /
 HOUSES_SYNC_FAILED / HOUSES_SYNC_SKIPPED in grow_log.txt. Everything is claimable
-incl. founder houses (Cade's call, 2026-07-09) except ponds/parks/plazas/schools.
+incl. founder houses (the owner's call, 2026-07-09) except ponds/parks/plazas/schools.
 Admin (verify/reject/revoke) = the "Admin" button on the LIVE homepage (visible
 only to accounts with profiles.is_admin = true — currently cade.toohey and
 stellar.kehler; every action is re-checked server-side inside the SQL functions,
 so the page itself is safe to be public). admin.bat still works locally too
 (same admin.html, service key from supabase_sync.env). See CLAIMING_SETUP.md §3.
 Setup status: LIVE as of 2026-07-09. Supabase project "followville"
-(ref bposhxtidoyulallvhdp, in Cade's "The Human Archive" org) created, schema run,
+(ref bposhxtidoyulallvhdp, in the owner's "The Human Archive" org) created, schema run,
 email-confirmation OFF, legacy anon key pasted into town.html (deployed, commit
 c180164), service-role key in supabase_sync.env (local only), all 30 buildings
 backfilled into `houses`. Verified end to end: anon REST reads houses (30 rows),
@@ -2133,13 +2133,13 @@ checking town.glb with pygltflib: 37 squashed (scale≈0.001) nodes before the f
 The following records how the former iCloud-to-`wip` workflow evolved. Keep it
 for incident history, but use the authoritative 2026-07-17 workflow at the top
 of this file for all current work.
-This whole folder lives in an iCloud Drive synced folder, shared between Cade and Zach —
+This whole folder lives in an iCloud Drive synced folder, shared between the maintainers —
 each has it synced locally via iCloud Drive, and each points their own
 Cowork/Codex session at their own local copy. They take turns (never edit at the same
 time); check that iCloud Drive shows fully synced to the other's machine automatically,
 so it's just there next time either person (or their AI) opens the folder — no git pull
 needed for this part. GitHub + Vercel (see "Deploying the live site" section below) are
-separate and only used for deploying the live website; Zach doesn't need GitHub/Vercel
+separate and only used for deploying the live website; the collaborator doesn't need GitHub/Vercel
 access unless he wants to deploy himself.
 
 Whoever's AI makes a change should add ONE line to TEAM_LOG.md before handing off (plain-
@@ -2147,18 +2147,18 @@ English, not technical) — that's the whole "who changed what" tracking mechani
 TEAM_LOG.md at the start of a session to see what happened on the other person's last turn,
 and check that Google Drive shows fully synced before starting your own turn.
 
-### Third AI: "Cade Codex on Windows" (Cowork)
-As of 2026-07-07, Cade also works this project from a Windows PC, via Codex in Cowork mode.
-That session is a THIRD AI with access to this same folder — alongside Cade's Mac Codex and
-Zach's Mac Codex. It reaches the project through the same iCloud Drive sync (folder path on
+### Third AI: "the owner Codex on Windows" (Cowork)
+As of 2026-07-07, the owner also works this project from a Windows PC, via Codex in Cowork mode.
+That session is a THIRD AI with access to this same folder — alongside the owner's Mac Codex and
+The collaborator's Mac Codex. It reaches the project through the same iCloud Drive sync (folder path on
 this machine: `C:\Users\cadet\iCloudDrive\neighborhood`), so the same rules apply: take turns,
 check iCloud is fully synced before starting, add a TEAM_LOG.md line before handing off (sign
-it "Cade (via Windows Codex)" so it's clear which AI/machine made the change).
+it "the owner (via Windows Codex)" so it's clear which AI/machine made the change).
 
 **What's different about the Windows session — corrected 2026-07-07:** its file/bash tools
 run inside a sandboxed Linux shell that only sees this mounted folder (no Blender there,
 no path to launch one) — but this machine ALSO has a separate screen-control tool
-(computer-use) that, once Cade grants access, can see the real Windows desktop and drive
+(computer-use) that, once the owner grants access, can see the real Windows desktop and drive
 it with actual clicks/keystrokes. **Blender 5.1 is installed on this PC.** Verified
 2026-07-07: with that access granted, this session opened `neighborhood.blend` in the real
 Blender GUI, used the Scripting tab to inspect the embedded generator script, and closed
@@ -2180,7 +2180,7 @@ back out without saving. So:
   practical way to pass arguments without a human at the keyboard. **Verified working
   2026-07-07** with a real `replay` run (safe — never touches `world_state.json`/the
   `.blend` by design): got `ALL_DONE`, `town.glb` refreshed, state file untouched (checked
-  by hash). Still get Cade's go-ahead before the first real `+N`/`-N`/`=N` growth day from
+  by hash). Still get the owner's go-ahead before the first real `+N`/`-N`/`=N` growth day from
   here. Two gotchas already hit and fixed: (1) keep both files plain ASCII — Windows
   PowerShell 5.1 misreads em-dashes/curly quotes in a BOM-less `.ps1` and can crash
   mid-string; (2) `$ErrorActionPreference = "Stop"` plus `2>&1` on the Blender call turns
@@ -2195,12 +2195,12 @@ back out without saving. So:
   (200 OK) — confirms the Blender-to-website pipeline is intact from Windows.
 - It CAN safely do everything else: edit/read docs (README, AGENTS.md, AI_HANDOFF.md,
   TEAM_LOG.md, WEB_VIEWER_CHANGELOG.md), tweak the web viewer (`index.html`, `town.html`),
-  inspect `world_state.json` and `town.glb` (read-only unless Cade explicitly asks for a
+  inspect `world_state.json` and `town.glb` (read-only unless the owner explicitly asks for a
   hand-edit — see the "never edit/delete casually" rule at the top of this file), open
   Blender read-only for diagnosis (always "Ignore"/"Don't Save" on any prompt), and general
   planning/writing tasks.
 - If asked to "grow the town" or render a video, it should say so and offer either: point
-  Cade to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
+  The owner to running `grow.sh` on a Mac, or offer to build the headless `.bat` wrapper above —
   rather than attempting the GUI-clicking approach for a real growth day.
 - **Deploying to the live site** (see "Deploying the live site" section above for why this
   matters — growing the town alone does NOT push). **`deploy_website.bat` now exists**
@@ -2215,7 +2215,7 @@ back out without saving. So:
   C:\Users\cadet\followville_repo`. First real push (2026-07-07, the day 6 + street-cam
   update) needed a one-time `git config --global user.name/user.email` (now set) and one
   interactive GitHub sign-in via the browser (Git Credential Manager popped up a normal
-  github.com login page for Cade to complete himself — this session never sees or handles
+  github.com login page for the owner to complete himself — this session never sees or handles
   the credentials). Later pushes should be silent unless that browser login expires.
   Verified working end to end: pushed day 6/pop 26 + the new street-cam feature, confirmed
   live on `followville-kappa.vercel.app` within about a minute (stats and `town.glb` both
@@ -2278,7 +2278,7 @@ back out without saving. So:
 ## Files
 neighborhood.blend (scene; GUI panel: N key -> City tab) | neighborhood_blender.py (generator)
 grow.sh (CLI) | world_state.json (THE CITY) | renders/ (videos) | AI_HANDOFF.md (cheap-model manual)
-TEAM_LOG.md (plain-English "who changed what" between Cade & Zach, see Collaboration section)
+TEAM_LOG.md (plain-English "who changed what" between the owner & the collaborator, see Collaboration section)
 world_state_*_backup.json = old test states, ignorable.
 
 Windows-only tooling (permanent, keep): grow_windows.bat/.ps1, preview_website.bat/.ps1,
@@ -2308,7 +2308,7 @@ GitHub Action source file, kept here for reference — the live copy that matter
 already pushed to `.github/workflows/check_town_glb.yml` inside the git repo clone),
 check_town_glb_setup_note.txt (Fable-written setup note for the above, safe to ignore once read).
 Nobody has deleted these per the "never delete without approval" rule at the top of this
-file — ask Cade before cleaning them up.
+file — ask the owner before cleaning them up.
 
 Numbered/parenthesized conflict copies (`world_state 2.json`, `Codex(1).md`, etc.) are
 iCloud sync artifacts, not intentional files — see the race-condition gotcha in the Third AI

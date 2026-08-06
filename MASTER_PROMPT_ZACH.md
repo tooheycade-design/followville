@@ -1,4 +1,4 @@
-# Zach's Mac handoff — guarded Followville workflow
+# the collaborator's Mac handoff — guarded Followville workflow
 
 Read `AGENTS.md`, `CLAUDE.md`, and the newest `TEAM_LOG.md` entries from the
 Git repository before doing anything. `CLAIMING_SETUP.md` is required for
@@ -15,7 +15,7 @@ account or ownership work.
 
 ## First Mac preflight
 
-Confirm Blender and Zach's clone path, then set both locations explicitly:
+Confirm Blender and the collaborator's clone path, then set both locations explicitly:
 
 ```bash
 export FOLLOWVILLE_REPO_DIR="$HOME/Documents/GitHub/followville"
@@ -34,11 +34,11 @@ The preflight must report `PREFLIGHT_OK`. It intentionally aborts if:
 
 Do not bypass a failed preflight and do not use the retired iCloud-only or
 `--no-git` workflow. If this Mac has not yet passed the current preflight, ask
-Cade to run the growth from Windows instead.
+The owner to run the growth from Windows instead.
 
 ## Production growth
 
-Only after Cade and Zach confirm that one person is running today's growth:
+Only after the maintainers confirm that one person is running today's growth:
 
 ```bash
 ./grow.sh +N --render

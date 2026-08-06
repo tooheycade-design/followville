@@ -10,7 +10,7 @@ first for full context on what Followville already is before writing any code.
 
 ## What Followville is (read CLAUDE.md for the full picture)
 
-Followville is Cade's Instagram growth project: a persistent 3D low-poly town built in
+Followville is the owner's Instagram growth project: a persistent 3D low-poly town built in
 Blender, where every follower gained = a new house. `neighborhood_blender.py` (headless
 Blender, run via `grow_windows.bat`/`grow.sh`) grows the town and writes the current state
 to `world_state.json`, then `export_web.py` bakes the real geometry to `town.glb`. The
@@ -24,7 +24,7 @@ There is currently **no backend, no accounts, no database** — it's pure static
 
 Goal: let real Instagram followers create an account on the website, verify who they are,
 and claim exactly one existing house in the town as "theirs." Read the full requirements
-below — they were worked out with Cade before this prompt was written, including the two
+below — they were worked out with the owner before this prompt was written, including the two
 decisions he already made (verification approach and backend stack), so don't re-litigate
 those; build them.
 
@@ -63,7 +63,7 @@ that assumes this is possible is wrong. What IS available:
   which is the real problem worth solving (stopping one person from claiming 50 houses
   under 50 handles they don't own).
 
-## Decided approach (Cade already chose these — build to this spec)
+## Decided approach (the owner already chose these — build to this spec)
 
 **Verification: DM/bio-code challenge.**
 1. User signs up on the site with email/password (or magic link) via Supabase Auth, and
@@ -80,11 +80,11 @@ that assumes this is possible is wrong. What IS available:
    Developer App, and Meta's app review for the messaging permission — which has real
    external lead time (historically days to weeks, entirely outside our control). Build
    the `verification_status` flow generically (pending / verified / rejected) so that
-   while the Meta app review is pending, verification can be **manually approved by Cade**
+   while the Meta app review is pending, verification can be **manually approved by the owner**
    (an admin action) as a stand-in — then swap in the automated webhook once Meta approves,
    with zero schema changes. Do not block the whole feature launch on Meta's review timeline.
 6. Because true cryptographic proof-of-follow isn't possible, add a lightweight abuse
-   safety net regardless: rate-limit signups per IP/device, and give Cade a simple way to
+   safety net regardless: rate-limit signups per IP/device, and give the owner a simple way to
    revoke a claim (e.g. an admin table flag) if a fraudulent claim is reported later.
 
 **Backend: Supabase** (Postgres + built-in Auth + built-in Realtime). Keep the frontend on
@@ -181,17 +181,17 @@ and upserts any missing rows via Supabase's REST API with a service-role key.
    visually, e.g. a name tag or marker), and failure (someone else just claimed it —
    refresh state from Realtime and tell them).
 
-## Assumptions to confirm with Cade before/while building (don't silently guess)
+## Assumptions to confirm with the owner before/while building (don't silently guess)
 
 - Are the 10 **founder houses** (mushroom, casino, cat, castle, Eiffel, hydrangea, Burj
   Khalifa, toilet, beach house, cottage) and **milestone buildings** (fountain plaza,
   skyscraper, stadium) excluded from the public claim pool (`claimable = false`), since
   they represent specific real people/milestones rather than anonymous new followers? This
   prompt assumes yes — confirm before shipping.
-- Confirm with Cade which of DM-code vs bio-code is easier to reliably automate once you've
+- Confirm with the owner which of DM-code vs bio-code is easier to reliably automate once you've
   looked at the current Instagram Messaging/Graph API docs — pick one as the primary path.
 - Confirm the manual-admin-approval fallback (for while Meta's app review is pending) is
-  acceptable to Cade as a launch stopgap.
+  acceptable to the owner as a launch stopgap.
 
 ## Where to look first
 

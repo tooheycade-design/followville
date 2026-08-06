@@ -241,7 +241,7 @@ RING_WALLS = WALLS + [(0.78, 0.91, 0.82), (0.99, 0.86, 0.72), (0.84, 0.80, 0.94)
                       (0.99, 0.94, 0.70), (0.74, 0.87, 0.95), (0.97, 0.78, 0.84)]
 
 # Day-15 feature neighborhood. The ten houses remain original Followville
-# designs. Cade later requested a clearly recognizable Cat in the Hat public
+# designs. The owner later requested a clearly recognizable Cat in the Hat public
 # art statue for the center island; keep it separate from the claimable homes.
 # The houses sit on the flat crown of a permanent landscaped hill and face the
 # revealed loop.
@@ -4706,7 +4706,7 @@ def sorted_lots_filling(radius):
     find_free_lots, same as before, so it doesn't need special-casing
     here). Promoted from the one-off condense_day9.py script (which still
     exists for reference) to the real pipeline as the DEFAULT ordering for
-    all new growth, per Zach's request to keep the town looking dense
+    all new growth, per the collaborator's request to keep the town looking dense
     without needing a manual condense pass every few days. Pass --scatter
     on the CLI to fall back to the old sorted_lots() ordering instead."""
     block_radius = max(1, radius // BLOCK_N + 1)
@@ -4751,7 +4751,7 @@ def find_free_lots(count, size, occupied, blocked_blocks=None, fill_mode="block"
                 # 2026-07-10: skip the lot dead-center of its 3x3 block --
                 # it's fully boxed in by the other 8 lots with no road
                 # frontage on any side, so a house placed there is
-                # unreachable from the street (Zach spotted several of these
+                # unreachable from the street (the collaborator spotted several of these
                 # "encapsulated" houses in the day-9 video). Leaving it
                 # unbuilt turns it into a little green square instead, via
                 # the existing scatter_nature() pass over unoccupied lots.
@@ -4928,7 +4928,7 @@ def build_district_roads(world_col, buildings, m):
         # the walking loop (starts at cx-22) -- nothing bridges the two ring
         # roads themselves. That left a bare ~14-unit strip of grass between
         # them with no way to drive/walk from the outer ring to the inner one,
-        # even though each individually connects fine to its own ring. Zach
+        # even though each individually connects fine to its own ring. The collaborator
         # spotted this in the web preview ("a road belongs there to get into
         # the circle"). Fix: one more straight segment closing that exact gap,
         # picking up right where the connector ends and handing off right
@@ -7873,7 +7873,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # overhead shot were framing with way too much empty grass/sky padding
     # around the actual buildings, and the old 9-degree total orbit sweep
     # read as nearly static across an 11-12s clip -- neither felt "cinematic"
-    # per Zach's feedback. Tightened the distance padding so buildings fill
+    # per the collaborator's feedback. Tightened the distance padding so buildings fill
     # more of the portrait frame, and widened the orbit sweep so the shot
     # visibly moves and reveals more of the town (including the park ring)
     # over the course of the clip instead of holding one static-feeling view.
@@ -8281,7 +8281,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # grid spans x -78..72) covering the whole width in the fixed 12s
         # floor works out to ~12.5 m/s -- more like a car than "walking into
         # town," and most of that distance is plain grid houses, not the
-        # founders' custom landmarks Zach actually wants visible. Fixed to a
+        # founders' custom landmarks the collaborator actually wants visible. Fixed to a
         # town-size-independent window centered on the founder cluster
         # (measured x -21..25): a little approach room before it, straight
         # through it, a little continuation after -- at a brisk-but-human
@@ -8597,7 +8597,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (110, (675.0, -230.0, 430.0), (470.0, 145.0, 8.0)),
             # 3.7-12.0s: one wide, legible composition holds Lodgepole and
             # Millstone together for the entire 33-home rise. Do not turn this
-            # back into two close-ups; Cade needs to see the complete batch.
+            # back into two close-ups; the owner needs to see the complete batch.
             (120, (760.0, -140.0, 455.0),
              ((lodge_x + mill_x) / 2, (lodge_y + mill_y) / 2, 9.0)),
             (180, (735.0, -85.0, 425.0),
@@ -8831,7 +8831,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # 0-5s: a low, close, roughly 33-degree drone angle that lets
             # downtown fill the frame with the spire standing over it and the
             # civic plaza in the near foreground, then accelerates east. This
-            # opening framing is held deliberately tight per Zach's reference
+            # opening framing is held deliberately tight per the collaborator's reference
             # still - do not raise it back to a distant overhead establish.
             # Shifted +13m east on 2026-07-31 to track City Hall and Civic
             # Square after the landmark ground-level correction moved them.
@@ -9422,7 +9422,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         cam_data.dof.aperture_fstop = 5.6
         cam_obj = bpy.data.objects.new("Camera", cam_data)
         cam_obj.parent = rig
-        # 2026-07-09 night fix (Cade's PC), take 2: the first cut orbited at
+        # 2026-07-09 night fix (the owner's PC), take 2: the first cut orbited at
         # r~29.5 THROUGH the inner ring houses; take 1's fix (r=20, h=8.5) was
         # still low enough that park-rim trees (r<=13.8, tops ~7) loomed across
         # the lower half of frame as the camera swept past. Final: r~17.7 at
@@ -9498,7 +9498,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     # shadow-free "skylight" fill from the opposite side so shaded facades
     # read as sky-lit instead of near-black. Same time-of-day moods as before.
     sun_data = bpy.data.lights.new("Sun", type="SUN")
-    # 2026-07-09 night (Cade's PC): the "0.95x sun + 6.5deg + 0.15x fill" combo
+    # 2026-07-09 night (the owner's PC): the "0.95x sun + 6.5deg + 0.15x fill" combo
     # still washed the town out (fainter shadows + flatter color than day 7).
     # Full sun strength + near-original shadow sharpness restore the contrast;
     # the sky fill idea stays but much weaker (a subtle shaded-side lift only).
@@ -9839,7 +9839,7 @@ def main(cfg=None):
             for thr, btype in MILESTONES:
                 if state["pop"] >= thr and thr not in done:
                     done.append(thr)
-                    # Cade's approved 135..500 reserve is ordinary houses
+                    # The owner's approved 135..500 reserve is ordinary houses
                     # only. Reaching 500 completes that first neighborhood plan;
                     # it must not silently insert the legacy plaza.
                     if thr == 500 and planned_before < SUBURBAN_CAPACITY and house_gained > 0:

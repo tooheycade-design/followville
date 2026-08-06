@@ -4,7 +4,7 @@ REM repo-based growth; it can switch the clone to wip. Use reviewed Git work
 REM from the authoritative repo instead.
 REM Followville -- push your current work to the shared "wip" branch on
 REM GitHub WITHOUT deploying it to the live site (that's deploy_website.bat's
-REM job, and it only ever touches "main"). Run this whenever you want Zach
+REM job, and it only ever touches "main"). Run this whenever you want the collaborator
 REM (or his AI) to be able to pull_latest.bat and see/build on what you've
 REM got so far, before it's ready to go live.
 REM
@@ -12,7 +12,7 @@ REM 2026-07-10: this used to do the copy/commit/push itself in batch with a
 REM blind file-copy loop. Rewritten to call sync_push.ps1, which does the
 REM same conflict-aware 3-way comparison as sync_lib.sh (the Mac equivalent)
 REM instead of blindly overwriting -- see sync_push.ps1's own comments for
-REM why (it's what silently dropped Cade's profile-picture feature before
+REM why (it's what silently dropped the owner's profile-picture feature before
 REM this fix). Batch is bad at that kind of logic, same reason
 REM grow_windows.bat delegates to grow_windows.ps1 for anything nontrivial.
 REM

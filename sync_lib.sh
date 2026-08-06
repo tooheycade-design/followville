@@ -4,12 +4,12 @@
 # WHY THIS EXISTS (2026-07-10): both scripts used to blindly `cp` every
 # git-tracked file from this iCloud folder over the repo clone, then commit
 # and push whatever resulted. That has no concept of "did someone else change
-# this file since I last synced" -- so if Cade added a feature to town.html
-# that only ever existed in HIS local iCloud folder, and Zach's Mac then
+# this file since I last synced" -- so if the owner added a feature to town.html
+# that only ever existed in HIS local iCloud folder, and the collaborator's Mac then
 # pushed a graphics update to town.html that was based on an OLDER pull,
-# Zach's blind copy silently overwrote Cade's feature. No conflict, no
+# The collaborator's blind copy silently overwrote the owner's feature. No conflict, no
 # warning, nothing to see -- it just vanished. Confirmed via git history that
-# this is exactly what happened to Cade's profile-picture feature: no trace
+# this is exactly what happened to the owner's profile-picture feature: no trace
 # of it anywhere in the repo's commits, reflog, or dangling objects, meaning
 # it was local-only and got clobbered before ever being committed.
 #
@@ -67,7 +67,7 @@ safe_copy_tracked_files() {
     if (cd "$REPO" && git show "$PREV:$f") | cmp -s - "$SRC/$f"; then
       # we didn't touch it locally -- the newer upstream version is correct.
       # Do NOT overwrite it with our stale local copy (this is the exact bug
-      # that dropped Cade's feature). Refresh our local copy instead so the
+      # that dropped the owner's feature). Refresh our local copy instead so the
       # iCloud folder stops being stale for this file.
       cp "$REPO/$f" "$SRC/$f"
       REFRESHED_FILES="$REFRESHED_FILES $f"

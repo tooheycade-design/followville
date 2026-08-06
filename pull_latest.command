@@ -2,20 +2,20 @@
 # STATUS 2026-07-17: HANDOFF/RECOVERY ONLY. Git is authoritative. This may
 # restore plain-name mirrors into iCloud, but never makes iCloud a growth
 # source and never replaces the guarded repo growth launcher.
-# pull_latest.command — brings Cade's (or your own past session's) latest
+# pull_latest.command — brings the owner's (or your own past session's) latest
 # work from GitHub into this iCloud folder. Run this FIRST, every session,
 # before editing anything. Companion to deploy_website.command (pushes the
 # other direction) and share_progress.command (pushes WIP without deploying).
 #
 # Why this exists (2026-07-10): editing files directly in this iCloud folder
-# and trusting iCloud Drive itself to sync them to Cade's machine is exactly
+# and trusting iCloud Drive itself to sync them to the owner's machine is exactly
 # what caused the repeated "numbered conflict copy" bugs documented in
 # CLAUDE.md, plus a nastier one: this folder's own .git got corrupted by
 # stale lock files that iCloud even synced onto another machine. This script
 # sidesteps all of that by using GitHub as the sync layer instead of iCloud:
 # it updates a plain, non-iCloud-synced local clone (~/followville_repo) and
-# copies the result INTO this folder. iCloud still syncs this folder to Cade
-# as always, but the actual "did I get Cade's real latest work" question is
+# copies the result INTO this folder. iCloud still syncs this folder to the owner
+# as always, but the actual "did I get the owner's real latest work" question is
 # now answered by git/GitHub, never by hoping iCloud's file rename won.
 #
 # Double-click to run. Optional: pass a branch name (defaults to "main") if
@@ -42,7 +42,7 @@ cd "$REPO"
 git fetch origin
 
 STEP="git identity"
-git config user.name  >/dev/null 2>&1 || git config user.name  "Zach Kehler"
+git config user.name  >/dev/null 2>&1 || git config user.name  "the collaborator Kehler"
 git config user.email >/dev/null 2>&1 || git config user.email "zachkehler@gmail.com"
 
 STEP="checkout branch"

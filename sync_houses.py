@@ -2,7 +2,7 @@
 """Followville: sync world_state.json buildings -> Supabase `houses` table.
 
 Insert-only by design: rows already in the table are NEVER touched, so any
-manual edits Cade makes (e.g. flipping `claimable`) survive every sync. The
+manual edits the owner makes (e.g. flipping `claimable`) survive every sync. The
 guarded exceptions are canonical seed 172's Day 26 school restoration and
 seed 524's Day 27 construction-site-to-cinema conversion. Both verify the old
 non-claimable row before changing only civic metadata.
@@ -32,7 +32,7 @@ import urllib.request
 import urllib.error
 
 # Buildings that aren't dwellings — nobody should put a name tag on a pond.
-# Everything else (incl. founder houses + milestone buildings, per Cade
+# Everything else (incl. founder houses + milestone buildings, per the owner
 # 2026-07-09) is claimable. Flip any row later with:
 #   update houses set claimable = true/false where id = <seed>;
 NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "streetlight", "car",

@@ -47,7 +47,7 @@ opened Ferry Street. Address 577 is next.
 - Existing houses, founder buildings, the Day-7 pond, the Day-8 circular park,
   and every existing grid road remain fixed.
 - The old population-500 plaza is suppressed when this reserve completes;
-  Cade specified that the 366 additions are houses only.
+  The owner specified that the 366 additions are houses only.
 - Ordinary growth stays deterministic through address 616. It must not fall
   back to the legacy lot system before population 750.
 

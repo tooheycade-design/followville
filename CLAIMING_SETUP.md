@@ -2,7 +2,7 @@
 
 Real followers create an account on the site, verify their Instagram handle,
 and normally claim one house in the town. Trusted admin accounts may claim two.
-Built 2026-07-09 (Cade's Windows Claude, Fable).
+Built 2026-07-09 (the owner's Windows Claude, Fable).
 
 **Stack:** Supabase (Postgres + Auth + Realtime) as the backend; the site stays
 static on Vercel. New files: `supabase_schema.sql` (run once in Supabase),
@@ -73,7 +73,7 @@ updates only that row. Yard pieces are placed inward from every road-facing lot
 edge (diagonally inward on corner lots). The existing `claims` Realtime
 subscription makes saved looks appear for every open visitor.
 
-**Temporary yard pause (2026-07-15):** Cade disabled the yard-piece presentation
+**Temporary yard pause (2026-07-15):** the owner disabled the yard-piece presentation
 pending a better redesign. `YARD_DECORATIONS_ENABLED` is false in `town.html`,
 so saved pieces do not render and the chooser is hidden. Existing normalized
 `customization.yard` values remain stored; do not delete them or run a database
@@ -81,7 +81,7 @@ migration. Exterior, roof/accent, and door customization remains live.
 
 ---
 
-## 1. One-time setup (~15 minutes, Cade)
+## 1. One-time setup (~15 minutes, the owner)
 
 1. **Create the project:** [supabase.com](https://supabase.com) → New project →
    name it `followville` (free tier is plenty; it comfortably handles thousands
@@ -162,7 +162,7 @@ in their bio). While Meta app review is pending, YOU are the webhook:
 House ids = the building's `seed` in world_state.json. To make any building
 unclaimable (or claimable): `update houses set claimable = false where id = <seed>;`
 
-**Claimability defaults** (set at sync time, per Cade 2026-07-09): everything is
+**Claimability defaults** (set at sync time, per the owner 2026-07-09): everything is
 claimable — including the 10 founder houses and future milestone buildings —
 EXCEPT non-dwellings (`pond`, `park`, `plaza`), which default to false. Flip any
 row with the SQL above. The type list lives in `sync_houses.py`

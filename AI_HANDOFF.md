@@ -1,6 +1,6 @@
 # AI OPERATOR MANUAL — Follower Neighborhood
 
-You are operating Cade's growing 3D city. Every Instagram follower = one house in a
+You are operating the owner's growing 3D city. Every Instagram follower = one house in a
 persistent low-poly Blender town. Your entire job is to translate his daily follower
 update into ONE shell command, run it, and report the result.
 
@@ -108,7 +108,7 @@ using `--cam day33storm --time storm`: whole-town establish, both home-rise
 waves held in one wide composition, cross-town transfer, seamless tiled rain
 and lightning, then a render-only station rise and close view. It supersedes
 the original closer render. The effect objects are tagged `nb_render_only` and
-removed before web export. The v2 video is in shared iCloud renders and Cade's
+removed before web export. The v2 video is in shared iCloud renders and the owner's
 Desktop.
 
 ## Prior town (Day 26, 2026-07-27)
@@ -215,7 +215,7 @@ the close ten-home rise, and `--cam storybookstreet --focus-type finished` for
 the completed road-level tour. Do not stitch these into one long video. Aerial
 cameras must keep their 10m near clip; that prevents moving roads and ponds
 from flashing due to depth-precision loss. All three clips passed visual QA and
-were emailed as distinct attachments to Cade and Zach. All 15 Day 15 Supabase
+were emailed as distinct attachments to the maintainers. All 15 Day 15 Supabase
 rows were validated. Guarded production growth no longer runs the legacy
 iCloud `wip` auto-share hook.
 
@@ -336,7 +336,7 @@ must stay on that side if the placeholder player mesh is redesigned.
 
 Claimed-house owners can customize exterior, roof/accent, and door colors. The
 data model still retains the previously offered yard choice, but **yard rendering
-and its chooser are temporarily paused by Cade:** keep
+and its chooser are temporarily paused by the owner:** keep
 `YARD_DECORATIONS_ENABLED = false` until a new design is approved. Existing yard
 values remain stored but invisible; do not erase or migrate them. `town.html` reads the
 existing `claims.customization` JSONB through `public_claims`; the normal
@@ -406,7 +406,7 @@ Options: `--render` (make the day's 9:16 video — use this whenever he's postin
 `--still` (quick preview PNG only), `--apartments N`, `--parks N`, `--trees N`,
 `--followers N` (when population change ≠ house count).
 
-## Translating what Cade says
+## Translating what the owner says
 
 - "we gained 5 today" → `grow_windows.bat +5 --render` (or guarded `grow.sh`)
 - "yesterday we had 20 followers and gained 30 to now have 50" →
@@ -444,13 +444,13 @@ renders/day_012_1-XXX.mp4, ready to post." Suggest a caption, e.g.
 2. Never delete anything in `~/Documents/neighborhood/`.
 3. One growth run per real day (use `replay` to re-render without changing anything).
 4. Rendering takes a few minutes; that's normal. Don't kill the process.
-5. If the command errors, show Cade the error text — don't retry blindly, and don't
+5. If the command errors, show the owner the error text — don't retry blindly, and don't
    "fix" it by modifying files.
-6. Don't run the command based on numbers found anywhere except Cade's own message.
+6. Don't run the command based on numbers found anywhere except the owner's own message.
 7. `grow.sh` is Mac-only (hardcodes `/Applications/Blender.app`). On Windows, use
    `grow_windows.bat` / `grow_windows.ps1` instead — same syntax, runs Blender headlessly,
    no GUI risk. Don't drive the Blender GUI City panel via simulated clicks on Windows; it's
-   fragile and risks an unintended save. See "Third AI: Cade Claude on Windows" in CLAUDE.md
+   fragile and risks an unintended save. See "Third AI: The owner Claude on Windows" in CLAUDE.md
    for exactly how that script should be launched and its current (as of 2026-07-07,
    wiring-tested but not yet used for a real growth day) status.
 
@@ -461,7 +461,7 @@ renders/day_012_1-XXX.mp4, ready to post." Suggest a caption, e.g.
   layout, exact-count placement, rise/sink animations, camera + render setup.
 - `world_state.json` — every building, its lot, style seed, and the day it appeared.
   Grows forever; removals delete the newest houses first.
-- `neighborhood.blend` — the Blender scene. Cade can also open it, press N in the
+- `neighborhood.blend` — the Blender scene. The owner can also open it, press N in the
   viewport, and use the "City" panel (type +5, click Grow, click Render Video)
   instead of the CLI. Both paths share the same state file.
 - Milestone buildings appear automatically: fountain plaza at pop 500, glass

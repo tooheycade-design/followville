@@ -1,8 +1,8 @@
-# Followville Downtown + Terrain Handoff for Cade
+# Followville Downtown + Terrain Handoff for the owner
 
 Date: 2026-07-17
 
-## Cade integration result
+## the owner integration result
 
 Status: semantically integrated onto current Day 16 on
 `codex/downtown-terrain-merge`, rebuilt from the authoritative iCloud Blend,
@@ -15,10 +15,10 @@ unchanged, and no Supabase, claim, ownership, or customization operation was
 performed. The complete GLB and all six streamed chunks were regenerated from
 the merged source, and the manifest now carries the shared walk-surface data.
 
-The filename supplied by Zach was the only matching ZIP in the iCloud folder,
+The filename supplied by the collaborator was the only matching ZIP in the iCloud folder,
 but its measured SHA-256 was
 `C10B8D816C27BB567D891F64D269D32BFBC38EFBC6CC5A209F16A46F69D080D7`,
-not the separately provided `84c64f...` value. Cade explicitly authorized
+not the separately provided `84c64f...` value. The owner explicitly authorized
 continuing. The archive was treated only as an untrusted source transplant;
 its files were reviewed and its obsolete Day 15 binary was excluded.
 
@@ -42,7 +42,7 @@ ground obstruction, and keeps persistent chat in a top-left walking feed.
 `world_state.json`, Day 16 / 272 / 275, addresses, claims, owners, and Supabase
 were unchanged.
 
-Historical package status (superseded): Zach's source package originated as an
+Historical package status (superseded): The collaborator's source package originated as an
 unpublished Day 15 design branch. It has since been integrated, rebuilt against
 Day 16, and published through the normal repository workflow. Do not deploy the
 package's old binary or use its branch as current state.
@@ -79,13 +79,13 @@ Latest authoritative main observed during handoff: `5515226`
   modeled interiors, doors, canopies, and wall-embedded side windows.
 - Added adaptive rendering/performance tuning and offline local-preview QA routes.
 
-## Merge guidance for Cade's AI
+## Merge guidance for the owner's AI
 
 1. Start from `5515226` or newer. Preserve Day 16, all Avatar System v1 files,
    third-person controls, `avatar-system.js`, Avatar Studio UI, profile saving,
    multiplayer avatar rendering, and all district-streaming/LOD work.
 2. Review/overlay the supplied source files. Resolve `town.html`,
-   `export_web.py`, and `check_town_glb.py` semantically because Cade's district
+   `export_web.py`, and `check_town_glb.py` semantically because the owner's district
    pipeline may also edit those files.
 3. The geometry source is primarily `neighborhood_blender.py`,
    `downtown_visuals.py`, `downtown_visual_plan.py`, and `world_layout.py`.
