@@ -54,32 +54,42 @@ existing geometry never moves. Fixing it properly means relocating the shop to
 flatter ground (the meadow is at grade 0 east of about x=-100) or terracing the
 pad in steps. Do not "fix" it by raising its `MAX_PAD_STAND` entry.
 
-### Not started: a road from Timber Bend to the main town
+### Timber Bend Crossing (built 2026-08-06)
 
-Cade asked for "a quality road from the log houses with the bridge, over to the
-main area". Findings, so it can be picked up cleanly:
+A second river bridge, from Timber Bend Road at (502.9, 125.9) west to the
+Kaleidoscope Crest access road at (236, 72). 292m, arched 64m deck, standard
+3.25m half-width. `world_layout.timber_crossing_points()` is the single
+description; the Blender geometry, the browser walk surface and
+`check_world_geometry.py` all read it, so there are no copies to drift.
 
-- The "log houses" are **Timber Bend** (`Lodgepole Loop`, `Timber Bend Road`),
-  blender x 481..596, y 132..297.
-- The river runs north-south at x roughly 350..388
-  (`neighborhood_plan.RIVER_CENTERLINE`, half width 14).
-- The **only** crossing is Founders Crossing at y ~= -215
-  (`RIVER_BRIDGE`), which is 350-500m south of Timber Bend. Rivergate and
-  River Meadows use it; the northern east-bank districts effectively have no
-  route to town.
-- So this needs two authored roads: an east-bank arterial from Timber Bend
-  south to the bridge landing at (400, -215), and a west-side link from the
-  bridge approach (276, -217) to the North Ridge connector, which ends at
-  (133, -123).
-- Whatever is built must be added to `world_layout` so
-  `check_world_geometry.py` can see it (an unknown road is not audited), use
-  control points every ~3m (`_add_road_strip` subdivides to 2m internally but
-  `walk_surface_manifest` uses the points as given), and go through
-  `append_graded_road` so the browser gets the walk surface for free.
-- A second bridge would need an `INTENTIONALLY_RAISED_ROADS` entry.
+**Correction to an earlier note in this file:** it previously said the northern
+east-bank districts had "no route to town". That was wrong, and the mistake is
+worth knowing about. A graph that joins roads only where segments share an
+endpoint reports the east bank as many separate islands. Roads are 6.5m wide,
+so testing by *surface* — segments joined when their centrelines pass within
+the sum of their half-widths — shows the whole east bank, Eastbank Village
+included, as one continuous network, with Timber Bend 538m from the North
+Ridge connector against 512m straight-line (a x1.05 detour). **Test road
+connectivity by surface, not by endpoints.** The new crossing is a shortcut,
+not a repair.
 
-Left undone deliberately: a new river crossing is a large, highly visible world
-change that wanted visual review at a scale that was not available unattended.
+Two hard constraints, both measured, that will bite anyone moving this:
+
+- **The latitude is forced.** South of y~140 the river runs PERCHED above its
+  own meadow (up to 2.7m at y=60-100), so a bridge there spans water standing
+  higher than the land. North of y~150 the west bank is a bluff: 36% at y=150,
+  61% at y=170, 113% at y=270. y=143 is the only place the river is in its
+  valley and both banks are gentle.
+- **The deck must be arched.** The river's carve pulls the ground to the
+  channel bed for 34m either side, so both abutments sit LOWER than the water
+  between them; a straight chord ran 0.44m under the surface. The arch is sized
+  from the worst shortfall over the water only — applying it near an abutment,
+  where the arch shape is ~0, divides by almost nothing and lifts the deck 7m
+  into the air.
+
+Related unfixed defect worth a look: **the river is perched above its meadow
+from about y=0 to y=134**, by up to 2.7m. `LEVEL_WATER` covers the fishing pond
+but nothing checks the river, so this is invisible to every current test.
 
 ## Open the authoritative project
 

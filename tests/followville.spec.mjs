@@ -1089,3 +1089,47 @@ test.describe("vote page on a phone", () => {
     expect(errors).toEqual([]);
   });
 });
+
+/* Timber Bend Crossing (added 2026-08-06) — the second river bridge, linking
+   the eastern log-house districts straight to the Kaleidoscope Crest access
+   road instead of routing every trip 500m south to Founders Crossing. */
+test("Timber Bend Crossing carries the road over the river", async ({ page }) => {
+  test.skip(!worldState.buildings.some(building => building.district === "Timber Bend"),
+    "Timber Bend is not built in this state");
+  const errors = watchPageErrors(page);
+  // three.js x = blender x, z = -blender y. Mid-span is blender (362, 142.5).
+  await page.goto("/town.html?local=1&view=free&at=336,-141&look=398,4,-142#walk");
+  await waitForTown(page);
+
+  const audit = await page.evaluate(() => {
+    const qa = window.__followvilleTerrainQA;
+    // the whole run, west junction -> deck -> east junction, in blender coords
+    const spine = [[236,72],[298,129],[334,141],[348,142],[362,142.5],[378,142.8],
+                   [398,142],[424,135],[472,124],[502.9,125.9]];
+    return {
+      samples: spine.map(([bx, by]) => ({
+        bx, by,
+        walk: qa.walkSurfaceHeight(bx, -by),
+        terrain: qa.regionalTerrainHeight(bx, -by),
+      })),
+      // the crossing must be present in the shared walk-surface manifest
+      segments: qa.surfaces().segments.filter(s =>
+        s[0] >= 230 && s[0] <= 505 && s[1] <= -60 && s[1] >= -150).length,
+    };
+  });
+
+  // Continuous walkable surface the whole way across -- no holes to fall through.
+  for (const s of audit.samples)
+    expect(s.walk, `walk surface at blender ${s.bx},${s.by}`).toBeGreaterThan(0);
+  expect(audit.segments).toBeGreaterThan(80);
+
+  // Over the channel the deck must stand clear of the riverbed, or the road is
+  // in the water rather than above it.
+  for (const s of audit.samples.filter(s => s.bx >= 346 && s.bx <= 378))
+    expect(s.walk, `deck above bed at ${s.bx}`).toBeGreaterThan(s.terrain + 0.5);
+
+  // Approaches follow the ground rather than floating over it.
+  for (const s of audit.samples.filter(s => s.bx <= 298 || s.bx >= 424))
+    expect(Math.abs(s.walk - s.terrain), `approach on grade at ${s.bx}`).toBeLessThan(0.5);
+  expect(errors).toEqual([]);
+});
