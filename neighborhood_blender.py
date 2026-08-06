@@ -8432,12 +8432,28 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # 24 new homes rising under the drone, then a descent onto the Salmon
         # Pro Shop as it appears, then a climb out over the finished town.
         # Nothing cuts -- every beat is a keyframe on the same camera.
+        # Day 35's 24 homes are NOT one group: 8 finish Ferry Street in
+        # Eastbank Village and 16 open Marshlight Lane in River Meadows, 633m
+        # apart. Averaging them puts the aim point in empty meadow between the
+        # two, which is what the first cut did -- the drone arrived over open
+        # grass with older log homes on the horizon and nothing rose on screen.
+        # Both groups are on the eastern river side, so one continuous
+        # southward sweep can visit each as it builds.
         latest_day = max((item.get("day", 0) for item in buildings), default=0)
         newest_homes = [b for b in buildings
                         if b["type"] == "house" and b.get("day") == latest_day]
-        points = [build_pos(b) for b in newest_homes]
-        hx = sum(p[0] for p in points) / len(points) if points else 0.0
-        hy = sum(p[1] for p in points) / len(points) if points else 0.0
+        north = [b for b in newest_homes if b.get("plan_id", 0) <= 584]
+        south = [b for b in newest_homes if b.get("plan_id", 0) >= 585]
+
+        def centre(group, fallback):
+            points = [build_pos(b) for b in group]
+            if not points:
+                return fallback
+            return (sum(p[0] for p in points) / len(points),
+                    sum(p[1] for p in points) / len(points))
+
+        nx, ny = centre(north, (441.0, 392.0))
+        mx, my = centre(south, (534.0, -241.0))
         sx, sy = SALMON_SHOP_X, SALMON_SHOP_Y
 
         aim = bpy.data.objects.new("Day35StoreAim", None)
@@ -8454,22 +8470,25 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         tr.track_axis = "TRACK_NEGATIVE_Z"
         tr.up_axis = "UP_Y"
         beats = (
-            # 0-6s: the town as it was this morning, a wide banking establish
-            # across downtown. Nothing has risen yet.
-            (1, (330.0, -300.0, 210.0), (10.0, -10.0, 12.0)),
-            (90, (250.0, -300.0, 196.0), (5.0, -12.0, 12.0)),
-            (180, (150.0, -286.0, 180.0), (0.0, -14.0, 12.0)),
-            # 6-13s: swing onto the new homes and hold while they rise.
-            (250, (hx + 150.0, hy - 210.0, 150.0), (hx, hy, 8.0)),
-            (330, (hx + 96.0, hy - 150.0, 104.0), (hx, hy + 2.0, 7.0)),
-            (390, (hx + 70.0, hy - 118.0, 86.0), (hx, hy + 3.0, 6.5)),
-            # 13-19.5s: cross town and descend onto the store as it appears.
-            (440, (sx + 210.0, sy - 150.0, 150.0), (sx + 20.0, sy, 14.0)),
-            (500, (sx + 96.0, sy - 84.0, 74.0), (sx, sy - 2.0, 10.0)),
-            (560, (sx + 62.0, sy - 60.0, 44.0), (sx, sy - 3.0, 9.0)),
-            # 19.5-24s: climb back out over the finished town.
-            (640, (sx + 150.0, sy - 130.0, 128.0), (-30.0, -20.0, 12.0)),
-            (frame_end, (250.0, -240.0, 232.0), (-10.0, -18.0, 12.0)),
+            # 0-4s: the town as it stood this morning. Nothing has risen.
+            (1, (300.0, -300.0, 200.0), (10.0, -10.0, 12.0)),
+            (120, (215.0, -268.0, 178.0), (5.0, -12.0, 12.0)),
+            # 4-8s: swing north-east onto Ferry Street's eight.
+            (190, (nx + 90.0, ny - 250.0, 168.0), (nx, ny, 10.0)),
+            (240, (nx + 82.0, ny - 84.0, 92.0), (nx, ny, 8.0)),
+            # 8-11s: hold while they build.
+            (330, (nx + 66.0, ny - 62.0, 74.0), (nx, ny + 2.0, 7.0)),
+            # 11-15.5s: one continuous sweep south down the river valley.
+            (400, (nx + 150.0, (ny + my) / 2, 118.0), (nx + 40.0, 90.0, 8.0)),
+            (470, (mx + 150.0, my + 96.0, 108.0), (mx, my, 8.0)),
+            # 15.5-18.5s: settle over Marshlight Lane's sixteen.
+            (555, (mx + 104.0, my - 76.0, 82.0), (mx, my - 2.0, 7.0)),
+            # 18.5-23s: cross the town westward and descend on the store.
+            (615, (180.0, -250.0, 196.0), (-40.0, -110.0, 12.0)),
+            (665, (sx + 118.0, sy - 104.0, 88.0), (sx + 6.0, sy - 4.0, 11.0)),
+            (706, (sx + 66.0, sy - 62.0, 46.0), (sx, sy - 3.0, 9.0)),
+            # 23-25s: lift away with the finished town behind it.
+            (frame_end, (sx + 168.0, sy - 150.0, 150.0), (-30.0, -24.0, 12.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -10089,7 +10108,7 @@ def main(cfg=None):
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
     if cfg.get("cam") == "day35store":
-        frame_end = max(frame_end, FPS * 24)
+        frame_end = max(frame_end, FPS * 25)
     elif cfg.get("cam") == "day34fire":
         frame_end = max(frame_end, FPS * 16)
     elif cfg.get("cam") == "day33storm":
@@ -10156,12 +10175,18 @@ def main(cfg=None):
         # 440-560, then climbs out. Every rise is timed inside the beat that
         # frames it: nothing appears before the drone has arrived to see it,
         # and nothing is still growing when the drone leaves.
-        for index, e in enumerate(home_roots):
-            animate_rise(e, 252 + index * 4, dur=28)     # last settles at 372
-        animate_rise(store_roots[0], 468, dur=64)        # settles at 532
+        ferry = [e for e in home_roots
+                 if int(e.get("nb_world_plan_id", 0)) <= 584]
+        marshlight = [e for e in home_roots
+                      if int(e.get("nb_world_plan_id", 0)) >= 585]
+        for index, e in enumerate(ferry):
+            animate_rise(e, 246 + index * 6, dur=26)     # 8 up by frame 314
+        for index, e in enumerate(marshlight):
+            animate_rise(e, 408 + index * 5, dur=26)     # 16 up by frame 509
+        animate_rise(store_roots[0], 648, dur=56)        # settles at 704
         for e in rise:
             if e not in home_roots and e not in store_roots:
-                animate_rise(e, 235)
+                animate_rise(e, 232)
     elif cfg.get("cam") == "day33storm":
         home_roots = [e for e in rise if e.name.startswith("house_d")]
         lodgepole_roots = [e for e in home_roots
