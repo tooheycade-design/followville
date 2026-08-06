@@ -308,6 +308,10 @@ near-zero scale, and `check_town_glb.py` repeats that check independently.
 
 ## Claimable homes (see `CLAIMING_SETUP.md`)
 
+The same verified/pending/rejected flag is what the mayoral election calls
+"citizenship" — see `ELECTION_SETUP.md`. Approving someone for a house also
+lets them vote; there is no second approval and no second account concept.
+
 Followers sign up, verify their Instagram handle (DM code, manually approved by
 Cade), and claim one house. Backend is Supabase; schema in
 `supabase_schema.sql`. One-house-per-account and one-account-per-house are
@@ -380,7 +384,9 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 | `TEAM_LOG.md` | Who changed what, newest first. |
 | `AI_HANDOFF.md` | Cheap-model manual. |
 
-Other docs: `CLAIMING_SETUP.md`, `AVATAR_SYSTEM.md` (read before touching the
+Other docs: `CLAIMING_SETUP.md`, `ELECTION_SETUP.md` (read before touching the
+mayoral election, the ballot or `vote.html` — a "citizen" there is exactly a
+`verified` profile, not a new account type), `AVATAR_SYSTEM.md` (read before touching the
 avatar catalog, rigs, persistence or controls), `INTERIOR_SYSTEM.md` (read
 before touching the room, furnishing catalog, persistence or builder),
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`

@@ -15,6 +15,10 @@
     {
       "source": "/house/:id",
       "destination": "/town.html?house=:id"
+    },
+    {
+      "source": "/vote",
+      "destination": "/vote.html"
     }
   ],
   "headers": [
@@ -72,6 +76,24 @@
     },
     {
       "source": "/house/:id",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/vote",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/vote.html",
       "headers": [
         {
           "key": "Cache-Control",

@@ -87,6 +87,39 @@
   .admin-section h2 { margin:0 0 11px; }
   .admin-list { max-height:390px; overflow-y:auto; padding-right:4px; scrollbar-gutter:stable; }
   .admin-list .card:last-child { margin-bottom:0; }
+
+  /* election panel */
+  .field { display:block; margin-bottom:10px; }
+  .field span { display:block; font-size:11px; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; opacity:.6; margin-bottom:4px; }
+  .field input, .field textarea, .field select {
+    width:100%; padding:9px 11px; border-radius:9px; font-family:inherit; font-size:13.5px;
+    color:var(--navy); background:rgba(255,255,255,.75);
+    border:1px solid rgba(28,43,69,.18);
+  }
+  .field textarea { resize:vertical; min-height:56px; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btnrow { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .primary-btn { background:var(--navy); color:#fff; }
+  .warn-btn { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+  .note { font-size:12px; line-height:1.5; opacity:.65; margin:10px 0 0; }
+  .note.warn { color:#7a1f1f; opacity:.9; font-weight:600; }
+  .locked-banner { background:#fdf0e4; border:1px solid rgba(201,107,74,.4); color:#7a3a1f;
+    border-radius:10px; padding:10px 13px; font-size:12.5px; margin-bottom:12px; }
+  .standing-row { display:flex; align-items:center; gap:11px; }
+  .standing-row .rank { width:22px; opacity:.45; font-size:12px; font-weight:700; }
+  .standing-row .who { font-weight:700; flex:1; min-width:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .standing-row .tally { font-weight:800; font-variant-numeric:tabular-nums; }
+  .standing-row .pct { font-size:11.5px; opacity:.55; min-width:40px; text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .bar { height:4px; background:rgba(28,43,69,.12); border-radius:3px; margin-top:7px; }
+  .bar i { display:block; height:100%; border-radius:3px; background:var(--accent); }
+  .turnout { display:flex; gap:22px; flex-wrap:wrap; margin-bottom:14px; }
+  .turnout div { min-width:96px; }
+  .turnout b { display:block; font-size:24px; font-weight:800; letter-spacing:-.4px;
+    font-variant-numeric:tabular-nums; }
+  .turnout small { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; opacity:.55; }
   @media (max-width:720px){
     body { padding:22px 12px; }
     .section-grid { grid-template-columns:1fr; }
@@ -109,6 +142,7 @@
     <div class="admin-tabs" role="tablist" aria-label="Admin sections">
       <button type="button" class="admin-tab active" data-tab="accounts" role="tab" aria-selected="true">Accounts &amp; claims</button>
       <button type="button" class="admin-tab" data-tab="multiplayer" role="tab" aria-selected="false">Multiplayer &amp; chat</button>
+      <button type="button" class="admin-tab" data-tab="election" role="tab" aria-selected="false">Election</button>
     </div>
 
     <div id="accountsPanel" class="admin-panel active" role="tabpanel">
@@ -144,6 +178,81 @@
         </section>
       </div>
     </div>
+
+    <div id="electionPanel" class="admin-panel" role="tabpanel">
+      <div id="electionUnavailable" style="display:none;">
+        <div class="locked-banner">
+          <b>The election tables aren't installed yet.</b> Paste
+          <code>supabase_migrations/20260805_election_v1.sql</code> into the Supabase SQL
+          Editor and run it, then refresh this page.
+          <div id="electionUnavailableDetail" class="note"></div>
+        </div>
+      </div>
+      <div id="electionMain" style="display:none;">
+        <div class="section-grid">
+          <section class="admin-section">
+            <h2>The election</h2>
+            <label class="field"><span>which election</span>
+              <select id="electionPicker"></select></label>
+            <label class="field"><span>title</span>
+              <input id="electionTitle" maxlength="120" placeholder="Followville mayoral election" /></label>
+            <label class="field"><span>blurb shown above the ballot</span>
+              <textarea id="electionBlurb" maxlength="600"
+                placeholder="One vote per citizen. Polls are open for 48 hours."></textarea></label>
+            <div class="field-row">
+              <label class="field"><span>opens</span>
+                <input id="electionStarts" type="datetime-local" /></label>
+              <label class="field"><span>closes</span>
+                <input id="electionEnds" type="datetime-local" /></label>
+            </div>
+            <label class="field" style="display:flex;align-items:center;gap:9px;">
+              <input id="electionPublished" type="checkbox" style="width:auto;" />
+              <span style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;opacity:.85;">
+                published — visible on the public /vote page</span></label>
+            <div class="btnrow">
+              <button class="primary-btn" id="saveElection">save</button>
+              <button class="approve" id="open48">▶ open the poll for 48 hours now</button>
+              <button class="warn-btn" id="closeNow">close the poll now</button>
+            </div>
+            <p class="note">"Open for 48 hours now" publishes the election, sets the opening time to
+            this moment and the closing time to exactly 48 hours later. Add every candidate first —
+            the ballot freezes as soon as the first vote lands.</p>
+          </section>
+
+          <section class="admin-section">
+            <h2>Live standings</h2>
+            <div class="turnout">
+              <div><b id="statBallots">0</b><small>ballots cast</small></div>
+              <div><b id="statEligible">0</b><small>citizens eligible</small></div>
+              <div><b id="statTurnout">0%</b><small>turnout</small></div>
+            </div>
+            <div id="standings" class="admin-list"><div class="empty">no votes yet</div></div>
+          </section>
+
+          <section class="admin-section wide">
+            <h2>Candidates <span id="candidateCount"></span></h2>
+            <div id="ballotLocked" class="locked-banner" style="display:none;">
+              <b>The ballot is locked.</b> Voting has started, so candidates can no longer be
+              added or removed — that would change a race already partly decided.
+            </div>
+            <div class="field-row" id="candidateForm">
+              <label class="field"><span>instagram handle</span>
+                <input id="candHandle" placeholder="@theirhandle" autocapitalize="none" /></label>
+              <label class="field"><span>display name (optional)</span>
+                <input id="candName" maxlength="60" placeholder="Real name or nickname" /></label>
+            </div>
+            <label class="field" id="candPitchField"><span>their pitch (optional, 280 chars)</span>
+              <input id="candPitch" maxlength="280" placeholder="Why they should be mayor" /></label>
+            <div class="btnrow" id="candidateAddRow">
+              <button class="primary-btn" id="addCandidate">+ add to the ballot</button>
+            </div>
+            <div id="candidates" class="admin-list" style="margin-top:12px;">
+              <div class="empty">nobody on the ballot yet</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
   </div>
 
   <p class="backlink"><a href="index.html">← back to Followville</a></p>
@@ -156,15 +265,17 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let mode = null, serviceKey = null, sb = null;
 
+const ADMIN_TABS = ["accounts", "multiplayer", "election"];
 function selectAdminTab(tab){
-  const selected = tab === "multiplayer" ? "multiplayer" : "accounts";
+  const selected = ADMIN_TABS.includes(tab) ? tab : "accounts";
   document.querySelectorAll(".admin-tab").forEach(button => {
     const active = button.dataset.tab === selected;
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", String(active));
   });
-  document.getElementById("accountsPanel").classList.toggle("active", selected === "accounts");
-  document.getElementById("multiplayerPanel").classList.toggle("active", selected === "multiplayer");
+  for (const name of ADMIN_TABS){
+    document.getElementById(name + "Panel").classList.toggle("active", name === selected);
+  }
   try { sessionStorage.setItem("followville_admin_tab", selected); } catch (_) {}
 }
 document.querySelectorAll(".admin-tab").forEach(button =>
@@ -351,6 +462,230 @@ async function loadAll(){
       <span class="logtext">${esc(row.body)}</span>`;
     chatWrap.appendChild(d);
   }
+
+  await loadElection();
+}
+
+/* ───────────────────────── election ─────────────────────────
+   Loaded separately from everything else and allowed to fail: if the election
+   migration hasn't been run in Supabase yet, this section shows how to install
+   it instead of taking the whole admin page down with it. */
+let electionReport = null;
+let selectedElectionId = null;
+let creatingNewElection = false;   // true only while "+ new election…" is picked
+let paintedElectionId;          // which election the FORM currently shows
+let paintedElectionList = "";   // so the 30s refresh never clobbers typing
+
+function toLocalInput(iso){
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+         `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fromLocalInput(value){
+  if (!value) return null;
+  const d = new Date(value);          // a datetime-local value parses as local time
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+async function loadElection(){
+  try {
+    electionReport = await rpc("admin_election_report", { p_election_id: selectedElectionId });
+    // Adopt whichever election the report actually returned. Without this the
+    // id stays null after a plain page load, and every action below refuses
+    // with "save the election first" on an election that is already saved.
+    if (!creatingNewElection) selectedElectionId = electionReport?.election?.id ?? null;
+    document.getElementById("electionUnavailable").style.display = "none";
+    document.getElementById("electionMain").style.display = "block";
+    renderElection();
+  } catch (e){
+    const message = (e.message || "").slice(0, 300);
+    if (message.includes("not_admin")) throw e;   // handled by init()'s no-access path
+    document.getElementById("electionMain").style.display = "none";
+    document.getElementById("electionUnavailable").style.display = "block";
+    document.getElementById("electionUnavailableDetail").textContent = message;
+  }
+}
+
+function renderElection(){
+  const report = electionReport || {};
+  const elections = report.elections || [];
+  const election = report.election || null;
+  const candidates = report.candidates || [];
+  const locked = !!report.ballot_locked;
+
+  const picker = document.getElementById("electionPicker");
+  const listKey = elections.map(e => `${e.id}:${e.title}:${e.is_published}`).join("|");
+  if (listKey !== paintedElectionList){
+    paintedElectionList = listKey;
+    picker.innerHTML = elections.map(e =>
+      `<option value="${e.id}">${esc(e.title)}${e.is_published ? "" : " (draft)"}</option>`
+    ).join("") + '<option value="">+ new election…</option>';
+  }
+  picker.value = election ? String(election.id) : "";
+
+  // Repaint the form only when the selected election actually changes, so the
+  // 30-second auto-refresh can't wipe out half-typed text.
+  const currentId = election ? election.id : null;
+  if (paintedElectionId !== currentId){
+    paintedElectionId = currentId;
+    document.getElementById("electionTitle").value = election?.title || "";
+    document.getElementById("electionBlurb").value = election?.blurb || "";
+    document.getElementById("electionStarts").value = toLocalInput(election?.starts_at);
+    document.getElementById("electionEnds").value = toLocalInput(election?.ends_at);
+    document.getElementById("electionPublished").checked = !!election?.is_published;
+  }
+
+  const totalVotes = Number(report.total_votes || 0);
+  const eligible = Number(report.eligible_citizens || 0);
+  document.getElementById("statBallots").textContent = totalVotes;
+  document.getElementById("statEligible").textContent = eligible;
+  document.getElementById("statTurnout").textContent =
+    eligible ? Math.round((totalVotes / eligible) * 100) + "%" : "—";
+
+  const standings = document.getElementById("standings");
+  const ranked = candidates.filter(c => c.votes > 0);
+  standings.innerHTML = ranked.length ? "" : '<div class="empty">no votes yet</div>';
+  ranked.forEach((row, index) => {
+    const pct = totalVotes ? (row.votes / totalVotes) * 100 : 0;
+    const d = document.createElement("div");
+    d.className = "card";
+    d.style.display = "block";
+    d.innerHTML = `<div class="standing-row">
+        <span class="rank">${index + 1}</span>
+        <span class="who">@${esc(row.instagram_handle)}</span>
+        <span class="tally">${row.votes}</span>
+        <span class="pct">${pct.toFixed(0)}%</span>
+      </div>
+      <div class="bar"><i style="width:${pct.toFixed(2)}%"></i></div>`;
+    standings.appendChild(d);
+  });
+
+  document.getElementById("candidateCount").textContent =
+    "(" + candidates.length + ")";
+  document.getElementById("ballotLocked").style.display = locked ? "block" : "none";
+  for (const id of ["candidateForm", "candPitchField", "candidateAddRow"]){
+    document.getElementById(id).style.display = locked ? "none" : "";
+  }
+
+  const list = document.getElementById("candidates");
+  list.innerHTML = candidates.length ? "" : '<div class="empty">nobody on the ballot yet</div>';
+  for (const row of candidates){
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<span class="who">@${esc(row.instagram_handle)}</span>
+      ${row.display_name ? `<span class="meta">${esc(row.display_name)}</span>` : ""}
+      ${row.pitch ? `<span class="logtext">${esc(row.pitch)}</span>` : ""}
+      <span class="pill house">${row.votes} ${row.votes === 1 ? "vote" : "votes"}</span>
+      <span class="spacer"></span>
+      ${locked ? "" : '<button class="reject">remove</button>'}`;
+    const remove = d.querySelector(".reject");
+    if (remove) remove.onclick = () => {
+      if (confirm("Remove @" + row.instagram_handle + " from the ballot?"))
+        electionAct(d, "admin_candidate_remove", { p_candidate_id: row.id },
+                    "removed @" + row.instagram_handle);
+    };
+    list.appendChild(d);
+  }
+}
+
+async function electionAct(card, fn, args, okMsg, repaintForm){
+  const buttons = card ? card.querySelectorAll("button") : [];
+  for (const b of buttons) b.disabled = true;
+  try {
+    const result = await rpc(fn, args);
+    if (repaintForm) paintedElectionId = undefined;   // force the form to reload
+    if (result && result.id && fn === "admin_election_save"){
+      selectedElectionId = Number(result.id);
+      creatingNewElection = false;
+      paintedElectionList = "";
+    }
+    toast(okMsg);
+    await loadElection();
+  } catch (e){
+    const message = (e.message || "");
+    toast("failed: " + (
+      message.includes("ballot_locked")   ? "voting has started — the ballot is frozen" :
+      message.includes("candidate_exists")? "that handle is already on the ballot" :
+      message.includes("bad_handle")      ? "that doesn't look like a valid instagram handle" :
+      message.includes("no_candidates")   ? "add at least one candidate first" :
+      message.slice(0, 120)));
+  } finally {
+    for (const b of buttons) b.disabled = false;
+  }
+}
+
+document.getElementById("electionPicker").onchange = event => {
+  const value = event.target.value;
+  selectedElectionId = value ? Number(value) : null;
+  creatingNewElection = !value;
+  paintedElectionId = value ? undefined : null;
+  if (!value){
+    // "+ new election…": blank the form and let save() create it
+    document.getElementById("electionTitle").value = "";
+    document.getElementById("electionBlurb").value = "";
+    document.getElementById("electionStarts").value = "";
+    document.getElementById("electionEnds").value = "";
+    document.getElementById("electionPublished").checked = false;
+    electionReport = { ...electionReport, election: null, candidates: [],
+                       total_votes: 0, ballot_locked: false };
+    paintedElectionId = null;
+    renderElection();
+    return;
+  }
+  loadElection();
+};
+
+document.getElementById("saveElection").onclick = event => {
+  electionAct(event.target.closest(".btnrow"), "admin_election_save", {
+    p_id: selectedElectionId,
+    p_title: document.getElementById("electionTitle").value.trim() || "Followville mayoral election",
+    p_blurb: document.getElementById("electionBlurb").value.trim(),
+    p_starts_at: fromLocalInput(document.getElementById("electionStarts").value),
+    p_ends_at: fromLocalInput(document.getElementById("electionEnds").value),
+    p_is_published: document.getElementById("electionPublished").checked,
+  }, "election saved", true);
+};
+
+document.getElementById("open48").onclick = event => {
+  if (!selectedElectionId) return toast("save the election first");
+  if (!confirm("Open the poll right now for exactly 48 hours?\n\n" +
+               "It goes live on the public /vote page immediately, and the ballot " +
+               "freezes as soon as the first vote is cast.")) return;
+  electionAct(event.target.closest(".btnrow"), "admin_election_open_48h",
+              { p_election_id: selectedElectionId }, "the poll is open — 48 hours", true);
+};
+
+document.getElementById("closeNow").onclick = event => {
+  if (!selectedElectionId) return toast("save the election first");
+  if (!confirm("Close the poll now?\n\nVotes already cast are kept and the result stands.")) return;
+  electionAct(event.target.closest(".btnrow"), "admin_election_close",
+              { p_election_id: selectedElectionId }, "the poll is closed", true);
+};
+
+document.getElementById("addCandidate").onclick = event => {
+  if (!selectedElectionId) return toast("save the election first");
+  const handle = document.getElementById("candHandle").value.trim();
+  if (!handle) return toast("enter an instagram handle");
+  electionAct(event.target.closest(".btnrow"), "admin_candidate_add", {
+    p_election_id: selectedElectionId,
+    p_handle: handle,
+    p_display_name: document.getElementById("candName").value.trim() || null,
+    p_pitch: document.getElementById("candPitch").value.trim(),
+  }, "added @" + handle.replace(/^@/, "").toLowerCase());
+  document.getElementById("candHandle").value = "";
+  document.getElementById("candName").value = "";
+  document.getElementById("candPitch").value = "";
+  document.getElementById("candHandle").focus();
+};
+
+// Enter in the handle box adds the candidate — 30 of them is a lot of clicking.
+for (const id of ["candHandle", "candName", "candPitch"]){
+  document.getElementById(id).addEventListener("keydown", event => {
+    if (event.key === "Enter"){ event.preventDefault(); document.getElementById("addCandidate").click(); }
+  });
 }
 
 async function act(card, fn, args, okMsg){

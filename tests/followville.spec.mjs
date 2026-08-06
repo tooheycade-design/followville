@@ -986,3 +986,43 @@ test("verified homeowners can furnish a shared low-poly interior", async ({ page
   });
   expect(errors).toEqual([]);
 });
+
+/* ── Mayoral election (added 2026-08-05) ──
+   These run signed out, which is the state that matters most publicly: a
+   visitor who is not an approved citizen must never see the ballot or the
+   tally. The signed-in paths need a real Supabase account and are covered by
+   the manual checklist in ELECTION_SETUP.md. */
+
+test("the homepage offers the vote page to everyone", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.goto("/index.html");
+  const vote = page.locator("#voteBtn");
+  await expect(vote).toBeVisible();
+  await expect(vote).toHaveAttribute("href", "/vote");
+  await expect(vote.locator("strong")).toHaveText("Vote for mayor");
+  expect(errors).toEqual([]);
+});
+
+test("the vote page settles into a public state and never leaks a ballot", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.goto("/vote.html");
+  await expect(page.getByRole("heading", { name: /Vote for Mayor|Followville/ }).first()).toBeVisible();
+
+  // It must leave "loading" on its own — whether an election exists or not.
+  await expect
+    .poll(() => page.locator("body").getAttribute("data-vote-state"), { timeout: 20_000 })
+    .not.toBe("loading");
+
+  const state = await page.locator("body").getAttribute("data-vote-state");
+  expect(["guest", "no-election"]).toContain(state);
+  // Signed out is never a citizen, so no candidate row may be rendered at all.
+  await expect(page.locator("body")).toHaveAttribute("data-vote-citizen", "false");
+  expect(await page.locator(".candidate").count()).toBe(0);
+  expect(await page.locator(".standing").count()).toBe(0);
+
+  if (state === "guest"){
+    await expect(page.getByText(/need to be a citizen/i)).toBeVisible();
+    await expect(page.locator("#becomeCitizen")).toHaveAttribute("href", "town.html#claim");
+  }
+  expect(errors).toEqual([]);
+});

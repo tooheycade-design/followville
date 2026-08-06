@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Followville — Vote for Mayor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="Followville's mayoral election — citizens choose the town's first mayor." />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<!--
+  Followville town hall — the 48-hour mayoral election.
+
+  This page is public, but the BALLOT is not. election_state() decides what a
+  caller may see: a signed-out visitor (or one still waiting on Cade's
+  approval) gets only the teaser — title, closing time, how many are running.
+  Names and tallies come back only for verification_status = 'verified'.
+  "Citizen" is not a new concept: it is exactly that existing flag, set when
+  Cade approves an Instagram DM code on admin.html.
+
+  Nothing here is the security boundary. One-vote-per-citizen is a primary key
+  in Postgres, and cast_vote() re-checks citizenship and the poll window
+  server-side. The countdown below is display only — it never decides whether
+  voting is allowed, because a client clock can be wrong or edited.
+-->
+<style>
+  :root{
+    --cream:#f2e9da;
+    --cream-deep:#e9dcc4;
+    --navy:#1c2b45;
+    --navy-soft:#2c3f5e;
+    --accent:#c96b4a;
+    --accent-soft:#e9a484;
+    --green:#4f8e67;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; padding:0; min-height:100%; }
+  body {
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:var(--navy); color:#fff; min-height:100vh;
+    padding:max(26px,env(safe-area-inset-top)) 22px max(26px,env(safe-area-inset-bottom));
+    display:flex; justify-content:center;
+  }
+  .bg-grid{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.12;
+    background-image:
+      linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(circle at 50% 26%, black 0%, transparent 76%);
+  }
+  .wrap{ position:relative; z-index:1; width:100%; max-width:1040px; }
+
+  .brand-row{
+    display:flex; align-items:center; gap:15px; padding:0 0 13px;
+    border-bottom:1px solid rgba(255,255,255,.32); margin-bottom:18px;
+  }
+  .logo-ring{
+    width:56px; height:56px; flex:0 0 auto; padding:3px; border-radius:50%;
+    background:var(--cream); border:1px solid rgba(255,255,255,.72);
+    box-shadow:0 5px 18px rgba(4,12,22,.3);
+  }
+  .logo-ring img{ width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; background:var(--cream); }
+  .logo-fallback{
+    width:100%; height:100%; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; background:var(--cream); color:var(--navy); font-weight:800; font-size:20px;
+  }
+  .brand-copy{ flex:1; min-width:0; }
+  .kicker{
+    margin:0 0 3px; color:var(--accent-soft); font-size:10px; font-weight:700;
+    letter-spacing:.09em; text-transform:uppercase;
+  }
+  h1{ margin:0; font:400 30px/1.1 Georgia,"Times New Roman",serif; letter-spacing:-.3px; }
+  .brand-back{ font-size:12.5px; opacity:.66; text-decoration:none; color:#fff; white-space:nowrap; }
+  .brand-back:hover{ opacity:1; color:var(--accent-soft); }
+
+  .blurb{ margin:0 0 18px; font-size:14px; line-height:1.55; opacity:.75; max-width:660px; }
+
+  .status-strip{
+    display:flex; align-items:baseline; gap:10px 20px; flex-wrap:wrap;
+    padding:13px 0; margin-bottom:20px;
+    border-top:1px solid rgba(255,255,255,.18);
+    border-bottom:1px solid rgba(255,255,255,.18);
+  }
+  .status-strip .clock{ font-size:21px; font-weight:700; letter-spacing:-.3px; }
+  .status-strip .clock.closed{ color:var(--accent-soft); }
+  .status-strip .meta{ font-size:12px; opacity:.6; }
+  .status-strip .spacer{ flex:1; }
+  .live-dot{
+    display:inline-block; width:7px; height:7px; border-radius:50%; background:#6fc98a;
+    margin-right:7px; box-shadow:0 0 0 4px rgba(111,201,138,.16);
+  }
+
+  .panel{
+    padding:26px 26px 22px; border-radius:3px;
+    background:rgba(13,29,44,.86); border:1px solid rgba(255,255,255,.27);
+    box-shadow:0 12px 32px rgba(4,12,22,.26);
+  }
+  .panel h2{ margin:0 0 10px; font:400 23px/1.15 Georgia,"Times New Roman",serif; }
+  .panel p{ margin:0 0 14px; font-size:14px; line-height:1.6; opacity:.78; }
+  .panel p:last-child{ margin-bottom:0; }
+  .panel .quiet{ font-size:12.5px; opacity:.55; }
+
+  .cta{
+    display:inline-flex; align-items:center; gap:8px; margin-top:6px;
+    padding:13px 22px; border-radius:2px; border:none; cursor:pointer;
+    background:var(--cream); color:var(--navy); font:700 14px/1 inherit;
+    text-decoration:none; font-family:inherit;
+  }
+  .cta:hover{ background:#fff; }
+  .cta.ghost{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.6); }
+  .cta.ghost:hover{ background:rgba(255,255,255,.08); }
+  .cta.danger{ background:var(--accent); color:#fff; }
+  .cta:disabled{ opacity:.5; cursor:default; }
+  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
+
+  .code{
+    display:inline-block; margin:4px 0 12px; padding:9px 16px; border-radius:2px;
+    background:rgba(242,233,218,.94); color:var(--navy);
+    font:700 19px/1 ui-monospace, Consolas, monospace; letter-spacing:.06em;
+  }
+
+  /* two columns: cast your ballot on the left, the live count on the right */
+  .vote-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:14px; align-items:start; }
+
+  .section-title{
+    display:flex; align-items:baseline; gap:9px; margin:0 0 12px;
+    font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent-soft);
+  }
+  .section-title span{ font-weight:600; letter-spacing:0; text-transform:none; font-size:11.5px; color:#fff; opacity:.5; }
+
+  /* With ~30 candidates the ballot is simply long and the page scrolls. An
+     inner scrollbox here left the left column short and the right column
+     1500px tall — badly lopsided — and hid most of the field behind a scroll
+     nobody would find. Instead: the ballot grows, the confirm bar sticks to
+     the bottom so your pick is always one click away, and the live count
+     sticks to the top so it stays on screen while you read the field. */
+  .ballot{ padding-right:2px; }
+  .cast-area{
+    position:sticky; bottom:0; padding:14px 0 2px; margin-top:2px;
+    background:linear-gradient(180deg, rgba(13,29,44,0) 0%, rgba(13,29,44,.94) 26%, rgba(13,29,44,.98) 100%);
+  }
+  .tally-panel{ position:sticky; top:20px; }
+  .tally-list{ max-height:calc(100vh - 250px); overflow-y:auto; padding-right:5px; scrollbar-gutter:stable; }
+  .candidate{
+    display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
+    padding:13px 4px; background:none; border:0; color:inherit; cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,.16); font-family:inherit;
+    transition:padding .14s ease, color .14s ease;
+  }
+  .candidate:hover{ padding-left:8px; color:#ffd1bb; }
+  .candidate .mark{
+    flex:0 0 auto; width:17px; height:17px; margin-top:2px; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.5);
+  }
+  .candidate.selected .mark{ border-color:var(--accent-soft); box-shadow:inset 0 0 0 4px var(--accent); }
+  .candidate.selected{ color:#ffd1bb; }
+  .candidate .who{ min-width:0; flex:1; }
+  .candidate .handle{ display:block; font-size:15px; font-weight:680; }
+  .candidate .name{ font-weight:400; opacity:.55; }
+  .candidate .pitch{ display:block; margin-top:3px; font-size:12px; line-height:1.45; opacity:.6; }
+  .candidate:disabled{ cursor:default; }
+  .candidate:disabled:hover{ padding-left:4px; color:inherit; }
+
+  .standing{ padding:10px 0 9px; border-bottom:1px solid rgba(255,255,255,.13); }
+  .standing:last-child{ border-bottom:0; }
+  .standing-top{ display:flex; align-items:baseline; gap:9px; font-size:13.5px; }
+  .standing-rank{ flex:0 0 auto; width:19px; opacity:.45; font-size:11.5px; font-weight:700; }
+  .standing-handle{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:640; }
+  .standing-votes{ flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; }
+  .standing-pct{ flex:0 0 auto; font-size:11px; opacity:.5; font-variant-numeric:tabular-nums; min-width:38px; text-align:right; }
+  .standing-bar{ height:3px; margin-top:6px; margin-left:28px; background:rgba(255,255,255,.12); }
+  .standing-bar i{ display:block; height:100%; background:var(--accent); transition:width .4s ease; }
+  .standing.mine .standing-handle{ color:var(--accent-soft); }
+  .standing.leader .standing-bar i{ background:var(--accent-soft); }
+
+  .tally-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
+  .tally-head b{ font-size:27px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+  .tally-head small{ font-size:11.5px; opacity:.55; }
+
+  .winner{
+    padding:18px 20px; margin-bottom:16px; border-radius:2px;
+    background:rgba(201,107,74,.16); border:1px solid rgba(233,164,132,.45);
+  }
+  .winner .label{ font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-soft); }
+  .winner .who{ margin-top:5px; font:400 27px/1.1 Georgia,"Times New Roman",serif; }
+  .winner .meta{ margin-top:5px; font-size:12.5px; opacity:.65; }
+
+  .voted-banner{
+    display:flex; align-items:center; gap:11px; padding:14px 16px; margin-bottom:16px;
+    border-radius:2px; background:rgba(79,142,103,.16); border:1px solid rgba(111,201,138,.4);
+    font-size:13.5px;
+  }
+  .voted-banner b{ color:#a9e2bd; }
+  .voted-check{ flex:0 0 auto; font-size:16px; }
+
+  .confirm-box{
+    margin-top:16px; padding:15px 17px; border-radius:2px;
+    background:rgba(201,107,74,.14); border:1px solid rgba(233,164,132,.5);
+  }
+  .confirm-box p{ margin:0 0 12px; font-size:13.5px; opacity:.9; }
+
+  .err{ margin-top:12px; font-size:13px; color:#ffb4a0; min-height:17px; }
+  .empty{ opacity:.5; font-size:13.5px; padding:10px 2px; }
+
+  .footnote{ margin-top:22px; font-size:11.5px; opacity:.45; line-height:1.6; }
+  .footnote a{ color:var(--accent-soft); }
+
+  @media (max-width:860px){
+    body{ padding:16px 13px max(16px,env(safe-area-inset-bottom)); }
+    h1{ font-size:25px; }
+    .panel{ padding:19px 17px 17px; }
+    .vote-grid{ grid-template-columns:1fr; }
+    /* one column: sticky panels and capped lists just get in the way */
+    .tally-panel{ position:static; }
+    .tally-list{ max-height:none; overflow-y:visible; }
+    .status-strip .clock{ font-size:18px; }
+    .brand-back{ display:none; }
+  }
+</style>
+</head>
+<body data-vote-state="loading" data-vote-citizen="false">
+<div class="bg-grid"></div>
+
+<main class="wrap">
+  <header class="brand-row">
+    <div class="logo-ring">
+      <img src="logo.png" alt="Followville"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-fallback',textContent:'FV'}))" />
+    </div>
+    <div class="brand-copy">
+      <p class="kicker">Followville Town Hall</p>
+      <h1 id="electionTitle">Vote for Mayor</h1>
+    </div>
+    <a class="brand-back" href="index.html">&larr; back to Followville</a>
+  </header>
+
+  <p class="blurb" id="electionBlurb"></p>
+
+  <div class="status-strip" id="statusStrip" style="display:none;">
+    <span class="clock" id="clock">&ndash;</span>
+    <span class="meta" id="clockMeta"></span>
+    <span class="spacer"></span>
+    <span class="meta" id="turnoutMeta"></span>
+  </div>
+
+  <div id="view"><div class="panel"><p class="quiet">Loading the town hall&hellip;</p></div></div>
+
+  <p class="footnote">
+    One vote per citizen, enforced by the database &mdash; not by this page. Votes are final
+    and cannot be changed once cast. Questions? DM <b>@followville</b> on Instagram.
+  </p>
+</main>
+
+<script type="module">
+const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
+
+const REFRESH_MS = 5000;          // live leaderboard cadence while the tab is visible
+const view = document.getElementById("view");
+const statusStrip = document.getElementById("statusStrip");
+const clockEl = document.getElementById("clock");
+const clockMetaEl = document.getElementById("clockMeta");
+const turnoutEl = document.getElementById("turnoutMeta");
+
+let sb = null;
+let state = null;
+let selectedCandidate = null;   // chosen in the UI, not yet cast
+let confirming = false;
+let casting = false;
+let clockOffsetMs = 0;          // server now minus browser now; the browser clock is not trusted
+let refreshTimer = null;
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+function setBodyState(name){ document.body.dataset.voteState = name; }
+function serverNow(){ return Date.now() + clockOffsetMs; }
+
+function formatRemaining(ms){
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours >= 1) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  if (minutes >= 1) return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  return `${seconds}s`;
+}
+function formatWhen(iso){
+  const when = new Date(iso);
+  return Number.isNaN(when.getTime()) ? "" : when.toLocaleString(undefined,
+    { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+}
+
+/* ── the countdown strip. Display only: whether voting is actually allowed is
+   decided by the server on every cast_vote call, never by this timer. ── */
+function renderClock(){
+  const election = state?.election;
+  if (!election){ statusStrip.style.display = "none"; return; }
+  statusStrip.style.display = "flex";
+
+  const opensAt = election.starts_at ? Date.parse(election.starts_at) : null;
+  const closesAt = election.ends_at ? Date.parse(election.ends_at) : null;
+  const now = serverNow();
+
+  if (!opensAt || !closesAt){
+    clockEl.textContent = "Not scheduled yet";
+    clockEl.classList.remove("closed");
+    clockMetaEl.textContent = "the polling window hasn't been set";
+  } else if (now < opensAt){
+    clockEl.textContent = "Polls open in " + formatRemaining(opensAt - now);
+    clockEl.classList.remove("closed");
+    clockMetaEl.textContent = "opens " + formatWhen(election.starts_at);
+  } else if (now < closesAt){
+    clockEl.innerHTML = '<i class="live-dot"></i>Polls close in ' + esc(formatRemaining(closesAt - now));
+    clockEl.classList.remove("closed");
+    clockMetaEl.textContent = "closes " + formatWhen(election.ends_at);
+  } else {
+    clockEl.textContent = "Polls are closed";
+    clockEl.classList.add("closed");
+    clockMetaEl.textContent = "closed " + formatWhen(election.ends_at);
+  }
+
+  turnoutEl.textContent = state.is_citizen && typeof state.total_votes === "number"
+    ? `${state.total_votes} ${state.total_votes === 1 ? "ballot" : "ballots"} cast · ${election.candidate_count} running`
+    : `${election.candidate_count} ${election.candidate_count === 1 ? "candidate" : "candidates"} running`;
+}
+
+/* ── panels for everyone who cannot vote yet ── */
+function panel(html){ view.innerHTML = `<div class="panel">${html}</div>`; }
+
+function renderGate(){
+  const election = state?.election;
+  const closing = election?.ends_at
+    ? `<p>Voting ${election.has_closed ? "closed" : "closes"} ${esc(formatWhen(election.ends_at))}.</p>` : "";
+  const status = state?.verification_status;
+
+  if (!state?.signed_in){
+    setBodyState("guest");
+    panel(`
+      <h2>You need to be a citizen to vote</h2>
+      <p>Followville's mayor is chosen by its residents. Voting is open to
+      <b>citizens</b> &mdash; accounts Cade has approved &mdash; so the ballot and the
+      running count stay hidden until you're one of them.</p>
+      <p class="quiet">Becoming a citizen takes three steps: create an account with your
+      Instagram handle, DM the code it gives you to <b>@followville</b>, and wait for Cade
+      to approve you by hand. Then come back here and vote.</p>
+      ${closing}
+      <div class="cta-row">
+        <a class="cta" id="becomeCitizen" href="town.html#claim">become a citizen &rarr;</a>
+        <a class="cta ghost" href="town.html#claim">already have an account? sign in</a>
+      </div>`);
+    return;
+  }
+  if (status === "rejected"){
+    setBodyState("rejected");
+    panel(`
+      <h2>This account can't vote</h2>
+      <p>Your citizenship was rejected, so you can't take part in the election. If you
+      think that's a mistake, DM <b>@followville</b> on Instagram.</p>`);
+    return;
+  }
+  if (status !== "verified"){
+    setBodyState(state?.signed_in && !status ? "setup" : "pending");
+    panel(!status
+      ? `<h2>One step left</h2>
+         <p>You're signed in, but you haven't told us which Instagram account is yours yet.
+         Finish that and you can be approved as a citizen.</p>
+         <div class="cta-row"><a class="cta" href="town.html#claim">finish setting up &rarr;</a></div>`
+      : `<h2>Your citizenship is pending</h2>
+         <p>Cade approves every citizen by hand. DM your verification code to
+         <b>@followville</b> on Instagram if you haven't already &mdash; you'll find it in your
+         account panel in the town.</p>
+         <p class="quiet">The ballot and the live count appear here the moment you're approved.
+         This page checks again every few seconds.</p>
+         ${closing}
+         <div class="cta-row"><a class="cta ghost" href="town.html#claim">open my account panel</a></div>`);
+  }
+}
+
+/* ── the live standings, shown to citizens the whole time ── */
+function standingsMarkup(){
+  const candidates = [...(state.candidates || [])].sort(
+    (a, b) => b.votes - a.votes || a.instagram_handle.localeCompare(b.instagram_handle));
+  const total = state.total_votes || 0;
+  if (!candidates.length) return '<div class="empty">nobody is on the ballot yet</div>';
+  const leaderVotes = candidates[0].votes;
+  return candidates.map((candidate, index) => {
+    const pct = total ? (candidate.votes / total) * 100 : 0;
+    const mine = Number(state.my_vote) === Number(candidate.id);
+    const leading = candidate.votes > 0 && candidate.votes === leaderVotes;
+    return `
+      <div class="standing ${mine ? "mine" : ""} ${leading ? "leader" : ""}">
+        <div class="standing-top">
+          <span class="standing-rank">${index + 1}</span>
+          <span class="standing-handle">@${esc(candidate.instagram_handle)}${mine ? " ·&nbsp;your vote" : ""}</span>
+          <span class="standing-votes">${candidate.votes}</span>
+          <span class="standing-pct">${total ? pct.toFixed(0) + "%" : "—"}</span>
+        </div>
+        <div class="standing-bar"><i style="width:${total ? pct.toFixed(2) : 0}%"></i></div>
+      </div>`;
+  }).join("");
+}
+
+function ballotMarkup(){
+  const candidates = [...(state.candidates || [])].sort(
+    (a, b) => a.instagram_handle.localeCompare(b.instagram_handle));
+  if (!candidates.length) return '<div class="empty">nobody is on the ballot yet</div>';
+  return candidates.map(candidate => `
+    <button type="button" class="candidate ${Number(selectedCandidate) === Number(candidate.id) ? "selected" : ""}"
+      data-candidate-id="${candidate.id}" ${casting ? "disabled" : ""}>
+      <span class="mark" aria-hidden="true"></span>
+      <span class="who">
+        <span class="handle">@${esc(candidate.instagram_handle)}${
+          candidate.display_name ? ` <span class="name">${esc(candidate.display_name)}</span>` : ""}</span>
+        ${candidate.pitch ? `<span class="pitch">${esc(candidate.pitch)}</span>` : ""}
+      </span>
+    </button>`).join("");
+}
+
+function renderCitizenView(){
+  const election = state.election;
+  const votedFor = state.my_vote
+    ? (state.candidates || []).find(c => Number(c.id) === Number(state.my_vote))
+    : null;
+
+  // closed: the result stands
+  if (election.has_closed){
+    setBodyState("closed");
+    const ranked = [...(state.candidates || [])].sort(
+      (a, b) => b.votes - a.votes || a.instagram_handle.localeCompare(b.instagram_handle));
+    const winner = ranked[0];
+    const tied = winner && ranked.filter(c => c.votes === winner.votes);
+    const winnerBlock = !winner || !winner.votes
+      ? `<div class="winner"><div class="label">Result</div>
+         <div class="who">No votes were cast</div></div>`
+      : tied.length > 1
+        ? `<div class="winner"><div class="label">Result — tie</div>
+           <div class="who">${tied.map(c => "@" + esc(c.instagram_handle)).join(" &amp; ")}</div>
+           <div class="meta">tied on ${winner.votes} ${winner.votes === 1 ? "vote" : "votes"} of
+           ${state.total_votes} cast</div></div>`
+        : `<div class="winner"><div class="label">Mayor of Followville</div>
+           <div class="who">@${esc(winner.instagram_handle)}</div>
+           <div class="meta">${winner.votes} of ${state.total_votes}
+           ${state.total_votes === 1 ? "vote" : "votes"}
+           (${state.total_votes ? ((winner.votes / state.total_votes) * 100).toFixed(0) : 0}%)</div></div>`;
+    view.innerHTML = `
+      <div class="panel">
+        ${winnerBlock}
+        ${votedFor ? `<div class="voted-banner"><span class="voted-check">✓</span>
+          <span>You voted for <b>@${esc(votedFor.instagram_handle)}</b>.</span></div>` : ""}
+        <div class="section-title">Final standings <span>${state.total_votes} ballots cast</span></div>
+        ${standingsMarkup()}
+      </div>`;
+    return;
+  }
+
+  // Not open: show who is running, but no voting. Gated on is_open alone —
+  // the server's own answer — so a half-configured election (published with a
+  // start but no closing time) shows this instead of a ballot that would only
+  // fail on submit.
+  if (!election.is_open){
+    setBodyState("not-open");
+    const opensLine = election.starts_at && !election.has_opened
+      ? `Voting opens ${esc(formatWhen(election.starts_at))} and stays open for 48 hours.
+         Come back then &mdash; you get one vote, and it's final.`
+      : `Voting hasn't opened yet. Check back shortly &mdash; when it does, you get
+         one vote, and it's final.`;
+    view.innerHTML = `
+      <div class="panel">
+        <h2>The ballot is set</h2>
+        <p>${esc(String(election.candidate_count))} ${election.candidate_count === 1 ? "citizen is" : "citizens are"}
+        running for mayor. ${opensLine}</p>
+        <div class="section-title">On the ballot</div>
+        <div class="ballot">${ballotMarkup()}</div>
+      </div>`;
+    view.querySelectorAll(".candidate").forEach(b => { b.disabled = true; });
+    return;
+  }
+
+  // open
+  setBodyState(votedFor ? "voted" : "open");
+  const leaderboard = `
+    <div class="panel tally-panel">
+      <div class="section-title">Live count <span>updating every few seconds</span></div>
+      <div class="tally-head">
+        <b>${state.total_votes}</b>
+        <small>${state.total_votes === 1 ? "ballot cast" : "ballots cast"} so far</small>
+      </div>
+      <div class="tally-list">${standingsMarkup()}</div>
+    </div>`;
+
+  const left = votedFor
+    ? `<div class="panel">
+         <div class="voted-banner"><span class="voted-check">✓</span>
+           <span>Your vote is in for <b>@${esc(votedFor.instagram_handle)}</b>.</span></div>
+         <p>Thanks for voting. Each account gets one vote and it can't be changed, so
+         that's you done &mdash; watch the count on the right until the polls close.</p>
+         <p class="quiet">Tell the rest of the town to vote: the more citizens turn out,
+         the more the result actually means something.</p>
+         <div class="cta-row"><a class="cta ghost" href="town.html#walk">walk the town &rarr;</a></div>
+       </div>`
+    : `<div class="panel">
+         <div class="section-title">Cast your ballot <span>one vote, and it's final</span></div>
+         <div class="ballot" id="ballot">${ballotMarkup()}</div>
+         <div class="cast-area" id="castArea"></div>
+         <div class="err" id="voteErr"></div>
+       </div>`;
+
+  // The whole view is rebuilt every few seconds by the live refresh, which
+  // would otherwise yank the leaderboard back to the top under anyone
+  // scrolling through the lower half of a 30-strong field.
+  const tallyScroll = view.querySelector(".tally-list")?.scrollTop || 0;
+  view.innerHTML = `<div class="vote-grid">${left}${leaderboard}</div>`;
+  const tally = view.querySelector(".tally-list");
+  if (tally) tally.scrollTop = tallyScroll;
+  if (votedFor) return;
+
+  view.querySelectorAll("[data-candidate-id]").forEach(button => {
+    button.onclick = () => {
+      selectedCandidate = Number(button.dataset.candidateId);
+      confirming = false;
+      renderCitizenView();
+    };
+  });
+  renderCastArea();
+}
+
+function renderCastArea(){
+  const area = document.getElementById("castArea");
+  if (!area) return;
+  const candidate = (state.candidates || []).find(c => Number(c.id) === Number(selectedCandidate));
+  // Only pin the bar once there is something to confirm. A permanently stuck
+  // "pick someone" hint would sit on top of a candidate row for no reason.
+  area.className = candidate ? "cast-area" : "";
+  if (!candidate){
+    area.innerHTML = `<p class="quiet" style="margin-top:14px;">Pick a candidate to cast your vote.</p>`;
+    return;
+  }
+  if (!confirming){
+    area.innerHTML = `<div class="cta-row">
+      <button class="cta" id="doPreCast">vote for @${esc(candidate.instagram_handle)}</button></div>`;
+    document.getElementById("doPreCast").onclick = () => { confirming = true; renderCastArea(); };
+    return;
+  }
+  area.innerHTML = `
+    <div class="confirm-box">
+      <p>Cast your one vote for <b>@${esc(candidate.instagram_handle)}</b>?
+      This is permanent &mdash; you can't change it or vote again.</p>
+      <div class="cta-row" style="margin-top:0;">
+        <button class="cta danger" id="doCast" ${casting ? "disabled" : ""}>
+          ${casting ? "casting…" : "yes, cast my vote"}</button>
+        <button class="cta ghost" id="doCancelCast" ${casting ? "disabled" : ""}>never mind</button>
+      </div>
+    </div>`;
+  document.getElementById("doCast").onclick = castVote;
+  document.getElementById("doCancelCast").onclick = () => { confirming = false; renderCastArea(); };
+}
+
+async function castVote(){
+  if (casting || !selectedCandidate) return;
+  casting = true;
+  renderCastArea();
+  const { error } = await sb.rpc("cast_vote", { p_candidate_id: Number(selectedCandidate) });
+  casting = false;
+  if (error){
+    const message = error.message || "";
+    const friendly =
+      message.includes("already_voted")    ? "You've already voted in this election — one vote per citizen." :
+      message.includes("polls_closed")     ? "The polls just closed." :
+      message.includes("polls_not_open")   ? "The polls aren't open yet." :
+      message.includes("not_verified")     ? "Only approved citizens can vote." :
+      message.includes("unknown_candidate")? "That candidate isn't on the ballot." :
+      message.includes("no_election")      ? "There's no election running right now." :
+                                             "Couldn't cast your vote: " + message;
+    confirming = false;
+    await refresh();
+    const errEl = document.getElementById("voteErr");
+    if (errEl) errEl.textContent = friendly;
+    return;
+  }
+  confirming = false;
+  selectedCandidate = null;
+  await refresh();
+}
+
+/* ── load + render ── */
+function render(){
+  const election = state?.election;
+  document.body.dataset.voteCitizen = String(!!state?.is_citizen);
+
+  if (election){
+    document.getElementById("electionTitle").textContent = election.title;
+    document.getElementById("electionBlurb").textContent = election.blurb || "";
+  }
+  renderClock();
+
+  if (!election){
+    setBodyState("no-election");
+    statusStrip.style.display = "none";
+    panel(`<h2>No election is running</h2>
+      <p>Followville isn't voting on anything right now. When a mayoral election opens,
+      it shows up here and runs for 48 hours.</p>
+      <div class="cta-row"><a class="cta ghost" href="index.html">back to Followville</a></div>`);
+    return;
+  }
+  if (!state.is_citizen){ renderGate(); return; }
+  renderCitizenView();
+}
+
+async function refresh(){
+  if (!sb) return;
+  const { data, error } = await sb.rpc("election_state");
+  if (error){
+    // PGRST202 = the RPC doesn't exist, i.e. the election migration hasn't been
+    // run in Supabase yet. That genuinely IS "no election", so say so plainly
+    // rather than showing visitors a database error. Any other failure is a
+    // real outage and gets reported as one.
+    const missing = error.code === "PGRST202" ||
+      /could not find the function|does not exist/i.test(error.message || "");
+    if (missing){
+      state = { election:null, signed_in:false, is_citizen:false };
+      render();
+      return;
+    }
+    if (!state) panel(`<h2>Couldn't reach the town hall</h2>
+      <p>${esc(error.message || "Please try again in a moment.")}</p>`);
+    return;
+  }
+  state = data;
+  if (state?.election?.server_now){
+    const parsed = Date.parse(state.election.server_now);
+    if (!Number.isNaN(parsed)) clockOffsetMs = parsed - Date.now();
+  }
+  render();
+}
+
+function startPolling(){
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+}
+
+// The countdown ticks locally every second so it feels live between refreshes;
+// the underlying numbers are still whatever the server last told us.
+setInterval(() => { if (state?.election) renderClock(); }, 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+window.addEventListener("pageshow", event => { if (event.persisted) location.reload(); });
+
+(async function init(){
+  try {
+    const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    sb = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.onAuthStateChange(() => refresh());
+    await refresh();
+    startPolling();
+  } catch (e){
+    setBodyState("error");
+    panel(`<h2>Couldn't reach the town hall</h2>
+      <p>The election service didn't load. Check your connection and refresh.</p>
+      <p class="quiet">${esc(e?.message || "")}</p>`);
+  }
+})();
+</script>
+</body>
+</html>

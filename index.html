@@ -209,6 +209,12 @@
     content:""; width:7px; height:7px; flex:0 0 auto; border-radius:50%;
     background:#df825f; box-shadow:0 0 0 4px rgba(223,130,95,.13);
   }
+  .destination-card.vote,.destination-card.vote.today { background:none; }
+  .destination-card.vote .destination-copy strong { color:#f1b091; }
+  .destination-card.vote::before {
+    content:""; width:7px; height:7px; flex:0 0 auto; border-radius:50%;
+    background:#6fc98a; box-shadow:0 0 0 4px rgba(111,201,138,.15);
+  }
   .destination-icon { display:none; }
   .destination-copy { min-width:0; flex:1; }
   .destination-copy strong { display:block; font-size:16px; font-weight:680; }
@@ -276,8 +282,10 @@
     .action-list { display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:0; }
     .destination-card { padding:15px 10px 15px 0; min-height:76px; border-radius:0; gap:9px; }
     .destination-card + .destination-card { padding-left:14px; border-left:1px solid rgba(255,255,255,.25); }
-    .destination-card.today { grid-column:1/-1; min-height:62px; padding-left:0; }
-    .destination-card.today + .destination-card { padding-left:0; border-left:0; }
+    .destination-card.today,.destination-card.vote { grid-column:1/-1; min-height:62px; padding-left:0; }
+    .destination-card.today + .destination-card,
+    .destination-card.vote + .destination-card { padding-left:0; border-left:0; }
+    .destination-card.vote { border-top:1px solid rgba(255,255,255,.25); }
     .destination-icon { display:none; }
     .destination-copy strong { font-size:13px; }
     .destination-copy small { font-size:10px; }
@@ -343,6 +351,13 @@
           <span class="destination-copy">
             <strong>Today in Followville</strong>
             <small id="todaySummary">See the newest homes and visit today&rsquo;s streets.</small>
+          </span>
+          <span class="destination-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="destination-card vote" id="voteBtn" href="/vote">
+          <span class="destination-copy">
+            <strong>Vote for mayor</strong>
+            <small id="voteSummary">Citizens choose who runs Followville.</small>
           </span>
           <span class="destination-arrow" aria-hidden="true">&rarr;</span>
         </a>
