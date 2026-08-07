@@ -169,17 +169,65 @@
   .candidate:disabled{ cursor:default; }
   .candidate:disabled:hover{ padding-left:4px; color:inherit; }
 
-  .standing{ padding:10px 0 9px; border-bottom:1px solid rgba(255,255,255,.13); }
+  .standing{ padding:11px 0 10px; border-bottom:1px solid rgba(255,255,255,.13); }
   .standing:last-child{ border-bottom:0; }
   .standing-top{ display:flex; align-items:baseline; gap:9px; font-size:13.5px; }
   .standing-rank{ flex:0 0 auto; width:19px; opacity:.45; font-size:11.5px; font-weight:700; }
+  .standing.r1 .standing-rank{ color:#f0c46a; opacity:1; }
+  .standing.r2 .standing-rank{ color:#cfd6de; opacity:1; }
+  .standing.r3 .standing-rank{ color:#d8a06a; opacity:1; }
   .standing-handle{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:640; }
-  .standing-votes{ flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; }
-  .standing-pct{ flex:0 0 auto; font-size:11px; opacity:.5; font-variant-numeric:tabular-nums; min-width:38px; text-align:right; }
-  .standing-bar{ height:3px; margin-top:6px; margin-left:28px; background:rgba(255,255,255,.12); }
-  .standing-bar i{ display:block; height:100%; background:var(--accent); transition:width .4s ease; }
+  .standing-handle .nm{ font-weight:400; opacity:.5; }
+  .standing-votes{ flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; opacity:.62; font-size:12.5px; }
+  /* The number people actually came for: promoted from a faded 11px footnote
+     to the largest thing on the row. */
+  .standing-pct{
+    flex:0 0 auto; min-width:62px; text-align:right; font-variant-numeric:tabular-nums;
+    font-size:17px; font-weight:800; letter-spacing:-.4px;
+  }
+  .standing-bar{
+    height:7px; margin-top:7px; margin-left:28px; border-radius:5px;
+    background:rgba(255,255,255,.11); overflow:hidden;
+  }
+  .standing-bar i{
+    display:block; height:100%; border-radius:5px; min-width:2px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-soft));
+    transition:width .55s cubic-bezier(.2,.7,.3,1);
+  }
   .standing.mine .standing-handle{ color:var(--accent-soft); }
-  .standing.leader .standing-bar i{ background:var(--accent-soft); }
+  .standing.leader .standing-bar i{ background:linear-gradient(90deg,#e9a484,#f5cf9a); }
+  .standing.leader .standing-pct{ color:#f5cf9a; }
+
+  /* party chip — the ballot has two party candidates and twenty independents */
+  .party-chip{
+    display:inline-block; margin-left:6px; padding:1px 7px 2px; border-radius:999px;
+    font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    vertical-align:1px; white-space:nowrap;
+    background:rgba(233,164,132,.2); color:#f0b795; border:1px solid rgba(233,164,132,.42);
+  }
+  .candidate .party-chip{ font-size:10px; }
+
+  /* who is winning, called out above the list */
+  .leader-card{
+    padding:15px 17px 16px; margin-bottom:15px; border-radius:3px;
+    background:linear-gradient(135deg, rgba(201,107,74,.22), rgba(201,107,74,.09));
+    border:1px solid rgba(233,164,132,.44);
+  }
+  .leader-card .label{
+    font-size:9.5px; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--accent-soft);
+  }
+  .leader-card .who{
+    margin-top:5px; font-size:20px; font-weight:750; letter-spacing:-.3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .leader-card .big{
+    display:flex; align-items:baseline; gap:9px; margin-top:8px;
+    font-variant-numeric:tabular-nums;
+  }
+  .leader-card .big b{ font-size:38px; font-weight:850; letter-spacing:-1.4px; line-height:1; }
+  .leader-card .big small{ font-size:12px; opacity:.7; }
+  .leader-card .gap{ margin-top:7px; font-size:12px; opacity:.72; }
 
   .tally-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
   .tally-head b{ font-size:27px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
@@ -393,9 +441,61 @@ function renderGate(){
 }
 
 /* ── the live standings, shown to citizens the whole time ── */
-function standingsMarkup(){
-  const candidates = [...(state.candidates || [])].sort(
+/* A candidate's party is carried in the existing `pitch` column behind a
+   `party:` prefix, so the two party candidates could be marked without a
+   migration. Anything without that prefix is a normal written pitch. */
+function partyOf(candidate){
+  const m = /^\s*party:\s*(.+)$/i.exec(candidate.pitch || "");
+  return m ? m[1].trim() : null;
+}
+function pitchOf(candidate){
+  return partyOf(candidate) ? "" : (candidate.pitch || "");
+}
+function partyChip(candidate){
+  const party = partyOf(candidate);
+  return party ? `<span class="party-chip">${esc(party)}</span>` : "";
+}
+/* Whole numbers once a race is big enough for them to mean something, one
+   decimal while a single vote still moves the number several points. */
+function pctText(pct, total){
+  if (!total) return "—";
+  return (total >= 50 || pct === 0 ? pct.toFixed(0) : pct.toFixed(1)) + "%";
+}
+
+function rankedCandidates(){
+  return [...(state.candidates || [])].sort(
     (a, b) => b.votes - a.votes || a.instagram_handle.localeCompare(b.instagram_handle));
+}
+
+function leaderCardMarkup(){
+  const ranked = rankedCandidates();
+  const total = state.total_votes || 0;
+  if (!ranked.length || !total || !ranked[0].votes) return "";
+  const top = ranked[0];
+  const tied = ranked.filter(c => c.votes === top.votes);
+  const pct = (top.votes / total) * 100;
+  const runnerUp = ranked.find(c => c.votes < top.votes);
+  const gap = runnerUp ? top.votes - runnerUp.votes : top.votes;
+  const who = tied.length > 1
+    ? `${tied.length}-way tie`
+    : `@${esc(top.instagram_handle)}${partyChip(top)}`;
+  const gapLine = tied.length > 1
+    ? `${tied.map(c => "@" + esc(c.instagram_handle)).join(", ")}`
+    : runnerUp
+      ? `${gap} ${gap === 1 ? "vote" : "votes"} clear of @${esc(runnerUp.instagram_handle)}`
+      : `the only candidate with votes so far`;
+  return `
+    <div class="leader-card">
+      <div class="label">${tied.length > 1 ? "Currently tied" : "Currently leading"}</div>
+      <div class="who">${who}</div>
+      <div class="big"><b>${pctText(pct, total)}</b>
+        <small>${top.votes} of ${total} ${total === 1 ? "ballot" : "ballots"}</small></div>
+      <div class="gap">${gapLine}</div>
+    </div>`;
+}
+
+function standingsMarkup(){
+  const candidates = rankedCandidates();
   const total = state.total_votes || 0;
   if (!candidates.length) return '<div class="empty">nobody is on the ballot yet</div>';
   const leaderVotes = candidates[0].votes;
@@ -403,13 +503,15 @@ function standingsMarkup(){
     const pct = total ? (candidate.votes / total) * 100 : 0;
     const mine = Number(state.my_vote) === Number(candidate.id);
     const leading = candidate.votes > 0 && candidate.votes === leaderVotes;
+    const name = candidate.display_name
+      ? ` <span class="nm">${esc(candidate.display_name)}</span>` : "";
     return `
-      <div class="standing ${mine ? "mine" : ""} ${leading ? "leader" : ""}">
+      <div class="standing ${mine ? "mine" : ""} ${leading ? "leader" : ""} r${index + 1}">
         <div class="standing-top">
           <span class="standing-rank">${index + 1}</span>
-          <span class="standing-handle">@${esc(candidate.instagram_handle)}${mine ? " ·&nbsp;your vote" : ""}</span>
+          <span class="standing-handle">@${esc(candidate.instagram_handle)}${name}${partyChip(candidate)}${mine ? " ·&nbsp;your vote" : ""}</span>
           <span class="standing-votes">${candidate.votes}</span>
-          <span class="standing-pct">${total ? pct.toFixed(0) + "%" : "—"}</span>
+          <span class="standing-pct">${pctText(pct, total)}</span>
         </div>
         <div class="standing-bar"><i style="width:${total ? pct.toFixed(2) : 0}%"></i></div>
       </div>`;
@@ -426,8 +528,9 @@ function ballotMarkup(){
       <span class="mark" aria-hidden="true"></span>
       <span class="who">
         <span class="handle">@${esc(candidate.instagram_handle)}${
-          candidate.display_name ? ` <span class="name">${esc(candidate.display_name)}</span>` : ""}</span>
-        ${candidate.pitch ? `<span class="pitch">${esc(candidate.pitch)}</span>` : ""}
+          candidate.display_name ? ` <span class="name">${esc(candidate.display_name)}</span>` : ""}${
+          partyChip(candidate)}</span>
+        ${pitchOf(candidate) ? `<span class="pitch">${esc(pitchOf(candidate))}</span>` : ""}
       </span>
     </button>`).join("");
 }
@@ -501,6 +604,7 @@ function renderCitizenView(){
         <b>${state.total_votes}</b>
         <small>${state.total_votes === 1 ? "ballot cast" : "ballots cast"} so far</small>
       </div>
+      ${leaderCardMarkup()}
       <div class="tally-list ${tallyExpanded ? "expanded" : ""}">${standingsMarkup()}</div>
       ${(state.candidates || []).length > 10
         ? `<button type="button" class="tally-more" id="tallyMore">${
