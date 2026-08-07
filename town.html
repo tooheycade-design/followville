@@ -7638,7 +7638,12 @@ function renderAuthForms(mode){
       <label>password</label><input id="fPass" type="password" autocomplete="current-password" />
       <button class="primary" id="doSignin">sign in</button>
       <div class="err" id="authErr"></div>
+      <button class="linkish" id="forgot">forgot your password?</button>
       <button class="linkish" id="swap">new here? create an account</button>`;
+    document.getElementById("forgot").onclick = () => {
+      const typed = (document.getElementById("fEmail")?.value || "").trim();
+      location.href = "reset.html" + (typed ? "?email=" + encodeURIComponent(typed) : "");
+    };
     document.getElementById("doSignin").onclick = async () => {
       const btn = document.getElementById("doSignin"); btn.disabled = true;
       const { error } = await sb.auth.signInWithPassword({

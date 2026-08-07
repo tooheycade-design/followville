@@ -816,7 +816,14 @@
         <input id="fPass" type="password" autocomplete="current-password" />
         <button class="primary" id="doSignin" type="button">Sign in</button>
         <div class="err" id="authErr"></div>
+        <button class="linkish" id="forgot" type="button">Forgot your password?</button>
         <button class="linkish" id="swap" type="button">New here? Create an account</button>`;
+      const forgot = document.getElementById("forgot");
+      if (forgot) forgot.onclick = () => {
+        // Carry whatever they already typed across so they don't retype it.
+        const typed = (document.getElementById("fEmail")?.value || "").trim();
+        location.href = "reset.html" + (typed ? "?email=" + encodeURIComponent(typed) : "");
+      };
       document.getElementById("swap").onclick = () => renderAuthForms(up ? "signin" : "signup");
       const submit = document.getElementById(up ? "doSignup" : "doSignin");
       submit.onclick = up ? doSignup : doSignin;
