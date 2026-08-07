@@ -4708,7 +4708,7 @@ function addLandmarkColliders(root){
   const configured=new Set();
   for(const building of worldBuildings){
     if(!["burjhouse","followmart","firestation","cityhall","constructionzone",
-         "movietheater","raftingstation","weatherstation","salmonproshop"].includes(building.type))continue;
+         "movietheater","raftingstation","weatherstation","salmonproshop","apartmentcomplex"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -4771,6 +4771,7 @@ function addLandmarkColliders(root){
   if(worldBuildings.some(b=>b.type==="raftingstation"))expected.push("raftingstation");
   if(worldBuildings.some(b=>b.type==="weatherstation"))expected.push("weatherstation");
   if(worldBuildings.some(b=>b.type==="salmonproshop"))expected.push("salmonproshop");
+  if(worldBuildings.some(b=>b.type==="apartmentcomplex"))expected.push("apartmentcomplex");
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }

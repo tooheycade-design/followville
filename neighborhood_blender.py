@@ -151,6 +151,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day35store  24-second continuous town/homes/Salmon Pro Shop reveal
 #   --cam day36reveal 16-second held skyline, fast transfer, 13 Heron Reach rises
 #   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
+#   --commons        add Followville Commons, the permanent apartment complex
+#   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -181,7 +183,8 @@ def _cli():
              "--movietheater": "movietheater",
              "--eastwoods": "eastwoods",
              "--raftingstation": "raftingstation",
-             "--salmonproshop": "salmonproshop"}
+             "--salmonproshop": "salmonproshop",
+             "--commons": "apartmentcomplex"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -230,6 +233,16 @@ RAFTING_STATION_Y = -30.0
 # genuinely retained platform rather than a slab resting on a slope.
 SALMON_SHOP_X = -128.0
 SALMON_SHOP_Y = -36.0
+
+# Followville Commons. Sited by scanning the meadow for the largest clear,
+# level ground within reach of the civic district: 60m clear in every
+# direction, and the connector to Meadow Run runs at 1.4-2.1% grade.
+APARTMENTS_X = -28.0
+APARTMENTS_Y = -252.0
+# The site falls 1.43m across the 68x44 podium, so the deck is pinned just
+# clear of the high corner and _add_retaining_skirt beds the rest into the
+# slope. At the low corner it stands 1.49m proud, inside DEFAULT_MAX_PAD_STAND.
+APARTMENTS_PAD_Z = 2.20
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -3321,6 +3334,292 @@ def build_rafting_station(col, seed):
         splash.scale = (1.8 + rng.random(), .22, .10)
 
 
+def _commons_block(col, tag, cx, cy, w, d, floors, base_z,
+                   wall, accent, slate, glass, rail, m):
+    """One residential block: glazed ground floor, balconied storeys above.
+
+    Every applied detail projects clear of the wall it sits on rather than
+    sharing its plane, per the project's visible-surface depth rule.
+    """
+    floor_h = 3.05
+    body_h = floors * floor_h
+    add_box(col, tag + "_body", w, d, body_h, cx, cy, base_z, wall)
+    # A projecting accent bay so the mass reads as two joined slabs. It owns
+    # its faces by 16cm on each side rather than sitting flush.
+    add_box(col, tag + "_bay", w * .30, d + .32, body_h, cx, cy, base_z, accent)
+
+    # ground-floor lobby: recessed glazing behind a projecting canopy
+    for side in (-1, 1):
+        gy = cy + side * (d / 2 + .07)
+        add_box(col, tag + "_lobby_glass", w * .62, .14, 2.62,
+                cx, gy, base_z + .30, glass)
+    add_box(col, tag + "_canopy", w * .78, d + 1.90, .26,
+            cx, cy, base_z + 3.05, accent)
+
+    # floor bands — one per storey, projecting 9cm
+    for level in range(1, floors):
+        add_box(col, tag + "_band_%d" % level, w + .18, d + .18, .16,
+                cx, cy, base_z + level * floor_h - .08, slate)
+
+    # balcony stacks on both long faces
+    for level in range(1, floors):
+        z = base_z + level * floor_h
+        for bay in (-1, 1):
+            bx = cx + bay * w * .29
+            for side in (-1, 1):
+                by = cy + side * (d / 2 + .80)
+                add_box(col, tag + "_balcony_%d" % level, w * .34, 1.60, .18,
+                        bx, by, z, slate)
+                add_box(col, tag + "_bal_rail_%d" % level, w * .34, .10, .92,
+                        bx, by + side * .74, z + .18, rail)
+                for edge in (-1, 1):
+                    add_box(col, tag + "_bal_side_%d" % level, .10, 1.52,
+                            .92, bx + edge * w * .17, by, z + .18, rail)
+                # the window the balcony belongs to, recessed behind the slab
+                add_box(col, tag + "_bal_glass_%d" % level, w * .26, .12, 2.05,
+                        bx, cy + side * (d / 2 + .06), z + .30, glass)
+
+    # end-wall windows, projecting frames
+    for level in range(1, floors):
+        z = base_z + level * floor_h + .55
+        for side in (-1, 1):
+            wx = cx + side * (w / 2 + .07)
+            add_box(col, tag + "_endwin_%d" % level, .14, d * .46, 1.45,
+                    wx, cy, z, glass)
+            add_box(col, tag + "_endtrim_%d" % level, .10, d * .54, 1.65,
+                    wx + side * .05, cy, z - .10, rail)
+
+    # parapet, plant and a stair head so the roof is not a bare lid
+    top = base_z + body_h
+    add_box(col, tag + "_parapet", w + .30, d + .30, .78, cx, cy, top, slate)
+    add_box(col, tag + "_roofdeck", w - .30, d - .30, .12, cx, cy, top - .06, m["cap"])
+    add_box(col, tag + "_stairhead", w * .26, d * .40, 2.35,
+            cx - w * .24, cy, top + .12, accent)
+    for unit in (-1, 1):
+        add_box(col, tag + "_plant", 2.10, 1.70, 1.05,
+                cx + w * .22, cy + unit * d * .22, top + .12, m["metal"])
+    return top + .78
+
+
+def _commons_lounger(col, x, y, z, frame, fabric):
+    add_box(col, "commons_lounger", 1.95, .74, .12, x, y, z + .30, fabric)
+    add_box(col, "commons_lounger_back", .62, .70, .10, x - .62, y, z + .58, fabric)
+    for side in (-1, 1):
+        add_box(col, "commons_lounger_leg", .09, .09, .30,
+                x + side * .78, y, z, frame)
+
+
+def build_apartment_complex(col, seed):
+    """Followville Commons: two six-storey blocks round a courtyard pool.
+
+    The 616-house reserve is finished, so this is where the town's growth goes
+    now. It is deliberately a landmark rather than a house: one record holding
+    many residents, which is exactly why population is read from state["pop"]
+    and never from len(buildings).
+    """
+    rng = random.Random(7300 + seed)
+    m = std_mats()
+    pale = mat("NB_commons_wall", (.90, .86, .78), .88)
+    warm = mat("NB_commons_warm", (.80, .58, .45), .86)
+    accent = mat("NB_commons_accent", (.44, .55, .60), .84)
+    slate = mat("NB_commons_slate", (.31, .35, .40), .86)
+    glass = mat("NB_commons_glass", (.16, .32, .42), .12, .10, 1.0, 0.0, .58)
+    rail = mat("NB_commons_rail", (.94, .93, .90), .58)
+    deck = mat("NB_commons_deck", (.86, .82, .72), .92)
+    pave = mat("NB_commons_pave", (.72, .71, .68), .94)
+    water = mat("NB_commons_water", (.16, .58, .74), .07, .04, .92, .30, .74)
+    lawn = mat("NB_commons_lawn", (.40, .63, .32), 1.0)
+    hedge = mat("NB_commons_hedge", (.26, .46, .26), 1.0)
+    brick = mat("NB_commons_brick", (.62, .44, .36), .92)
+
+    z = APARTMENTS_PAD_Z
+    HX, HY = 34.0, 22.0
+
+    # ── podium ───────────────────────────────────────────────────────────
+    add_box(col, "commons_pad", HX * 2, HY * 2, .18, 0, 0, z - .18, pave)
+    _add_retaining_skirt(col, "commons_skirt", HX, HY, z - .18,
+                         (APARTMENTS_X, APARTMENTS_Y), brick)
+    # entrance apron: broad steps down to the connector road on the north side
+    for step in range(4):
+        add_box(col, "commons_step_%d" % step, 15.0 - step * .7, 1.05, .22,
+                -6.0, HY + .55 + step * 1.05, z - .20 - step * .30, pave)
+
+    # ── the two blocks, set along the north edge facing the road ─────────
+    _commons_block(col, "commons_a", -18.5, 9.0, 25.0, 13.5, 6, z,
+                   pale, accent, slate, glass, rail, m)
+    _commons_block(col, "commons_b", 18.5, 9.0, 25.0, 13.5, 6, z,
+                   warm, accent, slate, glass, rail, m)
+
+    # ── courtyard, pool, deck ────────────────────────────────────────────
+    # The deck is a RING, not a slab. A slab across the courtyard roofs the
+    # pool over completely -- from above there is simply no pool, which is
+    # exactly what the first cut of this did. The opening is 17.4 x 8.4, the
+    # deck frames it out to 30 x 15, and the lawn sits outside that again, so
+    # no two surfaces in the courtyard share a plane or overlap.
+    OPEN_X, OPEN_Y = 8.7, 4.2
+    DECK_X, DECK_Y = 15.0, 7.5
+    for side in (-1, 1):
+        add_box(col, "commons_deck_x", DECK_X * 2, DECK_Y - OPEN_Y, .10,
+                0, -7.0 + side * (OPEN_Y + (DECK_Y - OPEN_Y) / 2), z + .02, deck)
+        add_box(col, "commons_deck_y", DECK_X - OPEN_X, OPEN_Y * 2, .10,
+                side * (OPEN_X + (DECK_X - OPEN_X) / 2), -7.0, z + .02, deck)
+        add_box(col, "commons_lawn_side", 8.0, 30.0, .06,
+                side * 19.0, -7.0, z, lawn)
+    add_box(col, "commons_lawn_south", 44.0, 6.0, .06, 0, -17.6, z, lawn)
+
+    # Basin recessed 22cm under the deck surface, water 6cm below its rim, so
+    # deck / rim / water are three distinct elevations.
+    add_box(col, "commons_pool_basin", OPEN_X * 2, OPEN_Y * 2, 1.02,
+            0, -7.0, z - 1.12, accent)
+    add_box(col, "commons_pool_water", OPEN_X * 2 - .4, OPEN_Y * 2 - .4, .52,
+            0, -7.0, z - .68, water)
+    for lane in (-1, 0, 1):
+        add_box(col, "commons_pool_lane", OPEN_X * 2 - 1.8, .22, .05,
+                0, -7.0 + lane * 2.5, z - 1.08, rail)
+    # coping stands proud of the deck, embedded 2cm so no face is coplanar
+    for side in (-1, 1):
+        add_box(col, "commons_coping_x", OPEN_X * 2 + 1.4, .70, .20,
+                0, -7.0 + side * (OPEN_Y + .35), z + .10, rail)
+        add_box(col, "commons_coping_y", .70, OPEN_Y * 2, .20,
+                side * (OPEN_X + .35), -7.0, z + .10, rail)
+
+    for index in range(6):
+        side = -1 if index < 3 else 1
+        _commons_lounger(col, -6.5 + (index % 3) * 6.5, -7.0 + side * 6.3,
+                         z + .12, rail, [warm, accent, pale][index % 3])
+    for ux in (-9.0, 9.0):
+        add_ngon_cone(col, "commons_umbrella_pole", .09, .09, 2.45, 8,
+                      ux, -13.4, z + .12, rail)
+        add_ngon_cone(col, "commons_umbrella", 2.15, .12, .70, 8,
+                      ux, -13.4, z + 2.35, warm)
+
+    # pool house closing the south side of the courtyard
+    add_box(col, "commons_poolhouse", 9.5, 5.0, 3.30, 0, -17.6, z, pale)
+    add_prism_roof(col, "commons_poolhouse_roof", 10.3, 5.8, 1.25,
+                   0, -17.6, z + 3.30, slate)
+    add_box(col, "commons_poolhouse_door", 1.7, .16, 2.20,
+            0, -17.6 + 2.58, z + .04, glass)
+
+    # ── car park along the north edge, between the blocks and the road ───
+    add_box(col, "commons_lot", 30.0, 9.0, .08, 0, 18.0, z + .01, m["road"])
+    for slot in range(9):
+        add_box(col, "commons_lot_line", .16, 8.2, .03,
+                -13.5 + slot * 3.4, 18.0, z + .09, m["dash"])
+    for index in range(5):
+        cx = -11.5 + index * 5.6
+        body = [warm, accent, pale, slate, brick][index % 5]
+        add_box(col, "commons_car", 4.05, 1.85, 1.02, cx, 18.2, z + .22, body)
+        add_box(col, "commons_car_cabin", 2.20, 1.70, .78, cx - .18, 18.2,
+                z + 1.14, glass)
+        for wx in (-1.35, 1.35):
+            for wy in (-.92, .92):
+                add_ngon_cone(col, "commons_car_wheel", .34, .34, .24, 10,
+                              cx + wx, 18.2 + wy, z + .06, slate, rot=math.pi / 2)
+
+    # ── planting and lighting ────────────────────────────────────────────
+    # Kept clear of the car park (y 13.5..22.5) and of the hedges, so nothing
+    # grows through anything else.
+    for hx in (-32.4, 32.4):
+        add_box(col, "commons_hedge", 1.6, 30.0, 1.05, hx, -6.0, z, hedge)
+    tree_spots = [(-26.0, -20.5), (-13.0, -20.5), (0.0, -20.5),
+                  (13.0, -20.5), (26.0, -20.5),
+                  (-28.5, 2.0), (28.5, 2.0), (-28.5, -12.0), (28.5, -12.0)]
+    for tx, ty in tree_spots:
+        add_ngon_cone(col, "commons_trunk", .28, .24, 1.70, 7, tx, ty, z, m["trunk"])
+        add_ngon_cone(col, "commons_tree", 2.30, .30, 4.30, 8, tx, ty, z + 1.60,
+                      hedge)
+    for index in range(6):
+        lx = -27.0 + index * 11.0
+        add_ngon_cone(col, "commons_lamp_pole", .13, .10, 4.60, 6,
+                      lx, 13.6, z, slate)
+        add_box(col, "commons_lamp", .55, .40, .22, lx, 13.6, z + 4.60, m["bulb"])
+
+    # ── approach road down from Meadow Run ───────────────────────────────
+    # Control points every 3m: _add_road_strip subdivides internally, but
+    # walk_surface_manifest uses the points as given, so coarse ones would
+    # drift the walk surface off the visible road.
+    spine = [(-19.0, 57.0), (-16.5, 47.0), (-13.0, 36.0), (-9.5, 27.0),
+             (-6.0, 22.5)]
+    dense = []
+    for (ax, ay), (bx, by) in zip(spine, spine[1:]):
+        steps = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / 3.0)))
+        for step in range(steps):
+            t = step / steps
+            dense.append((ax + (bx - ax) * t, ay + (by - ay) * t))
+    dense.append(spine[-1])
+    _add_road_strip(col, "commons_approach", dense, m["road"],
+                    terrain_conform=True,
+                    terrain_origin=(APARTMENTS_X, APARTMENTS_Y))
+
+    # ── the sign ─────────────────────────────────────────────────────────
+    add_box(col, "commons_sign_base", 6.4, 1.0, .95, -6.0, HY - 1.6, z, brick)
+    add_box(col, "commons_sign_panel", 6.0, .30, 1.35, -6.0, HY - 1.6, z + .95,
+            pale)
+    add_text(col, "commons_sign_text", "FOLLOWVILLE COMMONS", .52, .05,
+             -6.0, HY - 1.82, z + 1.52, slate)
+
+
+def build_day37_statue(world_col, buildings, frame_end):
+    """Render-only: the next mayor's plinth, in front of City Hall.
+
+    Nothing here is written to world_state.json and export_web strips every
+    object tagged nb_render_only, so the town on the website is unchanged.
+    The figure is deliberately faceless with a question mark above it: the
+    poll does not close until Sunday.
+    """
+    hall = next((b for b in buildings if b.get("type") == "cityhall"), None)
+    if not hall:
+        raise RuntimeError("Day 37 statue requires City Hall")
+    hx, hy = build_pos(hall)
+    # In front of the hall means south of it, on its approach.
+    sx, sy = hx + 6.0, hy - 34.0
+    ground = terrain_height(sx, sy)
+
+    stone = mat("NB_day37_stone", (.74, .71, .64), .93)
+    dark = mat("NB_day37_plinth", (.34, .33, .31), .90)
+    bronze = mat("NB_day37_bronze", (.44, .33, .20), .48, .62)
+    gold = mat("NB_day37_gold", (.95, .74, .26), .32, .70)
+
+    # Same idiom as the Day 24 kickoff and the Day 32 semi: a root Empty at
+    # the site with every part built in LOCAL coordinates and simply parented.
+    # animate_rise then scales the root, so the whole thing grows out of the
+    # ground together instead of each piece swelling where it stands.
+    root = bpy.data.objects.new("Day37_MayorPlinth_RenderOnly", None)
+    root.location = (sx, sy, ground)
+    root["nb_rest_scale"] = (1.0, 1.0, 1.0)
+    root["nb_render_only"] = True
+    world_col.objects.link(root)
+
+    def attach(obj):
+        obj.parent = root
+        obj["nb_render_only"] = True
+        return obj
+
+    attach(add_box(world_col, "day37_plinth_base", 5.0, 5.0, .55, 0, 0, 0, dark))
+    attach(add_box(world_col, "day37_plinth", 3.5, 3.5, 3.10, 0, 0, .55, stone))
+    attach(add_box(world_col, "day37_plinth_cap", 4.0, 4.0, .30, 0, 0, 3.65, dark))
+    base = 3.95
+    for side in (-1, 1):
+        attach(add_box(world_col, "day37_leg", .42, .46, 1.70,
+                       side * .38, 0, base, bronze))
+    attach(add_box(world_col, "day37_torso", 1.55, .80, 1.85, 0, 0, base + 1.70, bronze))
+    attach(add_box(world_col, "day37_shoulders", 1.95, .90, .38,
+                   0, 0, base + 3.30, bronze))
+    for side in (-1, 1):
+        attach(add_box(world_col, "day37_arm", .38, .40, 1.60,
+                       side * 1.02, 0, base + 1.85, bronze))
+    attach(add_ngon_cone(world_col, "day37_neck", .26, .26, .28, 8,
+                         0, 0, base + 3.68, bronze))
+    attach(add_uv_sphere(world_col, "day37_head", .52, 0, 0, base + 4.48, bronze))
+    # The question mark faces south, which is the side the drone arrives from.
+    attach(add_text(world_col, "day37_question", "?", 2.60, .22,
+                    0, -.62, base + 6.35, gold))
+    attach(add_box(world_col, "day37_placard", 2.60, .22, .85, 0, -1.80, 2.30, dark))
+    attach(add_text(world_col, "day37_placard_text", "MAYOR OF FOLLOWVILLE",
+                    .26, .04, 0, -1.94, 2.72, gold))
+    return root
+
+
 def build_salmon_pro_shop(col, seed):
     """Salmon Pro Shop: a timber-and-fieldstone outdoors superstore.
 
@@ -4597,6 +4896,7 @@ ASSET_VARIANTS = {
     "fishingpond": [("AST_fishingpond_0", lambda c: build_fishing_pond(c, 3200))],
     "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
     "salmonproshop": [("AST_salmonproshop_0", lambda c: build_salmon_pro_shop(c, 3800))],
+    "apartmentcomplex": [("AST_apartmentcomplex_0", lambda c: build_apartment_complex(c, 7300))],
     "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
@@ -4646,6 +4946,8 @@ def web_chunk_id(b):
         return "rafting-station"
     if b.get("type") == "salmonproshop":
         return "salmon-pro-shop"
+    if b.get("type") == "apartmentcomplex":
+        return "apartment-complex"
     if b.get("type") == "weatherstation":
         return "weather-station"
     if b.get("type") == "constructionzone":
@@ -4678,7 +4980,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
-        "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1}
+        "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
+        "apartmentcomplex": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -4688,7 +4991,7 @@ def footprint(b):
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
     if (b.get("plan_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
-                          "raftingstation", "forestreserve", "salmonproshop")):
+                          "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -8596,6 +8899,74 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day37reveal":
+        # Day 37, 24 seconds:
+        #   0-6s     the Day 36 downtown framing, but orbiting -- a slow
+        #            22-degree arc on a fixed circumference rather than a
+        #            locked-off hold. Same six seconds before the town moves.
+        #   6-8.9s   one fast run south to Followville Commons.
+        #   8.9-15.7s the complex rises under a descending push, framed from
+        #            the south so the pool reads in front of both blocks.
+        #   15.7-24s across to City Hall, low, for the mayor's plinth.
+        commons = next((b for b in buildings
+                        if b.get("type") == "apartmentcomplex"), None)
+        hall = next((b for b in buildings if b.get("type") == "cityhall"), None)
+        cx, cy = build_pos(commons) if commons else (APARTMENTS_X, APARTMENTS_Y)
+        hx, hy = build_pos(hall) if hall else (CITY_HALL_X, CITY_HALL_Y)
+        stx, sty = hx + 6.0, hy - 34.0
+
+        # The orbit is expressed as a radius and elevation about the same aim
+        # point Day 36 used, so frame 1 is that shot exactly and the move can
+        # only ever be a rotation about it.
+        skyline_on = (25.0, 6.0, 42.0)
+        ORBIT_R, ORBIT_H = 150.0, 76.4
+
+        def orbit(degrees):
+            a = math.radians(degrees)
+            return (skyline_on[0] + ORBIT_R * math.cos(a),
+                    skyline_on[1] + ORBIT_R * math.sin(a),
+                    skyline_on[2] + ORBIT_H)
+
+        aim = bpy.data.objects.new("Day37RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day37RevealCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day37RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        beats = (
+            (1,   orbit(-63.1), skyline_on),
+            (62,  orbit(-56.0), skyline_on),
+            (124, orbit(-48.5), skyline_on),
+            (180, orbit(-41.0), skyline_on),
+            # 6-8.9s: climb out and run south to the Commons.
+            (222, (40.0, -190.0, 168.0), (-10.0, -250.0, 26.0)),
+            (268, (cx, cy - 96.0, 60.0), (cx, cy, 12.0)),
+            # 8.9-15.7s: hold the whole complex, descending slowly as it rises.
+            (330, (cx, cy - 90.0, 54.0), (cx, cy - 1.0, 11.5)),
+            (470, (cx, cy - 74.0, 43.0), (cx, cy - 3.0, 10.0)),
+            # 15.7-24s: across to City Hall and down onto the plinth.
+            (545, (stx + 5.0, sty - 40.0, 30.0), (stx, sty, 9.5)),
+            (640, (stx + 3.0, sty - 28.0, 16.0), (stx, sty, 7.8)),
+            (frame_end, (stx + 2.0, sty - 24.0, 13.2), (stx, sty, 7.2)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day36reveal":
         # Day 36, 16 seconds, three beats and one unbroken move:
         #   0-6s    locked off on the downtown skyline, ~42 degrees above the
@@ -10187,6 +10558,19 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(salmon_pro_shop)
             new_batch.append(salmon_pro_shop)
+        if cfg.get("apartmentcomplex"):
+            if any(b["type"] == "apartmentcomplex" for b in state["buildings"]):
+                raise RuntimeError("Followville Commons already exists")
+            commons = {
+                "type": "apartmentcomplex", "gx": 0, "gy": 0,
+                "px": APARTMENTS_X, "py": APARTMENTS_Y, "pz": 0.0,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "name": "Followville Commons",
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(commons)
+            new_batch.append(commons)
         if cfg.get("constructionzone"):
             existing_zone = [b for b in state["buildings"]
                              if b["type"] == "constructionzone"]
@@ -10282,7 +10666,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day36reveal":
+    if cfg.get("cam") == "day37reveal":
+        frame_end = max(frame_end, FPS * 24)
+    elif cfg.get("cam") == "day36reveal":
         frame_end = max(frame_end, FPS * 16)
     elif cfg.get("cam") == "day35store":
         frame_end = max(frame_end, FPS * 25)
@@ -10325,7 +10711,20 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day36reveal":
+    if cfg.get("cam") == "day37reveal":
+        # The three Heron Reach cabins that finish the 616-house plan are 640m
+        # from anything this camera looks at, so they go up early and unseen.
+        # The Commons is the only thing that rises on screen.
+        commons_roots = [e for e in rise if e.name.startswith("apartmentcomplex_d")]
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for e in home_roots:
+            animate_rise(e, 150, dur=30)
+        for e in commons_roots:
+            animate_rise(e, 286, dur=76)          # settles at 362, well held
+        for e in rise:
+            if e not in commons_roots and e not in home_roots:
+                animate_rise(e, 286, dur=60)
+    elif cfg.get("cam") == "day36reveal":
         # Nothing may rise until the drone has arrived at frame 258, and the
         # last home must finish with time left to look at the finished street.
         home_roots = [e for e in rise if e.name.startswith("house_d")]
@@ -10594,6 +10993,9 @@ def main(cfg=None):
         # Tightened the same way.
         hero = (hx, hy, max(40.0, span * 1.3 + 42))
     build_stage(world_col, state["buildings"], frame_end, m, tod, hero, cfg.get("cam"))
+    if cfg.get("cam") == "day37reveal":
+        animate_rise(build_day37_statue(world_col, state["buildings"], frame_end),
+                     566, dur=80)
     if cfg.get("cam") == "day34fire":
         build_day34_fire_response(world_col, state["buildings"], frame_end)
     if cfg.get("cam") == "day33storm":

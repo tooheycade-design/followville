@@ -295,6 +295,7 @@ LANDMARK_FOOTPRINTS = {
     "raftingstation":   (-9.0,   33.0,   -8.0,   12.0, True),
     # Turned a quarter turn to face the city, so the pad is 56 wide by 50 deep.
     "salmonproshop":   (-28.0,   28.0,  -25.0,   25.0, True),
+    "apartmentcomplex": (-34.0,  34.0,  -22.0,   22.0, True),
     "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
 }
 
@@ -319,6 +320,8 @@ RETAINED_PADS = {
     "rafting-forecourt": "retaining skirt on its three downhill edges",
     "fishing-dock": "steel piles in the pond",
     "weather-station-campus": "continuous concrete retaining wall",
+    "apartment-complex": "brick retaining skirt round the whole podium, "
+                         "_add_retaining_skirt()",
 }
 
 # How proud each deck is allowed to stand at its most exposed edge, in metres.
@@ -375,6 +378,7 @@ LANDMARK_APPROACHES = {
     "civicsquare": {"City Hall approach"},
     "raftingstation": {"rafting outpost lane"},
     "salmonproshop": {"Salmon Pro Shop approach"},
+    "apartmentcomplex": {"Followville Commons approach"},
     "weatherstation": {"First Alert Weather access"},
 }
 
