@@ -3,7 +3,7 @@
     "bytes": 1985532,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "8a85bb3558477cc1851108d87be714ba76033c2aea23eb561b4d29f45e9b5d97"
+    "sha256": "d9ba9332940ecfc26986e6611af1c65fba71b1fa53898f94609a54771dfeaca8"
   },
   "chunks": [
     {
@@ -604,17 +604,17 @@
     },
     {
       "asset": {
-        "bytes": 996724,
+        "bytes": 983516,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "ed80b26f7518f1436a1cac71bc8bc0e46db315fb29e58ff0efa66da9da70f064"
+        "sha256": "60ebc365ae5ead9fe7ef8c997b5660093eed2bf66740496cbb17baca935cc24b"
       },
       "bounds": {
         "center": [
-          1.773,
-          10.227
+          -0.227,
+          14.591
         ],
-        "radius": 261.599
+        "radius": 307.717
       },
       "building_ids": [
         2,
@@ -2352,9 +2352,9 @@
     }
   ],
   "fallback": {
-    "bytes": 28102280,
+    "bytes": 28080988,
     "file": "town.glb",
-    "sha256": "bc5e8bb5290da54f598a929ae6c0631073e131390bc3294bd98f85745b448f13"
+    "sha256": "2cdc790656fb09e2699362e9d6b3c07ba9d214b0138b52ac1583cfea8a4a891a"
   },
   "state": {
     "building_count": 824,
