@@ -237,12 +237,15 @@ SALMON_SHOP_Y = -36.0
 # Followville Commons. Sited by scanning the meadow for the largest clear,
 # level ground within reach of the civic district: 60m clear in every
 # direction, and the connector to Meadow Run runs at 1.4-2.1% grade.
-APARTMENTS_X = -28.0
-APARTMENTS_Y = -252.0
-# The site falls 1.43m across the 68x44 podium, so the deck is pinned just
-# clear of the high corner and _add_retaining_skirt beds the rest into the
-# slope. At the low corner it stands 1.49m proud, inside DEFAULT_MAX_PAD_STAND.
-APARTMENTS_PAD_Z = 2.20
+APARTMENTS_X = -50.0
+APARTMENTS_Y = -300.0
+# Re-sited 2026-08-07. The first site was chosen against stored coordinates
+# and landed 0.9m from house seed 485 once district render offsets were
+# applied -- the complex grew through a claimed house. This one was scanned
+# with check_world_geometry's own transform and clears every building by 30m.
+# Terrain falls 1.41m across the podium; the deck sits just over the high
+# corner and stands 1.47m proud at the low one, inside DEFAULT_MAX_PAD_STAND.
+APARTMENTS_PAD_Z = 1.84
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -3410,14 +3413,17 @@ def _commons_lounger(col, x, y, z, frame, fabric):
 
 
 def build_apartment_complex(col, seed):
-    """Followville Commons: two six-storey blocks round a courtyard pool.
+    """Followville Commons: two six-storey blocks behind a courtyard pool.
 
-    The 616-house reserve is finished, so this is where the town's growth goes
-    now. It is deliberately a landmark rather than a house: one record holding
-    many residents, which is exactly why population is read from state["pop"]
-    and never from len(buildings).
+    Turned to face the city. The blocks sit along the SOUTH edge looking
+    north, so the drone arriving from downtown meets the lawn, then the pool,
+    then the facades -- not the backs of two slabs. The car park is pushed to
+    the west end for the same reason: the north frontage stays clear.
+
+    The 616-house reserve is finished, so this is where growth goes now. It is
+    one record holding many residents, which is exactly why population is read
+    from state["pop"] and never from len(buildings).
     """
-    rng = random.Random(7300 + seed)
     m = std_mats()
     pale = mat("NB_commons_wall", (.90, .86, .78), .88)
     warm = mat("NB_commons_warm", (.80, .58, .45), .86)
@@ -3439,107 +3445,78 @@ def build_apartment_complex(col, seed):
     add_box(col, "commons_pad", HX * 2, HY * 2, .18, 0, 0, z - .18, pave)
     _add_retaining_skirt(col, "commons_skirt", HX, HY, z - .18,
                          (APARTMENTS_X, APARTMENTS_Y), brick)
-    # entrance apron: broad steps down to the connector road on the north side
-    for step in range(4):
-        add_box(col, "commons_step_%d" % step, 15.0 - step * .7, 1.05, .22,
-                -6.0, HY + .55 + step * 1.05, z - .20 - step * .30, pave)
 
-    # ── the two blocks, set along the north edge facing the road ─────────
-    _commons_block(col, "commons_a", -18.5, 9.0, 25.0, 13.5, 6, z,
+    # ── the two blocks, along the SOUTH edge, facing the city ────────────
+    _commons_block(col, "commons_a", -18.5, -11.5, 25.0, 13.5, 6, z,
                    pale, accent, slate, glass, rail, m)
-    _commons_block(col, "commons_b", 18.5, 9.0, 25.0, 13.5, 6, z,
+    _commons_block(col, "commons_b", 18.5, -11.5, 25.0, 13.5, 6, z,
                    warm, accent, slate, glass, rail, m)
 
-    # ── courtyard, pool, deck ────────────────────────────────────────────
-    # The deck is a RING, not a slab. A slab across the courtyard roofs the
-    # pool over completely -- from above there is simply no pool, which is
-    # exactly what the first cut of this did. The opening is 17.4 x 8.4, the
-    # deck frames it out to 30 x 15, and the lawn sits outside that again, so
-    # no two surfaces in the courtyard share a plane or overlap.
+    # ── courtyard and pool, between the blocks and the city ──────────────
+    # The deck is a RING. A slab across the courtyard roofs the pool over and
+    # from above there is simply no pool.
+    POOL_Y = 5.0
     OPEN_X, OPEN_Y = 8.7, 4.2
     DECK_X, DECK_Y = 15.0, 7.5
     for side in (-1, 1):
         add_box(col, "commons_deck_x", DECK_X * 2, DECK_Y - OPEN_Y, .10,
-                0, -7.0 + side * (OPEN_Y + (DECK_Y - OPEN_Y) / 2), z + .02, deck)
+                0, POOL_Y + side * (OPEN_Y + (DECK_Y - OPEN_Y) / 2), z + .02, deck)
         add_box(col, "commons_deck_y", DECK_X - OPEN_X, OPEN_Y * 2, .10,
-                side * (OPEN_X + (DECK_X - OPEN_X) / 2), -7.0, z + .02, deck)
-        add_box(col, "commons_lawn_side", 8.0, 30.0, .06,
-                side * 19.0, -7.0, z, lawn)
-    add_box(col, "commons_lawn_south", 44.0, 6.0, .06, 0, -17.6, z, lawn)
+                side * (OPEN_X + (DECK_X - OPEN_X) / 2), POOL_Y, z + .02, deck)
+    add_box(col, "commons_lawn_north", 50.0, 7.0, .06, 2.0, 17.5, z, lawn)
+    add_box(col, "commons_lawn_mid", 14.0, 15.0, .06, -24.0, -6.0, z, lawn)
 
-    # Basin recessed 22cm under the deck surface, water 6cm below its rim, so
-    # deck / rim / water are three distinct elevations.
     add_box(col, "commons_pool_basin", OPEN_X * 2, OPEN_Y * 2, 1.02,
-            0, -7.0, z - 1.12, accent)
+            0, POOL_Y, z - 1.12, accent)
     add_box(col, "commons_pool_water", OPEN_X * 2 - .4, OPEN_Y * 2 - .4, .52,
-            0, -7.0, z - .68, water)
+            0, POOL_Y, z - .68, water)
     for lane in (-1, 0, 1):
         add_box(col, "commons_pool_lane", OPEN_X * 2 - 1.8, .22, .05,
-                0, -7.0 + lane * 2.5, z - 1.08, rail)
-    # coping stands proud of the deck, embedded 2cm so no face is coplanar
+                0, POOL_Y + lane * 2.5, z - 1.08, rail)
     for side in (-1, 1):
         add_box(col, "commons_coping_x", OPEN_X * 2 + 1.4, .70, .20,
-                0, -7.0 + side * (OPEN_Y + .35), z + .10, rail)
+                0, POOL_Y + side * (OPEN_Y + .35), z + .10, rail)
         add_box(col, "commons_coping_y", .70, OPEN_Y * 2, .20,
-                side * (OPEN_X + .35), -7.0, z + .10, rail)
+                side * (OPEN_X + .35), POOL_Y, z + .10, rail)
 
     for index in range(6):
         side = -1 if index < 3 else 1
-        _commons_lounger(col, -6.5 + (index % 3) * 6.5, -7.0 + side * 6.3,
+        _commons_lounger(col, -6.5 + (index % 3) * 6.5, POOL_Y + side * 6.3,
                          z + .12, rail, [warm, accent, pale][index % 3])
-    for ux in (-9.0, 9.0):
+    for ux in (-12.6, 12.6):
         add_ngon_cone(col, "commons_umbrella_pole", .09, .09, 2.45, 8,
-                      ux, -13.4, z + .12, rail)
+                      ux, POOL_Y, z + .12, rail)
         add_ngon_cone(col, "commons_umbrella", 2.15, .12, .70, 8,
-                      ux, -13.4, z + 2.35, warm)
+                      ux, POOL_Y, z + 2.35, warm)
 
-    # pool house closing the south side of the courtyard
-    add_box(col, "commons_poolhouse", 9.5, 5.0, 3.30, 0, -17.6, z, pale)
+    # pool house closes the east end of the courtyard
+    add_box(col, "commons_poolhouse", 9.5, 5.0, 3.30, 26.0, 6.0, z, pale)
     add_prism_roof(col, "commons_poolhouse_roof", 10.3, 5.8, 1.25,
-                   0, -17.6, z + 3.30, slate)
-    add_box(col, "commons_poolhouse_door", 1.7, .16, 2.20,
-            0, -17.6 + 2.58, z + .04, glass)
+                   26.0, 6.0, z + 3.30, slate)
+    add_box(col, "commons_poolhouse_door", 1.7, .16, 2.20, 26.0, 3.42, z + .04, glass)
 
-    # ── car park along the north edge, between the blocks and the road ───
-    add_box(col, "commons_lot", 30.0, 9.0, .08, 0, 18.0, z + .01, m["road"])
-    for slot in range(9):
-        add_box(col, "commons_lot_line", .16, 8.2, .03,
-                -13.5 + slot * 3.4, 18.0, z + .09, m["dash"])
-    for index in range(5):
-        cx = -11.5 + index * 5.6
-        body = [warm, accent, pale, slate, brick][index % 5]
-        add_box(col, "commons_car", 4.05, 1.85, 1.02, cx, 18.2, z + .22, body)
-        add_box(col, "commons_car_cabin", 2.20, 1.70, .78, cx - .18, 18.2,
+    # ── car park, west end, off the city frontage ────────────────────────
+    add_box(col, "commons_lot", 14.0, 17.0, .08, -26.0, 11.0, z + .01, m["road"])
+    for slot in range(5):
+        add_box(col, "commons_lot_line", 13.2, .16, .03,
+                -26.0, 4.0 + slot * 3.4, z + .09, m["dash"])
+    for index in range(4):
+        cy = 5.6 + index * 3.4
+        body = [warm, accent, pale, slate][index % 4]
+        add_box(col, "commons_car", 1.85, 4.05, 1.02, -26.0, cy, z + .22, body)
+        add_box(col, "commons_car_cabin", 1.70, 2.20, .78, -26.0, cy + .18,
                 z + 1.14, glass)
-        for wx in (-1.35, 1.35):
-            for wy in (-.92, .92):
+        for wx in (-.92, .92):
+            for wy in (-1.35, 1.35):
                 add_ngon_cone(col, "commons_car_wheel", .34, .34, .24, 10,
-                              cx + wx, 18.2 + wy, z + .06, slate, rot=math.pi / 2)
+                              -26.0 + wx, cy + wy, z + .06, slate, rot=math.pi / 2)
 
-    # ── planting and lighting ────────────────────────────────────────────
-    # Kept clear of the car park (y 13.5..22.5) and of the hedges, so nothing
-    # grows through anything else.
-    for hx in (-32.4, 32.4):
-        add_box(col, "commons_hedge", 1.6, 30.0, 1.05, hx, -6.0, z, hedge)
-    tree_spots = [(-26.0, -20.5), (-13.0, -20.5), (0.0, -20.5),
-                  (13.0, -20.5), (26.0, -20.5),
-                  (-28.5, 2.0), (28.5, 2.0), (-28.5, -12.0), (28.5, -12.0)]
-    for tx, ty in tree_spots:
-        add_ngon_cone(col, "commons_trunk", .28, .24, 1.70, 7, tx, ty, z, m["trunk"])
-        add_ngon_cone(col, "commons_tree", 2.30, .30, 4.30, 8, tx, ty, z + 1.60,
-                      hedge)
-    for index in range(6):
-        lx = -27.0 + index * 11.0
-        add_ngon_cone(col, "commons_lamp_pole", .13, .10, 4.60, 6,
-                      lx, 13.6, z, slate)
-        add_box(col, "commons_lamp", .55, .40, .22, lx, 13.6, z + 4.60, m["bulb"])
-
-    # ── approach road down from Meadow Run ───────────────────────────────
+    # ── approach road, in from the north-west, to the car park ───────────
     # Control points every 3m: _add_road_strip subdivides internally, but
     # walk_surface_manifest uses the points as given, so coarse ones would
     # drift the walk surface off the visible road.
-    spine = [(-19.0, 57.0), (-16.5, 47.0), (-13.0, 36.0), (-9.5, 27.0),
-             (-6.0, 22.5)]
+    spine = [(-45.0, 57.0), (-40.0, 46.0), (-34.0, 36.0), (-29.0, 28.0),
+             (-26.0, 20.0)]
     dense = []
     for (ax, ay), (bx, by) in zip(spine, spine[1:]):
         steps = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / 3.0)))
@@ -3550,29 +3527,50 @@ def build_apartment_complex(col, seed):
     _add_road_strip(col, "commons_approach", dense, m["road"],
                     terrain_conform=True,
                     terrain_origin=(APARTMENTS_X, APARTMENTS_Y))
+    # apron stepping the road up onto the podium
+    for step in range(4):
+        add_box(col, "commons_step_%d" % step, 11.0 - step * .6, 1.05, .22,
+                -26.0, HY + .55 + step * 1.05, z - .20 - step * .30, pave)
 
-    # ── the sign ─────────────────────────────────────────────────────────
-    add_box(col, "commons_sign_base", 6.4, 1.0, .95, -6.0, HY - 1.6, z, brick)
-    add_box(col, "commons_sign_panel", 6.0, .30, 1.35, -6.0, HY - 1.6, z + .95,
-            pale)
+    # ── planting and lighting, clear of the lot and the deck ─────────────
+    for hx in (-32.6, 32.6):
+        add_box(col, "commons_hedge", 1.6, 26.0, 1.05, hx, -6.0, z, hedge)
+    tree_spots = [(-14.0, 19.5), (-4.0, 19.5), (6.0, 19.5), (16.0, 19.5),
+                  (26.0, 19.5), (-31.0, -18.0), (31.0, -18.0), (0.0, -20.5)]
+    for tx, ty in tree_spots:
+        add_ngon_cone(col, "commons_trunk", .28, .24, 1.70, 7, tx, ty, z, m["trunk"])
+        add_ngon_cone(col, "commons_tree", 2.30, .30, 4.30, 8, tx, ty, z + 1.60,
+                      hedge)
+    for index in range(5):
+        lx = -14.0 + index * 10.0
+        add_ngon_cone(col, "commons_lamp_pole", .13, .10, 4.60, 6,
+                      lx, 14.5, z, slate)
+        add_box(col, "commons_lamp", .55, .40, .22, lx, 14.5, z + 4.60, m["bulb"])
+
+    # ── the sign, on the city side where it can be read ──────────────────
+    add_box(col, "commons_sign_base", 6.4, 1.0, .95, 6.0, HY - 2.4, z, brick)
+    add_box(col, "commons_sign_panel", 6.0, .30, 1.35, 6.0, HY - 2.4, z + .95, pale)
     add_text(col, "commons_sign_text", "FOLLOWVILLE COMMONS", .52, .05,
-             -6.0, HY - 1.82, z + 1.52, slate)
+             6.0, HY - 2.62, z + 1.52, slate)
 
 
 def build_day37_statue(world_col, buildings, frame_end):
-    """Render-only: the next mayor's plinth, in front of City Hall.
+    """Render-only: the next mayor's plinth, in FRONT of City Hall.
 
-    Nothing here is written to world_state.json and export_web strips every
-    object tagged nb_render_only, so the town on the website is unchanged.
-    The figure is deliberately faceless with a question mark above it: the
-    poll does not close until Sunday.
+    CITY_HALL_ROAD_Y is -93 and the hall stands at -134, so the hall faces
+    NORTH, toward downtown. The first cut put this at hall_y - 34, which is
+    round the back of the building. It now stands between the hall and its
+    approach road, and the question mark faces north because that is the side
+    the drone comes in from.
+
+    Nothing is written to world_state.json and export_web strips every object
+    tagged nb_render_only, so the town on the website is unchanged.
     """
     hall = next((b for b in buildings if b.get("type") == "cityhall"), None)
     if not hall:
         raise RuntimeError("Day 37 statue requires City Hall")
     hx, hy = build_pos(hall)
-    # In front of the hall means south of it, on its approach.
-    sx, sy = hx + 6.0, hy - 34.0
+    sx, sy = hx, hy + 30.0
     ground = terrain_height(sx, sy)
 
     stone = mat("NB_day37_stone", (.74, .71, .64), .93)
@@ -3580,10 +3578,6 @@ def build_day37_statue(world_col, buildings, frame_end):
     bronze = mat("NB_day37_bronze", (.44, .33, .20), .48, .62)
     gold = mat("NB_day37_gold", (.95, .74, .26), .32, .70)
 
-    # Same idiom as the Day 24 kickoff and the Day 32 semi: a root Empty at
-    # the site with every part built in LOCAL coordinates and simply parented.
-    # animate_rise then scales the root, so the whole thing grows out of the
-    # ground together instead of each piece swelling where it stands.
     root = bpy.data.objects.new("Day37_MayorPlinth_RenderOnly", None)
     root.location = (sx, sy, ground)
     root["nb_rest_scale"] = (1.0, 1.0, 1.0)
@@ -3611,12 +3605,15 @@ def build_day37_statue(world_col, buildings, frame_end):
     attach(add_ngon_cone(world_col, "day37_neck", .26, .26, .28, 8,
                          0, 0, base + 3.68, bronze))
     attach(add_uv_sphere(world_col, "day37_head", .52, 0, 0, base + 4.48, bronze))
-    # The question mark faces south, which is the side the drone arrives from.
+    # Turned to face north: the default text rotation faces -Y, which is now
+    # away from the camera.
     attach(add_text(world_col, "day37_question", "?", 2.60, .22,
-                    0, -.62, base + 6.35, gold))
-    attach(add_box(world_col, "day37_placard", 2.60, .22, .85, 0, -1.80, 2.30, dark))
+                    0, .62, base + 6.35, gold,
+                    rotation=(math.pi / 2, 0, math.pi)))
+    attach(add_box(world_col, "day37_placard", 2.60, .22, .85, 0, 1.80, 2.30, dark))
     attach(add_text(world_col, "day37_placard_text", "MAYOR OF FOLLOWVILLE",
-                    .26, .04, 0, -1.94, 2.72, gold))
+                    .26, .04, 0, 1.94, 2.72, gold,
+                    rotation=(math.pi / 2, 0, math.pi)))
     return root
 
 
@@ -8901,23 +8898,20 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         bpy.context.scene.camera = cam_obj
     elif cam == "day37reveal":
         # Day 37, 24 seconds:
-        #   0-6s     the Day 36 downtown framing, but orbiting -- a slow
-        #            22-degree arc on a fixed circumference rather than a
-        #            locked-off hold. Same six seconds before the town moves.
+        #   0-6s     the Day 36 downtown framing, orbiting slowly.
         #   6-8.9s   one fast run south to Followville Commons.
-        #   8.9-15.7s the complex rises under a descending push, framed from
-        #            the south so the pool reads in front of both blocks.
-        #   15.7-24s across to City Hall, low, for the mayor's plinth.
+        #   8.9-15.7s the complex rises, framed from the NORTH so the lawn,
+        #            the pool and both facades read in that order -- the side
+        #            the complex was turned round to present.
+        #   15.7-24s back up to City Hall for the mayor's plinth, viewed from
+        #            the north with the hall itself behind it.
         commons = next((b for b in buildings
                         if b.get("type") == "apartmentcomplex"), None)
         hall = next((b for b in buildings if b.get("type") == "cityhall"), None)
         cx, cy = build_pos(commons) if commons else (APARTMENTS_X, APARTMENTS_Y)
         hx, hy = build_pos(hall) if hall else (CITY_HALL_X, CITY_HALL_Y)
-        stx, sty = hx + 6.0, hy - 34.0
+        stx, sty = hx, hy + 30.0
 
-        # The orbit is expressed as a radius and elevation about the same aim
-        # point Day 36 used, so frame 1 is that shot exactly and the move can
-        # only ever be a rotation about it.
         skyline_on = (25.0, 6.0, 42.0)
         ORBIT_R, ORBIT_H = 150.0, 76.4
 
@@ -8946,16 +8940,16 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (62,  orbit(-56.0), skyline_on),
             (124, orbit(-48.5), skyline_on),
             (180, orbit(-41.0), skyline_on),
-            # 6-8.9s: climb out and run south to the Commons.
-            (222, (40.0, -190.0, 168.0), (-10.0, -250.0, 26.0)),
-            (268, (cx, cy - 96.0, 60.0), (cx, cy, 12.0)),
-            # 8.9-15.7s: hold the whole complex, descending slowly as it rises.
-            (330, (cx, cy - 90.0, 54.0), (cx, cy - 1.0, 11.5)),
-            (470, (cx, cy - 74.0, 43.0), (cx, cy - 3.0, 10.0)),
-            # 15.7-24s: across to City Hall and down onto the plinth.
-            (545, (stx + 5.0, sty - 40.0, 30.0), (stx, sty, 9.5)),
-            (640, (stx + 3.0, sty - 28.0, 16.0), (stx, sty, 7.8)),
-            (frame_end, (stx + 2.0, sty - 24.0, 13.2), (stx, sty, 7.2)),
+            # 6-8.9s: out over the southern suburbs toward the Commons.
+            (222, (10.0, -190.0, 172.0), (-30.0, -270.0, 26.0)),
+            (268, (cx + 4.0, cy + 96.0, 62.0), (cx, cy - 2.0, 12.0)),
+            # 8.9-15.7s: settle and descend on the city-facing frontage.
+            (330, (cx + 3.0, cy + 88.0, 55.0), (cx, cy - 2.0, 11.5)),
+            (470, (cx + 2.0, cy + 72.0, 43.0), (cx, cy - 3.0, 10.0)),
+            # 15.7-24s: back north to City Hall, down onto the plinth.
+            (545, (stx - 4.0, sty + 42.0, 32.0), (stx, sty, 9.5)),
+            (640, (stx - 2.0, sty + 29.0, 17.0), (stx, sty, 7.8)),
+            (frame_end, (stx - 1.0, sty + 25.0, 13.6), (stx, sty, 7.2)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
