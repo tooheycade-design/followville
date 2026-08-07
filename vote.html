@@ -348,10 +348,16 @@ function formatRemaining(ms){
   if (minutes >= 1) return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
   return `${seconds}s`;
 }
+/* Always Eastern, always labelled. The town announces its deadlines in ET, so
+   rendering this in each viewer's own zone made the page contradict the post
+   that sent them here — someone in Central read "12:00 PM" for a 1pm ET close.
+   The countdown above it is the timezone-proof number; this is the date. */
 function formatWhen(iso){
   const when = new Date(iso);
-  return Number.isNaN(when.getTime()) ? "" : when.toLocaleString(undefined,
-    { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+  if (Number.isNaN(when.getTime())) return "";
+  return when.toLocaleString("en-US", {
+    weekday:"short", month:"short", day:"numeric",
+    hour:"numeric", minute:"2-digit", timeZone:"America/New_York" }) + " ET";
 }
 
 /* ── the countdown strip. Display only: whether voting is actually allowed is
