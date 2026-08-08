@@ -770,6 +770,24 @@
   // Fails silently to the plain static page if anything here can't load.
   const SUPABASE_URL = "https://bposhxtidoyulallvhdp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwb3NoeHRpZG95dWxhbGx2aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDgwMzUsImV4cCI6MjA5OTE4NDAzNX0._WRwlwtwLBrJIsvYjK5tj6XxDB98k5c6GB1HJ7WfSXk";
+  // A password-recovery link that lands HERE instead of /reset means Supabase
+  // fell back to the Site URL, which it does whenever redirect_to is not in
+  // the redirect allowlist. Forward it on rather than dead-ending: to someone
+  // tapping the link in their email, a homepage that does nothing is
+  // indistinguishable from a broken account.
+  //
+  // This has to run before supabase-js is imported. The client consumes the
+  // tokens out of the URL on construction (detectSessionInUrl defaults to
+  // true), so a check placed after the import would find nothing left.
+  {
+    const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(location.search);
+    if (hash.get("type") === "recovery" || query.get("type") === "recovery") {
+      location.replace("reset.html" + location.search + location.hash);
+      throw new Error("forwarding a recovery link to /reset");
+    }
+  }
+
   const overlay = document.getElementById("authOverlay");
   const forms   = document.getElementById("authForms");
   const title   = document.getElementById("authTitle");
