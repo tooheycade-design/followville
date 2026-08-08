@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1985532,
+    "bytes": 1985896,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "d9ba9332940ecfc26986e6611af1c65fba71b1fa53898f94609a54771dfeaca8"
+    "sha256": "e5bf72e85a1880c26a506a7005fccb61419bfdcfdbd38ecbad89f15e24436439"
   },
   "chunks": [
     {
@@ -604,17 +604,17 @@
     },
     {
       "asset": {
-        "bytes": 983516,
+        "bytes": 1063040,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "60ebc365ae5ead9fe7ef8c997b5660093eed2bf66740496cbb17baca935cc24b"
+        "sha256": "9922fccdda3dd551b1695ed4751bd0ea8ddbc02781012fd59fd573b73e053cdf"
       },
       "bounds": {
         "center": [
-          -0.227,
-          14.591
+          35.125,
+          11.708
         ],
-        "radius": 307.717
+        "radius": 408.166
       },
       "building_ids": [
         2,
@@ -627,7 +627,8 @@
         29,
         30,
         807,
-        824
+        824,
+        825
       ],
       "house_ids": [
         2,
@@ -999,6 +1000,66 @@
       "id": "follow-mart",
       "initial": false,
       "label": "Follow Mart"
+    },
+    {
+      "asset": {
+        "bytes": 101152,
+        "compression": "draco",
+        "file": "town_chunks/food-court.glb",
+        "sha256": "11c40a560395d97e4b2a92b15f8e00dac4a914430e9de2b21e2f7833700c4ae8"
+      },
+      "bounds": {
+        "center": [
+          424.0,
+          -20.0
+        ],
+        "radius": 63.95
+      },
+      "building_ids": [
+        826,
+        827,
+        828,
+        829,
+        830,
+        831,
+        832,
+        833,
+        834,
+        835,
+        836,
+        837,
+        838,
+        839,
+        840,
+        841,
+        842,
+        843,
+        844
+      ],
+      "house_ids": [
+        826,
+        827,
+        828,
+        829,
+        830,
+        831,
+        832,
+        833,
+        834,
+        835,
+        836,
+        837,
+        838,
+        839,
+        840,
+        841,
+        842,
+        843,
+        844
+      ],
+      "id": "food-court",
+      "initial": false,
+      "label": "Food Court"
     },
     {
       "asset": {
@@ -2352,15 +2413,15 @@
     }
   ],
   "fallback": {
-    "bytes": 28080988,
+    "bytes": 28960164,
     "file": "town.glb",
-    "sha256": "2cdc790656fb09e2699362e9d6b3c07ba9d214b0138b52ac1583cfea8a4a891a"
+    "sha256": "6f3d004844eff37ad38c9e77f11a9543fd4cc3b89a308021bcc7553429d12a7e"
   },
   "state": {
-    "building_count": 824,
-    "day": 37,
-    "population": 830,
-    "seed_counter": 825
+    "building_count": 844,
+    "day": 38,
+    "population": 849,
+    "seed_counter": 845
   },
   "streaming": {
     "detail_load_distance": 110,
