@@ -152,6 +152,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day36reveal 16-second held skyline, fast transfer, 13 Heron Reach rises
 #   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
 #   --commons        add Followville Commons, the permanent apartment complex
+#   --foodcourt      add the Food Court ring of food-shaped homes
+#   --cam day38reveal 16-second skyline, run east, Food Court rise
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
@@ -184,7 +186,8 @@ def _cli():
              "--eastwoods": "eastwoods",
              "--raftingstation": "raftingstation",
              "--salmonproshop": "salmonproshop",
-             "--commons": "apartmentcomplex"}
+             "--commons": "apartmentcomplex",
+             "--foodcourt": "foodcourt"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
             "--apartments": "apartments", "--parks": "parks", "--trees": "trees",
@@ -237,6 +240,25 @@ SALMON_SHOP_Y = -36.0
 # Followville Commons. Sited by scanning the meadow for the largest clear,
 # level ground within reach of the civic district: 60m clear in every
 # direction, and the connector to Meadow Run runs at 1.4-2.1% grade.
+# Food Court. Sited by scanning the meadow east of Kaleidoscope Crest with
+# check_world_geometry's own transform: 82m clear radius, 1.21m fall across
+# the ring, and an 89m connector to Rivergate at 0.1-1.8% grade.
+FOOD_COURT_X = 424.0
+FOOD_COURT_Y = 20.0
+FOOD_COURT_HOMES = 19
+
+
+def food_court_lots():
+    """The ring of homes, evenly spaced and every one facing the loop road."""
+    lots = []
+    for index in range(FOOD_COURT_HOMES):
+        a = math.tau * index / FOOD_COURT_HOMES - math.pi / 2
+        lots.append((FOOD_COURT_X + 46.0 * math.cos(a),
+                     FOOD_COURT_Y + 38.0 * math.sin(a),
+                     a + math.pi))          # face inward, toward the road
+    return lots
+
+
 APARTMENTS_X = -50.0
 APARTMENTS_Y = -300.0
 # Re-sited 2026-08-07. The first site was chosen against stored coordinates
@@ -3412,6 +3434,190 @@ def _commons_lounger(col, x, y, z, frame, fabric):
                 x + side * .78, y, z, frame)
 
 
+def _food_shell(col, wall, trim, glass, door_m, w, d, h):
+    """Door, window and step, so every one of these still reads as a home."""
+    add_box(col, "food_door_frame", 1.45, .22, 2.45, 0, -d / 2 - .06, 0, trim)
+    add_box(col, "food_door", 1.10, .12, 2.15, 0, -d / 2 - .16, .05, door_m)
+    add_box(col, "food_knob", .12, .09, .12, .38, -d / 2 - .24, 1.05, trim)
+    add_box(col, "food_step", 2.20, .90, .18, 0, -d / 2 - .62, 0, trim)
+    for side in (-1, 1):
+        add_box(col, "food_win_frame", 1.25, .16, 1.25,
+                side * w * .29, -d / 2 - .05, h * .48, trim)
+        add_box(col, "food_win", 1.00, .10, 1.00,
+                side * w * .29, -d / 2 - .12, h * .48 + .12, glass)
+
+
+def build_food_house(col, variant):
+    """One of ten food-shaped homes for the Food Court ring."""
+    style = variant % 10
+    m = std_mats()
+    trim = mat("NB_food_trim", (.97, .96, .92), .70)
+    glass = mat("NB_food_glass", (.30, .52, .62), .14, .10, 1.0, 0.0, .58)
+    door_m = mat("NB_food_door", (.42, .27, .18), .80)
+    bun = mat("NB_food_bun", (.87, .64, .34), .92)
+    meat = mat("NB_food_meat", (.40, .22, .15), .93)
+    cheese = mat("NB_food_cheese", (.96, .74, .22), .82)
+    salad = mat("NB_food_salad", (.42, .68, .32), .94)
+    red = mat("NB_food_red", (.80, .21, .18), .86)
+    cream = mat("NB_food_cream", (.97, .93, .86), .84)
+    pink = mat("NB_food_pink", (.95, .62, .70), .84)
+    choc = mat("NB_food_choc", (.36, .22, .16), .88)
+    dark = mat("NB_food_dark", (.16, .18, .20), .86)
+    white = mat("NB_food_white", (.98, .97, .95), .80)
+
+    if style == 0:            # burger
+        w = d = 9.0
+        add_ngon_cone(col, "bun_bottom", 4.5, 4.4, 1.7, 14, 0, 0, 0, bun)
+        add_ngon_cone(col, "patty", 4.6, 4.6, 1.1, 14, 0, 0, 1.7, meat)
+        add_box(col, "cheese", 8.6, 8.6, .30, 0, 0, 2.8, cheese)
+        for i in range(10):
+            a = math.tau * i / 10
+            add_box(col, "lettuce", 2.0, 1.2, .40, 4.1 * math.cos(a),
+                    4.1 * math.sin(a), 3.1, salad)
+        add_uv_sphere(col, "bun_top", 4.45, 0, 0, 3.3, bun)
+        for i in range(7):
+            a = math.tau * i / 7 + .3
+            add_uv_sphere(col, "sesame", .26, 2.0 * math.cos(a), 2.0 * math.sin(a), 7.0, cream)
+        h = 7.5
+    elif style == 1:          # pizza slice, standing on its crust
+        w, d, h = 9.0, 3.4, 8.6
+        add_ngon_cone(col, "slice", 5.2, .35, 8.2, 3, 0, 0, 0, cheese, rot=math.pi / 2)
+        add_box(col, "crust", 8.6, 3.7, 1.5, 0, 0, 0, bun)
+        for cx, cy in ((-1.9, 0), (1.9, 0), (0, 0), (-1.0, 0), (1.0, 0)):
+            add_ngon_cone(col, "pepperoni", .85, .85, .22, 10,
+                          cx, -1.9, 2.6 + abs(cx) * .5, red)
+    elif style == 2:          # donut
+        w = d = 9.4
+        for i in range(16):
+            a = math.tau * i / 16
+            add_ngon_cone(col, "dough", 1.55, 1.55, 1.9, 8,
+                          3.4 * math.cos(a), 3.4 * math.sin(a), 0, bun)
+            add_ngon_cone(col, "icing", 1.5, 1.4, .55, 8,
+                          3.4 * math.cos(a), 3.4 * math.sin(a), 1.9, pink)
+        for i in range(11):
+            a = math.tau * i / 11 + .4
+            add_box(col, "sprinkle", .55, .22, .18,
+                    3.4 * math.cos(a), 3.4 * math.sin(a), 2.5, cheese)
+        h = 2.5
+    elif style == 3:          # coffee cup
+        w = d = 8.4
+        add_ngon_cone(col, "cup", 3.6, 4.3, 7.0, 16, 0, 0, 0, white)
+        add_ngon_cone(col, "sleeve", 4.05, 4.15, 2.0, 16, 0, 0, 2.4, choc)
+        add_ngon_cone(col, "lid", 4.6, 4.2, .9, 16, 0, 0, 7.0, dark)
+        add_ngon_cone(col, "spout", 1.1, .9, .5, 8, 0, -2.4, 7.9, dark)
+        for i in range(6):
+            a = math.pi * (i / 5) - math.pi / 2
+            add_box(col, "handle", .75, .75, .75,
+                    4.0 + 1.7 * math.cos(a), 0, 3.7 + 2.1 * math.sin(a), white)
+        h = 7.9
+    elif style == 4:          # hot dog
+        w, d, h = 10.0, 4.6, 4.6
+        add_box(col, "bun_lower", 9.6, 4.4, 1.8, 0, 0, 0, bun)
+        add_box(col, "sausage", 8.4, 2.9, 2.6, 0, 0, 2.0, meat)
+        for end in (-4.2, 4.2):
+            add_uv_sphere(col, "sausage_end", 1.42, end, 0, 3.3, meat)
+        for side in (-1, 1):
+            add_box(col, "bun_side", 9.6, 1.15, 2.4, 0, side * 1.75, 1.8, bun)
+        for i in range(7):
+            add_box(col, "mustard", .9, .5, .28, -3.6 + i * 1.2,
+                    (.7 if i % 2 else -.7), 4.2, cheese)
+    elif style == 5:          # ice cream cone
+        w = d = 8.0
+        add_ngon_cone(col, "cone", .55, 3.7, 5.8, 12, 0, 0, 0, bun)
+        for i in range(4):
+            add_ngon_cone(col, "waffle", 1.2 + i * .8, 1.3 + i * .8, .16, 12,
+                          0, 0, 1.1 + i * 1.3, choc)
+        add_uv_sphere(col, "scoop_a", 2.5, -.9, .3, 6.4, pink)
+        add_uv_sphere(col, "scoop_b", 2.2, 1.2, -.4, 6.9, cream)
+        add_uv_sphere(col, "cherry", .75, .2, 0, 9.1, red)
+        h = 8.0
+    elif style == 6:          # cupcake
+        w = d = 8.6
+        for i in range(12):
+            a = math.tau * i / 12
+            add_box(col, "flute", 1.25, 1.25, 3.6, 3.5 * math.cos(a),
+                    3.5 * math.sin(a), 0, pink)
+        add_ngon_cone(col, "case_top", 4.3, 4.5, .4, 14, 0, 0, 3.6, pink)
+        add_ngon_cone(col, "frost_a", 4.2, 3.2, 1.7, 14, 0, 0, 4.0, cream)
+        add_ngon_cone(col, "frost_b", 3.2, 2.1, 1.5, 14, 0, 0, 5.7, cream)
+        add_ngon_cone(col, "frost_c", 2.1, .9, 1.4, 14, 0, 0, 7.2, cream)
+        add_uv_sphere(col, "cherry", .85, 0, 0, 9.1, red)
+        h = 8.2
+    elif style == 7:          # taco
+        w, d, h = 9.6, 5.6, 5.4
+        # A parabolic U, which is what a taco shell actually is.
+        for i in range(13):
+            t = -1.0 + 2.0 * i / 12
+            add_box(col, "shell", 1.15, 5.6, 1.15, 4.7 * t, 0, 4.3 * t * t, bun)
+        add_box(col, "filling_meat", 6.4, 3.6, 1.4, 0, 0, .9, meat)
+        add_box(col, "filling_salad", 6.0, 3.2, 1.0, 0, 0, 2.2, salad)
+        add_box(col, "filling_cheese", 5.4, 2.8, .7, 0, 0, 3.1, cheese)
+    elif style == 8:          # fries carton
+        w, d, h = 7.6, 6.4, 9.0
+        add_box(col, "carton", 6.6, 5.4, 5.4, 0, 0, 0, red)
+        add_box(col, "carton_lip", 7.4, 6.0, .6, 0, 0, 5.4, red)
+        add_box(col, "carton_band", 6.9, 5.7, 1.3, 0, 0, 1.4, cheese)
+        for i, (fx, fy, fh) in enumerate([(-1.8,-1.2,3.4),(-.6,.9,4.2),(.7,-.7,3.8),
+                                          (1.9,1.0,3.0),(0,0,4.6),(-1.4,1.4,2.8),
+                                          (1.5,-1.6,3.2)]):
+            add_box(col, "fry", .70, .70, fh, fx, fy, 5.6, cheese)
+    else:                     # sushi roll
+        w = d = 8.6
+        add_ngon_cone(col, "rice", 4.2, 4.2, 6.4, 16, 0, 0, 0, white)
+        add_ngon_cone(col, "nori", 4.35, 4.35, 4.4, 16, 0, 0, 1.0, dark)
+        add_ngon_cone(col, "fish", 2.4, 2.4, .7, 14, 0, 0, 6.4, red)
+        add_uv_sphere(col, "roe", .55, -1.4, .6, 7.2, cheese)
+        add_uv_sphere(col, "roe", .55, 1.3, -.5, 7.2, cheese)
+        h = 7.2
+
+    _food_shell(col, None, trim, glass, door_m, w, d, h)
+    add_box(col, "food_path", 1.5, 4.0, .10, 0, -d / 2 - 2.6, .02, m["cap"])
+    _merge_asset_meshes(col, "food_house_%02d" % variant)
+
+
+def build_food_court(col, seed):
+    """The ring road, its connector out to Rivergate, and the plaza sign."""
+    m = std_mats()
+    kerb = mat("NB_food_kerb", (.80, .78, .74), .93)
+    lawn = mat("NB_food_lawn", (.41, .64, .33), 1.0)
+    post = mat("NB_food_post", (.28, .30, .33), .82)
+    board = mat("NB_food_board", (.86, .28, .22), .84)
+    cream = mat("NB_food_signface", (.98, .96, .90), .82)
+
+    ring = []
+    for index in range(73):
+        a = math.tau * index / 72
+        ring.append((32.0 * math.cos(a), 25.0 * math.sin(a)))
+    _add_road_strip(col, "foodcourt_loop", ring, m["road"], terrain_conform=True,
+                    terrain_origin=(FOOD_COURT_X, FOOD_COURT_Y))
+
+    # connector out to Rivergate at (486.5,-43.5) -> local (62.5,-63.5)
+    spine = [(24.0, -19.0), (34.0, -30.0), (45.0, -42.0), (55.0, -54.0), (62.5, -63.5)]
+    dense = []
+    for (ax, ay), (bx, by) in zip(spine, spine[1:]):
+        steps = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / 3.0)))
+        for step in range(steps):
+            t = step / steps
+            dense.append((ax + (bx - ax) * t, ay + (by - ay) * t))
+    dense.append(spine[-1])
+    _add_road_strip(col, "foodcourt_approach", dense, m["road"], terrain_conform=True,
+                    terrain_origin=(FOOD_COURT_X, FOOD_COURT_Y))
+
+    add_ngon_cone(col, "foodcourt_green", 26.0, 26.0, .10, 28, 0, 0, .02, lawn)
+    for index in range(12):
+        a = math.tau * index / 12
+        add_ngon_cone(col, "foodcourt_lamp", .13, .10, 4.4, 6,
+                      25.0 * math.cos(a), 19.0 * math.sin(a), 0, post)
+        add_box(col, "foodcourt_lampbox", .50, .38, .20,
+                25.0 * math.cos(a), 19.0 * math.sin(a), 4.4, m["bulb"])
+    for side in (-1, 1):
+        add_ngon_cone(col, "foodcourt_signpost", .28, .24, 4.6, 8,
+                      side * 3.4, -27.5, 0, post)
+    add_box(col, "foodcourt_signboard", 9.0, .40, 2.6, 0, -27.5, 4.6, board)
+    add_box(col, "foodcourt_signface", 8.4, .16, 2.0, 0, -27.72, 4.9, cream)
+    add_text(col, "foodcourt_signtext", "FOOD COURT", .80, .06,
+             0, -27.92, 5.5, board)
+
 def build_apartment_complex(col, seed):
     """Followville Commons: two six-storey blocks behind a courtyard pool.
 
@@ -4851,6 +5057,11 @@ RIVER_ASSET_VARIANTS = [
     for i in range(8)
 ]
 
+FOOD_ASSET_VARIANTS = [
+    ("AST_food_%02d" % i, lambda c, i=i: build_food_house(c, i))
+    for i in range(10)
+]
+
 STORYBOOK_ASSET_VARIANTS = [
     ("AST_storybook_%02d" % i, lambda c, i=i: build_storybook_house(c, i))
     for i in range(10)
@@ -4894,6 +5105,7 @@ ASSET_VARIANTS = {
     "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
     "salmonproshop": [("AST_salmonproshop_0", lambda c: build_salmon_pro_shop(c, 3800))],
     "apartmentcomplex": [("AST_apartmentcomplex_0", lambda c: build_apartment_complex(c, 7300))],
+    "foodcourt": [("AST_foodcourt_0", lambda c: build_food_court(c, 8100))],
     "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
@@ -4945,6 +5157,8 @@ def web_chunk_id(b):
         return "salmon-pro-shop"
     if b.get("type") == "apartmentcomplex":
         return "apartment-complex"
+    if b.get("type") in ("foodhouse", "foodcourt"):
+        return "food-court"
     if b.get("type") == "weatherstation":
         return "weather-station"
     if b.get("type") == "constructionzone":
@@ -4978,7 +5192,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
         "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
-        "apartmentcomplex": 1}
+        "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -4988,7 +5202,8 @@ def footprint(b):
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
     if (b.get("plan_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
-                          "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex")):
+                          "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex",
+                          "foodhouse", "foodcourt")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -5088,7 +5303,9 @@ def find_free_lots(count, size, occupied, blocked_blocks=None, fill_mode="block"
     raise RuntimeError("Ran out of space")
 
 def place_instance(world_col, b, name):
-    if b["type"] == "house" and b.get("district") in {
+    if b["type"] == "foodhouse":
+        variants = FOOD_ASSET_VARIANTS
+    elif b["type"] == "house" and b.get("district") in {
             "Rivergate", "Cedarbank", "Timber Bend",
             "Eastbank Village", "River Meadows"}:
         variants = RIVER_ASSET_VARIANTS
@@ -8896,6 +9113,52 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day38reveal":
+        # Day 38, 16 seconds, the established shape: six seconds on the
+        # downtown skyline, one fast run east, then the whole Food Court ring
+        # coming out of the ground.
+        ring = [b for b in buildings if b.get("type") == "foodhouse"]
+        points = [build_pos(b) for b in ring]
+        fx = sum(p[0] for p in points) / len(points) if points else FOOD_COURT_X
+        fy = sum(p[1] for p in points) / len(points) if points else FOOD_COURT_Y
+
+        aim = bpy.data.objects.new("Day38RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day38RevealCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day38RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        skyline_at = (92.8, -127.8, 118.4)
+        skyline_on = (25.0, 6.0, 42.0)
+        beats = (
+            (1, skyline_at, skyline_on),
+            (180, skyline_at, skyline_on),
+            # 6-8.6s: out east over the river districts.
+            (214, (250.0, -90.0, 190.0), (380.0, -10.0, 24.0)),
+            (258, (fx - 96.0, fy - 74.0, 86.0), (fx, fy, 8.0)),
+            # 8.6-16s: swing round the ring as it rises.
+            (330, (fx - 86.0, fy - 62.0, 74.0), (fx, fy, 7.5)),
+            (405, (fx - 74.0, fy - 48.0, 62.0), (fx, fy, 7.0)),
+            (frame_end, (fx - 66.0, fy - 40.0, 55.0), (fx, fy, 6.5)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day37reveal":
         # Day 37, 24 seconds:
         #   0-6s     the Day 36 downtown framing, orbiting slowly.
@@ -10346,6 +10609,27 @@ def main(cfg=None):
                 pond_extras.append(("house", 1, cell))
             house_gained = gained - len(house_cells)
 
+        if cfg.get("foodcourt") and gained > 0:
+            # The 616-house reserve is finished, so these do not consume plan
+            # addresses -- the ring carries its own nineteen exact positions.
+            if not any(b["type"] == "foodcourt" for b in state["buildings"]):
+                yard = {"type": "foodcourt", "gx": 0, "gy": 0,
+                        "px": FOOD_COURT_X, "py": FOOD_COURT_Y, "pz": 0.0,
+                        "rot": 0.0, "seed": state["seed_counter"],
+                        "name": "Food Court", "day": state["day"]}
+                state["seed_counter"] += 1
+                state["buildings"].append(yard)
+                new_batch.append(yard)
+            built = len([b for b in state["buildings"] if b["type"] == "foodhouse"])
+            for x, y, rot in food_court_lots()[built:built + gained]:
+                home = {"type": "foodhouse", "gx": 0, "gy": 0,
+                        "px": round(x, 3), "py": round(y, 3), "rot": round(rot, 5),
+                        "district": "Food Court", "street": "Food Court Loop",
+                        "seed": state["seed_counter"], "day": state["day"]}
+                state["seed_counter"] += 1
+                state["buildings"].append(home)
+                new_batch.append(home)
+            house_gained = 0
         parkring_n = 0
         if cfg.get("parkring") and gained > 0:
             parkring_n, house_gained = gained, 0
@@ -10660,7 +10944,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day37reveal":
+    if cfg.get("cam") == "day38reveal":
+        frame_end = max(frame_end, FPS * 16)
+    elif cfg.get("cam") == "day37reveal":
         frame_end = max(frame_end, FPS * 24)
     elif cfg.get("cam") == "day36reveal":
         frame_end = max(frame_end, FPS * 16)
@@ -10705,7 +10991,19 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day37reveal":
+    if cfg.get("cam") == "day38reveal":
+        # The loop road first, then the ring clockwise, finishing with time in
+        # hand to look at the finished court.
+        yard = [e for e in rise if e.name.startswith("foodcourt_d")]
+        homes = [e for e in rise if e.name.startswith("foodhouse_d")]
+        for e in yard:
+            animate_rise(e, 262, dur=34)
+        for index, e in enumerate(homes):
+            animate_rise(e, 280 + index * 8, dur=26)
+        for e in rise:
+            if e not in yard and e not in homes:
+                animate_rise(e, 280)
+    elif cfg.get("cam") == "day37reveal":
         # The three Heron Reach cabins that finish the 616-house plan are 640m
         # from anything this camera looks at, so they go up early and unseen.
         # The Commons is the only thing that rises on screen.
