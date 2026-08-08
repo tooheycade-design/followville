@@ -243,8 +243,8 @@ SALMON_SHOP_Y = -36.0
 # Food Court. Sited by scanning the meadow east of Kaleidoscope Crest with
 # check_world_geometry's own transform: 82m clear radius, 1.21m fall across
 # the ring, and an 89m connector to Rivergate at 0.1-1.8% grade.
-FOOD_COURT_X = 424.0
-FOOD_COURT_Y = 20.0
+FOOD_COURT_X = 272.0
+FOOD_COURT_Y = 210.0
 FOOD_COURT_HOMES = 19
 
 

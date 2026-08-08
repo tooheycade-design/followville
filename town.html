@@ -4235,6 +4235,11 @@ function regionalTerrainHeight(x,z){
   // a ramp always stands proud of its own low bank.
   const pondDistance=Math.hypot((x-FISHING_POND_X)/FISHING_POND_SHELF[2],y-FISHING_POND_Y);
   height*=redesignSmoothstep(FISHING_POND_SHELF[0],FISHING_POND_SHELF[1],pondDistance);
+  // Food Court plateau -- must stay in lockstep with terrain_height() in
+  // downtown_visual_plan.py. A lerp to a datum, not a multiply toward zero.
+  const FOOD_COURT_PLATEAU=1-redesignSmoothstep(54.0,96.0,
+    Math.hypot((x-272.0)/1.00,y-210.0));
+  height=height*(1-FOOD_COURT_PLATEAU)+10.20*FOOD_COURT_PLATEAU;
   const riverDistance=Math.abs(x-riverCenterX(y));
   // Faithful port of downtown_visual_plan.terrain_height's river bank. A river
   // may not stand above its own meadow: riverWaterHeight is a pure function of

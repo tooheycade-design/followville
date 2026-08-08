@@ -156,6 +156,15 @@ def terrain_height(x, y):
     pond_distance = math.hypot((x-FISHING_POND_X)/pond_aspect, y-FISHING_POND_Y)
     height *= _smoothstep(pond_core, pond_feather, pond_distance)
 
+    # Food Court plateau. Levelling the TOP of the hill rather than removing
+    # it: a lerp toward a fixed datum, because the `height *= smoothstep(...)`
+    # idiom used by the other shelves flattens toward zero and would cut the
+    # hill away. Core 54m covers the 46m ring; the feather finishes at 96m and
+    # the nearest existing building is 106m away, so nothing else moves.
+    FOOD_COURT_PLATEAU = 1.0 - _smoothstep(54.0, 96.0, math.hypot(
+        (x - 272.0) / 1.00, y - 210.0))
+    height = height * (1.0 - FOOD_COURT_PLATEAU) + 10.20 * FOOD_COURT_PLATEAU
+
     distance = river_distance(x, y)
 
     # A river may not stand above its own meadow, and between y=0 and y=120
