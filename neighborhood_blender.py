@@ -3584,6 +3584,13 @@ def build_food_court(col, seed):
     board = mat("NB_food_board", (.86, .28, .22), .84)
     cream = mat("NB_food_signface", (.98, .96, .90), .82)
 
+    # The roads below bake ABSOLUTE world heights via terrain_conform, while
+    # the furniture further down is authored at local zero. The instance is
+    # pinned to world zero by "pz", so the furniture has to be lifted here or
+    # it ends up buried under the plateau it is meant to sit on. Everything
+    # sits inside the plateau's level core, so one sample is exact.
+    gz = terrain_height(FOOD_COURT_X, FOOD_COURT_Y)
+
     ring = []
     for index in range(73):
         a = math.tau * index / 72
@@ -3603,20 +3610,20 @@ def build_food_court(col, seed):
     _add_road_strip(col, "foodcourt_approach", dense, m["road"], terrain_conform=True,
                     terrain_origin=(FOOD_COURT_X, FOOD_COURT_Y))
 
-    add_ngon_cone(col, "foodcourt_green", 26.0, 26.0, .10, 28, 0, 0, .02, lawn)
+    add_ngon_cone(col, "foodcourt_green", 26.0, 26.0, .10, 28, 0, 0, gz + .02, lawn)
     for index in range(12):
         a = math.tau * index / 12
         add_ngon_cone(col, "foodcourt_lamp", .13, .10, 4.4, 6,
-                      25.0 * math.cos(a), 19.0 * math.sin(a), 0, post)
+                      25.0 * math.cos(a), 19.0 * math.sin(a), gz, post)
         add_box(col, "foodcourt_lampbox", .50, .38, .20,
-                25.0 * math.cos(a), 19.0 * math.sin(a), 4.4, m["bulb"])
+                25.0 * math.cos(a), 19.0 * math.sin(a), gz + 4.4, m["bulb"])
     for side in (-1, 1):
         add_ngon_cone(col, "foodcourt_signpost", .28, .24, 4.6, 8,
-                      side * 3.4, -27.5, 0, post)
-    add_box(col, "foodcourt_signboard", 9.0, .40, 2.6, 0, -27.5, 4.6, board)
-    add_box(col, "foodcourt_signface", 8.4, .16, 2.0, 0, -27.72, 4.9, cream)
+                      side * 3.4, -27.5, gz, post)
+    add_box(col, "foodcourt_signboard", 9.0, .40, 2.6, 0, -27.5, gz + 4.6, board)
+    add_box(col, "foodcourt_signface", 8.4, .16, 2.0, 0, -27.72, gz + 4.9, cream)
     add_text(col, "foodcourt_signtext", "FOOD COURT", .80, .06,
-             0, -27.92, 5.5, board)
+             0, -27.92, gz + 5.5, board)
 
 def build_apartment_complex(col, seed):
     """Followville Commons: two six-storey blocks behind a courtyard pool.
@@ -5329,7 +5336,7 @@ def place_instance(world_col, b, name):
                 authored_z = 0.1
             elif b["type"] in ("tree", "bush", "rock", "forestreserve"):
                 authored_z = terrain_height(x, y)
-            elif b["type"] in ("foodhouse", "foodcourt"):
+            elif b["type"] == "foodhouse":
                 # The Food Court sits on a levelled hilltop, so it has to
                 # follow the terrain like the scatter does. It used to fall
                 # through to the `else: authored_z = 0` below and looked
