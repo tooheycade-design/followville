@@ -6328,6 +6328,14 @@ def build_suburban_roads(world_col, buildings, m):
             street_objects.append(lamp)
             light_distance += 34.0
             light_index += 1
+        # Tag every piece with the street it belongs to. Dashes and lamps all
+        # share one name, so a reveal that filtered by name would leave a
+        # street's centre-line dashes floating over bare meadow -- and
+        # animating a road that was already standing HIDES it, which is the
+        # trap the Day 38 tour records.
+        for obj in street_objects:
+            if obj is not None:
+                obj["nb_street_index"] = street_index
         if street_index >= 18:
             river_reveal_objects.extend(street_objects)
     # Rounded, terrain-following covers turn independent road ribbons into one
@@ -9516,6 +9524,70 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day39reveal":
+        # Day 39, 10 seconds, one unbroken move in three beats:
+        #   0-2.0s   high over downtown, drifting north. The establishing look
+        #            at the city that already exists.
+        #   2.0-6.3s one continuous transfer north, up the corridor the new
+        #            arterial runs in. The roads land underneath it in flight,
+        #            so the quarter arrives as road-first-then-houses.
+        #   6.3-10s  track east along Northgate Avenue while the homes rise
+        #            one at a time, west to east, just ahead of the camera.
+        #
+        # Flying ALONG the street rather than framing it whole is forced by the
+        # arithmetic: the batch spans about 175m, and a 30mm lens on a 9:16
+        # frame only covers that from ~300m back, which is too far to read a
+        # house. Tracking the row keeps every home close.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest = [b for b in buildings
+                  if b["type"] == "house" and b.get("day") == latest_day]
+        points = sorted((build_pos(b) for b in newest), key=lambda p: p[0])
+        if points:
+            west, east = points[0], points[-1]
+        else:                      # replay of a day with no new homes
+            west, east = (-185.0, 306.0), (-10.0, 306.0)
+        street_y = sum(p[1] for p in points) / len(points) if points else 306.0
+
+        aim = bpy.data.objects.new("Day39RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day39RevealCamera")
+        cam_data.lens = 30
+        # 10m near clip for the aerial beats, per the aerial-camera rule; the
+        # closest this move ever gets to a roof is the final track at ~40m.
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day39RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # establishing: downtown from the south, high and looking down
+            (1,   (70.0, -200.0, 285.0), (5.0, -30.0, 10.0)),
+            (60,  (52.0, -150.0, 258.0), (0.0, 15.0, 8.0)),
+            # transfer north, following the arterial's own corridor
+            (120, (-30.0, 60.0, 168.0), (-93.0, 215.0, 6.0)),
+            (160, (-93.0, 180.0, 88.0), (-93.0, 290.0, 5.0)),
+            # arrive at the west end of the new frontage
+            (195, (west[0] + 20.0, street_y - 48.0, 52.0),
+                  (west[0] + 35.0, street_y, 6.0)),
+            # track east, staying just behind the homes as they come up
+            (300, (east[0] - 20.0, street_y - 56.0, 44.0),
+                  (east[0] - 5.0, street_y, 6.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day36reveal":
         # Day 36, 16 seconds, three beats and one unbroken move:
         #   0-6s    locked off on the downtown skyline, ~42 degrees above the
@@ -11072,17 +11144,27 @@ def main(cfg=None):
                 # Consume exact addresses from the hidden 616-address
                 # neighborhood reserve before falling back to the legacy grid. The plan
                 # lives outside world_state and creates no future objects.
-                already = len([b for b in state["buildings"] if b.get("plan_id")])
-                take = min(n, max(0, SUBURBAN_CAPACITY - already))
-                if take and SUBURBAN_PLAN:
-                    for slot in SUBURBAN_PLAN["houses"][already:already + take]:
-                        # Chapter three reserves ten of its addresses for
-                        # something other than a house -- a filling station, a
-                        # diner, the grocery, the school. They are consumed in
-                        # exactly the same order, so "+60 followers" still means
-                        # "the next sixty addresses appear"; one of them just
-                        # happens not to be a home. Older slots carry no type
-                        # and stay houses.
+                # "+50 followers" means FIFTY HOMES (Cade, 2026-08-09).
+                #
+                # Chapter three reserves ten of its addresses for something
+                # other than a house -- a filling station, a diner, the
+                # grocery, the school, the fire station. Those are NOT built by
+                # ordinary growth: their ground stays empty and the homes go up
+                # around it, and the building itself appears only when Cade
+                # asks for it. So the next N unbuilt HOUSE addresses are taken,
+                # in plan order, stepping over any reserved slot on the way.
+                #
+                # Indexing by count no longer works once slots can be skipped,
+                # so this matches on the plan_ids that are actually standing.
+                built_ids = {b["plan_id"] for b in state["buildings"]
+                             if b.get("plan_id")}
+                available = [slot for slot in SUBURBAN_PLAN["houses"]
+                             if slot["plan_id"] not in built_ids
+                             and slot.get("type", "house") == "house"] \
+                    if SUBURBAN_PLAN else []
+                take = min(n, len(available))
+                if take:
+                    for slot in available[:take]:
                         b = {"type": slot.get("type", "house"), "gx": 0, "gy": 0,
                              "px": slot["x"], "py": slot["y"], "rot": slot["rot"],
                              "plan_id": slot["plan_id"], "district": slot["district"],
@@ -11258,7 +11340,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day38foodtour":
+    if cfg.get("cam") == "day39reveal":
+        frame_end = FPS * 10          # exactly ten seconds, not "at least"
+    elif cfg.get("cam") == "day38foodtour":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day38reveal":
         frame_end = max(frame_end, FPS * 16)
@@ -11307,7 +11391,38 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day38foodtour":
+    if cfg.get("cam") == "day39reveal":
+        # Roads first, then the homes one at a time. Both land while the
+        # camera is still in transit over open meadow, so the quarter reads as
+        # "the road arrives, then the street fills in".
+        #
+        # ONLY the pieces that are new today are touched. animate_rise and
+        # _keyframe_hidden both hide an object before its turn, so sweeping in
+        # every road would delete the standing town for the first three
+        # seconds. The arterial is found by name and today's street by the
+        # nb_street_index tag build_suburban_roads stamps on every piece.
+        # Building records carry `street` (a name) but not `street_index`, so
+        # the indices come back from the plan via the addresses just built.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        new_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in new_ids}
+        arterial = [obj for obj in world_col.objects
+                    if obj.name.startswith("northgate_arterial")]
+        street = [obj for obj in world_col.objects
+                  if obj.get("nb_street_index") in new_streets]
+        for obj in arterial:
+            _keyframe_hidden(obj, 1, True)
+            _keyframe_hidden(obj, 95, False)
+        for obj in street:
+            _keyframe_hidden(obj, 1, True)
+            _keyframe_hidden(obj, 108, False)
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        for index, e in enumerate(sorted(home_roots, key=lambda o: o.location.x)):
+            animate_rise(e, 185 + index * 3, dur=18)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 185)
+    elif cfg.get("cam") == "day38foodtour":
         # The loop road, green and lamps land as the drone arrives at 225;
         # then one home every 8 frames, finishing at 414 -- before the camera
         # is down among them at 515, so nothing pops up in a face.
