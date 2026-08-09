@@ -245,10 +245,15 @@ palettes (90 stable variants), each batched to a single mesh.
 positions are rigid render-time offsets in `world_layout.DISTRICT_OFFSETS` —
 stored coordinates never move.
 
-**`neighborhood_plan.py`** deterministically reserves the next 366 ordinary
-houses across six curved-road districts with 18 cul-de-sacs. Planned roads and
-houses create no object until `+N` growth consumes their exact addresses, and
-existing geometry never moves. See `NEIGHBORHOOD_EXPANSION_PLAN.md`.
+**`neighborhood_plan.py`** deterministically reserves every future address:
+366 across six curved-road districts, then 250 more in the river chapter, then
+the gridded Northgate quarter. **Read the total from `HOUSE_CAPACITY`**, which
+is derived from `STREETS` — how many addresses a street seats depends on how
+much room its specials take, so any figure written in prose goes stale. A
+handful of chapter-three addresses are civic buildings rather than houses, and
+are consumed in the same order. Planned roads and houses create no object until
+`+N` growth consumes their exact addresses, and existing geometry never moves.
+See `NEIGHBORHOOD_EXPANSION_PLAN.md`.
 
 Milestones auto-build at population 500 (fountain plaza — suppressed while the
 houses-only reserve runs), 2,000 (skyscraper), 10,000 (stadium).

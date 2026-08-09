@@ -29,13 +29,19 @@ from mathutils import Matrix, Vector
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else ""
 if _SCRIPT_DIR and _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
-from neighborhood_plan import PLAN as SUBURBAN_PLAN, HOUSE_CAPACITY as SUBURBAN_CAPACITY
+from neighborhood_plan import (PLAN as SUBURBAN_PLAN,
+                               HOUSE_CAPACITY as SUBURBAN_CAPACITY,
+                               ARTERIAL_HALF_WIDTH,
+                               NORTHGATE_ARTERIAL_REVEAL,
+                               SUBURBAN_TIGHT_PLAN_IDS,
+                               northgate_arterial_points)
 from downtown_visual_plan import TERRAIN_BOUNDS, mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
                                   FISHING_POND_RX, FISHING_POND_RY)
 from downtown_visual_plan import river_center_x, river_distance, river_water_height
 from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
+                          LANDMARK_GRID_SIZE,
                           STORYBOOK_ACCESS, SALMON_SHOP_APPROACH,
                           SALMON_SHOP_ENTRY_RAMP,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
@@ -1105,17 +1111,11 @@ SUBURBAN_STYLES = [
     ("double_garage",       8.6, 5.9, 2, -1, "portico", 1.85, "doublegarage"),
 ]
 
-# Lots at branch merges and adjacent cul-de-sac arcs are intentionally tighter
-# than the main road frontage. These plan IDs use the compact lot footprint;
-# every other planned address uses the standard .78 footprint. The set was
-# audited against the original 366 reserved addresses with oriented boxes.
-SUBURBAN_TIGHT_PLAN_IDS = {
-    7, 19, 39, 40, 61, 62, 63, 93, 94, 95, 115, 116, 124, 125, 126, 128,
-    134, 135, 136, 158, 160, 162, 163, 164, 165, 180, 182, 193, 194, 195,
-    196, 197, 205, 206, 207, 208, 211, 212, 255, 256, 257, 258, 259, 260,
-    271, 280, 291, 292, 293, 294, 295, 296, 297, 298, 308, 310, 312, 313,
-    314, 315, 316, 317, 318, 326, 327, 349, 350,
-}
+# Which addresses use the compact lot footprint now lives in
+# neighborhood_plan, next to the footprints it changes the size of: the plan's
+# own overlap checks need it, and they cannot import this module because this
+# module needs bpy. Treating every planned house as the standard .78 lot
+# reported 53 pairs of BUILT houses as overlapping when they do not.
 
 
 def _sub_window(col, name, x, y, z, trim, glass, shutter=None,
@@ -5296,6 +5296,15 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1,
         "gasstation": 1, "restaurant": 1}
 
+# check_world_geometry.py needs a grid landmark's lot size to know where its
+# geometry is centred, and it cannot import this module because this module
+# needs bpy. world_layout carries the copy it reads; this is the assertion that
+# stops the two drifting apart silently.
+for _type, _lots in LANDMARK_GRID_SIZE.items():
+    assert SIZE.get(_type) == _lots, (
+        "world_layout.LANDMARK_GRID_SIZE says %s is %d lots, SIZE says %s"
+        % (_type, _lots, SIZE.get(_type)))
+
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
 
@@ -6140,6 +6149,75 @@ def _add_road_surface_dash(col, name, points, center_distance, length,
     obj = bpy.data.objects.new(name, mesh)
     col.objects.link(obj)
     return obj
+
+
+def build_northgate_arterial(world_col, buildings, m):
+    """The road from downtown up to the chapter-three quarter.
+
+    Cade's requirement was that the new quarter be connected by road to
+    downtown. This is that road: it leaves the downtown grid at the crossroads
+    of the x=-93 and y=87 streets, runs 220m north up the open gap between
+    Creekside Bend and Willow Hills, and lands on the Northgate Avenue
+    centreline. Both ends are real junctions on roads that already exist, not
+    stubs in a meadow.
+
+    The centreline itself lives in neighborhood_plan, because build_plan() has
+    to keep reserved addresses off it and the browser's walk surface and
+    check_world_geometry both need the same line. There are no copies to drift.
+
+    Not to be confused with the reverted 2026-08-09 east-west highway along
+    y=272: that line was cleared against the reserve's RAW coordinates, where
+    Pebble Court's houses look 58m further south than they actually stand, and
+    it ran through Willow Hills and Creekside Bend.
+    """
+    active = max((b.get("plan_id", 0) for b in buildings), default=0)
+    if active < NORTHGATE_ARTERIAL_REVEAL:
+        return []
+    shoulder_mat = mat("FV_suburban_road_shoulder", (.24, .27, .25), .99)
+    lane_mat = mat("FV_suburban_lane_marking", (.61, .60, .47), 1.0)
+    path_mat = mat("FV_suburban_walking_path", (.52, .49, .42), .99)
+
+    flat = northgate_arterial_points()
+    points = [(x, y, terrain_height(x, y)) for x, y in flat]
+    made = []
+    # Layer tops are all distinct and no two side walls overlap: shoulder .045,
+    # footway .035 outside the shoulder's edge, deck .085, dashes .095.
+    made.append(_add_road_strip(world_col, "northgate_arterial_shoulder", points,
+                                shoulder_mat, width=ARTERIAL_HALF_WIDTH * 2.4,
+                                bottom_offset=.005, top_offset=.045,
+                                terrain_conform=True))
+    made.append(_add_road_strip(world_col, "northgate_arterial", points,
+                                m["road"], width=ARTERIAL_HALF_WIDTH * 2.0,
+                                bottom_offset=.015, top_offset=.085,
+                                terrain_conform=True))
+    for side in (-1, 1):
+        # 5.5m out clears the 4.8m shoulder edge, so the two hardscape layers
+        # never share a vertical face.
+        made.append(_add_road_strip(
+            world_col, "northgate_arterial_path%d" % side,
+            _offset_terrain_path(points, side * 5.5), path_mat, width=1.25,
+            bottom_offset=.005, top_offset=.035, terrain_conform=True))
+
+    total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                for a, b in zip(points, points[1:]))
+    distance = 6.0
+    while distance < total - 3.0:
+        x, y, angle = _polyline_sample(points, distance)
+        dash = add_box(world_col, "northgate_arterial_dash", 2.2, .18, .018,
+                       x, y, terrain_height(x, y) + .095, lane_mat)
+        dash.rotation_euler.z = angle
+        made.append(dash)
+        distance += 11.0
+
+    # Covers at both ends, so the arterial reads as joined to the grid road it
+    # leaves and the avenue it arrives on rather than as a ribbon laid beside
+    # them. Same radii and lifts as every other junction in the town.
+    junctions = [flat[0], flat[-1]]
+    _add_terrain_disc_batch(world_col, "northgate_arterial_junction_shoulders",
+                            junctions, 4.55, .052, shoulder_mat, 20)
+    _add_terrain_disc_batch(world_col, "northgate_arterial_junction_surfaces",
+                            junctions, 3.95, .095, m["road"], 20)
+    return [obj for obj in made if obj is not None]
 
 
 def build_suburban_roads(world_col, buildings, m):
@@ -11158,6 +11236,7 @@ def main(cfg=None):
     # The redesign supplies one continuous walkable terrain mesh. The older
     # decorative mound pass is intentionally omitted to avoid intersecting
     # houses and roads with scenery that has no shared elevation model.
+    build_northgate_arterial(world_col, keep or state["buildings"], m)
     river_road_objects = build_suburban_roads(
         world_col, keep or state["buildings"], m)
     river_objects = build_river_chapter(world_col, keep or state["buildings"], m)

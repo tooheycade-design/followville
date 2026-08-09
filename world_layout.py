@@ -297,6 +297,22 @@ LANDMARK_FOOTPRINTS = {
     "salmonproshop":   (-28.0,   28.0,  -25.0,   25.0, True),
     "apartmentcomplex": (-34.0,  34.0,  -22.0,   22.0, True),
     "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
+    # The chapter-three reserve's ten non-house addresses. These are the same
+    # authored ground extents neighborhood_plan.TYPE_FOOTPRINT places against,
+    # so the reserve and the checker cannot disagree about how big a fire
+    # station is. Declaring them is the point: an undeclared type comes back
+    # "not audited", which is not the same as clean -- that is exactly how the
+    # Food Court shipped with a road through one of its homes.
+    # None of them is "rural": a fire station, a school, the grocery and a
+    # neighbourhood pond all belong in a town, and four of these types already
+    # stand inside the paved downtown grid.
+    "gasstation":       (-8.50,  8.50,  -8.50,  6.50, False),
+    "restaurant":       (-7.70,  7.70,  -7.50,  6.30, False),
+    "pond":             (-6.20,  6.20,  -6.20,  6.20, False),
+    "park":            (-12.25, 12.25, -12.25, 12.25, False),
+    "elementaryschool": (-14.20, 14.20, -14.20, 14.20, False),
+    "followmart":      (-17.00, 17.00, -17.00, 17.00, False),
+    "firestation":     (-18.00, 18.00, -18.00, 18.00, False),
 }
 
 # Authored ground that stands above the terrain. A road whose deck is taken
@@ -307,6 +323,18 @@ LANDMARK_FOOTPRINTS = {
 KEEP_OUT_REGIONS = [
     ("Kaleidoscope Crest plateau", 305.0, 60.0, 61.0, 48.0),
 ]
+
+# How many grid lots across each audited landmark is. Only the types that can
+# hold a downtown GRID address need an entry: a grid-addressed building's
+# geometry is centred on its lot block, not on its anchor lot, so a checker
+# that reads px/py finds nothing and audits the type at the world origin.
+# check_world_geometry cannot import the generator (it needs bpy), so this
+# mirrors neighborhood_blender.SIZE -- which asserts the two agree at import.
+LANDMARK_GRID_SIZE = {
+    "elementaryschool": 3, "followmart": 3, "firestation": 3,
+    "park": 2, "pond": 1, "gasstation": 1, "restaurant": 1,
+    "cityhall": 4, "civicsquare": 3,
+}
 
 # Walk pads whose deck deliberately stands clear of the ground, each with the
 # structure that holds it up. A pad standing proud with nothing named here is
@@ -374,6 +402,17 @@ LEVEL_WATER = {"fishingpond": 0.12}
 # The road that serves each landmark is allowed to touch it -- that is what a
 # road to somewhere does. Every other road must keep its distance.
 LANDMARK_APPROACHES = {
+    # PRE-EXISTING, and recorded rather than hidden. The downtown fire station
+    # campus (grid lot gx=3, gy=-6, centre 64.5,-70.5) lays a 36m lawn in a 39m
+    # block, and the hand-sited North Ridge connector passes 4.5m from that
+    # lawn's edge -- 1.5m of verge once the road's own half-width is taken off,
+    # where the rule asks for 2.0m. It was invisible until 2026-08-09 because
+    # firestation had no declared footprint at all. Nothing here can be fixed
+    # by moving anything: the campus and the connector were both built long
+    # ago and existing geometry never moves. What IS fixed is that the type is
+    # audited from now on, so a future fire station cannot repeat it -- the
+    # chapter-three one stands 5.20m clear of Northgate Avenue by construction.
+    "firestation": {"North Ridge connector"},
     "cityhall": {"City Hall approach"},
     "civicsquare": {"City Hall approach"},
     "raftingstation": {"rafting outpost lane"},
@@ -595,6 +634,17 @@ def walk_surface_manifest(state):
     if any(building.get("district") == "Timber Bend"
            for building in state.get("buildings", [])):
         append_graded_road(timber_crossing_points(), 3.25)
+
+    # The Northgate arterial, the road from downtown up to the chapter-three
+    # quarter. It appears with the quarter's first address.
+    from neighborhood_plan import (northgate_arterial_points,
+                                   NORTHGATE_ARTERIAL_REVEAL,
+                                   ARTERIAL_HALF_WIDTH)
+    if active >= NORTHGATE_ARTERIAL_REVEAL:
+        append_graded_road(
+            [(x, y, terrain_height(x, y) + .085)
+             for x, y in northgate_arterial_points()],
+            ARTERIAL_HALF_WIDTH)
 
     salmon_shop = next((building for building in state.get("buildings", [])
                         if building.get("type") == "salmonproshop"), None)

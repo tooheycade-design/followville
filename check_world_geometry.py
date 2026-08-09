@@ -34,11 +34,14 @@ import math
 import sys
 
 from downtown_visual_plan import terrain_height
-from neighborhood_plan import PLAN, RIVER_HALF_WIDTH
+from neighborhood_plan import (PLAN, RIVER_HALF_WIDTH,
+                               NORTHGATE_ARTERIAL_REVEAL,
+                               northgate_arterial_points)
 from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, INTENTIONALLY_RAISED_ROADS,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
-                          LANDMARK_FOOTPRINTS, LEVEL_WATER, RETAINED_PADS,
+                          LANDMARK_FOOTPRINTS, LANDMARK_GRID_SIZE,
+                          LEVEL_WATER, RETAINED_PADS,
                           DEFAULT_MAX_PAD_STAND, MAX_PAD_STAND,
                           SALMON_SHOP_APPROACH, timber_crossing_points,
                           STORYBOOK_ACCESS, rafting_access_points,
@@ -100,6 +103,25 @@ def densify(points, step=2.0):
     return dense
 
 
+def building_point(building):
+    """Where a building's geometry actually stands, in Blender coordinates.
+
+    Off-grid records carry px/py. A downtown GRID record carries gx/gy instead,
+    and its geometry is centred on the block of lots it fills, not on its
+    anchor lot -- place_instance offsets a SIZE-n asset by (n-1)*LOT/2 on both
+    axes. Reading px/py off a grid record returns (0, 0), which is how the
+    elementary school came to be audited at the world origin and reported as
+    1.5m from a house 115m away from it.
+    """
+    if "px" in building:
+        return transform_building_point(building)
+    bx, ix = divmod(building["gx"], BLOCK_N)
+    by, iy = divmod(building["gy"], BLOCK_N)
+    size = LANDMARK_GRID_SIZE.get(building["type"], 1)
+    return (bx * PITCH + ix * LOT + LOT / 2 + (size - 1) * LOT / 2,
+            by * PITCH + iy * LOT + LOT / 2 + (size - 1) * LOT / 2)
+
+
 def paved_envelope(buildings):
     """The rectangle the downtown grid's roads and sidewalks actually cover."""
     grid = [b for b in buildings
@@ -150,6 +172,8 @@ def every_road(state):
     if any(b.get("district") == "Timber Bend" for b in buildings):
         roads.append(("Timber Bend Crossing",
                       [(x, y) for x, y, _z in timber_crossing_points()]))
+    if active >= NORTHGATE_ARTERIAL_REVEAL:
+        roads.append(("Northgate arterial", northgate_arterial_points()))
     return roads
 
 
@@ -220,9 +244,9 @@ def check_landmarks_clear_roads_and_town(state):
     buildings = state["buildings"]
     envelope = paved_envelope(buildings)
     roads = every_road(state)
-    others = [(b, transform_building_point(b)) for b in buildings
+    others = [(b, building_point(b)) for b in buildings
               if "px" in b and b["type"] not in LANDMARK_FOOTPRINTS]
-    others += [(b, (b["gx"] * LOT, b["gy"] * LOT)) for b in buildings
+    others += [(b, building_point(b)) for b in buildings
                if "px" not in b and b["type"] not in ("tree", "bush", "rock")]
     audited = 0
     for building in buildings:
@@ -231,7 +255,7 @@ def check_landmarks_clear_roads_and_town(state):
             continue
         audited += 1
         x0, x1, y0, y1, rural = spec
-        cx, cy = transform_building_point(building)
+        cx, cy = building_point(building)
         corners = [(cx + x0, cy + y0), (cx + x1, cy + y0),
                    (cx + x1, cy + y1), (cx + x0, cy + y1)]
         outline = densify(corners + [corners[0]], 2.0)

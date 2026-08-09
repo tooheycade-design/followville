@@ -1,8 +1,11 @@
-# Followville deterministic neighborhood reserve: houses 135-750
+# Followville deterministic neighborhood reserve
 
 The original 366-address reserve was implemented 2026-07-11. The approved
 river chapter extends the same deterministic system by 250 addresses,
 367-616, carrying population 500 to 750. See `RIVER_EXPANSION_PLAN.md`.
+Chapter three adds addresses 617-1126 on a gridded quarter north of the
+town -- see "Chapter three" below, and note that ten of those addresses are
+deliberately not houses.
 
 Current progress: addresses 1-576 are built through Day 34 (population 720).
 The permanent Followville First Alert Weather station is a separate civic
@@ -30,8 +33,12 @@ opened Ferry Street. Address 577 is next.
 
 ## Behavior
 
-- `neighborhood_plan.py` owns all 616 exact addresses, street assignments,
-  rotations, road dependencies, district counts, and visible terrain features.
+- `neighborhood_plan.py` owns every exact address, street assignment, rotation,
+  road dependency, district count, and visible terrain feature. Read the total
+  from `HOUSE_CAPACITY`, which is derived from `STREETS`, not from any number
+  written in prose here: how many addresses a street can seat depends on how
+  much room its specials take, and a hand-kept figure goes stale the moment a
+  clearance changes.
 - Future plan data creates no Blender object by itself.
 - Ordinary `+N` growth consumes the next N addresses in sequence.
 - A short road segment appears only when its dependent house exists.
@@ -67,6 +74,53 @@ opened Ferry Street. Address 577 is next.
 | 527-584 | Eastbank Village | 58 (50 built; 8 remain) |
 | 585-616 | River Meadows | 32 (not started) |
 
+## Chapter three: the Northgate quarter (addresses 617 onward)
+
+A rectilinear grid on open ground north of everything built, sitting on a level
+terrace at 5.00m in `downtown_visual_plan.terrain_height`. Six avenues 36m
+apart (y=306 to y=486) crossed by five short streets 70m apart (x=-120 to
+x=160). `culdesac=False` on all thirteen: a grid street ends on another street,
+and a turning circle there would be a roundabout dropped in a junction.
+
+**Ten of these addresses are not houses.** They are consumed in the same order
+as everything else, so `+60 followers` still means "the next sixty addresses
+appear" -- one of them just happens to be a filling station. The reserved types
+are 2 filling stations, 2 diners, the grocery, the school, the fire station,
+2 parks and a pond.
+
+Specials are declared by a fraction ALONG their street, not by address index.
+An index-keyed special moves every time the counts are re-solved, and one
+declared past the end of a shortened street used to disappear without a word.
+
+**Size decides which street a special can stand on.** Avenues are 36m apart, so
+the deepest thing that fits between two of them is about 14m half-depth once
+both kerbs are respected. That takes the filling station, the diner, the pond
+and the park. It rejects the school (28.4m), Follow Mart (34m) and the fire
+station (36m) at ANY setback -- 36m of building does not fit in a 36m block --
+so those three stand on the two OUTER faces, where the ground is open: the fire
+station on Northgate Avenue's town side, Follow Mart and the school along
+Kettle Row's northern edge.
+
+Each address is set back so its own front edge lands 5.20m from its road
+centreline, whatever its size. That figure is not free: once a type is declared
+in `world_layout.LANDMARK_FOOTPRINTS`, `check_world_geometry` holds it to 2.0m
+beyond the road's 3.0m half-width.
+
+### The Northgate arterial
+
+The quarter's road connection to downtown, revealed with address 617. It leaves
+the downtown grid at the crossroads of the x=-93 and y=87 streets and runs
+220m north onto the Northgate Avenue centreline -- real junctions at both ends.
+Its centreline is declared once, in `neighborhood_plan.NORTHGATE_ARTERIAL`, and
+read by the generator, the browser walk surface and `check_world_geometry`, so
+there are no copies to drift.
+
+Do not restore the 2026-08-09 east-west highway along y=272 (commit `8689593`).
+It connected to nothing at either end, and it ran through Willow Hills and
+Creekside Bend: it had been cleared against the reserve's RAW coordinates,
+where Creekside Bend's houses look 58m further south than they actually stand.
+`build_plan()` now compares chapter three in WORLD metres for that reason.
+
 ## Safe daily operation
 
 Use the normal growth command. There is no special suburban flag:
@@ -82,9 +136,23 @@ or the website.
 
 ## Validation
 
-Run `python neighborhood_plan.py`. It verifies continuous IDs, the exact
-616-house total, district totals, minimum spacing, road setbacks, cul-de-sac
-clearance, and that every front door faces its assigned street.
+Run `python neighborhood_plan.py`. It verifies continuous IDs, district totals,
+minimum spacing, road setbacks, cul-de-sac clearance, and that every front door
+faces its assigned street.
+
+It also runs `_validate_footprints()`, which measures the ground each address
+actually covers rather than the distance between address POINTS. That
+distinction is the whole of the 2026-08-09 defect: every point-based check
+passed while fourteen houses stood inside the fire station and six of the ten
+specials had a road running through them. It checks footprint overlap between
+any pair involving a special, every special against every road centreline,
+every chapter-three address against the arterial, and that a civic pad's ground
+does not fall more than `MAX_SPECIAL_PAD_FALL` across its own footprint.
+
+Houses in DIFFERENT districts are compared in world metres, not raw plan
+coordinates. Districts are rigid render-time offsets, so two addresses can be
+58m apart in the raw numbers and standing on each other in the town.
+
 The GitHub Action runs the same validation on pushes to `main`.
 
 `check_town_glb.py` also verifies that every built planned house still matches
