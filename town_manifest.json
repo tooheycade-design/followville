@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 1986172,
+    "bytes": 1986100,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "69ebb05b52aebbafea8955431a79fe036d76772ffae55b3791115515874647e5"
+    "sha256": "a6b8e407086ae8c6eae2b39ebb8e3a4ce1f4141e1f3499e901e9e0bff62507b0"
   },
   "chunks": [
     {
@@ -1003,10 +1003,10 @@
     },
     {
       "asset": {
-        "bytes": 101128,
+        "bytes": 101452,
         "compression": "draco",
         "file": "town_chunks/food-court.glb",
-        "sha256": "108eaf889fa1e45077c78043a2fd6a3655e557c9d70412da776b9338dd2bcffc"
+        "sha256": "14cd9fa728e165972fa556bffadb00ccd84a65063dc5f2a813333aae3fa18750"
       },
       "bounds": {
         "center": [
@@ -2413,9 +2413,9 @@
     }
   ],
   "fallback": {
-    "bytes": 28944944,
+    "bytes": 28945196,
     "file": "town.glb",
-    "sha256": "757a34be32e40bf017b7f71719eafed51d6da7c39d4d1e7692a343b28bb428a6"
+    "sha256": "48c2d268b2d5c738dbdfcb8cbbd3fa6d5322eb715fb047fe4dddd4b249986661"
   },
   "state": {
     "building_count": 844,
