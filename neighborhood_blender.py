@@ -6142,6 +6142,72 @@ def _add_road_surface_dash(col, name, points, center_distance, length,
     return obj
 
 
+NORTHGATE_HIGHWAY_REVEAL = 617          # first chapter-three address
+
+
+def build_northgate_highway(world_col, buildings, m):
+    """The arterial that feeds the chapter-three grid.
+
+    Runs east-west along y=272, in the gap between the top of the old suburbs
+    (Pebble Court tops out at y=218) and the terrace edge, then throws two
+    ramps north into Northgate Avenue. It exists only once the quarter starts
+    building, so it does not appear as a road to nowhere.
+
+    Control points are emitted every 3m rather than at the bends. Terrain-
+    following strips subdivide to 2m internally but the walk surface uses the
+    control points as given, so coarse points drift the walkable surface away
+    from the visible asphalt (see CLAUDE.md's roads note).
+    """
+    active = max((b.get("plan_id", 0) for b in buildings), default=0)
+    if active < NORTHGATE_HIGHWAY_REVEAL:
+        return []
+    shoulder = mat("NB_hw_shoulder", (.55, .55, .53), .95)
+    median = mat("NB_hw_median", (.41, .64, .33), 1.0)
+    paint = mat("NB_hw_paint", (.95, .94, .88), .80)
+
+    def densify(points, step=3.0):
+        out = []
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            n = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / step)))
+            for i in range(n):
+                t = i / n
+                out.append((ax + (bx - ax) * t, ay + (by - ay) * t))
+        out.append(points[-1])
+        return out
+
+    made = []
+    spine = densify([(-215, 268), (-120, 272), (0, 274), (120, 272), (262, 266)])
+    made.append(_add_road_strip(world_col, "northgate_highway_shoulder", spine,
+                                shoulder, width=18.0, bottom_offset=.005,
+                                top_offset=.045, terrain_conform=True))
+    made.append(_add_road_strip(world_col, "northgate_highway", spine, m["road"],
+                                width=15.0, bottom_offset=.015,
+                                top_offset=.085, terrain_conform=True))
+    # A planted median, raised clear of the deck so the two surfaces never
+    # share a plane -- the visible-surface depth rule applies to hardscape.
+    made.append(_add_road_strip(world_col, "northgate_highway_median", spine,
+                                median, width=1.9, bottom_offset=.086,
+                                top_offset=.155, terrain_conform=True))
+    total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                for a, b in zip(spine, spine[1:]))
+    for lane in (-5.1, 5.1):
+        edge = _offset_terrain_path(spine, lane)
+        made.append(_add_road_strip(world_col, "northgate_highway_lane", edge,
+                                    paint, width=.20, bottom_offset=.086,
+                                    top_offset=.098, terrain_conform=True))
+    # Ramps north into Northgate Avenue, at two of the cross streets so the
+    # grid picks them up as ordinary junctions rather than stubs.
+    for rx in (-120.0, 90.0):
+        ramp = densify([(rx, 272.0), (rx, 288.0), (rx, 306.0)])
+        made.append(_add_road_strip(world_col, "northgate_highway_ramp_shoulder",
+                                    ramp, shoulder, width=9.6, bottom_offset=.005,
+                                    top_offset=.045, terrain_conform=True))
+        made.append(_add_road_strip(world_col, "northgate_highway_ramp", ramp,
+                                    m["road"], width=7.4, bottom_offset=.015,
+                                    top_offset=.085, terrain_conform=True))
+    return [obj for obj in made if obj is not None]
+
+
 def build_suburban_roads(world_col, buildings, m):
     """Reveal only the road pieces needed by houses already constructed."""
     if not SUBURBAN_PLAN:
@@ -11158,6 +11224,7 @@ def main(cfg=None):
     # The redesign supplies one continuous walkable terrain mesh. The older
     # decorative mound pass is intentionally omitted to avoid intersecting
     # houses and roads with scenery that has no shared elevation model.
+    build_northgate_highway(world_col, keep or state["buildings"], m)
     river_road_objects = build_suburban_roads(
         world_col, keep or state["buildings"], m)
     river_objects = build_river_chapter(world_col, keep or state["buildings"], m)
