@@ -7522,7 +7522,9 @@ def animate_ducks(world_col, buildings, frame_end):
                     kp.interpolation = "LINEAR"
 
 def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
-                    end_frame=None, burst_count=6, base_z=28.0):
+                    end_frame=None, burst_count=6, base_z=28.0,
+                    particle_size=1.2, spread=13.0, shards=12,
+                    emission=30.0):
     """One-off celebration: firework bursts above an area. Not saved to the
     world state — they exist only in videos rendered with --celebrate."""
     rng = random.Random(4242)
@@ -7537,7 +7539,7 @@ def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
             # 2026-07-09: was 9.0 -- readable at sunset but nearly invisible
             # against a bright daytime sky at drone distance; boosted so
             # daylight celebrations actually show up on camera
-            bsdf.inputs["Emission Strength"].default_value = 30.0
+            bsdf.inputs["Emission Strength"].default_value = emission
         except Exception:
             pass
         fmats.append(fm)
@@ -7553,7 +7555,7 @@ def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
         span = max(1, last - first - 22)
         t0 = int(first + span * k / max(1, burst_count - 1) + rng.uniform(0, 5))
         fm = fmats[k % len(fmats)]
-        for _ in range(12):
+        for _ in range(shards):
             th = rng.uniform(0, math.tau)
             ph = math.acos(rng.uniform(-1, 1))
             dx = math.sin(ph) * math.cos(th)
@@ -7561,15 +7563,19 @@ def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
             dz = math.cos(ph)
             # 2026-07-09: particles enlarged (0.75->1.2) + wider spread so the
             # bursts read at drone distance in daylight, not just at sunset
-            p = add_ngon_cone(world_col, "fw", 1.2, 0.8, 1.4, 6, bx, by, bz, fm)
+            p = add_ngon_cone(world_col, "fw", particle_size,
+                              particle_size * .67, particle_size * 1.17,
+                              6, bx, by, bz, fm)
+            mid = spread * .65
             p.scale = (0.001, 0.001, 0.001)
             p.keyframe_insert("scale", frame=t0)
             p.keyframe_insert("location", frame=t0)
-            p.location = (bx + dx * 8.5, by + dy * 8.5, bz + dz * 8.5)
+            p.location = (bx + dx * mid, by + dy * mid, bz + dz * mid)
             p.scale = (1, 1, 1)
             p.keyframe_insert("scale", frame=t0 + 7)
             p.keyframe_insert("location", frame=t0 + 7)
-            p.location = (bx + dx * 13.0, by + dy * 13.0, bz + dz * 13.0 - 2.0)
+            p.location = (bx + dx * spread, by + dy * spread,
+                          bz + dz * spread - 2.0)
             p.scale = (0.001, 0.001, 0.001)
             p.keyframe_insert("scale", frame=t0 + 22)
             p.keyframe_insert("location", frame=t0 + 22)
@@ -7579,8 +7585,8 @@ MAYOR_HANDLE = "@bps_out"
 
 
 def build_mayor_flyover(world_col, frame_end, handle=MAYOR_HANDLE,
-                        y=-142.0, z=60.0, first=70, last=262,
-                        x_from=-62.0, x_to=82.0):
+                        y=-142.0, z=54.0, first=70, last=262,
+                        x_from=-34.0, x_to=118.0):
     """Render-only: the banner plane that announces Followville's new mayor.
 
     Nothing here is ever written to world_state.json, the GLB or the Blend --
@@ -7628,8 +7634,12 @@ def build_mayor_flyover(world_col, frame_end, handle=MAYOR_HANDLE,
     # The flight is slow on purpose. A 34mm lens on a 9:16 frame is only about
     # 33 degrees wide, which is roughly 84m of sky at the distance the plane
     # crosses; at a realistic tow speed the banner would be readable for well
-    # under a second. This crosses 144m in 6.4s, so it holds the frame for
+    # under a second. This crosses 152m in 6.4s, so it holds the frame for
     # about four of them.
+    #
+    # The x range is offset east of the camera's aim because the banner trails
+    # 21m BEHIND the tug: centring the aircraft puts the words half out of
+    # frame, which is exactly how the first render clipped the M off MAYOR.
     root.location = (x_from, y, z)
     root.keyframe_insert("location", frame=first)
     root.location = (x_to, y, z)
@@ -11467,9 +11477,16 @@ def main(cfg=None):
         # Render-only celebration for the mayoral result. Neither the shells
         # nor the aircraft is ever written to world_state, the GLB or the
         # Blend -- same contract as the Day 34 emergency props.
+        # Sized for THIS shot, not for a drone pass. The defaults are 1.2m
+        # shards over a 13m spread, which is a couple of pixels at the ~150m
+        # this camera stands off and rendered as a scatter of white specks.
+        # 3.0m shards over 26m give bursts that read as fireworks, and the
+        # emission comes down from 30 to 16 so the colour survives the
+        # exposure instead of clipping to white.
         build_fireworks(world_col, CITY_HALL_X, CITY_HALL_Y, FPS * 10,
-                        start_frame=34, end_frame=272, burst_count=9,
-                        base_z=52.0)
+                        start_frame=34, end_frame=268, burst_count=9,
+                        base_z=54.0, particle_size=3.0, spread=26.0,
+                        shards=20, emission=16.0)
         build_mayor_flyover(world_col, FPS * 10)
 
     # animation timing: sinks first, then rises
