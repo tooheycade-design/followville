@@ -9639,14 +9639,21 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
     elif cam == "day39reveal":
-        # Day 39, 10 seconds, one unbroken move in three beats:
-        #   0-2.0s   high over downtown, drifting north. The establishing look
-        #            at the city that already exists.
-        #   2.0-6.3s one continuous transfer north, up the corridor the new
-        #            arterial runs in. The roads land underneath it in flight,
-        #            so the quarter arrives as road-first-then-houses.
-        #   6.3-10s  track east along Northgate Avenue while the homes rise
-        #            one at a time, west to east, just ahead of the camera.
+        # Day 39, 20 seconds, one unbroken move in four beats:
+        #   0-6.0s    high over downtown, drifting north. The establishing look
+        #             at the city that already exists.
+        #   6.0-11.0s one continuous transfer north, up the corridor the new
+        #             arterial runs in. The roads land underneath it in
+        #             flight, so the quarter arrives road-first-then-houses.
+        #   11-17.9s  track east along Northgate Avenue while the homes rise
+        #             one at a time, west to east, just ahead of the camera.
+        #   17.9-20s  lift away, looking back down the finished street.
+        #
+        # Twenty seconds rather than ten because thirty-three homes cannot
+        # read as "one at a time" in three: at ten seconds each house got
+        # three frames, which is a tenth of a second and looks like a single
+        # pop. Six frames each gives them six seconds, and the opening hold
+        # over the city grew from two seconds to six.
         #
         # Flying ALONG the street rather than framing it whole is forced by the
         # arithmetic: the batch spans about 175m, and a 30mm lens on a 9:16
@@ -9679,23 +9686,26 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         track.up_axis = "UP_Y"
 
         beats = (
-            # establishing: downtown from the south, high and looking down
+            # 0-6.0s establishing: downtown from the south, high and looking
+            # down, drifting slowly. Three keys rather than two so the drift
+            # decelerates into the transfer instead of snapping into it.
             (1,   (70.0, -200.0, 285.0), (5.0, -30.0, 10.0)),
-            (60,  (52.0, -150.0, 258.0), (0.0, 15.0, 8.0)),
-            # transfer north, following the arterial's own corridor
-            (120, (-30.0, 60.0, 168.0), (-93.0, 215.0, 6.0)),
-            (160, (-93.0, 180.0, 88.0), (-93.0, 290.0, 5.0)),
+            (110, (60.0, -176.0, 272.0), (3.0, -10.0, 9.0)),
+            (180, (44.0, -136.0, 248.0), (0.0, 22.0, 8.0)),
+            # 6.0-11.0s transfer north, following the arterial's own corridor
+            (268, (-25.0, 70.0, 172.0), (-93.0, 228.0, 6.0)),
+            (325, (-100.0, 190.0, 92.0), (-100.0, 292.0, 5.0)),
             # arrive at the west end of the new frontage
-            (195, (west[0] + 15.0, street_y - 58.0, 46.0),
+            (360, (west[0] + 15.0, street_y - 62.0, 50.0),
                   (west[0] + 50.0, street_y + 2.0, 6.0)),
-            # track east, staying just behind the homes as they come up
-            (255, (-70.0, street_y - 58.0, 52.0), (-40.0, street_y + 2.0, 6.0)),
+            # 11-17.9s track east, staying just behind the homes as they come up
+            (520, (-70.0, street_y - 58.0, 52.0), (-40.0, street_y + 2.0, 6.0)),
             # then swing north-east and lift, looking back down the finished
             # street. Tracking any closer to the end was the first attempt and
             # it ended on eight houses in an empty green field: north of the
             # street there is nothing to see yet, so the last beat has to turn
             # round and put the arterial and the town behind the new frontage.
-            (300, (55.0, street_y + 95.0, 150.0), (-85.0, street_y + 2.0, 6.0)),
+            (600, (55.0, street_y + 95.0, 150.0), (-85.0, street_y + 2.0, 6.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -11468,8 +11478,10 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") in ("day39reveal", "day39mayor"):
-        frame_end = FPS * 10          # exactly ten seconds, not "at least"
+    if cfg.get("cam") == "day39reveal":
+        frame_end = FPS * 20          # exactly twenty seconds, not "at least"
+    elif cfg.get("cam") == "day39mayor":
+        frame_end = FPS * 10
     elif cfg.get("cam") == "day38foodtour":
         frame_end = max(frame_end, FPS * 20)
     elif cfg.get("cam") == "day38reveal":
@@ -11545,20 +11557,24 @@ def main(cfg=None):
                     if obj.name.startswith("northgate_arterial")]
         street = [obj for obj in world_col.objects
                   if obj.get("nb_street_index") in new_streets]
+        # Mid-transfer, while the camera is still crossing open meadow.
         for obj in arterial:
             _keyframe_hidden(obj, 1, True)
-            _keyframe_hidden(obj, 95, False)
+            _keyframe_hidden(obj, 238, False)
         for obj in street:
             _keyframe_hidden(obj, 1, True)
-            _keyframe_hidden(obj, 108, False)
+            _keyframe_hidden(obj, 258, False)
         home_roots = [e for e in rise if e.name.startswith("house_d")]
-        # Last home is up at frame 272, before the closing lift starts, so the
-        # pull-back lands on a finished street rather than one still building.
+        # Six frames apart, not three. Thirty-three homes at three frames each
+        # is a tenth of a second per house and reads as one pop rather than a
+        # street filling in; six gives the sequence six and a half seconds.
+        # The last home is up at 555, so the closing lift still lands on a
+        # finished street.
         for index, e in enumerate(sorted(home_roots, key=lambda o: o.location.x)):
-            animate_rise(e, 160 + index * 3, dur=16)
+            animate_rise(e, 345 + index * 6, dur=18)
         for e in rise:
             if e not in home_roots:
-                animate_rise(e, 160)
+                animate_rise(e, 345)
     elif cfg.get("cam") == "day38foodtour":
         # The loop road, green and lamps land as the drone arrives at 225;
         # then one home every 8 frames, finishing at 414 -- before the camera
