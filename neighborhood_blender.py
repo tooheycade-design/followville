@@ -7522,7 +7522,7 @@ def animate_ducks(world_col, buildings, frame_end):
                     kp.interpolation = "LINEAR"
 
 def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
-                    end_frame=None, burst_count=6):
+                    end_frame=None, burst_count=6, base_z=28.0):
     """One-off celebration: firework bursts above an area. Not saved to the
     world state — they exist only in videos rendered with --celebrate."""
     rng = random.Random(4242)
@@ -7546,7 +7546,10 @@ def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
     for k in range(burst_count):
         bx = cx + rng.uniform(-26, 26)
         by = cy + rng.uniform(-20, 20)
-        bz = 28 + rng.uniform(0, 12)
+        # base_z defaults to the historic 28m so every existing caller is
+        # unchanged; City Hall's own dome tops out near 28m, so the mayor
+        # clip lifts them clear of it rather than bursting through the roof.
+        bz = base_z + rng.uniform(0, 12)
         span = max(1, last - first - 22)
         t0 = int(first + span * k / max(1, burst_count - 1) + rng.uniform(0, 5))
         fm = fmats[k % len(fmats)]
@@ -7570,6 +7573,79 @@ def build_fireworks(world_col, cx, cy, frame_end, start_frame=None,
             p.scale = (0.001, 0.001, 0.001)
             p.keyframe_insert("scale", frame=t0 + 22)
             p.keyframe_insert("location", frame=t0 + 22)
+
+
+MAYOR_HANDLE = "@bps_out"
+
+
+def build_mayor_flyover(world_col, frame_end, handle=MAYOR_HANDLE,
+                        y=-142.0, z=60.0, first=70, last=262,
+                        x_from=-62.0, x_to=82.0):
+    """Render-only: the banner plane that announces Followville's new mayor.
+
+    Nothing here is ever written to world_state.json, the GLB or the Blend --
+    it exists only in the video it was made for, exactly like the Day 34
+    emergency props. The whole aircraft is parented to one empty so the flight
+    is a single animated transform rather than a dozen keyed parts.
+    """
+    body = mat("NB_plane_body", (.95, .95, .93), .34)
+    accent = mat("NB_plane_accent", (.82, .17, .15), .44)
+    dark = mat("NB_plane_dark", (.16, .17, .20), .55)
+    cloth = mat("NB_banner_cloth", (.86, .16, .15), .74)
+    letters = mat("NB_banner_text", (1.0, .97, .88), .38)
+
+    root = bpy.data.objects.new("mayor_plane_root", None)
+    world_col.objects.link(root)
+    parts = []
+    # Nose to tail along +X, which is the direction of flight.
+    parts.append(add_box(world_col, "plane_fuselage", 7.6, 1.30, 1.30,
+                         0, 0, -.65, body))
+    parts.append(add_ngon_cone(world_col, "plane_nose", .65, .06, 1.5, 10,
+                               3.8, 0, -.65, accent, rot=0.0))
+    parts.append(add_box(world_col, "plane_wing", 2.0, 12.6, .26,
+                         -.2, 0, -.16, body))
+    parts.append(add_box(world_col, "plane_tailplane", 1.3, 4.6, .22,
+                         -3.4, 0, -.10, body))
+    parts.append(add_box(world_col, "plane_fin", 1.5, .22, 2.0,
+                         -3.5, 0, 0, accent))
+    parts.append(add_ngon_cone(world_col, "plane_prop_hub", .28, .22, .35, 8,
+                               4.6, 0, -.65, dark))
+    parts.append(add_box(world_col, "plane_canopy", 2.2, 1.0, .62,
+                         .9, 0, .60, dark))
+    # The banner streams behind the tail. Cloth first, then the lettering
+    # mounted clear of its face -- coplanar text on its own backing is exactly
+    # the depth-fight the visible-surface rule exists to stop.
+    parts.append(add_box(world_col, "banner_cloth", 30.0, .12, 4.4,
+                         -21.0, 0, -2.2, cloth))
+    parts.append(add_box(world_col, "banner_towline", 6.0, .07, .07,
+                         -8.6, 0, -.35, dark))
+    caption = add_text(world_col, "banner_text", "MAYOR %s" % handle,
+                       2.5, .10, -21.0, -.16, 0.0, letters)
+    parts.append(caption)
+    for part in parts:
+        part.parent = root
+
+    # The flight is slow on purpose. A 34mm lens on a 9:16 frame is only about
+    # 33 degrees wide, which is roughly 84m of sky at the distance the plane
+    # crosses; at a realistic tow speed the banner would be readable for well
+    # under a second. This crosses 144m in 6.4s, so it holds the frame for
+    # about four of them.
+    root.location = (x_from, y, z)
+    root.keyframe_insert("location", frame=first)
+    root.location = (x_to, y, z)
+    root.keyframe_insert("location", frame=last)
+    # Constant speed: a banner tow that eases in and out reads as a zoom.
+    for fc in obj_fcurves(root):
+        for kp in fc.keyframe_points:
+            kp.interpolation = "LINEAR"
+    # Hidden before it enters and after it leaves, so no aircraft hangs in the
+    # first or last frame of the clip.
+    _keyframe_hidden(root, 1, True)
+    _keyframe_hidden(root, first, False)
+    for part in parts:
+        _keyframe_hidden(part, 1, True)
+        _keyframe_hidden(part, first, False)
+    return [root] + parts
 
 
 def build_milestone_fireworks(world_col, cx, cy, frame_end):
@@ -9524,6 +9600,44 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day39mayor":
+        # Day 39, 10 seconds, outside the government building on the day the
+        # mayoral result is announced. One slow push from the south-east onto
+        # City Hall's portico and dome, framed low in a 9:16 frame so the top
+        # two-thirds is sky: that is where the shells burst and where the
+        # banner plane crosses. No cuts -- the whole clip is one move.
+        aim = bpy.data.objects.new("Day39MayorAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day39MayorCamera")
+        cam_data.lens = 34
+        # Not the 10m aerial clip: this is a ground-level civic shot and the
+        # nearest lamp standard is well inside ten metres of the final push.
+        cam_data.clip_start = 0.40
+        cam_data.clip_end = 6000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day39MayorCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        hx, hy = CITY_HALL_X, CITY_HALL_Y
+        beats = (
+            (1,   (hx + 88.0, hy - 84.0, 44.0), (hx + 4.0, hy + 2.0, 21.0)),
+            (150, (hx + 72.0, hy - 70.0, 39.0), (hx + 3.0, hy + 2.0, 20.0)),
+            (300, (hx + 57.0, hy - 57.0, 34.0), (hx + 2.0, hy + 2.0, 19.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day39reveal":
         # Day 39, 10 seconds, one unbroken move in three beats:
         #   0-2.0s   high over downtown, drifting north. The establishing look
@@ -9572,11 +9686,16 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (120, (-30.0, 60.0, 168.0), (-93.0, 215.0, 6.0)),
             (160, (-93.0, 180.0, 88.0), (-93.0, 290.0, 5.0)),
             # arrive at the west end of the new frontage
-            (195, (west[0] + 20.0, street_y - 48.0, 52.0),
-                  (west[0] + 35.0, street_y, 6.0)),
+            (195, (west[0] + 15.0, street_y - 58.0, 46.0),
+                  (west[0] + 50.0, street_y + 2.0, 6.0)),
             # track east, staying just behind the homes as they come up
-            (300, (east[0] - 20.0, street_y - 56.0, 44.0),
-                  (east[0] - 5.0, street_y, 6.0)),
+            (255, (-70.0, street_y - 58.0, 52.0), (-40.0, street_y + 2.0, 6.0)),
+            # then swing north-east and lift, looking back down the finished
+            # street. Tracking any closer to the end was the first attempt and
+            # it ended on eight houses in an empty green field: north of the
+            # street there is nothing to see yet, so the last beat has to turn
+            # round and put the arterial and the town behind the new frontage.
+            (300, (55.0, street_y + 95.0, 150.0), (-85.0, street_y + 2.0, 6.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -11334,13 +11453,22 @@ def main(cfg=None):
         render_mode=cfg.get("cam"))
     scatter_nature(world_col, occupied, keep or state["buildings"])
 
+    if cfg.get("cam") == "day39mayor":
+        # Render-only celebration for the mayoral result. Neither the shells
+        # nor the aircraft is ever written to world_state, the GLB or the
+        # Blend -- same contract as the Day 34 emergency props.
+        build_fireworks(world_col, CITY_HALL_X, CITY_HALL_Y, FPS * 10,
+                        start_frame=34, end_frame=272, burst_count=9,
+                        base_z=52.0)
+        build_mayor_flyover(world_col, FPS * 10)
+
     # animation timing: sinks first, then rises
     n_anim = len(rise) + len(sink)
     prehold = int(1.5 * FPS)
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day39reveal":
+    if cfg.get("cam") in ("day39reveal", "day39mayor"):
         frame_end = FPS * 10          # exactly ten seconds, not "at least"
     elif cfg.get("cam") == "day38foodtour":
         frame_end = max(frame_end, FPS * 20)
@@ -11391,7 +11519,14 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day39reveal":
+    if cfg.get("cam") == "day39mayor":
+        # Deliberately animates nothing. This clip is a replay of Day 39, so
+        # the batch handed to it is the thirty-three homes 440m north -- and
+        # animate_rise is also what HIDES an object before its turn, so
+        # touching them would delete the new quarter from its own city's
+        # celebration. Everything stays standing.
+        pass
+    elif cfg.get("cam") == "day39reveal":
         # Roads first, then the homes one at a time. Both land while the
         # camera is still in transit over open meadow, so the quarter reads as
         # "the road arrives, then the street fills in".
@@ -11417,11 +11552,13 @@ def main(cfg=None):
             _keyframe_hidden(obj, 1, True)
             _keyframe_hidden(obj, 108, False)
         home_roots = [e for e in rise if e.name.startswith("house_d")]
+        # Last home is up at frame 272, before the closing lift starts, so the
+        # pull-back lands on a finished street rather than one still building.
         for index, e in enumerate(sorted(home_roots, key=lambda o: o.location.x)):
-            animate_rise(e, 185 + index * 3, dur=18)
+            animate_rise(e, 160 + index * 3, dur=16)
         for e in rise:
             if e not in home_roots:
-                animate_rise(e, 185)
+                animate_rise(e, 160)
     elif cfg.get("cam") == "day38foodtour":
         # The loop road, green and lamps land as the drone arrives at 225;
         # then one home every 8 frames, finishing at 414 -- before the camera
