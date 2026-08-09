@@ -42,6 +42,13 @@ NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "s
                        "weatherstation",
                        "constructionzone", "movietheater",
                        "forestreserve",
+                       # Chapter three's filling stations and diners. They hold
+                       # a growth address each -- "+N followers" still means the
+                       # next N addresses appear -- but the whole point is that
+                       # they are not homes, so nobody should be able to claim
+                       # one and live in it. Every other chapter-three special
+                       # was already covered above.
+                       "gasstation", "restaurant",
                        "tree", "bush", "rock", "duck"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
