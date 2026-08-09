@@ -3576,6 +3576,97 @@ def build_food_house(col, variant):
     _merge_asset_meshes(col, "food_house_%02d" % variant)
 
 
+def build_gas_station(col, seed):
+    """A filling station: forecourt, canopy on four columns, two pump islands.
+
+    Authored like every planned house -- front on local -Y, footprint inside the
+    lot envelope -- so the reserve can hand it an ordinary street address and it
+    faces its road with no special casing anywhere in placement.
+    """
+    m = std_mats()
+    pave = mat("NB_gas_pave", (.62, .62, .60), .95)
+    wall = mat("NB_gas_wall", (.95, .94, .90), .86)
+    band = mat("NB_gas_band", (.86, .32, .26), .84)
+    glass = mat("NB_gas_glass", (.30, .52, .62), .14, .10, 1.0, 0.0, .58)
+    steel = mat("NB_gas_steel", (.80, .80, .82), .55)
+    dark = mat("NB_gas_dark", (.24, .26, .29), .84)
+
+    add_box(col, "gas_forecourt", 17.0, 15.0, .16, 0, -1.0, 0, pave)
+    # Shop along the back so the forecourt reads from the street.
+    add_box(col, "gas_shop", 9.4, 5.2, 3.5, -2.4, 5.0, .16, wall)
+    add_box(col, "gas_shop_band", 9.6, 5.4, .55, -2.4, 5.0, 3.66, band)
+    add_prism_roof(col, "gas_shop_roof", 9.8, 5.6, .9, -2.4, 5.0, 4.21, dark)
+    for i in range(3):
+        add_box(col, "gas_shop_glass", 2.30, .14, 2.05,
+                -5.3 + i * 2.9, 2.32, .90, glass)
+    add_box(col, "gas_shop_door", 1.15, .16, 2.35, 1.15, 2.30, .16, dark)
+
+    # Canopy: four columns, deck above head height, red fascia on all four
+    # sides so no oblique angle shows an open edge.
+    for cx in (-5.6, 5.6):
+        for cy in (-5.4, 1.0):
+            add_ngon_cone(col, "gas_column", .34, .34, 4.6, 8, cx, cy, .16, steel)
+    add_box(col, "gas_canopy_deck", 14.4, 9.6, .42, 0, -2.2, 4.76, wall)
+    add_box(col, "gas_canopy_fascia", 14.8, 10.0, .62, 0, -2.2, 5.18, band)
+    add_box(col, "gas_canopy_soffit", 13.6, 8.8, .14, 0, -2.2, 4.62, wall)
+
+    for cy in (-4.4, .0):
+        add_box(col, "gas_island", 6.4, 1.5, .26, 0, cy, .16, pave)
+        for px in (-1.9, 1.9):
+            add_box(col, "gas_pump", .95, .80, 1.85, px, cy, .42, wall)
+            add_box(col, "gas_pump_face", .70, .12, .95, px, cy - .44, 1.00, dark)
+
+    # Price totem on the street side, clear of the canopy.
+    add_ngon_cone(col, "gas_sign_post", .26, .24, 5.2, 8, -7.2, -7.4, .16, steel)
+    add_box(col, "gas_sign_board", 3.2, .38, 2.0, -7.2, -7.4, 5.36, band)
+    add_box(col, "gas_sign_face", 2.7, .16, 1.5, -7.2, -7.62, 5.60, wall)
+    _merge_asset_meshes(col, "gas_station")
+
+
+def build_restaurant(col, seed):
+    """A roadside diner: long glazed frontage, pitched roof, entry canopy."""
+    m = std_mats()
+    pave = mat("NB_din_pave", (.66, .65, .63), .95)
+    wall = mat("NB_din_wall", (.94, .90, .82), .87)
+    warm = mat("NB_din_warm", (.82, .44, .34), .85)
+    glass = mat("NB_din_glass", (.28, .50, .60), .14, .10, 1.0, 0.0, .58)
+    roof = mat("NB_din_roof", (.36, .38, .42), .86)
+    trim = mat("NB_din_trim", (.98, .97, .94), .70)
+    green = mat("NB_din_green", (.41, .64, .33), 1.0)
+
+    add_box(col, "din_pad", 15.0, 13.0, .14, 0, .5, 0, pave)
+    add_box(col, "din_lawn", 15.4, 2.2, .10, 0, -6.4, 0, green)
+
+    add_box(col, "din_body", 12.0, 7.2, 3.9, 0, 2.4, .14, wall)
+    add_box(col, "din_plinth", 12.3, 7.5, .45, 0, 2.4, .14, warm)
+    add_prism_roof(col, "din_roof", 12.6, 7.8, 1.6, 0, 2.4, 4.04, roof)
+    # Glazed street frontage, mounted clear of the wall it sits on.
+    front = -1.2
+    for i in range(4):
+        add_box(col, "din_window", 2.15, .16, 2.15,
+                -4.35 + i * 2.9, front - .10, 1.05, glass)
+        add_box(col, "din_mullion", .22, .22, 2.45,
+                -5.55 + i * 2.9, front - .10, .95, trim)
+    add_box(col, "din_mullion", .22, .22, 2.45, 6.05 - 2.9, front - .10, .95, trim)
+
+    add_box(col, "din_door", 1.30, .18, 2.45, 4.4, front - .12, .14, warm)
+    add_box(col, "din_entry_canopy", 3.6, 1.8, .28, 4.4, front - .95, 2.85, warm)
+    for px in (3.0, 5.8):
+        add_ngon_cone(col, "din_entry_post", .16, .14, 2.7, 8, px, front - 1.70, .14, trim)
+
+    # Roof sign, stood proud of the ridge rather than lying on it.
+    add_box(col, "din_sign_board", 6.2, .34, 1.5, -1.2, 2.4, 5.72, warm)
+    add_box(col, "din_sign_face", 5.6, .14, 1.05, -1.2, 2.21, 5.92, trim)
+    for px in (-3.6, 1.2):
+        add_ngon_cone(col, "din_sign_post", .14, .12, 1.7, 6, px, 2.4, 4.30, trim)
+
+    # A couple of patio tables so the frontage is not a blank apron.
+    for tx in (-4.6, -1.6):
+        add_ngon_cone(col, "din_table_leg", .16, .14, .70, 6, tx, -3.6, .14, trim)
+        add_ngon_cone(col, "din_table_top", 1.05, 1.05, .12, 10, tx, -3.6, .84, wall)
+    _merge_asset_meshes(col, "restaurant")
+
+
 def build_food_court(col, seed):
     """The ring road, its connector out to Rivergate, and the plaza sign."""
     m = std_mats()
@@ -5114,6 +5205,8 @@ ASSET_VARIANTS = {
     "salmonproshop": [("AST_salmonproshop_0", lambda c: build_salmon_pro_shop(c, 3800))],
     "apartmentcomplex": [("AST_apartmentcomplex_0", lambda c: build_apartment_complex(c, 7300))],
     "foodcourt": [("AST_foodcourt_0", lambda c: build_food_court(c, 8100))],
+    "gasstation": [("AST_gasstation_0", lambda c: build_gas_station(c, 8200))],
+    "restaurant": [("AST_restaurant_0", lambda c: build_restaurant(c, 8300))],
     "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
@@ -5200,7 +5293,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
         "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
-        "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1}
+        "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1,
+        "gasstation": 1, "restaurant": 1}
 
 # unlocked automatically the day population crosses the threshold
 MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
@@ -10904,7 +10998,14 @@ def main(cfg=None):
                 take = min(n, max(0, SUBURBAN_CAPACITY - already))
                 if take and SUBURBAN_PLAN:
                     for slot in SUBURBAN_PLAN["houses"][already:already + take]:
-                        b = {"type": "house", "gx": 0, "gy": 0,
+                        # Chapter three reserves ten of its addresses for
+                        # something other than a house -- a filling station, a
+                        # diner, the grocery, the school. They are consumed in
+                        # exactly the same order, so "+60 followers" still means
+                        # "the next sixty addresses appear"; one of them just
+                        # happens not to be a home. Older slots carry no type
+                        # and stay houses.
+                        b = {"type": slot.get("type", "house"), "gx": 0, "gy": 0,
                              "px": slot["x"], "py": slot["y"], "rot": slot["rot"],
                              "plan_id": slot["plan_id"], "district": slot["district"],
                              "street": slot["street"], "seed": state["seed_counter"],

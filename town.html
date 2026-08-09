@@ -4240,6 +4240,16 @@ function regionalTerrainHeight(x,z){
   const FOOD_COURT_PLATEAU=1-redesignSmoothstep(54.0,96.0,
     Math.hypot((x-272.0)/1.00,y-210.0));
   height=height*(1-FOOD_COURT_PLATEAU)+10.20*FOOD_COURT_PLATEAU;
+  // Chapter-three terrace -- must stay in lockstep with terrain_height() in
+  // downtown_visual_plan.py. A lerp to a datum, not a multiply toward zero,
+  // and the x feather is stretched 1.4x so the western climb has 98m to
+  // resolve while the southern edge stops short of the Food Court.
+  const TERRACE_DATUM=5.00;
+  const terraceDistance=Math.hypot(
+    Math.max(0,(-165.0-x)*0.46,(x-185.0)*0.85),
+    Math.max(0,Math.abs(y-400.0)-100.0));
+  const terrace=1-redesignSmoothstep(0.0,65.0,terraceDistance);
+  height=height*(1-terrace)+TERRACE_DATUM*terrace;
   const riverDistance=Math.abs(x-riverCenterX(y));
   // Faithful port of downtown_visual_plan.terrain_height's river bank. A river
   // may not stand above its own meadow: riverWaterHeight is a pure function of

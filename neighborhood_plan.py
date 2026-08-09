@@ -10,7 +10,8 @@ import math
 
 BASE_POPULATION = 134
 LEGACY_RESERVE_CAPACITY = 366
-HOUSE_CAPACITY = 616
+RIVER_RESERVE_CAPACITY = 616
+HOUSE_CAPACITY = 1126
 ROAD_HALF_WIDTH = 3.0
 HOUSE_SETBACK = 8.5
 HOUSE_ROAD_CLEARANCE = 6.75
@@ -48,7 +49,21 @@ DISTRICTS = (
     ("Timber Bend", 54),
     ("Eastbank Village", 58),
     ("River Meadows", 32),
+    # Chapter three: two dense gridded quarters on open ground north and south
+    # of everything built so far. Deliberately NOT more curved cul-de-sac
+    # suburbs -- the existing long radial streets are the ones Cade wants to
+    # become main downtown arterials later, so these are laid out as short
+    # blocks on a rectilinear grid that a downtown can actually grow into.
+    ("Northgate", 314),
+    ("Southline", 196),
 )
+
+# Address numbers inside chapter three that are NOT ordinary houses. The key is
+# the address's index along its own street, so a special keeps both its place in
+# the growth numbering AND a sensible corner or mid-block position. Everything
+# here is an existing generator type; nothing needs a new asset to be reserved.
+# The terrace datum and box live in downtown_visual_plan.terrain_height, which
+# is the single shared walk surface; they are not duplicated here.
 
 # Each street is intentionally independent and develops from its first point
 # toward a cul-de-sac at its last point. Counts total 616. The original 366
@@ -135,6 +150,63 @@ STREETS = (
          points=[(485, -195), (510, -225), (535, -252), (565, -263), (595, -255)]),
     dict(district="River Meadows", name="Heron Reach", count=16,
          points=[(535, -252), (545, -285), (568, -310), (600, -318), (630, -305)]),
+
+    # ---------------------------------------------------------------- chapter
+    # three. Addresses 617-1126: 500 houses and ten reserved non-house
+    # addresses, on a rectilinear grid rather than more radial cul-de-sacs.
+    #
+    # Both quarters sit on ground that is genuinely empty: an occupancy sweep of
+    # the built world plus the whole 616-address reserve found the city solid
+    # from about y=-320 to y=280, so these go north of 300 and south of -340.
+    # Three long avenues carry the addresses, five short cross streets tie them
+    # into blocks, and `culdesac=False` keeps a grid a grid -- a bulb on the end
+    # of a street that runs into another street would be a roundabout in the
+    # middle of a junction.
+    #
+    # Address spacing is deliberately tighter than the river chapter's. Adjacent
+    # addresses alternate sides of the street, so a 6.5m step along the frontage
+    # is a 13m gap between neighbours on the same side: dense enough to read as
+    # a town rather than a subdivision, still clear of the 7.35m minimum.
+
+    # The quarter is sited on the broad flat bowl the terrain already has here.
+    # Profiling the ground at 40m across y=280..520 found it between 3.3 and
+    # 6.5m for x in [-170,170], climbing hard to 20m by x=-320 and 13m by
+    # x=280. Building across that climb would have meant either a terrace edge
+    # steeper than a road can climb, or a feather long enough to reach back and
+    # move Pebble Court. So the grid stops at the edge of the flat ground.
+
+    # Northgate -- the three southern avenues plus every cross street.
+    dict(district="Northgate", name="Northgate Avenue", count=71, culdesac=False,
+         specials={8: "gasstation", 44: "restaurant"},
+         points=[(-190, 306), (-60, 306), (60, 306), (210, 306)]),
+    dict(district="Northgate", name="Foundry Street", count=71, culdesac=False,
+         specials={22: "followmart", 58: "park"},
+         points=[(-190, 342), (-60, 342), (60, 342), (210, 342)]),
+    dict(district="Northgate", name="Lantern Row", count=72, culdesac=False,
+         specials={12: "pond", 40: "elementaryschool"},
+         points=[(-190, 378), (-60, 378), (60, 378), (210, 378)]),
+    dict(district="Northgate", name="Kiln Cross", count=20, culdesac=False,
+         points=[(-120, 306), (-120, 396), (-120, 486)]),
+    dict(district="Northgate", name="Maple Cross", count=20, culdesac=False,
+         points=[(-50, 306), (-50, 396), (-50, 486)]),
+    dict(district="Northgate", name="Cedar Cross", count=20, culdesac=False,
+         points=[(20, 306), (20, 396), (20, 486)]),
+    dict(district="Northgate", name="Quarry Cross", count=20, culdesac=False,
+         points=[(90, 306), (90, 396), (90, 486)]),
+    dict(district="Northgate", name="Anvil Cross", count=20, culdesac=False,
+         points=[(160, 306), (160, 396), (160, 486)]),
+
+    # Southline -- the three northern avenues on the same grid, so the two
+    # districts read as one quarter rather than two subdivisions.
+    dict(district="Southline", name="Southline Avenue", count=62, culdesac=False,
+         specials={30: "firestation"},
+         points=[(-190, 414), (-60, 414), (60, 414), (210, 414)]),
+    dict(district="Southline", name="Millrace Street", count=62, culdesac=False,
+         specials={18: "park", 52: "restaurant"},
+         points=[(-190, 450), (-60, 450), (60, 450), (210, 450)]),
+    dict(district="Southline", name="Kettle Row", count=72, culdesac=False,
+         specials={26: "gasstation"},
+         points=[(-190, 486), (-60, 486), (60, 486), (210, 486)]),
 )
 
 TERRAIN = (
@@ -231,7 +303,11 @@ def build_plan():
 
     all_segments = [(a, b, i) for i, path in enumerate(street_paths)
                     for a, b in zip(path, path[1:])]
-    all_bulbs = [(path[-1], i) for i, path in enumerate(street_paths)]
+    # Only streets that actually END in a turning circle reserve one. A grid
+    # street runs into another street, so treating its last point as a bulb
+    # would blank out twelve metres of frontage around a plain junction.
+    all_bulbs = [(path[-1], i) for i, path in enumerate(street_paths)
+                 if STREETS[i].get("culdesac", True)]
 
     for street_index, street in enumerate(STREETS):
         path = street_paths[street_index]
@@ -276,6 +352,10 @@ def build_plan():
             hx, hy, angle, side = chosen
             houses.append(dict(
                 plan_id=sequence, district=street["district"], street=street["name"],
+                # Ordinary unless this street reserved the address for something
+                # else. Keyed on the address's index along its own street, so a
+                # special holds a chosen position AND a fixed growth number.
+                type=street.get("specials", {}).get(address_index, "house"),
                 x=round(hx, 3), y=round(hy, 3),
                 # House assets face local -Y. Rotate that front toward the
                 # sampled road centerline, never sideways along the street.
@@ -297,9 +377,12 @@ def build_plan():
                               street_index=street_index))
         # The bulb must not appear until the final road segment reaches it.
         # Revealing it early creates a detached gray disc in growth videos.
-        turnarounds.append(dict(center=path[-1], reveal_at=last_sequence,
-                                district=street["district"], street=street["name"],
-                                street_index=street_index))
+        # Grid streets end on another street rather than in a turning circle,
+        # and a bulb there would be a roundabout dropped in a junction.
+        if street.get("culdesac", True):
+            turnarounds.append(dict(center=path[-1], reveal_at=last_sequence,
+                                    district=street["district"], street=street["name"],
+                                    street_index=street_index))
     assert len(houses) == HOUSE_CAPACITY
     return dict(houses=houses, roads=roads, turnarounds=turnarounds,
                 terrain=list(TERRAIN), districts=list(DISTRICTS),

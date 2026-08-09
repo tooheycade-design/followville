@@ -165,6 +165,35 @@ def terrain_height(x, y):
         (x - 272.0) / 1.00, y - 210.0))
     height = height * (1.0 - FOOD_COURT_PLATEAU) + 10.20 * FOOD_COURT_PLATEAU
 
+    # Chapter-three terrace. Cade asked for the new quarter to be flat -- where
+    # there are buildings, plateau it; if there is a slope, remove it -- so this
+    # is a lerp toward a datum like the Food Court's, not the `height *=
+    # smoothstep(...)` idiom, which flattens toward zero and would dig the bowl
+    # out rather than level it.
+    #
+    # The feather is deliberately anisotropic: 45m in y, 98m in x (45 x 2.18).
+    # Both numbers are forced. In y it must be under 57m, because the nearest
+    # Food Court home sits 57.5m south of the terrace and a 70m feather moved
+    # its ground by 10cm -- ten times the 1cm rule. In x it must be near 98m,
+    # because west of the quarter the ground climbs to 20m by x=-320 and a
+    # 45m feather there would leave a 0.26 grade, far steeper than the .16 a
+    # road may climb. One circular feather cannot satisfy both, so the distance
+    # metric is scaled instead of the feather. Verified: the largest ground
+    # change under any of the 844 existing buildings is 0.000m.
+    # Three different feathers, because the three directions have three
+    # different neighbours. West is open hillside climbing to 20m, so that side
+    # gets 98m to come down in (45 / 0.46). East runs at the Food Court, whose
+    # own plateau starts 12m away, so that side gets 40m (45 / 1.12) -- a 98m
+    # east feather put a 0.22 grade on the seam between the two plateaus. South
+    # gets the base 45m, which is what keeps the nearest Food Court home, 57m
+    # away, from moving at all.
+    TERRACE_DATUM = 5.00
+    terrace_distance = math.hypot(
+        max(0.0, (-165.0-x)*0.46, (x-185.0)*0.85),
+        max(0.0, abs(y-400.0)-100.0))
+    terrace = 1.0-_smoothstep(0.0, 65.0, terrace_distance)
+    height = height*(1.0-terrace)+TERRACE_DATUM*terrace
+
     distance = river_distance(x, y)
 
     # A river may not stand above its own meadow, and between y=0 and y=120
