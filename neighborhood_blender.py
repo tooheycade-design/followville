@@ -5329,6 +5329,15 @@ def place_instance(world_col, b, name):
                 authored_z = 0.1
             elif b["type"] in ("tree", "bush", "rock", "forestreserve"):
                 authored_z = terrain_height(x, y)
+            elif b["type"] in ("foodhouse", "foodcourt"):
+                # The Food Court sits on a levelled hilltop, so it has to
+                # follow the terrain like the scatter does. It used to fall
+                # through to the `else: authored_z = 0` below and looked
+                # correct only by accident: its first site was at roughly
+                # zero elevation, so world zero and the ground were the same
+                # place. On the plateau they are 10.20m apart, and the whole
+                # neighbourhood rendered underneath its own road.
+                authored_z = terrain_height(x, y)
             else:
                 authored_z = 0
         empty.location = (x, y, authored_z)
