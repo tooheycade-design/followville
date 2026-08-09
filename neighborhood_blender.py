@@ -154,6 +154,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --commons        add Followville Commons, the permanent apartment complex
 #   --foodcourt      add the Food Court ring of food-shaped homes
 #   --cam day38reveal 16-second skyline, run east, Food Court rise
+#   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
@@ -9175,6 +9176,109 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day38foodtour":
+        # Day 38, 20 seconds, one unbroken move from 230m over downtown to
+        # 2m over the Food Court's own loop road:
+        #   0.0-4.0s   high drone over the city, pushing slowly in.
+        #   4.0-7.5s   one continuous transfer north-east to the Food Court.
+        #   7.5-13.6s  a descending arc while the nineteen homes rise, one at
+        #              a time, counter-clockwise round the ring.
+        #  13.6-17.2s  the same move keeps descending, crosses the ring of
+        #              homes well above the tallest of them, and settles on
+        #              the loop road.
+        #  17.2-20.0s  street level, past the homes, turning south-west to
+        #              look back down the valley toward town.
+        #
+        # Everything after the transfer lives NORTH-EAST of the ring, which is
+        # not the side the Day 38 reveal used. TODS["day"] puts the sun at
+        # rot (50, 0, 120) -- light running toward (-0.66, -0.38, -0.64), i.e.
+        # a sun 40 degrees up in the NORTH-EAST. A camera north-east of the
+        # ring therefore has the sun behind it and every food house lit, and
+        # the town it turns back toward is south-west, in the same direction.
+        yard_b = next((b for b in buildings if b.get("type") == "foodcourt"), None)
+        fx, fy = build_pos(yard_b) if yard_b else (FOOD_COURT_X, FOOD_COURT_Y)
+        # The loop road is drawn as a 32x25 ellipse about that record, and the
+        # homes stand on a wider one, so the road is the clear lane between
+        # the ring of homes outside it and the ring of lamp posts inside it.
+        gz = terrain_height(fx, fy)
+        eye = gz + 2.05                       # road top is gz + 0.19
+
+        def loop(degrees, lift=0.0):
+            a = math.radians(degrees)
+            return (fx + 32.0 * math.cos(a), fy + 25.0 * math.sin(a), eye + lift)
+
+        aim = bpy.data.objects.new("Day38FoodTourAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day38FoodTourCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day38FoodTourCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        tr = cam_obj.constraints.new("TRACK_TO")
+        tr.target = aim
+        tr.track_axis = "TRACK_NEGATIVE_Z"
+        tr.up_axis = "UP_Y"
+
+        skyline_on = (25.0, 6.0, 42.0)
+        beats = (
+            # 0.0-4.0s: the city as it stands, from the south-east.
+            (1,   (185.0, -232.0, 205.0), skyline_on),
+            (60,  (156.0, -200.0, 185.0), skyline_on),
+            (120, (128.0, -170.0, 166.0), skyline_on),
+            # 4.0-7.5s: north-east across the river districts, ~480m.
+            (180, (240.0, 40.0, 150.0), (300.0, 190.0, 20.0)),
+            (225, (fx + 74.0, fy + 82.0, 96.0), (fx, fy - 2.0, 10.0)),
+            # 7.5-13.6s: settle and sink while the ring builds.
+            (290, (fx + 68.0, fy + 72.0, 84.0), (fx, fy - 2.0, 10.0)),
+            (350, (fx + 63.0, fy + 64.0, 70.0), (fx, fy - 2.0, 10.0)),
+            (408, (fx + 58.0, fy + 58.0, 58.0), (fx, fy - 4.0, 10.0)),
+            # 13.6-17.2s: down through the ring. The 28m key is the one that
+            # matters -- it is where the camera crosses the homes, and the
+            # tallest of them (the fries carton's longest fry) tops out at
+            # 20.4m. Sampling the evaluated path frame by frame put the
+            # closest approach at 1.4m above a coffee cup's lid with 4.0m of
+            # lateral clearance, and no frame inside anything at all.
+            (452, (fx + 40.0, fy + 37.0, 40.0), (fx + 4.0, fy, 11.0)),
+            (482, (fx + 29.0, fy + 25.0, 28.0), (fx + 10.0, fy + 6.0, 12.0)),
+            (500, (fx + 22.5, fy + 18.0, 20.0), (fx + 14.0, fy + 16.0, eye)),
+            (515, loop(45.0), loop(80.0)),
+            # 17.2-20.0s: counter-clockwise along the loop road, homes passing
+            # on the right, lamps and the green on the left, then the turn
+            # south-west onto the valley and the town beyond it.
+            (545, loop(80.0), loop(115.0)),
+            (575, loop(120.0), loop(150.0, lift=-0.3)),
+            (frame_end, loop(140.0), (fx - 72.0, fy - 30.0, gz - 4.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+
+        # The 10m near clip that keeps thin aerial roads and ponds from
+        # flashing (see CLAUDE.md) would erase the whole street beat, so it
+        # has to come down with the camera -- but only once nothing is within
+        # the value being left behind, and in two steps so depth precision is
+        # given up as late as possible. clip_end drops with it for the same
+        # reason: it is the ratio that costs precision, not the near plane.
+        # LINEAR, because a bezier handle can overshoot a clip plane past zero.
+        for frame, near, far in ((1, 10.0, 8000.0), (440, 10.0, 8000.0),
+                                 (485, 2.0, 4000.0), (515, 0.30, 1200.0),
+                                 (frame_end, 0.30, 1200.0)):
+            cam_data.clip_start, cam_data.clip_end = near, far
+            cam_data.keyframe_insert("clip_start", frame=frame)
+            cam_data.keyframe_insert("clip_end", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
+
+        bpy.context.scene.camera = cam_obj
     elif cam == "day37reveal":
         # Day 37, 24 seconds:
         #   0-6s     the Day 36 downtown framing, orbiting slowly.
@@ -10595,6 +10699,20 @@ def main(cfg=None):
     new_batch, removed, unlocked = [], [], []
     if replay:
         new_batch = [b for b in state["buildings"] if b.get("day") == state["day"]]
+        if not new_batch:
+            # "Re-animate yesterday's batch" only works while the newest
+            # buildings carry state["day"], and the --foodcourt block breaks
+            # that: it appends its records and stamps them BEFORE the
+            # `state["day"] += 1` further down, while every other addition is
+            # created after it. So the Food Court's twenty records carry day
+            # 37 in a day-38 world, an exact match finds nothing, and a replay
+            # renders a town where nothing rises at all -- which is what
+            # `--cam day38reveal` did when it was replayed. Fall back to the
+            # newest day that actually exists. Render-only: replay never
+            # writes world_state.json, so no stamp is corrected here.
+            newest = max((b.get("day", 0) for b in state["buildings"]), default=0)
+            new_batch = [b for b in state["buildings"]
+                         if b.get("day", 0) == newest]
     else:
         if lost > 0:
             houses = [b for b in state["buildings"] if b["type"] == "house"]
@@ -10960,7 +11078,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day38reveal":
+    if cfg.get("cam") == "day38foodtour":
+        frame_end = max(frame_end, FPS * 20)
+    elif cfg.get("cam") == "day38reveal":
         frame_end = max(frame_end, FPS * 16)
     elif cfg.get("cam") == "day37reveal":
         frame_end = max(frame_end, FPS * 24)
@@ -11007,7 +11127,26 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day38reveal":
+    if cfg.get("cam") == "day38foodtour":
+        # The loop road, green and lamps land as the drone arrives at 225;
+        # then one home every 8 frames, finishing at 414 -- before the camera
+        # is down among them at 515, so nothing pops up in a face.
+        #
+        # Nothing else is touched. The replay batch is the whole of day 37,
+        # which also holds three Heron Reach cabins and Followville Commons,
+        # 600m away and already standing for two days. Leaving them
+        # un-animated is what keeps them standing: animate_rise is also what
+        # hides an object before its turn.
+        yard = [e for e in rise if e.name.startswith("foodcourt_d")]
+        homes = [e for e in rise if e.name.startswith("foodhouse_d")]
+        if len(homes) != 19:
+            raise RuntimeError("Day 38 food tour expects 19 food homes in the"
+                               " animation batch, found %d" % len(homes))
+        for e in yard:
+            animate_rise(e, 230, dur=28)
+        for index, e in enumerate(homes):
+            animate_rise(e, 248 + index * 8, dur=22)
+    elif cfg.get("cam") == "day38reveal":
         # The loop road first, then the ring clockwise, finishing with time in
         # hand to look at the finished court.
         yard = [e for e in rise if e.name.startswith("foodcourt_d")]
