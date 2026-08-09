@@ -9234,22 +9234,31 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (290, (fx + 68.0, fy + 72.0, 84.0), (fx, fy - 2.0, 10.0)),
             (350, (fx + 63.0, fy + 64.0, 70.0), (fx, fy - 2.0, 10.0)),
             (408, (fx + 58.0, fy + 58.0, 58.0), (fx, fy - 4.0, 10.0)),
-            # 13.6-17.2s: down through the ring. The 28m key is the one that
-            # matters -- it is where the camera crosses the homes, and the
-            # tallest of them (the fries carton's longest fry) tops out at
-            # 20.4m. Sampling the evaluated path frame by frame put the
-            # closest approach at 1.4m above a coffee cup's lid with 4.0m of
-            # lateral clearance, and no frame inside anything at all.
-            (452, (fx + 40.0, fy + 37.0, 40.0), (fx + 4.0, fy, 11.0)),
-            (482, (fx + 29.0, fy + 25.0, 28.0), (fx + 10.0, fy + 6.0, 12.0)),
-            (500, (fx + 22.5, fy + 18.0, 20.0), (fx + 14.0, fy + 16.0, eye)),
-            (515, loop(45.0), loop(80.0)),
+            # 13.6-17.2s: round the OUTSIDE of the ring, then in through the
+            # one gap wide enough to use. The first cut of this shot dropped
+            # straight through the ring on the diagonal and it was the worst
+            # part of the reel: the camera passed 4.7m to the side of a coffee
+            # cup and 14m above it, which is clear, but a shallow-enough pitch
+            # to see anything else put the far half of that flat dark lid
+            # across the bottom third of the frame, and the beat after it was
+            # a frame of empty lawn. So the descent now stays outside the
+            # homes until it is lined up on x = fx, which is the exact
+            # midpoint between the ice cream cone and the cupcake -- the two
+            # homes either side of due north, 13.2m apart, and the widest gap
+            # anywhere on a ring this dense. It crosses their tops with 2.4m
+            # of air and 2.3m to spare on each side, and the aim runs ahead to
+            # the far side of the ring the whole way down, so what fills the
+            # frame is the ring of homes opposite, not the roof underneath.
+            (452, (fx + 30.0, fy + 50.0, 42.0), (fx - 20.0, fy + 2.0, 15.0)),
+            (484, (fx, fy + 44.0, 31.0), (fx - 28.0, fy + 10.0, 14.0)),
+            (504, (fx, fy + 30.0, 20.0), (fx - 26.0, fy + 16.0, eye + 1.5)),
+            (515, loop(92.0), loop(130.0)),
             # 17.2-20.0s: counter-clockwise along the loop road, homes passing
             # on the right, lamps and the green on the left, then the turn
             # south-west onto the valley and the town beyond it.
-            (545, loop(80.0), loop(115.0)),
-            (575, loop(120.0), loop(150.0, lift=-0.3)),
-            (frame_end, loop(140.0), (fx - 72.0, fy - 30.0, gz - 4.0)),
+            (545, loop(118.0), loop(152.0)),
+            (575, loop(142.0), loop(174.0, lift=-0.3)),
+            (frame_end, loop(162.0), (fx - 92.0, fy - 40.0, gz - 6.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
