@@ -2398,14 +2398,35 @@ function addTownAtmosphere(){
     // each hill on its preferred bearing, but move only the threatened ones
     // outward until its full (conservatively circular) footprint clears every
     // current building. Normal growth therefore extends the skyline safely.
+    //
+    // That search used to step outward in sixteen fixed 18m hops and give up.
+    // 288m of travel was enough until the town reached x=631 and z=-405: the
+    // hill on the 320 degree bearing then ran out of attempts still 42.8m
+    // INSIDE the town, so data-hill-clearance went to "fail" and stayed there
+    // (it was failing on 96fbb2b, before the Food Court work). Solve for the
+    // radius instead of stepping toward it, so there is no cap to exhaust.
+    //
+    // Along the ray p(t) = t * u, a building b is too close exactly while
+    // |p(t) - b| < keep, and that is a single interval in t whose ends are the
+    // roots of t^2 - 2t(u.b) + |b|^2 - keep^2 = 0. Collect one interval per
+    // building, sort by their near end, and walk: a hill may legitimately sit
+    // BEFORE an interval, so only intervals that actually contain the current
+    // radius push it further. The first t clear of all of them is the answer.
     const footprintRadius = r * scaleX;
-    for (let attempt=0; attempt<16; attempt++){
-      const hx = Math.cos(a) * radius, hz = Math.sin(a) * radius;
-      const nearest = occupiedTownPoints.length
-        ? Math.min(...occupiedTownPoints.map(([x,z]) => Math.hypot(x-hx,z-hz)))
-        : Infinity;
-      if (nearest - footprintRadius >= hillTownClearance) break;
-      radius += 18;
+    const keep = footprintRadius + hillTownClearance;
+    const ux = Math.cos(a), uz = Math.sin(a);
+    const bands = [];
+    for (const [bx, bz] of occupiedTownPoints){
+      const along = ux * bx + uz * bz;
+      const discriminant = along * along - (bx * bx + bz * bz) + keep * keep;
+      if (discriminant <= 0) continue;          // the ray never comes that close
+      const spread = Math.sqrt(discriminant);
+      bands.push([along - spread, along + spread]);
+    }
+    bands.sort((one, other) => one[0] - other[0]);
+    for (const [near, far] of bands){
+      if (near > radius) break;                 // sorted, so nothing later reaches it
+      if (far > radius) radius = far;
     }
     const material = new THREE.MeshStandardMaterial({
       color:hillColors[i % hillColors.length], roughness:1.0, flatShading:true,
@@ -5751,7 +5772,21 @@ const HOME_MATERIAL_ROLES = {
   burjhouse: { wall:["NB_burj_glass"], roof:["NB_burj_trim"], door:["NB_door"] },
   toilethouse: { wall:["NB_wc_white"], roof:["NB_wc_seat"], door:["NB_door"] },
   beachhouse: { wall:["NB_bch_wall"], roof:["NB_bch_roof"], door:["NB_door"] },
-  cottagehouse: { wall:["NB_cot_wall"], roof:["NB_cot_roof"], door:["NB_door"] }
+  cottagehouse: { wall:["NB_cot_wall"], roof:["NB_cot_roof"], door:["NB_door"] },
+  // The Food Court's nineteen homes. This table does double duty -- it is also
+  // what `isHome` is decided from (see townMapItem) -- so leaving foodhouse out
+  // dropped all nineteen from the town map entirely, along with their street:
+  // the map showed 31 streets where world_state has 32, and a follower who owned
+  // one could not find their own house. They have been claimable and synced to
+  // Supabase as claimable since day 37, so that was a real hole, not a
+  // formality. Missed until 2026-08-10 because the walking test failed on
+  // data-hill-clearance eight assertions earlier and never reached the map.
+  //
+  // The roles deliberately avoid the food itself: recolouring a burger's bun
+  // lilac would throw away the one thing this district is for. Owners get the
+  // foundation, the trim and the door, all of which read clearly from the
+  // street and none of which is the food.
+  foodhouse: { wall:["NB_food_plinth"], roof:["NB_food_trim"], door:["NB_food_door"] }
 };
 
 function materialRoleFor(building, material){

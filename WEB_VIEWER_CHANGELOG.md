@@ -3,6 +3,49 @@
 Running log of every change made while building the Followville web viewer, in order.
 Kept here (rather than just in chat) so it survives across sessions.
 
+## Food Court homes reach the town map (2026-08-10)
+- `townMapItem()` decides `isHome` from `HOME_MATERIAL_ROLES[building.type]`, and
+  `foodhouse` had no entry — so `if (!isHome && !landmark) return null` dropped
+  all nineteen Food Court homes out of the map, and "Food Court Loop" with them.
+  The map listed 31 streets where `world_state.json` has 32.
+- They are claimable and have been synced to Supabase as claimable since day 37,
+  so a follower could own one with no way to find it on the map, no
+  `/house/:id` teleport and no Homeowner Mode. Adding the entry fixes all three.
+- `data-home-visuals`' denominator goes 793 → 812; 793 was exactly 812 minus the
+  nineteen.
+- Found only because the hill-clearance fix below let the walking test run eight
+  assertions further and reach the map. It had been invisible for three days.
+- **The palette roles deliberately avoid the food.** `wall` → the foundation
+  (`NB_food_plinth`), `roof` → the trim, `door` → the door. Recolouring a
+  burger's bun lilac would throw away the point of the district. To allow that
+  instead, point `wall` at the body materials; `ensureHouseMaterialsIsolated()`
+  already clones per house, so no owner can recolour a neighbour.
+
+## Backdrop hills stop failing their own audit (2026-08-10)
+- `data-hill-clearance` had been `"fail"` on every page load since before the
+  Food Court work — confirmed by running the suite against a worktree at
+  `96fbb2b` — and `town.html` logged "Followville backdrop hill clearance audit
+  failed" to the console on every visit.
+- The eighteen backdrop hills each keep their bearing and get pushed outward
+  until their (conservatively circular) footprint clears every building by 18m.
+  The search stepped outward in **sixteen fixed 18m hops and then gave up**. That
+  288m of travel was enough until the town reached x=631 / z=-405; the hill on
+  the 320° bearing then exhausted its attempts still **42.8m inside the town**.
+- `addTownAtmosphere()` now solves for the radius rather than stepping toward it,
+  so there is no cap to exhaust. Along the ray `p(t) = t·u`, a building is too
+  close over exactly one interval in `t`, bounded by the roots of
+  `t² − 2t(u·b) + |b|² − keep² = 0`. Collect one interval per building, sort by
+  near end, and walk — only intervals that actually contain the current radius
+  push it outward, because **a hill may legitimately sit before an interval**.
+- All eighteen now clear by exactly 18.00m. Radii land within ~11m of the old
+  stepped values (379 vs 390, 347 vs 350); only the previously-unsolvable hill
+  moves far, to 675m, which is correct — the town genuinely extends that way.
+- Cheaper than before, too: the old loop ran up to sixteen nearest-building scans
+  per hill, this runs one.
+- The audit still measures clearance **after** placement, so it remains a real
+  guard against a future change breaking the maths — it is just no longer
+  possible for ordinary growth to fail it.
+
 ## Day 33 storm and First Alert Weather reveal (2026-08-03)
 - Grew exactly 33 ordinary claimable homes from population 656 to 689. Plan
   IDs 513-526 finish Timber Bend's Lodgepole Loop and IDs 527-545 open

@@ -1,6 +1,93 @@
-# Codex handoff -- current through Day 35
+# Codex handoff -- current through Day 39
 
-Updated 2026-08-06 for Cade and Zach's next Claude/Codex session.
+Updated 2026-08-10 for Cade and Zach's next Claude/Codex session. Newest session
+first; the 2026-08-06 section below it is still current except where this one
+supersedes it.
+
+## Read this first -- 2026-08-10 session (Cade, via Windows Claude)
+
+The Food Court's nineteen homes were rebuilt and its connector re-routed. Five
+things here will bite you if you assume the old behaviour.
+
+1. **Importing `neighborhood_blender` in a background Blender session RUNS A
+   GROWTH.** The module ends in `if bpy.app.background: main()` -- that line is
+   the entire difference between "load the generator" and "grow the city". Set
+   `os.environ["FOLLOWVILLE_IMPORT_ONLY"] = "1"` **before** the import if you
+   only want the functions; nothing in the growth path sets it, so the launchers
+   and the GUI panel are unchanged. `check_food_assets.py` is the worked example.
+
+   This is first because of what it cost. A checker of mine imported the
+   module with `NEIGHBORHOOD_STATE_DIR` pointed at the repo and silently
+   advanced the world to day 40, appending five Northgate houses.
+   `git checkout -- world_state.json` was the whole repair -- but in the
+   meantime `town_manifest.json` disagreed with `world_state.json`,
+   `validateTownManifest()` threw, and the browser **quietly dropped out of
+   district streaming into the full-GLB fallback**. That fallback never assigns
+   `localWalkSurfaces`, so the walk-surface manifest went empty and a Playwright
+   test failed 400m away from anything that had changed. **A state/manifest
+   mismatch does not announce itself.** If a walk-surface or streaming test
+   starts failing for no reason, compare `world_state.json`'s day / pop /
+   building-count against `town_manifest.json`'s `state` block first.
+
+2. **Food house assets face local -Y, like every other house in town, and the
+   Food Court's stored `rot` values were 90 degrees out.** `food_court_lots()`
+   returned `a + pi`, which points the authored front along the ring *tangent*,
+   so all nineteen showed the plaza a side wall. It is `a - pi/2`, and the 19
+   stored values were rewritten to match (positions untouched). The ring
+   constants in that function also said 46x38 when the day-37 run wrote its
+   addresses from **40x33** -- if you re-derive a Food Court lot, use the
+   function, not any figure you remember.
+
+3. **`check_food_assets.py` is new, and it needs Blender.** It builds the ten
+   food house designs before the per-house merge collapses them and requires:
+   nothing below its own foundation, nothing past `FOOD_COURT_HOME_REACH`
+   (4.80m), and no two axis-aligned boxes sharing a face plane over an
+   overlapping area. It then measures all nineteen standing homes against both
+   district roads using each design's **convex hull**. Use the hull, not a
+   bounding box: a box round a 14-gon plinth with a doorstep has corners 6.45m
+   from the anchor and reports homes as standing in roads they clear.
+
+   ```text
+   & "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe" ^
+       --background --factory-startup --python check_food_assets.py
+   ```
+
+4. **The river connector is a 3.0m lane where it passes the homes, and that is
+   deliberate.** A 6m carriageway cannot exist there: nineteen homes evenly
+   spaced leave no gap for a road, so it has to thread two of them, and those
+   two stand 11.98m apart and take 8.18m of that between them. Do not "fix" the
+   narrow neck by widening it. `food_court_connector()` derives its centreline
+   from `food_court_lots()` and sites it on the line that balances the two
+   homes' verges; it is sited from two measured reaches in
+   `FOOD_COURT_GAP_REACH`, and `check_food_assets.py` re-measures those every
+   run and fails with the real figure if they drift. Two ways this went wrong
+   before it was right, both worth knowing: taking a home's *foundation* reach
+   when its roof **overhangs** further put the lane inside the home it was moved
+   to miss, and a pinch at a single point is not enough when a home presents a
+   **flat side** to the lane, because then the clearance barely grows as the
+   lane moves away.
+
+   Also corrected: `world_layout.LANDMARK_FOOTPRINTS`' comment calls this "a road
+   through one of its homes" and that is **right** -- measured properly it was
+   one home by 2.51m, and the other cleared by 0.30m. An earlier commit message
+   and TEAM_LOG entry of mine said two homes by 2.13m and 1.02m; that came from
+   sampling one worst-case envelope for all nineteen designs and is wrong.
+
+5. **`HOME_MATERIAL_ROLES` in `town.html` is not just a palette table -- it is
+   what `isHome` is decided from.** `townMapItem()` reads it, and anything that
+   is neither a home nor a landmark hits `if (!isHome && !landmark) return null`
+   and vanishes from the town map. `foodhouse` had no entry, so all nineteen
+   Food Court homes and their street were missing from the map for three days
+   while being **claimable and synced to Supabase as claimable** -- an owner had
+   no way to find their own house, no `/house/:id` teleport and no Homeowner
+   Mode. **If you add a claimable house type, add it to that table in the same
+   commit** or it is unreachable. Its palette roles point at the foundation, the
+   trim and the door on purpose, so nobody can recolour a burger's bun.
+
+   Worth generalising, and the reason this sat unnoticed: the walking test
+   failed on `data-hill-clearance` eight assertions earlier and never reached
+   the map. **One red assertion hides every assertion behind it.** When you fix
+   a long-standing test failure, expect the next one rather than assuming green.
 
 ## Read this first -- 2026-08-06 session (Cade, via Windows Claude)
 

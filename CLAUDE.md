@@ -161,9 +161,29 @@ five known regressions and requires each to be caught; the count is whatever
 one-to-one coverage of every building ID. Both run in CI on every push to
 `main` — check the Actions tab after any push.
 
+`check_food_assets.py` needs Blender, because the only honest answer comes from
+building the assets. The Food Court's homes are the one district made of loose
+primitives rather than the shared suburban shell, so it builds all ten designs
+before the per-house merge collapses them and requires nothing below the
+foundation, nothing past `FOOD_COURT_HOME_REACH`, and no two axis-aligned boxes
+sharing a face plane. It then measures all nineteen standing homes against both
+district roads using each design's **convex hull** — a box drawn round a round
+plinth reports homes as standing in roads they clear.
+
+**Importing `neighborhood_blender` in a background Blender session runs a
+growth.** The module ends in `if bpy.app.background: main()`, which is the whole
+launch mechanism, so any tool that imports it to read a function grows the city
+as a side effect — one did, silently advancing the world a day and leaving
+`town_manifest.json` disagreeing with `world_state.json`, which drops the
+browser out of district streaming without saying so. Set
+`FOLLOWVILLE_IMPORT_ONLY` before the import; nothing in the growth path sets it.
+
 `pnpm test:e2e` runs the Playwright suite. Run it after any public navigation
 work. Runtime state is exposed as `data-*` attributes on `<body>`, so
-assertions read those rather than poking at `THREE`.
+assertions read those rather than poking at `THREE`. A failure far from what you
+touched is worth taking seriously rather than filing as flake: the Timber Bend
+crossing test went red because a state/manifest mismatch had emptied the
+walk-surface manifest 400m away.
 
 ---
 
