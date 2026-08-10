@@ -253,6 +253,20 @@ SALMON_SHOP_Y = -36.0
 FOOD_COURT_X = 272.0
 FOOD_COURT_Y = 210.0
 FOOD_COURT_HOMES = 19
+# The ring the nineteen homes actually stand on. These were 46/38 until
+# 2026-08-09, which is not what built the district: the day-37 growth run wrote
+# its addresses from 40/33, so the constants here described a ring 6m wider than
+# the one in world_state.json. Nothing moved when they were corrected -- every
+# address is already stored -- but anyone re-deriving a lot from this function
+# got a position no house has ever occupied. 40/33 is also the only pair that
+# fits: it leaves each home exactly 8m from the loop road's centre line.
+FOOD_COURT_RING_RX = 40.0
+FOOD_COURT_RING_RY = 33.0
+# Every home's own geometry -- body, plinth, entrance steps, paving -- stays
+# inside this radius of its anchor. The loop road's centre line is 8m away and
+# it is ROAD (6m) wide, so its kerb is at 5.0m: a home that reaches further
+# than this paves over the street it is meant to face.
+FOOD_COURT_HOME_REACH = 4.80
 
 
 def food_court_lots():
@@ -260,9 +274,15 @@ def food_court_lots():
     lots = []
     for index in range(FOOD_COURT_HOMES):
         a = math.tau * index / FOOD_COURT_HOMES - math.pi / 2
-        lots.append((FOOD_COURT_X + 46.0 * math.cos(a),
-                     FOOD_COURT_Y + 38.0 * math.sin(a),
-                     a + math.pi))          # face inward, toward the road
+        # Food house assets are authored with their front on local -Y, like
+        # every other house in town, and place_instance() turns that front by
+        # `rot`. Rotating by `a + pi` -- what this returned until 2026-08-09 --
+        # leaves the front pointing along the ring tangent, so all nineteen
+        # homes showed the plaza a side wall and walked their front paths out
+        # across the grass. -Y lands on the inward radius at `a - pi/2`.
+        lots.append((FOOD_COURT_X + FOOD_COURT_RING_RX * math.cos(a),
+                     FOOD_COURT_Y + FOOD_COURT_RING_RY * math.sin(a),
+                     a - math.pi / 2))       # face inward, toward the road
     return lots
 
 
@@ -3435,21 +3455,246 @@ def _commons_lounger(col, x, y, z, frame, fabric):
                 x + side * .78, y, z, frame)
 
 
-def _food_shell(col, wall, trim, glass, door_m, w, d, h):
-    """Door, window and step, so every one of these still reads as a home."""
-    add_box(col, "food_door_frame", 1.45, .22, 2.45, 0, -d / 2 - .06, 0, trim)
-    add_box(col, "food_door", 1.10, .12, 2.15, 0, -d / 2 - .16, .05, door_m)
-    add_box(col, "food_knob", .12, .09, .12, .38, -d / 2 - .24, 1.05, trim)
-    add_box(col, "food_step", 2.20, .90, .18, 0, -d / 2 - .62, 0, trim)
+FOOD_PLINTH_H = .44             # foundation every food home stands on
+FOOD_PLINTH_SINK = .10          # bites into the ground so no base can float
+FOOD_LANDING_Z = FOOD_PLINTH_H - .06    # doorstep, one threshold below the plinth
+FOOD_LAYER_EMBED = .12          # how far each stacked layer sinks into the last
+FOOD_BODY_SIDES = 14
+FOOD_BODY_R = 4.16              # round bodies; keeps the home inside its reach
+FOOD_BODY_APOTHEM = FOOD_BODY_R * math.cos(math.pi / FOOD_BODY_SIDES)
+FOOD_PLINTH_R = 4.44
+FOOD_WALL_H = 2.86              # tall enough to carry a 2.42m door frame
+
+
+def _food_ngon_rot(sides):
+    """Turn an n-gon so one flat facet is centred on local -Y.
+
+    add_ngon_cone() puts its first vertex at `rot`, so the facet between
+    vertices 0 and 1 sits half a step further round. Landing that facet on -Y
+    gives every round food body a real flat wall to hang a door on. That is the
+    whole reason the old doors and windows floated: they were mounted on the lot
+    envelope (-d/2), which on a round body is open air -- the burger's door
+    frame stood 6cm clear of the bun, and the cupcake's two windows were left
+    hanging in the sky beside the frosting.
+    """
+    return -math.pi / 2 - math.pi / sides
+
+
+def _food_facet_angle(index, sides=FOOD_BODY_SIDES):
+    """Outward angle of facet `index`, counting from the front facet."""
+    return -math.pi / 2 + index * math.tau / sides
+
+
+def _food_facet_box(col, name, w, d, h, apothem, angle, z, material, out=.10):
+    """A detail lying flat on one facet of a round body.
+
+    `out` is how far its outward face stands proud of the facet; the rest of the
+    depth stays buried in the body, so trim, ribs, seams and window frames are
+    attached to something instead of hovering beside it.
+    """
+    centre = apothem + out - d / 2
+    obj = add_box(col, name, w, d, h,
+                  centre * math.cos(angle), centre * math.sin(angle),
+                  z, material)
+    obj.rotation_euler.z = angle + math.pi / 2
+    return obj
+
+
+def _food_facet_window(col, name, apothem, angle, z, trim, glass,
+                       width=1.06, height=1.16):
+    """_sub_window's layering, laid flat on one facet of a round body."""
+    _food_facet_box(col, name + "_frame", width + .24, .14, height + .24,
+                    apothem, angle, z, trim, out=.05)
+    _food_facet_box(col, name + "_glass", width, .10, height,
+                    apothem, angle, z + .12, glass, out=.10)
+    _food_facet_box(col, name + "_mullion", .08, .07, height,
+                    apothem, angle, z + .12, trim, out=.15)
+    _food_facet_box(col, name + "_transom", width, .07, .08,
+                    apothem, angle, z + .12 + height * .49, trim, out=.15)
+    _food_facet_box(col, name + "_sill", width + .34, .26, .12,
+                    apothem, angle, z - .11, trim, out=.11)
+
+
+def _food_axial_cylinder(col, name, r, length, sides, x, y, z, material,
+                         axis="-y"):
+    """A cylinder lying along -Y or +X instead of standing up.
+
+    add_ngon_cone() extrudes along +Z from its origin and keeps its cap circle in
+    the object's own XY plane, so rotating the object turns both together and the
+    cap stays centred on the origin. That is why a sausage or a doughnut tube
+    placed this way lands exactly where it is asked to, and a rotated box does
+    not: a box turns about its bottom face, not its middle.
+    """
+    obj = add_ngon_cone(col, name, r, r, length, sides, x, y, z, material)
+    if axis == "-y":
+        obj.rotation_euler.x = math.pi / 2
+    elif axis == "+x":
+        obj.rotation_euler.y = math.pi / 2
+    else:
+        raise ValueError("axis must be '-y' or '+x'")
+    return obj
+
+
+def _food_tilted_slab(col, name, length, depth, thickness, x, z, normal,
+                      material):
+    """A shell segment laid along a curve, its thickness following the normal.
+
+    A stack of axis-aligned boxes on a parabola reads as a staircase, which is
+    exactly what the taco's shell used to be. Rotating each segment about Y turns
+    it about its own bottom face, so the origin goes on the inner surface and the
+    slab grows outward from there -- the fold stays smooth and every segment
+    overlaps its neighbours.
+    """
+    obj = add_box(col, name, length, depth, thickness, x, 0, z, material)
+    obj.rotation_euler.y = math.atan2(normal[0], normal[1])
+    return obj
+
+
+def _food_disc(col, name, r, depth, sides, x, y, z, material):
+    """A disc lying flat against a wall that faces -Y (pepperoni, badges)."""
+    obj = add_ngon_cone(col, name, r, r, depth, sides, x, y, z, material)
+    obj.rotation_euler.x = math.pi / 2
+    return obj
+
+
+def _food_dome(col, name, bands, base_z, material,
+               sides=FOOD_BODY_SIDES, rot=0.0):
+    """Stacked cone bands forming a dome that never dips below its own base.
+
+    Each band starts FOOD_LAYER_EMBED below the top of the one under it and a
+    few centimetres wider, so consecutive bands share no plane and the joint
+    reads as a seam. The old sesame bun was a single 4.45m sphere centred 3.3m
+    up: 1.15m of it hung below the world, its lower half cut down through the
+    patty and the cheese, and the seeds ended up sealed inside it.
+
+    Returns [(z0, z1, r_bot, r_top), ...] so callers can sit garnish on the real
+    surface instead of guessing where it is.
+    """
+    spans, z = [], base_z
+    for index, (r_bot, r_top, height) in enumerate(bands):
+        add_ngon_cone(col, "%s_%d" % (name, index), r_bot, r_top, height,
+                      sides, 0, 0, z, material, rot=rot)
+        spans.append((z, z + height, r_bot, r_top))
+        z += height - FOOD_LAYER_EMBED
+    return spans
+
+
+def _food_dome_radius(spans, z):
+    """Radius of a _food_dome at height z, or None if z misses it."""
+    for z0, z1, r_bot, r_top in spans:
+        if z0 <= z <= z1:
+            t = 0.0 if z1 == z0 else (z - z0) / (z1 - z0)
+            return r_bot + (r_top - r_bot) * t
+    return None
+
+
+def _food_studs(col, name, spans, courses, size, material, phase=0.0):
+    """Half-buried studs sitting on a dome's real skin.
+
+    `courses` is (height, count) pairs. Each stud's centre goes one radius inside
+    the surface, so it reads as a bump the dome actually carries. The old sesame
+    seeds were placed on a nominal radius and ended up entirely inside the bun --
+    geometry nobody could ever have seen.
+    """
+    index = 0
+    for z, count in courses:
+        surface = _food_dome_radius(spans, z)
+        if surface is None:
+            continue
+        ring = max(0.0, surface - size)
+        for step in range(count):
+            angle = math.tau * step / count + phase + z
+            add_uv_sphere(col, "%s_%02d" % (name, index), size,
+                          ring * math.cos(angle), ring * math.sin(angle),
+                          z, material, 5, 8)
+            index += 1
+
+
+def _food_plinth(col, front_y, stone, paving, radius=None, box=None):
+    """Foundation, doorstep and one step down to the verge.
+
+    Sunk FOOD_PLINTH_SINK into the ground so the base cannot float, and every
+    part of it inside FOOD_COURT_HOME_REACH so no home paves the loop road it
+    faces. The old homes ran a 4m front path out from the lot envelope; turning
+    the ring to face its road would have put that path in the street, and beside
+    the Rivergate connector it was already in one.
+
+    Returns the y the front walk may start from.
+    """
+    z0 = -FOOD_PLINTH_SINK
+    if radius is not None:
+        add_ngon_cone(col, "food_plinth", radius, radius - .06,
+                      FOOD_PLINTH_H + FOOD_PLINTH_SINK, FOOD_BODY_SIDES,
+                      0, 0, z0, stone, rot=_food_ngon_rot(FOOD_BODY_SIDES))
+    else:
+        add_box(col, "food_plinth", box[0], box[1],
+                FOOD_PLINTH_H + FOOD_PLINTH_SINK, 0, 0, z0, stone)
+    # Foundation, landing and step get staggered undersides. They are all
+    # buried, but "it is buried so the shared plane does not matter" is the
+    # reasoning that let coplanar faces accumulate here in the first place.
+    landing_face = front_y - .42
+    add_box(col, "food_landing", 3.60, .92, FOOD_LANDING_Z + .16,
+            0, landing_face + .46, -.16, stone)
+    add_box(col, "food_step", 3.20, .28, .38, 0, landing_face - .10, -.22,
+            paving)
+    # The walk starts inside the step rather than butted up against its face.
+    return landing_face - .18
+
+
+def _food_walk(col, from_y, paving):
+    """Paving from the bottom step to the verge, stopping short of the kerb."""
+    reach = -(FOOD_COURT_HOME_REACH - .08)
+    if from_y - reach < .70:
+        return
+    add_box(col, "food_walk", 1.45, from_y - reach, .12,
+            0, (from_y + reach) / 2, -.04, paving)
+
+
+def _food_entrance(col, front_y, trim, door_m, glass, m, green, green2,
+                   apothem=None, window_x=None):
+    """Front door and two windows, each on a wall the body really has.
+
+    A round body takes its windows on the facets either side of the door, where
+    there is geometry to carry them; a box body takes them flanking the door on
+    its own front wall.
+    """
+    # The frame's foot sits inside the landing, not flush on top of it.
+    _sub_door(col, "food_entry", 0, front_y, FOOD_LANDING_Z - .04, trim, door_m,
+              glass, m)
+    sill_z = FOOD_PLINTH_H + 1.02
+    if apothem is not None:
+        for index in (-1, 1):
+            _food_facet_window(col, "food_window", apothem,
+                               _food_facet_angle(index), sill_z, trim, glass)
+    else:
+        for side in (-1, 1):
+            _sub_window(col, "food_window", side * window_x, front_y, sill_z,
+                        trim, glass)
+    # Planters standing on the doorstep, clear of the door and inside the reach.
     for side in (-1, 1):
-        add_box(col, "food_win_frame", 1.25, .16, 1.25,
-                side * w * .29, -d / 2 - .05, h * .48, trim)
-        add_box(col, "food_win", 1.00, .10, 1.00,
-                side * w * .29, -d / 2 - .12, h * .48 + .12, glass)
+        px = side * 1.40
+        py = front_y - .13
+        add_box(col, "food_planter", .70, .56, .40, px, py,
+                FOOD_LANDING_Z - .04, trim)
+        add_ngon_cone(col, "food_planter_soil", .27, .25, .10, 8,
+                      px, py, FOOD_LANDING_Z + .24, green2)
+        add_ngon_cone(col, "food_shrub", .30, .09, .68, 8,
+                      px, py, FOOD_LANDING_Z + .30, green)
 
 
 def build_food_house(col, variant):
-    """One of ten food-shaped homes for the Food Court ring."""
+    """One of ten food-shaped homes for the Food Court ring.
+
+    Rebuilt 2026-08-09. Every one of these had been a stack of loose primitives
+    sized to a rectangular lot envelope, which produced exactly the three faults
+    reported from the plaza: pieces with nothing behind them (both windows on
+    every home, the doors on the round ones, the doughnut's sprinkles), pieces
+    nobody could ever see (the sesame seeds, sealed inside their own bun, and
+    1.15m of that bun below the ground), and layer on layer of coincident tops
+    and bottoms. Each design now stands on a sunk foundation, hangs its door and
+    windows on walls that exist, and embeds every garnish in the surface it sits
+    on.
+    """
     style = variant % 10
     m = std_mats()
     trim = mat("NB_food_trim", (.97, .96, .92), .70)
@@ -3465,114 +3710,265 @@ def build_food_house(col, variant):
     choc = mat("NB_food_choc", (.36, .22, .16), .88)
     dark = mat("NB_food_dark", (.16, .18, .20), .86)
     white = mat("NB_food_white", (.98, .97, .95), .80)
+    stone = mat("NB_food_plinth", (.80, .78, .73), .93)
+    green = mat("NB_food_green", (.30, .52, .30), .96)
+    green2 = mat("NB_food_green2", (.38, .62, .35), .96)
 
-    if style == 0:            # burger
-        w = d = 9.0
-        add_ngon_cone(col, "bun_bottom", 4.5, 4.4, 1.7, 14, 0, 0, 0, bun)
-        add_ngon_cone(col, "patty", 4.6, 4.6, 1.1, 14, 0, 0, 1.7, meat)
-        add_box(col, "cheese", 8.6, 8.6, .30, 0, 0, 2.8, cheese)
-        for i in range(10):
-            a = math.tau * i / 10
-            add_box(col, "lettuce", 2.0, 1.2, .40, 4.1 * math.cos(a),
-                    4.1 * math.sin(a), 3.1, salad)
-        add_uv_sphere(col, "bun_top", 4.45, 0, 0, 3.3, bun)
-        for i in range(7):
-            a = math.tau * i / 7 + .3
-            add_uv_sphere(col, "sesame", .26, 2.0 * math.cos(a), 2.0 * math.sin(a), 7.0, cream)
-        h = 7.5
-    elif style == 1:          # pizza slice, standing on its crust
-        w, d, h = 9.0, 3.4, 8.6
-        add_ngon_cone(col, "slice", 5.2, .35, 8.2, 3, 0, 0, 0, cheese, rot=math.pi / 2)
-        add_box(col, "crust", 8.6, 3.7, 1.5, 0, 0, 0, bun)
-        for cx, cy in ((-1.9, 0), (1.9, 0), (0, 0), (-1.0, 0), (1.0, 0)):
-            add_ngon_cone(col, "pepperoni", .85, .85, .22, 10,
-                          cx, -1.9, 2.6 + abs(cx) * .5, red)
-    elif style == 2:          # donut
-        w = d = 9.4
-        for i in range(16):
-            a = math.tau * i / 16
-            add_ngon_cone(col, "dough", 1.55, 1.55, 1.9, 8,
-                          3.4 * math.cos(a), 3.4 * math.sin(a), 0, bun)
-            add_ngon_cone(col, "icing", 1.5, 1.4, .55, 8,
-                          3.4 * math.cos(a), 3.4 * math.sin(a), 1.9, pink)
-        for i in range(11):
-            a = math.tau * i / 11 + .4
-            add_box(col, "sprinkle", .55, .22, .18,
-                    3.4 * math.cos(a), 3.4 * math.sin(a), 2.5, cheese)
-        h = 2.5
-    elif style == 3:          # coffee cup
-        w = d = 8.4
-        add_ngon_cone(col, "cup", 3.6, 4.3, 7.0, 16, 0, 0, 0, white)
-        add_ngon_cone(col, "sleeve", 4.05, 4.15, 2.0, 16, 0, 0, 2.4, choc)
-        add_ngon_cone(col, "lid", 4.6, 4.2, .9, 16, 0, 0, 7.0, dark)
-        add_ngon_cone(col, "spout", 1.1, .9, .5, 8, 0, -2.4, 7.9, dark)
-        for i in range(6):
-            a = math.pi * (i / 5) - math.pi / 2
-            add_box(col, "handle", .75, .75, .75,
-                    4.0 + 1.7 * math.cos(a), 0, 3.7 + 2.1 * math.sin(a), white)
-        h = 7.9
-    elif style == 4:          # hot dog
-        w, d, h = 10.0, 4.6, 4.6
-        add_box(col, "bun_lower", 9.6, 4.4, 1.8, 0, 0, 0, bun)
-        add_box(col, "sausage", 8.4, 2.9, 2.6, 0, 0, 2.0, meat)
-        for end in (-4.2, 4.2):
-            add_uv_sphere(col, "sausage_end", 1.42, end, 0, 3.3, meat)
+    body_z = FOOD_PLINTH_H - FOOD_LAYER_EMBED
+    ring_rot = _food_ngon_rot(FOOD_BODY_SIDES)
+    R = FOOD_BODY_R
+    round_body = True
+    front_y = -FOOD_BODY_APOTHEM
+    plinth_radius, plinth_box, window_x = FOOD_PLINTH_R, None, None
+
+    if style == 0:                              # sesame-bun burger
+        add_ngon_cone(col, "bun_bottom", R, R, FOOD_WALL_H, FOOD_BODY_SIDES,
+                      0, 0, body_z, bun, rot=ring_rot)
+        shoulder_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "bun_shoulder", 4.20, 3.96, .34, FOOD_BODY_SIDES,
+                      0, 0, shoulder_z, bun, rot=ring_rot)
+        patty_z = shoulder_z + .34 - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "patty", 4.30, 4.26, .58, FOOD_BODY_SIDES,
+                      0, 0, patty_z, meat, rot=ring_rot)
+        # Four sides turned point-first, so the corners droop over the patty the
+        # way a slice of cheese does.
+        add_ngon_cone(col, "cheese_slice", 4.52, 4.48, .24, 4,
+                      0, 0, patty_z + .46, cheese)
+        ruffle_z = patty_z + .58
+        add_ngon_cone(col, "lettuce_ruffle", 4.46, 4.18, .38, 22,
+                      0, 0, ruffle_z, salad)
+        for leaf in range(11):
+            _food_facet_box(col, "lettuce_leaf", 1.30, .54, .30, 4.18,
+                            math.tau * leaf / 11, ruffle_z + .08, salad,
+                            out=.40)
+        crown = _food_dome(col, "bun_top",
+                           [(R, 3.60, 1.02), (3.64, 2.70, 1.02),
+                            (2.74, 1.52, .92), (1.56, 0.0, .82)],
+                           ruffle_z + .38 - FOOD_LAYER_EMBED, bun,
+                           rot=ring_rot)
+        _food_studs(col, "sesame", crown,
+                    [(4.45, 7), (5.30, 6), (6.10, 5)], .22, cream)
+
+    elif style == 1:                            # pizza slice on its crust
+        round_body = False
+        half_w, depth = 4.15, 3.72
+        front_y = -depth / 2
+        plinth_radius, plinth_box, window_x = None, (9.02, 4.44), 2.55
+        add_box(col, "crust_wall", half_w * 2, depth, FOOD_WALL_H,
+                0, 0, body_z, bun)
+        add_box(col, "crust_lip", half_w * 2 + .16, depth + .20, .52,
+                0, 0, body_z - .06, bun)
+        wedge_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        # Tapering on one axis only: a real wedge from one mesh, and a front face
+        # that stays a true vertical plane for the pepperoni to sit against.
+        add_tapered_box(col, "cheese_wedge", half_w * 2 - .20, depth + .14,
+                        .66, depth + .14, 5.70, 0, 0, wedge_z, 0, 0, cheese)
+        slice_front = -(depth + .14) / 2
+        for px, dz, pr in ((-2.15, .70, .82), (1.85, .95, .78),
+                           (0.00, 2.20, .74), (-1.10, 3.30, .62),
+                           (0.95, 3.55, .56), (0.00, 4.55, .48)):
+            _food_disc(col, "pepperoni", pr, .22, 10,
+                       px, slice_front + .03, wedge_z + dz, red)
+
+    elif style == 2:                            # doughnut over a shopfront
+        add_ngon_cone(col, "shop_wall", R, R, FOOD_WALL_H, FOOD_BODY_SIDES,
+                      0, 0, body_z, cream, rot=ring_rot)
+        cornice_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "shop_cornice", 4.38, 4.28, .30, FOOD_BODY_SIDES,
+                      0, 0, cornice_z, choc, rot=ring_rot)
+        # The ring stands in the plane of the facade with a third of it sunk
+        # into the storey below, so it is held up rather than balanced on a
+        # tangent, and the hole still clears the roof.
+        ring_r, tube = 2.45, .62
+        ring_cz = cornice_z + ring_r - .35
+        for index in range(18):
+            angle = math.tau * index / 18
+            cx = ring_r * math.cos(angle)
+            cz = ring_cz + ring_r * math.sin(angle)
+            _food_axial_cylinder(col, "dough", tube, 1.16, 8, cx, .58, cz, bun)
+            _food_axial_cylinder(col, "icing", tube + .04, .34, 8,
+                                 cx, -.52, cz, pink)
+        for index in range(13):
+            angle = math.tau * index / 13 + .35
+            sprinkle_r = ring_r + .20 * math.cos(angle * 3)
+            _food_axial_cylinder(col, "sprinkle", .13, .24, 6,
+                                 sprinkle_r * math.cos(angle), -.82,
+                                 ring_cz + sprinkle_r * math.sin(angle),
+                                 cheese)
+
+    elif style == 3:                            # coffee cup
+        cup_r = 3.86
+        front_y = -cup_r * math.cos(math.pi / FOOD_BODY_SIDES)
+        plinth_radius = 4.30
+        add_ngon_cone(col, "cup_base", cup_r, cup_r, FOOD_WALL_H,
+                      FOOD_BODY_SIDES, 0, 0, body_z, white, rot=ring_rot)
+        flare_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "cup_body", 3.92, R, 2.30, FOOD_BODY_SIDES,
+                      0, 0, flare_z, white, rot=ring_rot)
+        # Cardboard, not chocolate: a brown sleeve directly under a near-black
+        # lid read as one dark band and lost the cup entirely.
+        add_ngon_cone(col, "cup_sleeve", 4.02, 4.14, 1.40, FOOD_BODY_SIDES,
+                      0, 0, flare_z + .02, bun, rot=ring_rot)
+        lid_z = flare_z + 2.30 - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "cup_lid", 4.30, 4.20, .62, FOOD_BODY_SIDES,
+                      0, 0, lid_z, dark, rot=ring_rot)
+        add_box(col, "cup_spout", 1.60, 1.10, .40, 0, -2.10, lid_z + .48, dark)
+        add_ngon_cone(col, "cup_lid_dome", 3.10, 2.60, .36, FOOD_BODY_SIDES,
+                      0, 0, lid_z + .50, dark, rot=ring_rot)
+        # A handle that closes back into the cup wall at both ends.
+        for index in range(7):
+            t = math.pi * (index / 6) - math.pi / 2
+            _food_axial_cylinder(col, "cup_handle", .26, .92, 6,
+                                 3.92 + 1.05 * math.cos(t), .46,
+                                 body_z + 1.45 + 1.05 * math.sin(t), white)
+
+    elif style == 4:                            # hot dog
+        round_body = False
+        half_w = 4.33
+        front_y = -2.20
+        plinth_radius, plinth_box, window_x = None, (9.30, 4.90), 2.80
+        add_box(col, "bun_lower", half_w * 2, 4.30, 1.90, 0, 0, body_z, bun)
+        _food_axial_cylinder(col, "sausage", .95, 7.10, 12,
+                             -3.55, 0, body_z + 2.30, meat, axis="+x")
+        for end in (-3.50, 3.50):
+            add_uv_sphere(col, "sausage_end", .95, end, 0, body_z + 2.30, meat)
         for side in (-1, 1):
-            add_box(col, "bun_side", 9.6, 1.15, 2.4, 0, side * 1.75, 1.8, bun)
-        for i in range(7):
-            add_box(col, "mustard", .9, .5, .28, -3.6 + i * 1.2,
-                    (.7 if i % 2 else -.7), 4.2, cheese)
-    elif style == 5:          # ice cream cone
-        w = d = 8.0
-        add_ngon_cone(col, "cone", .55, 3.7, 5.8, 12, 0, 0, 0, bun)
-        for i in range(4):
-            add_ngon_cone(col, "waffle", 1.2 + i * .8, 1.3 + i * .8, .16, 12,
-                          0, 0, 1.1 + i * 1.3, choc)
-        add_uv_sphere(col, "scoop_a", 2.5, -.9, .3, 6.4, pink)
-        add_uv_sphere(col, "scoop_b", 2.2, 1.2, -.4, 6.9, cream)
-        add_uv_sphere(col, "cherry", .75, .2, 0, 9.1, red)
-        h = 8.0
-    elif style == 6:          # cupcake
-        w = d = 8.6
-        for i in range(12):
-            a = math.tau * i / 12
-            add_box(col, "flute", 1.25, 1.25, 3.6, 3.5 * math.cos(a),
-                    3.5 * math.sin(a), 0, pink)
-        add_ngon_cone(col, "case_top", 4.3, 4.5, .4, 14, 0, 0, 3.6, pink)
-        add_ngon_cone(col, "frost_a", 4.2, 3.2, 1.7, 14, 0, 0, 4.0, cream)
-        add_ngon_cone(col, "frost_b", 3.2, 2.1, 1.5, 14, 0, 0, 5.7, cream)
-        add_ngon_cone(col, "frost_c", 2.1, .9, 1.4, 14, 0, 0, 7.2, cream)
-        add_uv_sphere(col, "cherry", .85, 0, 0, 9.1, red)
-        h = 8.2
-    elif style == 7:          # taco
-        w, d, h = 9.6, 5.6, 5.4
-        # A parabolic U, which is what a taco shell actually is.
-        for i in range(13):
-            t = -1.0 + 2.0 * i / 12
-            add_box(col, "shell", 1.15, 5.6, 1.15, 4.7 * t, 0, 4.3 * t * t, bun)
-        add_box(col, "filling_meat", 6.4, 3.6, 1.4, 0, 0, .9, meat)
-        add_box(col, "filling_salad", 6.0, 3.2, 1.0, 0, 0, 2.2, salad)
-        add_box(col, "filling_cheese", 5.4, 2.8, .7, 0, 0, 3.1, cheese)
-    elif style == 8:          # fries carton
-        w, d, h = 7.6, 6.4, 9.0
-        add_box(col, "carton", 6.6, 5.4, 5.4, 0, 0, 0, red)
-        add_box(col, "carton_lip", 7.4, 6.0, .6, 0, 0, 5.4, red)
-        add_box(col, "carton_band", 6.9, 5.7, 1.3, 0, 0, 1.4, cheese)
-        for i, (fx, fy, fh) in enumerate([(-1.8,-1.2,3.4),(-.6,.9,4.2),(.7,-.7,3.8),
-                                          (1.9,1.0,3.0),(0,0,4.6),(-1.4,1.4,2.8),
-                                          (1.5,-1.6,3.2)]):
-            add_box(col, "fry", .70, .70, fh, fx, fy, 5.6, cheese)
-    else:                     # sushi roll
-        w = d = 8.6
-        add_ngon_cone(col, "rice", 4.2, 4.2, 6.4, 16, 0, 0, 0, white)
-        add_ngon_cone(col, "nori", 4.35, 4.35, 4.4, 16, 0, 0, 1.0, dark)
-        add_ngon_cone(col, "fish", 2.4, 2.4, .7, 14, 0, 0, 6.4, red)
-        add_uv_sphere(col, "roe", .55, -1.4, .6, 7.2, cheese)
-        add_uv_sphere(col, "roe", .55, 1.3, -.5, 7.2, cheese)
-        h = 7.2
+            add_box(col, "bun_side", half_w * 2 - .16, 1.30, 3.16,
+                    0, side * 1.55, body_z - .06, bun)
+            _food_axial_cylinder(col, "bun_roll", .66, half_w * 2 - .16, 10,
+                                 -(half_w - .08), side * 1.55, body_z + 2.90,
+                                 bun, axis="+x")
+        for index in range(7):
+            add_box(col, "mustard", .84, .40, .34, -3.60 + index * 1.20,
+                    (.45 if index % 2 else -.45), body_z + 3.02, cheese)
 
-    _food_shell(col, None, trim, glass, door_m, w, d, h)
-    add_box(col, "food_path", 1.5, 4.0, .10, 0, -d / 2 - 2.6, .02, m["cap"])
+    elif style == 5:                            # ice cream cone
+        cone_r = 3.10
+        front_y = -cone_r * math.cos(math.pi / FOOD_BODY_SIDES)
+        plinth_radius = 3.62
+        add_ngon_cone(col, "cone_base", cone_r, cone_r, FOOD_WALL_H,
+                      FOOD_BODY_SIDES, 0, 0, body_z, bun, rot=ring_rot)
+        flare_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "cone_flare", 3.16, 4.10, 1.90, FOOD_BODY_SIDES,
+                      0, 0, flare_z, bun, rot=ring_rot)
+        for waffle_r, waffle_z in ((3.18, body_z + 2.63), (3.54, flare_z + .58),
+                                   (3.88, flare_z + 1.28)):
+            add_ngon_cone(col, "cone_waffle", waffle_r, waffle_r - .04, .14,
+                          FOOD_BODY_SIDES, 0, 0, waffle_z, choc, rot=ring_rot)
+        scoop_z = flare_z + 1.90
+        add_uv_sphere(col, "scoop_strawberry", 2.05, -.95, .25,
+                      scoop_z - .55, pink)
+        add_uv_sphere(col, "scoop_vanilla", 1.80, 1.15, -.35, scoop_z, cream)
+        cherry_z = scoop_z + 1.94
+        add_uv_sphere(col, "cherry", .70, .55, -.10, cherry_z, red)
+        add_ngon_cone(col, "cherry_stem", .08, .06, .58, 6,
+                      .55, -.10, cherry_z + .48, green)
+
+    elif style == 6:                            # cupcake
+        case_r = 3.78
+        case_apothem = case_r * math.cos(math.pi / FOOD_BODY_SIDES)
+        front_y = -case_apothem
+        plinth_radius = 4.06
+        add_ngon_cone(col, "case_body", case_r, case_r, 2.90, FOOD_BODY_SIDES,
+                      0, 0, body_z, pink, rot=ring_rot)
+        # Ribs on the facets of a solid case, not a ring of free-standing
+        # slabs: the old paper case was twelve separate boxes with daylight
+        # between them, which is what made the base read as a hanging fringe.
+        for facet in range(1, FOOD_BODY_SIDES):
+            _food_facet_box(col, "case_rib", .52, .30, 2.66, case_apothem,
+                            _food_facet_angle(facet), body_z + .10, pink,
+                            out=.24)
+        rim_z = body_z + 2.90 - FOOD_LAYER_EMBED
+        add_ngon_cone(col, "case_rim", 3.90, R, .70, FOOD_BODY_SIDES,
+                      0, 0, rim_z, pink, rot=ring_rot)
+        swirl = _food_dome(col, "frosting",
+                           [(4.06, 3.20, 1.30), (3.24, 2.30, 1.20),
+                            (2.34, 1.10, 1.10), (1.14, 0.0, .70)],
+                           rim_z + .70 - FOOD_LAYER_EMBED, cream, rot=ring_rot)
+        _food_studs(col, "sprinkle", swirl,
+                    [(rim_z + 1.30, 9), (rim_z + 2.30, 7)], .17, red)
+        add_uv_sphere(col, "cherry", .78, 0, 0, swirl[-1][1] + .14, red)
+
+    elif style == 7:                            # taco
+        round_body = False
+        front_y = -2.75
+        # 1.76 keeps the window sills' outer edges clear of the end wall's own
+        # side planes; 1.82 landed them exactly on it.
+        plinth_radius, plinth_box, window_x = None, (10.70, 6.20), 1.76
+        span, rise, thickness = 3.90, 3.50, 1.10
+        curve = rise / (span * span)
+        floor_z = body_z + thickness
+        # Segments laid along the fold, each tilted to the curve's normal and
+        # each a slightly different depth, so no two of the overlapping slabs
+        # share a front plane.
+        for index in range(17):
+            sx = -span + 2 * span * index / 16
+            slope = 2 * curve * sx
+            scale = math.hypot(slope, 1.0)
+            _food_tilted_slab(col, "shell", 1.30, 5.10 - .28 * abs(sx) / span,
+                              thickness, sx, floor_z + curve * sx * sx,
+                              (slope / scale, -1.0 / scale), bun)
+        # The fillings step up inside the fold, each one narrow enough at its
+        # top to stay within the shell's inner curve.
+        for fw0, fw1, fd, fh, dz, filling in (
+                (1.60, 3.80, 4.30, 1.00, -.08, meat),
+                (3.55, 5.10, 4.00, .85, .80, salad),
+                (4.90, 5.90, 3.60, .60, 1.53, cheese)):
+            add_tapered_box(col, "filling", fw0, fd, fw1, fd, fh,
+                            0, 0, floor_z + dz, 0, 0, filling)
+        # The open ends of the fold are walls in their own right: the front one
+        # carries the entrance, the back one keeps the house closed.
+        for side in (-1, 1):
+            add_box(col, "shell_end", 5.10, .70, 3.16,
+                    0, side * 2.40, body_z - .06, bun)
+
+    elif style == 8:                            # fries carton
+        round_body = False
+        front_y = -2.40
+        plinth_radius, plinth_box, window_x = None, (6.16, 5.36), 1.72
+        add_box(col, "carton", 5.60, 4.80, FOOD_WALL_H, 0, 0, body_z, red)
+        add_box(col, "carton_band", 5.76, 4.96, 1.00, 0, 0, body_z + 1.23,
+                cheese)
+        flare_z = body_z + FOOD_WALL_H - FOOD_LAYER_EMBED
+        add_tapered_box(col, "carton_flare", 5.44, 4.64, 6.90, 5.90, 1.90,
+                        0, 0, flare_z, 0, 0, red)
+        add_box(col, "carton_lip", 7.20, 6.20, .46, 0, 0, flare_z + 1.78, red)
+        # The fries rise out of the solid lip, so their cut ends are inside
+        # geometry rather than hanging in the carton's mouth.
+        for fx, fy, fh in ((-2.00, -1.40, 2.60), (-.70, .90, 3.40),
+                           (.70, -.80, 3.00), (2.00, 1.10, 2.30),
+                           (0.00, 0.00, 3.80), (-1.50, 1.60, 2.10),
+                           (1.60, -1.70, 2.45), (2.40, .20, 1.90)):
+            add_box(col, "fry", .66, .66, fh, fx, fy, flare_z + 1.30, cheese)
+
+    else:                                       # sushi roll
+        nori_r = 4.12
+        nori_apothem = nori_r * math.cos(math.pi / FOOD_BODY_SIDES)
+        front_y = -nori_apothem
+        add_ngon_cone(col, "nori", nori_r, nori_r, 4.58, FOOD_BODY_SIDES,
+                      0, 0, body_z, dark, rot=ring_rot)
+        add_ngon_cone(col, "rice", 3.98, 3.98, 5.70, FOOD_BODY_SIDES,
+                      0, 0, body_z, white, rot=ring_rot)
+        rice_top = body_z + 5.70
+        add_ngon_cone(col, "rice_dome", 4.04, 3.20, .50, FOOD_BODY_SIDES,
+                      0, 0, rice_top - FOOD_LAYER_EMBED, white, rot=ring_rot)
+        add_ngon_cone(col, "salmon_core", 2.30, 2.10, .80, 10,
+                      0, 0, rice_top + .10, red, rot=ring_rot)
+        for index in range(7):
+            angle = math.tau * index / 7 + .4
+            add_uv_sphere(col, "roe", .26, 1.40 * math.cos(angle),
+                          1.40 * math.sin(angle), rice_top + .78, cheese, 5, 8)
+        # The seam where the sheet laps itself, on the facet opposite the door.
+        _food_facet_box(col, "nori_seam", .44, .26, 4.30, nori_apothem,
+                        _food_facet_angle(FOOD_BODY_SIDES // 2),
+                        body_z + .12, dark, out=.10)
+
+    walk_from = _food_plinth(col, front_y, stone, m["cap"],
+                             radius=plinth_radius, box=plinth_box)
+    _food_entrance(col, front_y, trim, door_m, glass, m, green, green2,
+                   apothem=(-front_y) if round_body else None,
+                   window_x=window_x)
+    _food_walk(col, walk_from, m["cap"])
     _merge_asset_meshes(col, "food_house_%02d" % variant)
 
 
@@ -3709,13 +4105,21 @@ def build_food_court(col, seed):
                       25.0 * math.cos(a), 19.0 * math.sin(a), gz, post)
         add_box(col, "foodcourt_lampbox", .50, .38, .20,
                 25.0 * math.cos(a), 19.0 * math.sin(a), gz + 4.4, m["bulb"])
+    # The sign stands on the green, inside the loop road's inner kerb. It used
+    # to sit at y=-27.5: the road runs from -22 to -28 here, so both posts stood
+    # in the carriageway, half a metre from the far kerb -- and once the ring was
+    # turned to face its road, the board was parked squarely in the first home's
+    # front garden, filling the view from its doorstep.
+    sign_y = -20.0
     for side in (-1, 1):
         add_ngon_cone(col, "foodcourt_signpost", .28, .24, 4.6, 8,
-                      side * 3.4, -27.5, gz, post)
-    add_box(col, "foodcourt_signboard", 9.0, .40, 2.6, 0, -27.5, gz + 4.6, board)
-    add_box(col, "foodcourt_signface", 8.4, .16, 2.0, 0, -27.72, gz + 4.9, cream)
+                      side * 3.4, sign_y, gz, post)
+    add_box(col, "foodcourt_signboard", 9.0, .40, 2.6,
+            0, sign_y, gz + 4.6, board)
+    add_box(col, "foodcourt_signface", 8.4, .16, 2.0,
+            0, sign_y - .22, gz + 4.9, cream)
     add_text(col, "foodcourt_signtext", "FOOD COURT", .80, .06,
-             0, -27.92, gz + 5.5, board)
+             0, sign_y - .42, gz + 5.5, board)
 
 def build_apartment_complex(col, seed):
     """Followville Commons: two six-storey blocks behind a courtyard pool.

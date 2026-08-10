@@ -378,6 +378,7 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 | `downtown_visual_plan.py` | `terrain_height` and the shared terrain model. |
 | `check_town_glb.py` | Export completeness and state consistency. |
 | `check_world_geometry.py` | Is anything off the ground, on a road, in the street. |
+| `check_food_assets.py` | Are the ten Food Court home designs sound (needs Blender). |
 | `assets/asset_sources.json` | Approved third-party asset provenance and licenses. |
 | `assets/asset_library_manifest.json` | Generated hashes and geometry stats for the review library. |
 | `scripts/build_asset_library.py` | Syncs and verifies approved review assets without promoting them. |
