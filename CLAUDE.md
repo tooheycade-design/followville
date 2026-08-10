@@ -159,7 +159,33 @@ five known regressions and requires each to be caught; the count is whatever
 
 `check_town_glb.py` enforces hashes, state metadata, root integrity and exact
 one-to-one coverage of every building ID. Both run in CI on every push to
-`main` — check the Actions tab after any push.
+`main`, in the **`check`** job — check the Actions tab after any push.
+
+**Read the two CI jobs separately.** `check` (the Python audits) and `browser`
+(the Playwright suite) fail for completely different reasons, and the run's
+overall red tells you nothing about which. `browser` has been red on almost
+every run for months on GitHub's two shared, software-rendered cores: the heavy
+3D tests time out, **the set that fails changes from run to run on identical
+code**, and the whole suite takes 32-45 minutes there against ~15 locally.
+`playwright.config.mjs`'s own comment describes the same signature. So a red
+`browser` is not evidence of a defect and a green one is not available; get your
+signal from `pnpm test:e2e` locally, and use CI's `browser` only to compare the
+*named failing tests* against the previous run. `check` is the job that means
+something on its own.
+
+The repo is public, so neither needs `gh` or any token:
+
+```bash
+curl -s "https://api.github.com/repos/tooheycade-design/followville/actions/runs?branch=main&per_page=3" | jq -r '.workflow_runs[] | "\(.head_sha[0:9]) \(.status) \(.conclusion)"'
+```
+
+For which tests failed rather than just that something did, read the run's
+annotations — the CI reporter writes a Playwright summary into them:
+
+```bash
+curl -s "https://api.github.com/repos/tooheycade-design/followville/commits/main/check-runs" | jq -r '.check_runs[] | "\(.name) \(.conclusion) \(.id)"'
+curl -s "https://api.github.com/repos/tooheycade-design/followville/check-runs/<id>/annotations" | jq -r '.[] | select(.annotation_level=="notice") | .message'
+```
 
 `check_food_assets.py` needs Blender, because the only honest answer comes from
 building the assets. The Food Court's homes are the one district made of loose

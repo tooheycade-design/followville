@@ -6,7 +6,7 @@ supersedes it.
 
 ## Read this first -- 2026-08-10 session (Cade, via Windows Claude)
 
-The Food Court's nineteen homes were rebuilt and its connector re-routed. Five
+The Food Court's nineteen homes were rebuilt and its connector re-routed. Six
 things here will bite you if you assume the old behaviour.
 
 1. **Importing `neighborhood_blender` in a background Blender session RUNS A
@@ -88,6 +88,28 @@ things here will bite you if you assume the old behaviour.
    failed on `data-hill-clearance` eight assertions earlier and never reached
    the map. **One red assertion hides every assertion behind it.** When you fix
    a long-standing test failure, expect the next one rather than assuming green.
+
+6. **Read CI's two jobs separately, and do not trust a red `browser`.** `check`
+   (the Python audits) is meaningful on its own and has been green since
+   `35accbb`. `browser` (Playwright) has been red on nearly every run for months
+   because GitHub's two shared software-rendered cores time out on the heavy 3D
+   tests -- **the failing set changes run to run on identical code** (6 failed
+   at `96fbb2b`, 3 at `63a34fb`, 5 at `434dd06`, with tests appearing and
+   disappearing), and the suite takes 32-45 minutes there against ~15 locally.
+   Get your signal from `pnpm test:e2e` locally; use CI's `browser` only to
+   compare *named* failing tests against the previous run.
+
+   Corrected while checking this: the 2026-08-09 entry below says
+   `check_town_glb.py` "already fails on pristine main ... CI has been red since
+   `7de0a92`". That was true when written and is **not true now** -- the day-39
+   growth re-exported everything and `check` has been green ever since. I
+   repeated the stale claim before verifying it; don't inherit it a third time.
+
+   The repo is **public**, so you need no `gh` login and no token to look:
+
+   ```bash
+   curl -s "https://api.github.com/repos/tooheycade-design/followville/actions/runs?branch=main&per_page=3" | jq -r '.workflow_runs[] | "\(.head_sha[0:9]) \(.status) \(.conclusion)"'
+   ```
 
 ## Read this first -- 2026-08-06 session (Cade, via Windows Claude)
 
