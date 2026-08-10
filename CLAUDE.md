@@ -411,6 +411,30 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 
 ---
 
+## Followville Stories
+
+A **second** video format alongside Daily Growth, added 2026-08-10 — short
+episodes about events happening inside the persistent city, so the world feels
+alive between population updates. It changes nothing above. Full direction is
+in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
+
+- **Trigger:** "let's make a Followville Story", "Story video", "make an
+  episode". Enter Story mode — **gather context and propose three concepts
+  first**, don't start modifying Blender.
+- **No people, ever, in a produced Story.** The environment tells the story
+  through vehicles, doors, packages, lights, weather, props and hard cuts.
+  Website avatars are unaffected — the rule is about rendered video.
+- **Shot renders must not advance the world.** Build on `--replay` with a
+  Story camera, exactly as `--replay --godzilla` does: temporary set dressing
+  that never touches `world_state.json`, the GLBs or the Blend. Name shots
+  `--cam story001NAME --tag story_001_shotN`.
+- **Anything a Story leaves behind permanently** — a business, landmark,
+  branded store, custom property — is a normal `[WORLD]` change and takes the
+  full route: addressed build, guarded growth, `world_layout.py` declarations,
+  both audits.
+
+---
+
 ## Files
 
 | File | What it is |
@@ -447,8 +471,9 @@ before touching the room, furnishing catalog, persistence or builder),
 panel or `profiles.inventory` — note the fish IDs are permanent and the
 `profiles` update grant must re-grant `avatar` alongside `inventory`),
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
-(read before changing downtown or terrain), `NEIGHBORHOOD_EXPANSION_PLAN.md`,
-`WEB_VIEWER_CHANGELOG.md`.
+(read before changing downtown or terrain), `FOLLOWVILLE_STORIES.md` (read
+before writing, storyboarding or producing a Story video),
+`NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEB_VIEWER_CHANGELOG.md`.
 
 `condense_day9.py`, the `render_day9_*.command` scripts and the assorted
 Windows `.bat`/`.txt` scratch files are superseded paper trail. **Nobody
