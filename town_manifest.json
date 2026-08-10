@@ -1,9 +1,9 @@
 {
   "base": {
-    "bytes": 2061496,
+    "bytes": 2061568,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "0f7f9d2e13b56b4e479f4cc7bcf2b334aa95d1dfabfedf2351c3ed24bd75c361"
+    "sha256": "9242ddda3fb24c3ccb33be3a818fa344cde1d73f3d1840eaeb0659868a4b4017"
   },
   "chunks": [
     {
@@ -604,10 +604,10 @@
     },
     {
       "asset": {
-        "bytes": 1059468,
+        "bytes": 1059460,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "ae04deef4972d39422e7ece347262632693d07b4fab0525268c36fcc891f80b1"
+        "sha256": "45353fd58150739be9aeb9e4dc794e8e7a08ce57363b1835046653e4c5e6ac39"
       },
       "bounds": {
         "center": [
@@ -1003,10 +1003,10 @@
     },
     {
       "asset": {
-        "bytes": 101452,
+        "bytes": 162188,
         "compression": "draco",
         "file": "town_chunks/food-court.glb",
-        "sha256": "14cd9fa728e165972fa556bffadb00ccd84a65063dc5f2a813333aae3fa18750"
+        "sha256": "fc4fcda087ec70d1cb6271f4f8de6206197f3b61e1de9bbe09da467da88ede7f"
       },
       "bounds": {
         "center": [
@@ -2501,9 +2501,9 @@
     }
   ],
   "fallback": {
-    "bytes": 29316252,
+    "bytes": 29596252,
     "file": "town.glb",
-    "sha256": "616f9c8f922312539241c5e86efb40c355403feb686b1f9bf425d3255e42b236"
+    "sha256": "d10e11acc3f5a1897af795fcc313200e37ad7189a9cf29ef5ff6f18abb294bec"
   },
   "state": {
     "building_count": 877,
