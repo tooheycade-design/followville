@@ -35,6 +35,7 @@
   body.preview-mode #mapToggle,
   body.preview-mode #avatarToggle,
   body.preview-mode #avatarStudio,
+  body.preview-mode #inventoryPanel,
   body.preview-mode #townMapPanel,
   body.preview-mode #pauseMenu,
   body.preview-mode #chatToggle,
@@ -387,6 +388,14 @@
   #worldFishAction { width:100%; min-height:46px; margin-top:9px; border:0; border-radius:12px; background:#f0b34a; color:#173246; font:900 14px inherit; cursor:pointer; touch-action:none; }
   #worldFishAction.bite { background:#cf5132; color:#fff; animation:fishBitePulse .45s ease-in-out infinite alternate; }
   #worldFishingHud.payoff #worldCastRow { display:none; }
+  /* Only offered right after a landed fish — the one moment the player has a
+     reason to look. It is not a permanent HUD button. */
+  #worldFishingBag {
+    display:none; width:100%; margin-top:7px; padding:8px 12px; border-radius:11px;
+    border:1px solid rgba(213,232,235,.42); background:transparent; color:#d5e8eb;
+    font:800 11px inherit; cursor:pointer;
+  }
+  #worldFishingHud.payoff #worldFishingBag:not([hidden]) { display:block; }
   #worldFishingClose { margin-top:8px; border:0; background:none; color:#d5e8eb; font:750 11px inherit; text-decoration:underline; cursor:pointer; }
   #houseEnterPrompt {
     position:fixed; bottom:92px; left:50%; transform:translateX(-50%); z-index:9;
@@ -708,6 +717,80 @@
     color:#fff; background:rgba(12,27,43,.55); padding:8px 14px; border-radius:20px;
     font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
     text-shadow:0 1px 4px rgba(0,0,0,.5); backdrop-filter:blur(7px);
+  }
+  /* Inventory System v1. Deliberately quieter than the Tailor: one column, no
+     3D preview, no pills. It is a collection log, not a dashboard. */
+  #inventoryPanel {
+    position:fixed; inset:0; z-index:53; display:none; align-items:center; justify-content:center;
+    padding:clamp(8px,2vw,24px); background:rgba(7,16,28,.78); backdrop-filter:blur(9px);
+    color:#1c2b45; touch-action:auto;
+  }
+  #inventoryPanel.open { display:flex; }
+  #inventoryShell {
+    width:min(640px,100%); max-height:min(760px,100%); overflow:hidden;
+    display:flex; flex-direction:column; background:#fbf8f1;
+    border:1px solid rgba(255,255,255,.72); border-radius:26px;
+    box-shadow:0 30px 90px rgba(0,0,0,.48);
+  }
+  #inventoryHeader {
+    display:flex; align-items:flex-start; gap:14px; padding:19px 20px 15px;
+    border-bottom:1px solid rgba(28,43,69,.12); background:#fffdf8;
+  }
+  #inventoryTitleWrap { flex:1; min-width:0; }
+  #inventoryKicker { margin:0 0 4px; color:#9b543c; font-size:9.5px; font-weight:850; letter-spacing:.11em; text-transform:uppercase; }
+  #inventoryHeader h2 { margin:0; font:700 25px/1.1 Georgia,"Times New Roman",serif; letter-spacing:-.25px; }
+  #inventorySub { margin:6px 0 0; color:#566170; font-size:11.5px; line-height:1.4; }
+  #inventoryClose {
+    width:40px; height:40px; flex:0 0 auto; border:1px solid #cbd1d4; border-radius:50%;
+    background:#fff; color:#1c2b45; font:26px/1 inherit; cursor:pointer;
+  }
+  #inventoryClose:focus-visible, #inventoryPanel button:focus-visible {
+    outline:3px solid rgba(43,106,148,.32); outline-offset:2px;
+  }
+  #inventoryBody { flex:1; min-height:0; overflow:auto; padding:15px 16px 20px; overscroll-behavior:contain; }
+  #inventoryEmpty { margin:26px 8px; color:#687383; font-size:12px; line-height:1.55; text-align:center; }
+  #inventoryEmpty strong { display:block; margin-bottom:5px; color:#1c2b45; font:700 15px/1.2 Georgia,"Times New Roman",serif; }
+  #inventoryGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .inv-item {
+    position:relative; display:flex; align-items:center; gap:11px; min-width:0;
+    padding:10px 11px; border:1px solid #d8dcdd; border-radius:12px; background:#fff; text-align:left;
+  }
+  .inv-item.locked { background:#f4f2ec; border-style:dashed; border-color:#dcd8ce; }
+  .inv-swatch {
+    flex:0 0 auto; width:30px; height:30px; border-radius:50%;
+    background:var(--inv-color,#ddd); border:1px solid rgba(28,43,69,.20);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.38);
+  }
+  .inv-item.locked .inv-swatch { background:#e3e0d8; box-shadow:none; }
+  .inv-text { flex:1; min-width:0; }
+  .inv-name { display:block; font-size:11.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inv-item.locked .inv-name { color:#9aa0a8; }
+  .inv-note { display:block; margin-top:3px; color:#687383; font-size:9.5px; line-height:1.3; }
+  .inv-rarity {
+    display:inline-block; margin-top:5px; padding:2px 7px; border-radius:20px;
+    color:#fff; font-size:8.5px; font-weight:850; letter-spacing:.08em; text-transform:uppercase;
+    background:var(--inv-rarity,#587d88);
+  }
+  .inv-item.locked .inv-rarity { background:#c8c4ba; }
+  .inv-count {
+    flex:0 0 auto; align-self:flex-start; min-width:30px; text-align:right;
+    font:700 17px/1 Georgia,"Times New Roman",serif; color:#1c2b45;
+  }
+  .inv-item.locked .inv-count { color:#c2bfb6; font-size:14px; }
+  #inventoryFooter {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:13px 16px calc(13px + env(safe-area-inset-bottom));
+    border-top:1px solid rgba(28,43,69,.12); background:#fffdf8;
+  }
+  #inventorySaveNote { min-width:0; color:#576474; font-size:10.5px; line-height:1.35; }
+  #inventoryDone {
+    min-height:43px; flex:0 0 auto; border:0; border-radius:11px; padding:10px 20px;
+    background:#1c2b45; color:#fff; font:800 12px inherit; cursor:pointer;
+  }
+  @media (max-width:760px){
+    #inventoryPanel { padding:0; align-items:stretch; }
+    #inventoryShell { width:100%; max-height:100%; height:100%; border-radius:0; }
+    #inventoryGrid { grid-template-columns:1fr; }
   }
   #avatarStudio {
     position:fixed; inset:0; z-index:52; display:none; align-items:center; justify-content:center;
@@ -1178,6 +1261,7 @@
     <div class="pause-secondary-actions">
       <button class="pause-secondary" id="pauseMapBtn" type="button">open town map</button>
       <button class="pause-secondary" id="pauseAvatarBtn" type="button">edit avatar</button>
+      <button class="pause-secondary" id="pauseInventoryBtn" type="button">my inventory</button>
       <button class="pause-secondary" id="pauseHomesBtn" type="button" style="display:none;">manage my home</button>
       <button class="pause-secondary" id="pauseOpenBrowserBtn" type="button" style="display:none;">open in browser</button>
     </div>
@@ -1202,7 +1286,31 @@
   <div id="worldFishingStatus">Hold to build throw power.</div>
   <div id="worldCastRow"><div id="worldCastMeter"><div id="worldCastTarget"></div><div id="worldCastFill"></div></div><span id="worldCastRating">hold</span></div>
   <button id="worldFishAction" type="button">hold to cast</button>
+  <button id="worldFishingBag" type="button" hidden>see my inventory</button>
   <button id="worldFishingClose" type="button">put the rod away</button>
+</section>
+<section id="inventoryPanel" role="dialog" aria-modal="true" aria-labelledby="inventoryTitle" aria-hidden="true">
+  <div id="inventoryShell">
+    <header id="inventoryHeader">
+      <div id="inventoryTitleWrap">
+        <p id="inventoryKicker">Followville</p>
+        <h2 id="inventoryTitle">Inventory</h2>
+        <p id="inventorySub"></p>
+      </div>
+      <button id="inventoryClose" type="button" aria-label="Close inventory">&times;</button>
+    </header>
+    <div id="inventoryBody">
+      <div id="inventoryEmpty" hidden>
+        <strong>Nothing caught yet.</strong>
+        Head to the fishing pond near Fire Station 1 and cast a line. Everything you land is kept here.
+      </div>
+      <div id="inventoryGrid" role="list"></div>
+    </div>
+    <footer id="inventoryFooter">
+      <span id="inventorySaveNote"></span>
+      <button id="inventoryDone" type="button">done</button>
+    </footer>
+  </div>
 </section>
 <section id="fishingGame" role="dialog" aria-modal="true" aria-labelledby="fishingTitle" aria-hidden="true">
   <div id="fishingCard" data-stage="aim">
@@ -1366,6 +1474,10 @@ import {
   updateAvatarFishingPose
 } from "./avatar-system.js";
 import { createInteriorSystem, normalizeInteriorLayout } from "./interior-system.js";
+import {
+  createInventoryStore, inventoryRows, inventoryTotal, inventorySpeciesCount,
+  inventoryIsEmpty, rollFishOfRarity, fishById
+} from "./inventory-system.js";
 
 const pageParams = new URLSearchParams(location.search);
 const previewView = pageParams.get("preview");
@@ -3225,8 +3337,144 @@ function clearMovementInput(){
   move.run = false;
 }
 
+/* ─── Inventory System v1 ───
+   inventory-system.js owns the catalog, the stacking rules and both stores;
+   this section owns only the panel and the open/close transition, the same
+   split the Tailor and the interior builder use.
+
+   Guests get a real inventory backed by localStorage. Signing in merges that
+   device stash into the account once and then clears it, so playing before you
+   sign up is never wasted. Nothing here reads or writes world_state.json,
+   town.glb, a district chunk or the Blend: an inventory belongs to a player,
+   not to the town. */
+const inventoryPanel=document.getElementById("inventoryPanel");
+const inventoryGrid=document.getElementById("inventoryGrid");
+const inventoryEmpty=document.getElementById("inventoryEmpty");
+const inventorySub=document.getElementById("inventorySub");
+const inventorySaveNote=document.getElementById("inventorySaveNote");
+const inventoryCloseBtn=document.getElementById("inventoryClose");
+const inventoryDone=document.getElementById("inventoryDone");
+const pauseInventoryBtn=document.getElementById("pauseInventoryBtn");
+const worldFishingBag=document.getElementById("worldFishingBag");
+let resumeWalkingAfterInventory=false;
+
+const inventoryStore=createInventoryStore({
+  // Read `sb` lazily: supabase-js is imported after this module body runs, and
+  // a guest never has a client at all.
+  rpc:(name,args)=>sb ? sb.rpc(name,args) : Promise.resolve({error:{message:"offline"}}),
+  onChange:()=>{ publishInventoryState(); if(inventoryOpen()) renderInventory(); }
+});
+
+function inventoryOpen(){ return inventoryPanel.classList.contains("open"); }
+
+/* Runtime state lives on <body> as data-* so the Playwright suite asserts on
+   attributes instead of reaching into module internals — the same contract the
+   rest of the town uses. */
+function publishInventoryState(){
+  const inv=inventoryStore.get();
+  document.body.dataset.inventoryTotal=String(inventoryTotal(inv));
+  document.body.dataset.inventorySpecies=String(inventorySpeciesCount(inv));
+  document.body.dataset.inventoryStore=inventoryStore.isSignedIn()?"account":"device";
+}
+publishInventoryState();
+
+function renderInventory(){
+  const inv=inventoryStore.get();
+  const total=inventoryTotal(inv);
+  const species=inventorySpeciesCount(inv);
+  const empty=inventoryIsEmpty(inv);
+  inventoryEmpty.hidden=!empty;
+  inventoryGrid.hidden=empty;
+  inventorySub.textContent=empty
+    ? "Your catches are kept here."
+    : `${total} fish caught · ${species} of ${inventoryRows(inv).length} species discovered`;
+  inventorySaveNote.textContent=inventoryStore.isSignedIn()
+    ? "Saved to your Followville account."
+    : "Saved on this device. Sign in to keep these on your account.";
+  inventoryGrid.replaceChildren(...inventoryRows(inv).map(row=>{
+    const item=document.createElement("div");
+    item.className=row.discovered?"inv-item":"inv-item locked";
+    item.setAttribute("role","listitem");
+    item.style.setProperty("--inv-color",row.color);
+    item.style.setProperty("--inv-rarity",row.rarityColor);
+    const swatch=document.createElement("span");
+    swatch.className="inv-swatch";
+    swatch.setAttribute("aria-hidden","true");
+    const text=document.createElement("span");
+    text.className="inv-text";
+    const name=document.createElement("span");
+    name.className="inv-name";
+    name.textContent=row.discovered?row.name:"Not yet caught";
+    const note=document.createElement("span");
+    note.className="inv-note";
+    note.textContent=row.discovered?row.note:"Keep casting.";
+    const rarity=document.createElement("span");
+    rarity.className="inv-rarity";
+    rarity.textContent=row.rarity;
+    text.append(name,note,rarity);
+    const count=document.createElement("span");
+    count.className="inv-count";
+    count.textContent=row.discovered?`×${row.count}`:"—";
+    // Screen readers get the whole slot as one sentence instead of three
+    // orphaned fragments and a multiplication sign.
+    item.setAttribute("aria-label",row.discovered
+      ? `${row.name}, ${row.rarity}, ${row.count} caught`
+      : `Undiscovered ${row.rarity} fish`);
+    item.append(swatch,text,count);
+    return item;
+  }));
+}
+
+function openInventory(){
+  if(inventoryOpen())return;
+  resumeWalkingAfterInventory=gameRunning;
+  clearMovementInput();gameRunning=false;
+  crosshair.style.display="none";hint.style.display="none";
+  lookZone.style.display="none";joystickZone.style.display="none";runBtn.style.display="none";jumpBtn.style.display="none";
+  renderInventory();
+  inventoryPanel.classList.add("open");inventoryPanel.setAttribute("aria-hidden","false");
+  document.body.dataset.inventoryOpen="true";
+  requestAnimationFrame(()=>inventoryCloseBtn.focus({preventScroll:true}));
+}
+function closeInventory(restore=true){
+  if(!inventoryOpen())return;
+  inventoryPanel.classList.remove("open");inventoryPanel.setAttribute("aria-hidden","true");
+  delete document.body.dataset.inventoryOpen;
+  const shouldResume=restore&&resumeWalkingAfterInventory;resumeWalkingAfterInventory=false;
+  if(shouldResume){if(isTouch)resumeWalkingWithoutPointerLock();else resumeDesktopWalking();}
+}
+
+inventoryCloseBtn.addEventListener("click",()=>closeInventory(true));
+inventoryDone.addEventListener("click",()=>closeInventory(true));
+pauseInventoryBtn.addEventListener("click",()=>{
+  pauseMenu.classList.remove("open");
+  pauseMenu.setAttribute("aria-hidden","true");
+  openInventory();
+});
+worldFishingBag.addEventListener("click",openInventory);
+inventoryPanel.addEventListener("mousedown",event=>{if(event.target===inventoryPanel)closeInventory(true);});
+/* Maintainer-only, and gated behind ?local=1 exactly like the fishing and
+   terrain probes. It exists so the browser suite can assert stacking without
+   playing three full fish fights; it is not a public way to award yourself
+   fish, and a signed-in caller still goes through the same guarded RPC. */
+if(localDesignPreview){
+  window.__followvilleInventoryQA={
+    recordCatch(id,amount=1){ return inventoryStore.recordCatch(id,amount); },
+    get(){ return inventoryStore.get(); }
+  };
+}
+inventoryPanel.addEventListener("keydown",event=>{
+  if(event.key!=="Tab")return;
+  const focusable=[...inventoryPanel.querySelectorAll("button:not([disabled])")]
+    .filter(element=>element.offsetParent!==null);
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
+
 /* ─── Fishing Pond: one continuous cast-to-catch scene ───
-   Catches remain session-only until Followville has an inventory. Casting,
+   Landed fish are recorded in the inventory above. Casting,
    the bobber wait, hook timing, and the momentum fight all happen in one
    scene instead of a stack of modal prompts. The interaction rhythm is genre-
    familiar, while the art, tuning, and rarity system are Followville's own. */
@@ -3243,6 +3491,7 @@ let fishingCastTimer = null;
 let fishingBiteTimer = null;
 let fishingEscapeTimer = null;
 let fishingProfile = null;
+let fishingSpecies = null;   // the inventory catalog entry rolled for this fight
 let fishingBarY = .08;
 let fishingBarVelocity = 0;
 let fishingBarHeight = .25;
@@ -3423,6 +3672,8 @@ function resetFishingRound(){
   fishingCastRating = "Good";
   fishingCard.style.setProperty("--bobber-x","71%");
   fishingCard.classList.remove("fight");
+  fishingSpecies = null;
+  worldFishingBag.hidden = true;
   worldFishingHud.classList.remove("payoff");
   worldFishingHud.classList.add("open");
   worldFishingHud.setAttribute("aria-hidden","false");
@@ -3540,6 +3791,14 @@ function beginFishingCatch(){
   if (fishingStage !== "bite") return;
   clearTimeout(fishingEscapeTimer);
   fishingProfile = fishingRarityProfile();
+  // The rarity roll still owns difficulty and tuning; the species roll only
+  // decides which fish of that tier turned up, and lends its colour to the
+  // fight card and the in-world catch mesh so tiers stop looking identical.
+  // The local fishing audit route pins the species for the same reason it pins
+  // the rarity: automated input needs one deterministic fish to assert on.
+  fishingSpecies = localAuditView === "fishing"
+    ? fishById("pond_perch")
+    : rollFishOfRarity(fishingProfile.rarity);
   fishingCard.classList.add("fight");
   const castBonus=castJudgement(fishingCastQuality).bonus;
   fishingBarHeight = fishingProfile.barHeight+(fishingCastRating==="Perfect"?.01:0);
@@ -3574,10 +3833,14 @@ function beginFishingCatch(){
   catchHint.classList.add("open");
   catchRarity.textContent = fishingProfile.rarity;
   catchRarity.style.background = fishingProfile.color;
-  catchBehavior.textContent = `${fishingProfile.behavior} movement · difficulty ${fishingProfile.difficulty}`;
+  // Naming the fish mid-fight is the whole reason species exist: "Bluebell
+  // Pike, dart movement" reads as a creature, "Rare fish" reads as a tier.
+  catchBehavior.textContent = fishingSpecies
+    ? `${fishingSpecies.name} · ${fishingProfile.behavior} movement · difficulty ${fishingProfile.difficulty}`
+    : `${fishingProfile.behavior} movement · difficulty ${fishingProfile.difficulty}`;
   catchGame.dataset.behavior=fishingProfile.behavior;
   catchBar.classList.remove("locked");
-  catchFish.style.setProperty("--fish-color",fishingProfile.fishColor);
+  catchFish.style.setProperty("--fish-color",fishingSpecies?.color || fishingProfile.fishColor);
   catchCrown.style.display = fishingProfile.legendary ? "block" : "none";
   fishingStatus.textContent = "Hold to lift, release to fall. Brake before the catch zone overshoots.";
   updateFishingCatchVisuals();
@@ -3588,13 +3851,20 @@ function finishFishingCatch(caught){
   setFishingStage(caught ? "payoff" : "escaped");
   fishAction.classList.remove("catching","pressed");
   fishAction.textContent = caught ? "fish again" : "try another cast";
+  const escapedName = fishingSpecies?.name || `${fishingProfile.rarity} fish`;
+  // Record before any text is written, so the badge can quote the real stack
+  // count. recordCatch is synchronous for the UI and pushes to Supabase in the
+  // background — a landed fish never waits on the network to be acknowledged.
+  const landed = caught && fishingSpecies ? inventoryStore.recordCatch(fishingSpecies.id) : null;
+  const caughtName = fishingSpecies?.name || `${fishingProfile.rarity} fish`;
   fishingStatus.textContent = caught
     ? (fishingPerfect ? "Perfect catch — you never lost the fish!" : "Catch complete!")
-    : `${fishingProfile.rarity} fish escaped. Brake earlier and use lighter taps.`;
+    : `The ${escapedName} escaped. Brake earlier and use lighter taps.`;
   if(caught){
     caughtBadge.style.display = "block";
     caughtBadge.style.color = fishingProfile.color;
-    caughtBadge.textContent = `You caught a ${fishingProfile.rarity} fish${fishingPerfect ? " — Perfect!" : "!"}`;
+    const tally = landed ? (landed.isNew ? " — new species!" : ` — you now have ${landed.count}`) : "";
+    caughtBadge.textContent = `You caught a ${caughtName}${fishingPerfect ? " — Perfect!" : "!"}${tally}`;
   }
   fishingGame.classList.remove("open");
   fishingGame.setAttribute("aria-hidden","true");
@@ -3604,10 +3874,13 @@ function finishFishingCatch(caught){
   worldFishAction.classList.remove("bite");
   worldFishAction.textContent=caught?"fish again":"cast again";
   worldFishingStatus.textContent=caught
-    ? `${fishingPerfect?"Perfect! ":""}You landed a ${fishingProfile.rarity} fish.`
-    : `${fishingProfile.rarity} fish escaped. Brake earlier and use lighter taps.`;
+    ? `${fishingPerfect?"Perfect! ":""}You landed a ${caughtName}.`
+    : `The ${escapedName} escaped. Brake earlier and use lighter taps.`;
+  // The inventory is only offered in the moment there is something new to see.
+  worldFishingBag.hidden = !caught;
   if(caught&&worldFishingCatch){
-    worldFishingCatch.children.forEach(child=>child.material?.color?.set(fishingProfile.fishColor));
+    const catchColor = fishingSpecies?.color || fishingProfile.fishColor;
+    worldFishingCatch.children.forEach(child=>child.material?.color?.set(catchColor));
   }
 }
 function updateFishingCatchVisuals(){
@@ -3943,6 +4216,13 @@ function updatePlayerJump(dt){
   document.body.dataset.jumpHeight=playerJumpOffset.toFixed(2);
 }
 document.addEventListener("keydown", e => {
+  // Checked before fishing on purpose: the inventory is reachable from the
+  // fishing payoff HUD, and fishingOpen() stays true throughout, so a lower
+  // branch would swallow the key and close the pond instead of the panel.
+  if (inventoryOpen()){
+    if (e.code === "Escape" || e.code === "KeyI"){ e.preventDefault(); closeInventory(true); }
+    return;
+  }
   if (fishingOpen()){
     if (e.code === "Escape"){ e.preventDefault(); closeFishing(); }
     return;
@@ -3981,6 +4261,9 @@ document.addEventListener("keydown", e => {
   }
   if (!modalOpen() && e.code === "KeyV"){
     e.preventDefault(); openAvatarStudio(); return;
+  }
+  if (!modalOpen() && e.code === "KeyI"){
+    e.preventDefault(); openInventory(); return;
   }
   if (!modalOpen() && (e.code === "KeyT" || e.code === "Slash" || e.key === "/" || e.code === "Enter")){
     e.preventDefault(); openChat(); return;
@@ -7207,7 +7490,13 @@ async function refreshClaims(){
   }
 }
 async function refreshMyStatus(){
-  if (!session){ myProfile = null; myClaim = null; myClaims = []; claimLimit = 1; return; }
+  if (!session){
+    myProfile = null; myClaim = null; myClaims = []; claimLimit = 1;
+    // Drop back to this device's inventory. The account's fish stay on the
+    // account; signing out never copies them down to a shared computer.
+    inventoryStore.signOut();
+    return;
+  }
   const { data, error } = await sb.rpc("my_status");
   if (error) return;
   const priorHouseId = Number(myClaim?.house_id || 0);
@@ -7223,6 +7512,10 @@ async function refreshMyStatus(){
     if (prof) myProfile = prof;
   }
   syncAvatarFromProfile();
+  // Merges any device stash into the account once, then clears it. Fire and
+  // forget: nothing on screen should wait for it, and a failure just leaves the
+  // stash in place to be retried on the next status refresh.
+  inventoryStore.syncFromProfile(myProfile?.inventory, true).catch(() => {});
 }
 
 function canClaimAnotherHome(){

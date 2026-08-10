@@ -242,6 +242,9 @@ test("the fishing pond casts in-world before the focused fish fight", async ({ p
   await expect(page.locator("#fishingScene")).toBeHidden();
   await expect(page.locator("#catchRarity")).toHaveText("Common");
   await expect(page.locator("#catchBehavior")).toContainText("smooth movement");
+  // Inventory System v1 named the fish. The audit route pins the species for
+  // the same reason it pins the rarity, so this is deterministic.
+  await expect(page.locator("#catchBehavior")).toContainText("Pond Perch");
 
   // A boundary contact must replace the unreachable target, not merely clamp
   // the visible icon for one frame. Verify both ends drive the fish back into
@@ -309,10 +312,70 @@ test("the fishing pond casts in-world before the focused fish fight", async ({ p
   await expect(page.locator("body")).toHaveAttribute("data-fishing-game","payoff");
   await expect(page.locator("#fishingGame")).toBeHidden();
   await expect(page.locator("#worldFishingHud")).toBeVisible();
-  await expect(page.locator("#worldFishingStatus")).toContainText(/landed a Common fish/);
+  await expect(page.locator("#worldFishingStatus")).toContainText(/landed a Pond Perch/);
+
+  // Inventory System v1: a landed fish is kept, not announced and forgotten.
+  // The catch is recorded before the payoff text is written, so the count is
+  // already correct here without waiting on the network.
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-total","1");
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-species","1");
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-store","device");
+  await expect(page.locator("#caughtBadge")).toContainText("new species");
+  await expect(page.locator("#worldFishingBag")).toBeVisible();
+  await page.locator("#worldFishingBag").click();
+  await expect(page.locator("#inventoryPanel")).toBeVisible();
+  await expect(page.locator("#inventoryGrid .inv-item")).toHaveCount(13);
+  await expect(page.locator("#inventoryGrid .inv-item").first()).toContainText("Pond Perch");
+  await expect(page.locator("#inventoryGrid .inv-item").first()).toContainText("×1");
+  await expect(page.locator("#inventorySub")).toContainText("1 fish caught");
+  // Guests are told plainly where their fish live, so signing up reads as a
+  // benefit rather than a surprise.
+  await expect(page.locator("#inventorySaveNote")).toContainText(/this device/i);
+  // Escape must reach the panel even though the fishing session is still live.
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#inventoryPanel")).toBeHidden();
+  await expect(page.locator("#worldFishingHud")).toBeVisible();
+
   await page.getByRole("button",{name:"put the rod away"}).click();
   await expect(page.locator("#worldFishingHud")).toBeHidden();
   await expect(page.locator("#fishPrompt")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the inventory persists across visits and starts empty for a new device", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = watchPageErrors(page);
+  await page.goto("/town.html?local=1&view=fishing#walk");
+  await waitForTown(page);
+
+  // A device that has never caught anything shows the collection log, not a
+  // broken or hidden panel.
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-total","0");
+  await page.keyboard.press("KeyI");
+  await expect(page.locator("#inventoryPanel")).toBeVisible();
+  await expect(page.locator("#inventoryEmpty")).toBeVisible();
+  await expect(page.locator("#inventoryGrid")).toBeHidden();
+  await page.keyboard.press("KeyI");
+  await expect(page.locator("#inventoryPanel")).toBeHidden();
+
+  // Stacking is the whole feature: a second identical fish becomes x2 rather
+  // than a second row.
+  await page.evaluate(() => {
+    window.__followvilleInventoryQA.recordCatch("willow_bass");
+    window.__followvilleInventoryQA.recordCatch("willow_bass");
+    window.__followvilleInventoryQA.recordCatch("glass_eel");
+  });
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-total","3");
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-species","2");
+
+  // A guest's catches survive a reload. This is what makes playing before
+  // signing up worth anything.
+  await page.reload();
+  await waitForTown(page);
+  await expect(page.locator("body")).toHaveAttribute("data-inventory-total","3");
+  await page.keyboard.press("KeyI");
+  await expect(page.locator("#inventoryGrid .inv-item").first()).toContainText("×2");
+  await expect(page.locator("#inventorySub")).toContainText("3 fish caught · 2 of 13 species");
   expect(errors).toEqual([]);
 });
 

@@ -431,7 +431,9 @@ Windows and Mac). **GitHub is the sync mechanism, not file sync.**
 | `scripts/normalize_game_asset.py` | Isolated Blender intake/preview tool; refuses canonical town outputs. |
 | `grow_windows.bat/.ps1`, `grow.sh` | Guarded growth launchers. |
 | `preview_website.bat/.ps1` | Local HTTP preview, no Python/Node needed. |
+| `inventory-system.js` | Fish catalog, stacking rules, guest + account stores. |
 | `tests/followville.spec.mjs` | The Playwright suite. |
+| `tests/inventory_*_test.mjs` | Fast local inventory checks (`pnpm test:inventory`). |
 | `HISTORY.md` | Full historical record — every canon entry and incident. |
 | `TEAM_LOG.md` | Who changed what, newest first. |
 | `AI_HANDOFF.md` | Cheap-model manual. |
@@ -441,6 +443,9 @@ mayoral election, the ballot or `vote.html` — a "citizen" there is exactly a
 `verified` profile, not a new account type), `AVATAR_SYSTEM.md` (read before touching the
 avatar catalog, rigs, persistence or controls), `INTERIOR_SYSTEM.md` (read
 before touching the room, furnishing catalog, persistence or builder),
+`INVENTORY_SYSTEM.md` (read before touching the fish catalog, the inventory
+panel or `profiles.inventory` — note the fish IDs are permanent and the
+`profiles` update grant must re-grant `avatar` alongside `inventory`),
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `NEIGHBORHOOD_EXPANSION_PLAN.md`,
 `WEB_VIEWER_CHANGELOG.md`.

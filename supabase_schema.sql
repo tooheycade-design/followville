@@ -39,6 +39,7 @@ create table if not exists public.profiles (
   is_admin             boolean not null default false,
   avatar               jsonb not null default
                        '{"version":1,"skin":"peach","height":"adult","face":"classic","hair":"swept","outfit":"tailored","hat":"none","look":"custom"}'::jsonb,
+  inventory            jsonb not null default '{"version":1,"fish":{}}'::jsonb,
   constraint handle_format check (instagram_handle ~ '^[a-z0-9._]{1,30}$')
 );
 
@@ -46,6 +47,12 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists is_admin boolean not null default false;
 alter table public.profiles add column if not exists avatar jsonb not null default
   '{"version":1,"skin":"peach","height":"adult","face":"classic","hair":"swept","outfit":"tailored","hat":"none","look":"custom"}'::jsonb;
+-- Inventory System v1 (2026-08-10). See supabase_migrations/20260810_inventory_system_v1.sql
+-- and INVENTORY_SYSTEM.md. An inventory belongs to a player, not to a house,
+-- so it lives here and not on claims: guests, unverified accounts and
+-- non-homeowners all have one.
+alter table public.profiles add column if not exists inventory jsonb not null default
+  '{"version":1,"fish":{}}'::jsonb;
 
 do $$
 begin
@@ -143,16 +150,22 @@ drop policy if exists profiles_own_read on public.profiles;
 create policy profiles_own_read on public.profiles
   for select to authenticated using (user_id = auth.uid());
 
--- Players may update only the avatar column on their own profile. All other
--- profile fields remain server-controlled, and profiles_avatar_valid rejects
--- arbitrary JSON even when a client writes the column directly.
+-- Players may update only the avatar and inventory columns on their own
+-- profile. All other profile fields remain server-controlled, and the
+-- profiles_avatar_valid / profiles_inventory_valid constraints reject
+-- arbitrary JSON even when a client writes those columns directly.
+-- The policy name still says "avatar" for historical reasons; its row scope
+-- (own row, UPDATE, authenticated) is identical for both columns, so it is
+-- reused rather than duplicated. Column privileges below do the narrowing.
 drop policy if exists profiles_own_avatar_update on public.profiles;
 create policy profiles_own_avatar_update on public.profiles
   for update to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+-- The revoke is table-wide, so every client-writable column must be re-granted
+-- together here. Dropping one from this list silently breaks that feature.
 revoke update on public.profiles from public, anon, authenticated;
-grant update (avatar) on public.profiles to authenticated;
+grant update (avatar, inventory) on public.profiles to authenticated;
 
 grant select on public.public_claims to anon, authenticated;
 
@@ -343,6 +356,102 @@ begin
   if not found then raise exception 'profile_missing'; end if;
   return row_to_json(v_row);
 end $$;
+
+-- Inventory System v1 (fish only). Add-only by design: nothing in this schema
+-- lowers or clears a count, so a client bug or a hostile caller can inflate a
+-- stack but can never destroy a player's catches. A future Follow Bucks spend
+-- path is a separate migration with its own audit trail, not an edit to this.
+--
+-- CHECK constraints cannot contain subqueries and validating "every key of a
+-- nested object is in an allowlist" needs one, so the allowlist lives in this
+-- immutable helper — shared by the constraint and the RPC, never duplicated.
+-- Adding a fish means editing this list, INVENTORY_CATALOG in
+-- inventory-system.js, and a NEW migration. Never rewrite an applied one.
+create or replace function public.followville_inventory_is_valid(p jsonb)
+returns boolean
+language sql immutable parallel safe set search_path = ''
+as $$
+  select jsonb_typeof(p) = 'object'
+     and octet_length(p::text) <= 1024
+     and p ?& array['version','fish']
+     and p - array['version','fish'] = '{}'::jsonb
+     and p->>'version' = '1'
+     and jsonb_typeof(p->'fish') = 'object'
+     and not exists (
+       select 1 from jsonb_each(p->'fish') as e(key, value)
+       where e.key not in (
+               'pond_perch','meadow_minnow','dock_sunfish',
+               'rusty_carp','willow_bass','speckled_trout',
+               'bluebell_pike','glass_eel','moonlit_catfish',
+               'golden_sturgeon','founders_koi',
+               'kaleidoscope_koi','followville_phantom')
+          -- integer 1..999, as a regex so no cast can throw on hostile input
+          or jsonb_typeof(e.value) <> 'number'
+          or (e.value #>> '{}') !~ '^[1-9][0-9]{0,2}$'
+     );
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.profiles'::regclass and conname = 'profiles_inventory_valid'
+  ) then
+    alter table public.profiles add constraint profiles_inventory_valid
+      check (public.followville_inventory_is_valid(inventory));
+  end if;
+end $$;
+
+-- The client asks for an increment; it can never SET a count. One landed fish
+-- sends {"pond_perch":1}; a guest signing in sends their whole device stash in
+-- one call. Same RPC, so there is only one write path to reason about.
+create or replace function public.add_to_my_inventory(p_items jsonb)
+returns json
+language plpgsql security invoker set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_input jsonb := coalesce(p_items, '{}'::jsonb);
+  v_current jsonb;
+  v_next jsonb;
+  v_total integer := 0;
+  v_key text;
+  v_add integer;
+  v_row public.profiles;
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  if jsonb_typeof(v_input) <> 'object' or octet_length(v_input::text) > 1024 then
+    raise exception 'bad_inventory';
+  end if;
+  -- Validate the increment as if it were a whole inventory, so the catalog
+  -- allowlist is enforced from exactly one place.
+  if not public.followville_inventory_is_valid(
+       jsonb_build_object('version','1','fish',v_input)) then
+    raise exception 'bad_inventory';
+  end if;
+  select coalesce(sum((value #>> '{}')::integer), 0) into v_total from jsonb_each(v_input);
+  if v_total < 1 or v_total > 200 then raise exception 'bad_inventory'; end if;
+
+  select coalesce(inventory, '{"version":1,"fish":{}}'::jsonb) into v_current
+    from public.profiles where user_id = v_uid;
+  if v_current is null then raise exception 'profile_missing'; end if;
+
+  v_next := coalesce(v_current->'fish', '{}'::jsonb);
+  for v_key, v_add in select key, (value #>> '{}')::integer from jsonb_each(v_input)
+  loop
+    v_next := jsonb_set(v_next, array[v_key],
+      to_jsonb(least(999, coalesce((v_next->>v_key)::integer, 0) + v_add)), true);
+  end loop;
+
+  update public.profiles
+     set inventory = jsonb_build_object('version', 1, 'fish', v_next)
+   where user_id = v_uid returning * into v_row;
+  if not found then raise exception 'profile_missing'; end if;
+  return row_to_json(v_row);
+end $$;
+
+revoke execute on function public.add_to_my_inventory(jsonb) from public, anon, authenticated;
+grant execute on function public.add_to_my_inventory(jsonb) to authenticated, service_role;
 
 -- Homeowner Mode: the signed-in owner may change only the approved visual
 -- options on their own claim.  Keeping this behind a narrow RPC means the

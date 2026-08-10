@@ -6,9 +6,12 @@
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:inventory": "node tests/inventory_panel_test.mjs && node tests/inventory_migration_test.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1"
+    "@playwright/test": "1.61.1",
+    "@electric-sql/pglite": "^0.5.4",
+    "jsdom": "^28.0.0"
   }
 }
