@@ -286,6 +286,75 @@ def food_court_lots():
     return lots
 
 
+# Which two homes the connector threads, and how far each reaches toward the
+# gap between them. Nineteen homes evenly spaced on the ring leave no gap for a
+# road, so the connector has to pass between two of them; index 2 is the fries
+# carton and index 3 the sushi roll, and the ring has been complete since day
+# 37, so neither ever changes.
+#
+# These are measured, not estimated: 3.81m is the fries carton's overhanging
+# lip, not its foundation, and taking the foundation's 3.08m instead put the
+# lane 1.40m inside the home it was being moved to miss. check_food_assets.py
+# re-measures both off the built designs every run and fails with the real
+# figure, which is how that was caught.
+FOOD_COURT_GAP_INDICES = (2, 3)
+FOOD_COURT_GAP_REACH = (3.81, 4.37)
+# The lane's width along its own centreline, as (metres from the pinch, width).
+# It cannot be ROAD where it passes the homes: they stand 11.98m apart and take
+# 8.18m of that between them, leaving 3.80m of ground for a carriageway and two
+# verges.
+#
+# The narrow section runs the whole way from the loop junction to well clear of
+# the ring, rather than pinching at a point. A short pinch is not enough: the
+# fries carton presents a flat side to the lane, so the clearance hardly grows
+# as the lane moves away from it, and a stretch tapering back up to ROAD only
+# three metres inside the ring lay 1.02m inside that home's own footprint. Only
+# widen once both homes are behind it.
+FOOD_COURT_LANE_PROFILE = ((-6.4, 3.0), (6.0, 3.0), (10.0, 4.6), (14.0, ROAD))
+# The rest of the run out to the bridge, unchanged, local to the district.
+FOOD_COURT_LANE_TAIL = ((45.0, -42.0), (55.0, -54.0), (62.5, -63.5))
+
+
+def food_court_connector():
+    """The lane out to the river bridge, and its width at each control point.
+
+    Until 2026-08-09 this ran straight out on its own bearing at full ROAD
+    width and lay 1.77m inside the fries carton's foundation -- the incident
+    world_layout.LANDMARK_FOOTPRINTS' comment records, and the reason those ten
+    civic footprints were declared in the first place. Two things were wrong
+    with it: it took the bearing it happened to have rather than the line
+    through the gap, and it stayed six metres wide the whole way.
+
+    So it now leaves on the line that balances the two homes' verges -- the
+    middle of the gap is not the middle of the free ground, because the two
+    homes reach different distances into it -- and narrows to a single track
+    where it threads them, widening back to ROAD once it is clear of the ring.
+
+    The centreline is derived from food_court_lots(), so it cannot drift away
+    from the homes it has to miss. Local to the district instance, like
+    everything else in build_food_court(). Returns (points, widths).
+    """
+    lots = food_court_lots()
+    first, second = (lots[index] for index in FOOD_COURT_GAP_INDICES)
+    ax, ay = first[0] - FOOD_COURT_X, first[1] - FOOD_COURT_Y
+    bx, by = second[0] - FOOD_COURT_X, second[1] - FOOD_COURT_Y
+    span = math.hypot(bx - ax, by - ay)
+    along = span / 2 + (FOOD_COURT_GAP_REACH[0] - FOOD_COURT_GAP_REACH[1]) / 2
+    pinch_x = ax + (bx - ax) * along / span
+    pinch_y = ay + (by - ay) * along / span
+    # Perpendicular to the gap, so the pinch really is the closest the lane ever
+    # comes to either home, and pointing away from the plaza.
+    out_x, out_y = (by - ay) / span, -(bx - ax) / span
+    if pinch_x * out_x + pinch_y * out_y < 0:
+        out_x, out_y = -out_x, -out_y
+    points = [(pinch_x + step * out_x, pinch_y + step * out_y)
+              for step, _ in FOOD_COURT_LANE_PROFILE]
+    widths = [lane_width for _, lane_width in FOOD_COURT_LANE_PROFILE]
+    points.extend(FOOD_COURT_LANE_TAIL)
+    widths.extend([ROAD] * len(FOOD_COURT_LANE_TAIL))
+    return points, widths
+
+
 APARTMENTS_X = -50.0
 APARTMENTS_Y = -300.0
 # Re-sited 2026-08-07. The first site was chosen against stored coordinates
@@ -4086,16 +4155,19 @@ def build_food_court(col, seed):
     _add_road_strip(col, "foodcourt_loop", ring, m["road"], terrain_conform=True,
                     terrain_origin=(FOOD_COURT_X, FOOD_COURT_Y))
 
-    # connector out to Rivergate at (486.5,-43.5) -> local (62.5,-63.5)
-    spine = [(24.0, -19.0), (34.0, -30.0), (45.0, -42.0), (55.0, -54.0), (62.5, -63.5)]
-    dense = []
-    for (ax, ay), (bx, by) in zip(spine, spine[1:]):
-        steps = max(1, int(math.ceil(math.hypot(bx - ax, by - ay) / 3.0)))
-        for step in range(steps):
-            t = step / steps
-            dense.append((ax + (bx - ax) * t, ay + (by - ay) * t))
-    dense.append(spine[-1])
-    _add_road_strip(col, "foodcourt_approach", dense, m["road"], terrain_conform=True,
+    # The connector out over the river, threading the gap between the third and
+    # fourth homes and narrowing to a single track to do it. See
+    # food_court_connector() for why, and for what it used to run through.
+    #
+    # The control points are passed as authored: _add_road_strip subdivides to
+    # two metres internally, which is finer than the three this used to
+    # pre-densify to, and unlike the suburban roads this lane is in no walk
+    # surface manifest -- the browser walks the Food Court off the shared
+    # plateau in regionalTerrainHeight, not off a road deck -- so there is no
+    # coarser copy of it to drift away from the mesh.
+    lane_points, lane_widths = food_court_connector()
+    _add_road_strip(col, "foodcourt_approach", lane_points, m["road"],
+                    widths=lane_widths, terrain_conform=True,
                     terrain_origin=(FOOD_COURT_X, FOOD_COURT_Y))
 
     add_ngon_cone(col, "foodcourt_green", 26.0, 26.0, .10, 28, 0, 0, gz + .02, lawn)
@@ -12504,8 +12576,23 @@ def _register_ui():
             hs.remove(h)
     hs.append(_copy_video_to_desktop)
 
+# Importing this module inside a background Blender session used to GROW THE
+# CITY, because the line below is all there is between "load the generator" and
+# "run a growth". check_food_assets.py imports it to build the ten food house
+# designs and measure them; the first time that ran with NEIGHBORHOOD_STATE_DIR
+# pointing at the repo, the import advanced the world to day 40 and appended
+# five Northgate houses, which then made town_manifest.json disagree with
+# world_state.json and dropped the browser out of district streaming.
+#
+# FOLLOWVILLE_IMPORT_ONLY says "I want the functions, not a growth". Nothing in
+# the growth path sets it, so grow_windows.ps1, grow.sh and the GUI panel are
+# unaffected -- but any tool that wants to read the generator can now do so
+# without changing the city.
 if bpy.app.background:
-    main()
+    if os.environ.get("FOLLOWVILLE_IMPORT_ONLY"):
+        print("neighborhood_blender: imported for inspection; no growth run.")
+    else:
+        main()
 else:
     _register_ui()
     print("City panel ready — press N in the 3D viewport and open the 'City' tab.")
