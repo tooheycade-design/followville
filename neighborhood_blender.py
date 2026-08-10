@@ -162,6 +162,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day38reveal 16-second skyline, run east, Food Court rise
 #   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
+#   --cam day40reveal 27-second city overhead, one eastward drone run through
+#                     58 new homes, then the filling station in its own shot
+#   --gasstation     claim the reserve's next filling-station address
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -194,6 +197,7 @@ def _cli():
              "--raftingstation": "raftingstation",
              "--salmonproshop": "salmonproshop",
              "--commons": "apartmentcomplex",
+             "--gasstation": "gasstation",
              "--foodcourt": "foodcourt"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
@@ -4047,44 +4051,178 @@ def build_gas_station(col, seed):
     Authored like every planned house -- front on local -Y, footprint inside the
     lot envelope -- so the reserve can hand it an ordinary street address and it
     faces its road with no special casing anywhere in placement.
+
+    Rebuilt on day 40, when the reserve finally handed this type an address and
+    it became a thing people would actually look at rather than a placeholder.
+    The first version was six flat boxes and broke two standing rules: its price
+    board reached x=-8.80, outside the envelope declared for a gasstation -- so
+    the first one ever built would have failed check_world_geometry -- and its
+    canopy deck, fascia and shop band were concentric boxes sharing side planes.
+
+    It is built 16m wide, x in [-8.00, 8.00], NOT the 17m the reserve sets
+    aside: on a suburban street frontage the wider forecourt stood 5.6m from
+    its neighbours' centres and check_world_geometry wants 6.0. See the note on
+    world_layout.LANDMARK_FOOTPRINTS["gasstation"], which is the extent this is
+    audited at and must be kept in step with the numbers below.
+
+    Every stacked layer here is a single centred box of a DISTINCT size, so no
+    two visible faces ever land on one plane and there are no four-wall corner
+    joints to share a plane obliquely. Anything mounted on a wall goes through
+    mounted_face_center, which keeps its visible face clear of the wall it sits
+    on while leaving the hidden side embedded, and anything resting on a surface
+    goes through `seated`, which bites SEAT into it rather than sitting flush --
+    a box resting exactly on another's top face puts two coplanar faces in the
+    scene even though both are hidden, which is what the depth rule forbids.
+
+    Ground plan, all of it inside the envelope:
+        shop + planter along the back (+Y), forecourt and canopy at the street
+        (-Y), price totem in the front-east corner clear of the canopy deck.
     """
-    m = std_mats()
-    pave = mat("NB_gas_pave", (.62, .62, .60), .95)
-    wall = mat("NB_gas_wall", (.95, .94, .90), .86)
-    band = mat("NB_gas_band", (.86, .32, .26), .84)
-    glass = mat("NB_gas_glass", (.30, .52, .62), .14, .10, 1.0, 0.0, .58)
-    steel = mat("NB_gas_steel", (.80, .80, .82), .55)
-    dark = mat("NB_gas_dark", (.24, .26, .29), .84)
+    SEAT = .012
 
-    add_box(col, "gas_forecourt", 17.0, 15.0, .16, 0, -1.0, 0, pave)
-    # Shop along the back so the forecourt reads from the street.
-    add_box(col, "gas_shop", 9.4, 5.2, 3.5, -2.4, 5.0, .16, wall)
-    add_box(col, "gas_shop_band", 9.6, 5.4, .55, -2.4, 5.0, 3.66, band)
-    add_prism_roof(col, "gas_shop_roof", 9.8, 5.6, .9, -2.4, 5.0, 4.21, dark)
+    def seated(name, w, d, h, x, y, surface, material, bite=SEAT):
+        """Box of height h standing ON `surface`, biting into it."""
+        add_box(col, name, w, d, h + bite, x, y, surface - bite, material)
+
+    pave = mat("NB_gas_pave", (.72, .71, .68), .94)
+    drive = mat("NB_gas_drive", (.34, .35, .38), .90)
+    wall = mat("NB_gas_wall", (.96, .95, .91), .86)
+    band = mat("NB_gas_band", (.86, .31, .25), .82)
+    glass = mat("NB_gas_glass", (.30, .54, .64), .14, .10, 1.0, 0.0, .58)
+    steel = mat("NB_gas_steel", (.82, .82, .84), .48, .55)
+    dark = mat("NB_gas_dark", (.22, .24, .27), .84)
+    white = mat("NB_gas_white", (.93, .93, .90), .70)
+    green = mat("NB_gas_green", (.41, .64, .33), 1.0)
+    leaf = mat("NB_gas_leaf", (.34, .57, .30), .95)
+
+    # ── ground: concrete apron, asphalt forecourt inset inside it ───────────
+    # The apron IS the declared footprint. The drive is inset 0.6m on every
+    # side so the apron's top reads as a kerb margin and the two slabs share
+    # neither a top surface nor a side plane.
+    add_box(col, "gas_apron", 16.0, 15.0, .14, 0, -1.0, 0, pave)
+    APRON = .14
+    seated("gas_drive", 14.8, 9.2, .06, 0, -3.6, APRON, drive)
+    DRIVE = .20
+
+    # Two painted bays, tucked between the canopy's east edge (x=4.6) and the
+    # air line, and stopping well short of the EV posts at y=0.3.
+    for bx in (5.0, 6.1):
+        seated("gas_bay_line", .12, 2.4, .03, bx, -3.4, DRIVE, white)
+
+    # ── shop along the back, so the forecourt reads from the street ─────────
+    SHOP_X, SHOP_Y = -3.4, 3.9
+    SHOP_W, SHOP_D = 8.80, 4.4
+    SHOP_FRONT = SHOP_Y - SHOP_D / 2                      # y = 1.70
+    seated("gas_shop_plinth", 9.0, 4.6, .22, SHOP_X, SHOP_Y, APRON, band)
+    seated("gas_shop_body", SHOP_W, SHOP_D, 3.60, SHOP_X, SHOP_Y, .36, wall)
+    # Flat-roof cornice: slab oversails the wall, band steps back in, deck steps
+    # back again. Three sizes, three planes, and the roof still reads as flat.
+    seated("gas_shop_eaves", 9.12, 4.72, .14, SHOP_X, SHOP_Y, 3.96, wall)
+    seated("gas_shop_cornice", 8.74, 4.34, .30, SHOP_X, SHOP_Y, 4.10, band)
+    seated("gas_shop_deck", 8.40, 4.00, .08, SHOP_X, SHOP_Y, 4.40, dark)
+    # Rooftop plant, sitting on the deck rather than floating over it.
+    seated("gas_shop_hvac", 1.30, 1.00, .55, -5.9, 4.2, 4.48, steel)
+    seated("gas_shop_hvac_cap", 1.42, 1.12, .10, -5.9, 4.2, 5.03, dark)
+    seated("gas_shop_vent", 1.00, .82, .40, -1.4, 4.4, 4.48, steel)
+    seated("gas_shop_vent_cap", 1.12, .94, .09, -1.4, 4.4, 4.88, dark)
+
+    # Storefront. Each layer stands proud of the one behind it by a clear
+    # margin, so glass, mullion and sign band never share the wall's plane.
+    glass_y = mounted_face_center(SHOP_FRONT, -1, .16, .12)
+    # The mullion embeds 3cm rather than the glass's 4cm, so the two do not
+    # share a back plane where an end mullion laps a panel's edge.
+    mull_y = mounted_face_center(SHOP_FRONT, -1, .20, .17)
+    door_y = mounted_face_center(SHOP_FRONT, -1, .18, .14)
+    sign_y = mounted_face_center(SHOP_FRONT, -1, .24, .20)
+    add_box(col, "gas_shop_sill", 6.75, .18, .16, -4.40, glass_y, .54, white)
     for i in range(3):
-        add_box(col, "gas_shop_glass", 2.30, .14, 2.05,
-                -5.3 + i * 2.9, 2.32, .90, glass)
-    add_box(col, "gas_shop_door", 1.15, .16, 2.35, 1.15, 2.30, .16, dark)
+        seated("gas_shop_glass", 2.05, .16, 2.10,
+               -6.75 + i * 2.35, glass_y, .70, glass)
+    # Flanking mullions sit inside the wall's own west/east faces rather than
+    # on the arithmetic continuation of the panel pitch, which would hang the
+    # end one 6cm off the corner.
+    for mx in (-7.70, -5.575, -3.225, -.90):
+        add_box(col, "gas_shop_mullion", .18, .20, 2.46, mx, mull_y, .60, white)
+    # Door, surround and the wall behind them all stand on the plinth. Three
+    # different bites, so no two of the three share a base plane.
+    seated("gas_shop_door", 1.30, .18, 2.40, .10, door_y, .36, dark, bite=.018)
+    seated("gas_shop_door_frame", 1.54, .14, 2.62, .10, sign_y, .36, white,
+           bite=.024)
+    add_box(col, "gas_shop_signband", 8.20, .24, .66, SHOP_X, sign_y, 3.20, band)
+    add_box(col, "gas_shop_signface", 5.40, .12,
+            .38, SHOP_X, mounted_face_center(sign_y - .12, -1, .12, .09), 3.34, wall)
 
-    # Canopy: four columns, deck above head height, red fascia on all four
-    # sides so no oblique angle shows an open edge.
-    for cx in (-5.6, 5.6):
-        for cy in (-5.4, 1.0):
-            add_ngon_cone(col, "gas_column", .34, .34, 4.6, 8, cx, cy, .16, steel)
-    add_box(col, "gas_canopy_deck", 14.4, 9.6, .42, 0, -2.2, 4.76, wall)
-    add_box(col, "gas_canopy_fascia", 14.8, 10.0, .62, 0, -2.2, 5.18, band)
-    add_box(col, "gas_canopy_soffit", 13.6, 8.8, .14, 0, -2.2, 4.62, wall)
+    # ── canopy: four tapered columns and a four-layer deck ──────────────────
+    # Centred at x=-1.2 rather than 0 so the price totem has real ground in the
+    # front-east corner: at centre the deck reached x=5.5 and the board's top
+    # west corner passed straight through the fascia.
+    CAN_X, CAN_Y = -1.2, -3.8
+    for cx in (CAN_X - 4.1, CAN_X + 4.1):
+        for cy in (-6.4, -1.6):
+            seated("gas_column_base", .86, .86, .16, cx, cy, DRIVE, dark)
+            add_ngon_cone(col, "gas_column", .30, .24, 4.512, 8, cx, cy,
+                          .36 - SEAT, steel)
+    add_box(col, "gas_canopy_soffit", 10.6, 8.0, .12, CAN_X, CAN_Y, 4.86, wall)
+    seated("gas_canopy_web", 11.1, 8.5, .34, CAN_X, CAN_Y, 4.98, steel)
+    seated("gas_canopy_fascia", 11.6, 9.0, .46, CAN_X, CAN_Y, 5.32, band)
+    seated("gas_canopy_cap", 11.3, 8.7, .10, CAN_X, CAN_Y, 5.78, wall)
+    # Downlights recessed into the soffit; only the lit face hangs below it.
+    # Held to +-3.1 of centre so they clear the column heads at +-4.1.
+    for lx in (CAN_X - 3.1, CAN_X, CAN_X + 3.1):
+        for ly in (-6.4, -1.6):
+            add_box(col, "gas_downlight", .84, .84, .082, lx, ly, 4.79, white)
 
-    for cy in (-4.4, .0):
-        add_box(col, "gas_island", 6.4, 1.5, .26, 0, cy, .16, pave)
-        for px in (-1.9, 1.9):
-            add_box(col, "gas_pump", .95, .80, 1.85, px, cy, .42, wall)
-            add_box(col, "gas_pump_face", .70, .12, .95, px, cy - .44, 1.00, dark)
+    # ── pump islands ────────────────────────────────────────────────────────
+    # 6.0m, not 6.4m: at 6.4 the kerb reached x=3.2 and the east pair of canopy
+    # columns stood on the island instead of on the forecourt beside it.
+    for cy in (-6.4, -1.6):
+        seated("gas_island_kerb", 6.0, 1.70, .22, CAN_X, cy, DRIVE, pave)
+        seated("gas_island_top", 5.0, 1.30, .06, CAN_X, cy, .42, dark)
+        for px in (CAN_X - 1.8, CAN_X + 1.8):
+            seated("gas_pump_body", .95, .78, 1.55, px, cy, .48, wall)
+            seated("gas_pump_cap", 1.05, .88, .14, px, cy, 2.03, band)
+            # A screen on both faces: each island is served from both sides.
+            for face, outward in ((cy - .39, -1), (cy + .39, 1)):
+                add_box(col, "gas_pump_screen", .62, .10, .80,
+                        px, mounted_face_center(face, outward, .10, .07),
+                        1.16, dark)
+            seated("gas_pump_boom", .14, .14, .62, px + .54, cy, 2.17, steel)
+        # On the kerb rim beyond the island top, not straddling its edge.
+        for bx in (CAN_X - 2.75, CAN_X + 2.75):
+            add_ngon_cone(col, "gas_bollard", .13, .11, .82, 8, bx, cy,
+                          .42 - SEAT, band)
 
-    # Price totem on the street side, clear of the canopy.
-    add_ngon_cone(col, "gas_sign_post", .26, .24, 5.2, 8, -7.2, -7.4, .16, steel)
-    add_box(col, "gas_sign_board", 3.2, .38, 2.0, -7.2, -7.4, 5.36, band)
-    add_box(col, "gas_sign_face", 2.7, .16, 1.5, -7.2, -7.62, 5.60, wall)
+    # ── forecourt furniture along the east strip, clear of the deck ─────────
+    seated("gas_airwater", .70, .60, 1.25, 6.6, -1.4, DRIVE, steel)
+    seated("gas_airwater_cap", .80, .70, .12, 6.6, -1.4, 1.45, band)
+    for ex in (5.6, 6.9):
+        seated("gas_ev_post", .38, .34, 1.62, ex, .3, DRIVE, white)
+        add_box(col, "gas_ev_screen", .26, .10, .34, ex,
+                mounted_face_center(.3 - .17, -1, .10, .07), 1.20, dark)
+        seated("gas_ev_cap", .46, .42, .10, ex, .3, 1.82, band)
+    seated("gas_bin", .60, .58, .90, -7.0, .60, DRIVE, dark)
+    seated("gas_bin_lid", .70, .68, .10, -7.0, .60, 1.10, steel)
+
+    # ── planting bed beside the shop ────────────────────────────────────────
+    seated("gas_planter_kerb", 5.8, 4.0, .26, 5.0, 4.1, APRON, pave)
+    seated("gas_planter_soil", 5.3, 3.5, .08, 5.0, 4.1, .40, green)
+    for sx, sy, sr in ((3.4, 3.2, .62), (5.3, 5.0, .74), (6.6, 3.4, .55)):
+        add_ngon_cone(col, "gas_shrub", sr, sr * .35, sr * 1.9, 7, sx, sy,
+                      .48 - SEAT, leaf)
+
+    # ── price totem, front-east, clear of the canopy in x and the shop in y ──
+    TOT_X, TOT_Y = 6.45, -6.80
+    seated("gas_totem_foot", .90, .90, .18, TOT_X, TOT_Y, DRIVE, dark)
+    add_ngon_cone(col, "gas_totem_post", .24, .21, 3.072, 8, TOT_X, TOT_Y,
+                  .38 - SEAT, steel)
+    add_box(col, "gas_totem_board", 2.90, .42, 2.10, TOT_X, TOT_Y, 3.40, band)
+    seated("gas_totem_cap", 3.06, .56, .16, TOT_X, TOT_Y, 5.50, dark)
+    for face, outward in ((TOT_Y - .21, -1), (TOT_Y + .21, 1)):
+        face_y = mounted_face_center(face, outward, .14, .10)
+        add_box(col, "gas_totem_face", 2.45, .14, 1.52, TOT_X, face_y, 3.66, wall)
+        add_box(col, "gas_totem_price", 1.90, .10, .62, TOT_X,
+                mounted_face_center(face_y + outward * .07, outward, .10, .07),
+                3.86, dark)
     _merge_asset_meshes(col, "gas_station")
 
 
@@ -9236,6 +9374,15 @@ def build_background_ground(world_col, material, center_x, center_y):
         obj["fv_background_ground"] = True
 
 
+# Day 40's reveal is the first clip in the project made of two shots rather
+# than one unbroken camera move: the drone run ends at DAY40_GAS_CUT - 1 and the
+# filling station gets the rest to itself. Both the camera rig and the rise
+# schedule key off this, and they are built in different functions, so it lives
+# here rather than being written out twice.
+DAY40_GAS_CUT = 631
+DAY40_GAS_X, DAY40_GAS_Y = 118.25, 319.70
+
+
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
     cx, cy, ext = city_center_and_extent(buildings)
@@ -10124,6 +10271,123 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day40reveal":
+        # Day 40, 27 seconds, TWO shots.
+        #
+        # Shot one, frames 1-630, one unbroken drone move that never reverses:
+        #   0-5.0s    overhead of the city, high over downtown and drifting
+        #             north-west. The establishing look at what already exists.
+        #   5.0-10s   one continuous descending transfer out over the meadow,
+        #             which climbs from 0 to 15m under the flight path.
+        #   10-14.7s  run east down Foundry Street, brand new today, while its
+        #             nineteen homes come up just ahead of the camera.
+        #   14.7-19.3s cross south-east onto Northgate Avenue and keep running
+        #             east; the thirty-nine homes rise ahead in the same order.
+        #   19.3-21s  past the east end, climbing away from a finished street.
+        #
+        # The whole reveal is one eastward flight because the two streets fall
+        # that way on the ground: Foundry runs x -164 to -82 at y 342, the new
+        # stretch of Northgate Avenue runs x 8 to 184 at y 306. Approaching up
+        # the arterial at x=-93 the way day 39 did would arrive in the MIDDLE
+        # of Foundry and force the camera to double back, so this one crosses
+        # the meadow further west and picks the street up at its west end.
+        #
+        # Shot two, frames 631-810: the filling station, alone, on its corner.
+        # It is the first one the reserve has ever placed, it is the only thing
+        # in today's batch that is not a house, and at 17m across it is lost in
+        # a street-length tracking shot -- so it is held back and given its own
+        # camera rather than rising as house number forty.
+        #
+        # Portrait 9:16 on a 28mm lens covers only ~40 degrees horizontally, so
+        # every street beat flies ALONG the road rather than across it: the
+        # frontage recedes into the tall axis, which has ~63 degrees.
+        FOUNDRY_Y, AVENUE_Y = 342.0, 306.0
+        SHELF = 5.0                      # the whole Northgate quarter is level
+
+        aim = bpy.data.objects.new("Day40RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day40RevealCamera")
+        cam_data.lens = 28
+        # 10m near clip for the aerial beats, per the aerial-camera rule. The
+        # closest this move comes to a roof is ~45m, on the street runs.
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day40RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        # Aim heights follow the ground under them: downtown is at zero, the
+        # meadow crossing peaks near 15, and the Northgate shelf is flat at 5.
+        beats = (
+            (1,   (55.0, -330.0, 662.0),  (25.0, 55.0, 6.0)),
+            (80,  (40.0, -292.0, 620.0),  (0.0, 100.0, 6.0)),
+            (150, (-10.0, -190.0, 500.0), (-70.0, 175.0, 11.0)),
+            (215, (-140.0, -20.0, 340.0), (-170.0, 250.0, 15.0)),
+            (255, (-238.0, 120.0, 232.0), (-228.0, 300.0, 13.0)),
+            (300, (-262.0, 258.0, 112.0), (-205.0, 336.0, 11.0)),
+            # settled behind Foundry's west end, looking straight down it
+            (340, (-235.0, 328.0, 62.0), (-160.0, FOUNDRY_Y, SHELF + 3.0)),
+            (440, (-140.0, 334.0, 52.0), (-62.0, FOUNDRY_Y, SHELF + 3.0)),
+            # south-east onto the avenue without ever turning round
+            (500, (-45.0, 302.0, 54.0), (35.0, AVENUE_Y, SHELF + 3.0)),
+            (580, (58.0, 300.0, 52.0), (138.0, AVENUE_Y, SHELF + 3.0)),
+            (630, (150.0, 296.0, 86.0), (226.0, AVENUE_Y - 2.0, SHELF + 3.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+
+        # Shot two: its own camera, cut to with a bound timeline marker rather
+        # than whipped to, because a 250m jump back west is not a camera move.
+        gas_aim = bpy.data.objects.new("Day40GasAim", None)
+        world_col.objects.link(gas_aim)
+        gas_data = bpy.data.cameras.new("Day40GasCamera")
+        gas_data.lens = 30
+        gas_data.clip_start = 1.0
+        gas_data.clip_end = 4000.0
+        gas_data.dof.use_dof = False
+        gas_obj = bpy.data.objects.new("Day40GasCamera", gas_data)
+        world_col.objects.link(gas_obj)
+        gas_track = gas_obj.constraints.new("TRACK_TO")
+        gas_track.target = gas_aim
+        gas_track.track_axis = "TRACK_NEGATIVE_Z"
+        gas_track.up_axis = "UP_Y"
+
+        # A slow arc from the south-east round to the south, closing and
+        # settling as the station comes up. ~42 degrees down, so the forecourt
+        # fills the tall axis instead of 40m of empty sky above a 6m canopy.
+        gas_beats = (
+            (DAY40_GAS_CUT, (DAY40_GAS_X + 32.0, DAY40_GAS_Y - 28.0, SHELF + 37.0),
+             (DAY40_GAS_X, DAY40_GAS_Y - 4.0, SHELF + 1.0)),
+            (720, (DAY40_GAS_X + 18.0, DAY40_GAS_Y - 32.0, SHELF + 29.0),
+             (DAY40_GAS_X - 1.0, DAY40_GAS_Y - 5.0, SHELF + 1.0)),
+            (810, (DAY40_GAS_X + 7.0, DAY40_GAS_Y - 33.0, SHELF + 25.0),
+             (DAY40_GAS_X - 1.5, DAY40_GAS_Y - 6.0, SHELF + 1.0)),
+        )
+        for frame, position, target in gas_beats:
+            gas_obj.location = position
+            gas_aim.location = target
+            gas_obj.keyframe_insert("location", frame=frame)
+            gas_aim.keyframe_insert("location", frame=frame)
+
+        for obj in (cam_obj, aim, gas_obj, gas_aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+
+        scene = bpy.context.scene
+        scene.camera = cam_obj
+        for marker_name, marker_frame, marker_cam in (
+                ("day40_drone", 1, cam_obj),
+                ("day40_gasstation", DAY40_GAS_CUT, gas_obj)):
+            marker = scene.timeline_markers.new(marker_name, frame=marker_frame)
+            marker.camera = marker_cam
     elif cam == "day39reveal":
         # Day 39, 20 seconds, one unbroken move in four beats:
         #   0-6.0s    high over downtown, drifting north. The establishing look
@@ -11648,7 +11912,7 @@ def main(cfg=None):
                 cfg.get("fishingpond") or cfg.get("constructionzone") or
                 cfg.get("movietheater") or
                 cfg.get("eastwoods") or cfg.get("raftingstation") or
-                cfg.get("salmonproshop")):
+                cfg.get("gasstation") or cfg.get("salmonproshop")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -11821,6 +12085,34 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(fishing_pond)
             new_batch.append(fishing_pond)
+        if cfg.get("gasstation"):
+            # The first reserved NON-house address the project has ever
+            # claimed. Chapter three holds ten of them -- two filling stations,
+            # two diners, two parks, a pond, the grocery, the school and the
+            # fire station -- and ordinary growth steps straight over every one
+            # (see the addition loop above), so their ground stays empty and
+            # the homes go up around it until someone asks. This is the asking.
+            #
+            # It takes the reserve's own address rather than a free grid lot,
+            # which is the whole point: --special gasstation would drop one on
+            # whatever downtown lot happened to be free, 300m from the street
+            # the plan built a frontage for.
+            built_ids = {b["plan_id"] for b in state["buildings"]
+                         if b.get("plan_id")}
+            slot = next((s for s in SUBURBAN_PLAN["houses"]
+                         if s.get("type") == "gasstation"
+                         and s["plan_id"] not in built_ids), None)
+            if slot is None:
+                raise RuntimeError("The reserve has no unbuilt filling-station "
+                                   "address left")
+            station = {"type": "gasstation", "gx": 0, "gy": 0,
+                       "px": slot["x"], "py": slot["y"], "rot": slot["rot"],
+                       "plan_id": slot["plan_id"], "district": slot["district"],
+                       "street": slot["street"],
+                       "seed": state["seed_counter"], "day": state["day"]}
+            state["seed_counter"] += 1
+            state["buildings"].append(station)
+            new_batch.append(station)
         if cfg.get("raftingstation"):
             if any(b["type"] == "raftingstation" for b in state["buildings"]):
                 raise RuntimeError("Rafting station already exists")
@@ -11971,7 +12263,9 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day39reveal":
+    if cfg.get("cam") == "day40reveal":
+        frame_end = FPS * 27          # 21s drone run, then 6s on the station
+    elif cfg.get("cam") == "day39reveal":
         frame_end = FPS * 20          # exactly twenty seconds, not "at least"
     elif cfg.get("cam") == "day39mayor":
         frame_end = FPS * 10
@@ -12024,7 +12318,67 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day39mayor":
+    if cfg.get("cam") == "day40reveal":
+        # Foundry Street's road first, then its eighteen homes west to east,
+        # then Northgate Avenue's thirty-nine, then the filling station alone
+        # in the second shot.
+        #
+        # ONLY what is new today is touched. animate_rise is also what HIDES an
+        # object before its turn, so sweeping in every road would delete the
+        # standing town for the first ten seconds. Foundry is the one entirely
+        # new street, found by the nb_street_index tag build_suburban_roads
+        # stamps on every piece; Northgate Avenue is NOT hidden, because day 39
+        # built its western half and the pieces carry no per-segment reveal
+        # tag to tell yesterday's pavement from today's.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_ids = {b.get("plan_id") for b in state["buildings"]} - new_ids
+        old_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_ids}
+        new_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in new_ids} - old_streets
+        for obj in world_col.objects:
+            if obj.get("nb_street_index") in new_streets:
+                _keyframe_hidden(obj, 1, True)
+                _keyframe_hidden(obj, 292, False)
+
+        # Split by position, not by name: the station is the one root that is
+        # not a house, and both streets run east-west at known latitudes.
+        roots = [e for e in rise
+                 if e.name.startswith(("house_d", "gasstation_d"))]
+        station = [e for e in roots if e.name.startswith("gasstation_d")]
+        homes = [e for e in roots if e not in station]
+        foundry = sorted((e for e in homes if e.location.y > 325.0),
+                         key=lambda o: o.location.x)
+        avenue = sorted((e for e in homes if e.location.y <= 325.0),
+                        key=lambda o: o.location.x)
+        if len(foundry) != 19 or len(avenue) != 39 or len(station) != 1:
+            raise RuntimeError(
+                "day40reveal is cut to day 40's exact batch -- 19 Foundry "
+                "homes, 39 Northgate Avenue homes and 1 filling station. Got "
+                "%d / %d / %d. It needs `+58 --gasstation`; +58 alone steps "
+                "over the reserve's filling-station address and builds a "
+                "59th home instead."
+                % (len(foundry), len(avenue), len(station)))
+
+        # Foundry: 7 frames apart, so nineteen homes take 4.2 seconds rather
+        # than reading as one pop. Last is up at 478, as the camera leaves.
+        for index, e in enumerate(foundry):
+            animate_rise(e, 322 + index * 7, dur=20)
+        # The avenue starts while the camera is still finishing Foundry, so its
+        # west end is already coming alive in the far depth. 5 frames apart
+        # gives thirty-nine homes 6.3 seconds. It starts at 412 rather than 430
+        # so the LAST home finishes at 620 -- eleven frames before the cut to
+        # the filling station, instead of eight frames after it, which left the
+        # easternmost house frozen at nine-tenths height as the shot changed.
+        for index, e in enumerate(avenue):
+            animate_rise(e, 412 + index * 5, dur=18)
+        # The station, alone, thirty frames into its own shot.
+        for e in station:
+            animate_rise(e, DAY40_GAS_CUT + 30, dur=46)
+        for e in rise:
+            if e not in roots:
+                animate_rise(e, 292)
+    elif cfg.get("cam") == "day39mayor":
         # Deliberately animates nothing. This clip is a replay of Day 39, so
         # the batch handed to it is the thirty-three homes 440m north -- and
         # animate_rise is also what HIDES an object before its turn, so

@@ -300,13 +300,27 @@ LANDMARK_FOOTPRINTS = {
     # The chapter-three reserve's ten non-house addresses. These are the same
     # authored ground extents neighborhood_plan.TYPE_FOOTPRINT places against,
     # so the reserve and the checker cannot disagree about how big a fire
-    # station is. Declaring them is the point: an undeclared type comes back
+    # station is -- with one deliberate, documented exception, the gasstation
+    # below. Declaring them is the point: an undeclared type comes back
     # "not audited", which is not the same as clean -- that is exactly how the
     # Food Court shipped with a road through one of its homes.
     # None of them is "rural": a fire station, a school, the grocery and a
     # neighbourhood pond all belong in a town, and four of these types already
     # stand inside the paved downtown grid.
-    "gasstation":       (-8.50,  8.50,  -8.50,  6.50, False),
+    # 8.00, not the reserve's 8.50. This is the one type where the built
+    # extent is deliberately narrower than the ground TYPE_FOOTPRINT sets
+    # aside, and day 40 -- the first time the project ever claimed a reserved
+    # non-house address -- is what forced it. At 8.50 the forecourt's edge
+    # stood 5.6m from the centre of the houses either side of it on Northgate
+    # Avenue, and BUILDING_CLEARANCE below wants 6.0. The two rules genuinely
+    # disagree about a landmark dropped into a suburban street frontage: the
+    # reserve's own test (SPECIAL_NEIGHBOUR_CLEARANCE, footprint to footprint)
+    # was satisfied with 2.02m of grass to spare. Narrowing TYPE_FOOTPRINT
+    # instead was tried and rejected -- it reshuffles sixteen unbuilt Northgate
+    # addresses, including which side of the avenue they stand on. So the
+    # station is built 16m wide rather than 17m, this is the extent it is
+    # audited at, and the reserve keeps setting aside the wider strip.
+    "gasstation":       (-8.00,  8.00,  -8.50,  6.50, False),
     "restaurant":       (-7.70,  7.70,  -7.50,  6.30, False),
     "pond":             (-6.20,  6.20,  -6.20,  6.20, False),
     "park":            (-12.25, 12.25, -12.25, 12.25, False),
