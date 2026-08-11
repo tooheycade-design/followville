@@ -355,6 +355,23 @@ changes no state, no GLBs and no saved scene. **Story-only set dressing —
 packages, wreckage, temporary props, one-off vehicles, effects — follows that
 same pattern.** So do the render-only cameras `housefront` and `day34fire`.
 
+**Tag every Story prop `nb_render_only`, or it ships to the live website.**
+This is the sharpest edge in the whole format. `grow_windows.ps1` runs
+`export_web.py` in the *same* Blender invocation as the generator and then
+commits and pushes `town.glb` — so a Story prop left untagged does not just
+appear in a render, it becomes permanent town geometry on the public site.
+`export_web.py` deletes every object carrying `obj["nb_render_only"] = True`
+before it bakes the WORLD collection, and that tag is the only thing standing
+between a temporary gag and a rubber duck welded to the city forever. Tag the
+meshes, the text objects, the cars **and** the lamps.
+
+Safer still, and what #001 does: produce Stories by invoking Blender directly
+with the generator alone and **no `export_web.py` in the command**, against the
+repo's Blend copy. Nothing can then be exported, committed or pushed by
+accident. `--replay --focus-type finished` gives a fully-built static town —
+`focus-type` matching no building type empties the rise batch, which is what
+stops the day's houses popping up mid-shot.
+
 **Ownership of what a Story leaves behind.** A paid custom property appears
 already attributed to its buyer with no claim step; a sponsored location is
 never claimable, via `NON_CLAIMABLE_TYPES` and its `grow_windows.ps1` mirror.

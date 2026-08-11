@@ -165,6 +165,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day40reveal 27-second city overhead, one eastward drone run through
 #                     58 new homes, then the filling station in its own shot
 #   --gasstation     claim the reserve's next filling-station address
+#   --cam story001pricesign  Followville Stories #001, shots 1-4 (11.0s, --time day)
+#   --cam story001dusk       Followville Stories #001, shot 5 (4.2s, --time dusk)
+#                     Both are render-only overlays on the filling station and
+#                     need --replay --focus-type finished. See FOLLOWVILLE_STORIES.md.
 #   --cam riverdrone    reusable finished river/bridge aerial
 #   --cam riverbridge   reusable first-person-height bridge crossing
 #   --cityhall       add the permanent City Hall and its terrain-following road
@@ -9382,6 +9386,163 @@ def build_background_ground(world_col, material, center_x, center_y):
 DAY40_GAS_CUT = 631
 DAY40_GAS_X, DAY40_GAS_Y = 118.25, 319.70
 
+# ═══════════════ FOLLOWVILLE STORIES #001 -- "The Price Sign" ═══════════════
+#
+# The first Followville Story: the filling station opens, the price collapses,
+# the town drains it dry in a day. Two render-only cameras, four shots in the
+# day clip and one at dusk. See FOLLOWVILLE_STORIES.md.
+#
+# Render-only, exactly like --godzilla and the Day 34 emergency props: this
+# layer never writes world_state.json, never exports a GLB and never saves the
+# Blend. Run it on --replay.
+#
+# The station is ONE merged mesh. build_gas_station ends in _merge_asset_meshes,
+# so gas_totem_price and gas_downlight do not exist as objects at render time
+# and cannot be animated in place. Everything below is therefore an OVERLAY
+# standing proud of the merged geometry, never a flush repaint of it -- a plate
+# laid exactly on the board's face would put two visible faces on one plane,
+# which the depth rule forbids.
+#
+# Station local -> world is +(118.25, 319.70), rot 0, front on local -Y. The
+# whole Northgate quarter is a level shelf, so terrain here is a flat 5.0 and
+# every z below is measured off it.
+STORY001_SHELF = 5.0
+STORY001_TOTEM_X = DAY40_GAS_X + 6.45          # TOT_X
+STORY001_PRICE_Y = DAY40_GAS_Y - 7.45          # 0.44m proud of the board face
+# add_box's z is the BOTTOM of the box, so gas_totem_price spans 3.86 to 4.48
+# and its middle is 4.17. The text is align_y CENTER, so it has to be placed at
+# the middle -- placing it at 3.86 hangs the number off the bottom of the board.
+STORY001_PRICE_Z = STORY001_SHELF + 4.17
+STORY001_SWAP = 115                            # frame the price drops
+
+
+def _story001_plate(world_col, name, body, size, colour, emission=0.0):
+    """One price readout standing in front of the totem's merged board.
+
+    A FONT curve rather than geometry: the joke is a number changing, and it
+    has to be legible at 7m on a portrait lens. Text objects are render-only
+    here, so nothing about them reaches the GLB.
+    """
+    curve = bpy.data.curves.new(name, type="FONT")
+    curve.body = body
+    curve.size = size
+    curve.align_x = "CENTER"
+    curve.align_y = "CENTER"
+    curve.extrude = .012
+    obj = bpy.data.objects.new(name, curve)
+    material = mat("NB_" + name, colour, .30)
+    if emission:
+        # mat() has no emission argument, so drive the BSDF directly rather
+        # than passing it through and silently setting Transmission instead.
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
+        colour_input = (bsdf.inputs.get("Emission Color")
+                        or bsdf.inputs.get("Emission"))
+        if colour_input:
+            colour_input.default_value = (*colour, 1.0)
+        strength = bsdf.inputs.get("Emission Strength")
+        if strength:
+            strength.default_value = emission
+    obj.data.materials.append(material)
+    world_col.objects.link(obj)
+    # export_web.py strips anything carrying this tag before it bakes the
+    # WORLD collection. Story props must never become permanent town geometry.
+    obj["nb_render_only"] = True
+    obj.location = (STORY001_TOTEM_X, STORY001_PRICE_Y, STORY001_PRICE_Z)
+    # Text is authored in XY facing +Z; +90 about X stands it up facing -Y,
+    # which is the street, and leaves it reading left-to-right along +X.
+    obj.rotation_euler = (math.pi / 2, 0, 0)
+    return obj
+
+
+def _story001_show(obj, first, last, frame_end):
+    """Hide obj outside [first, last]. Same keying animate_rise uses."""
+    def key(frame, hidden):
+        obj.hide_viewport = hidden
+        obj.hide_render = hidden
+        obj.keyframe_insert("hide_viewport", frame=frame)
+        obj.keyframe_insert("hide_render", frame=frame)
+    if first > 1:
+        key(1, True)
+        key(first, False)
+    else:
+        key(1, False)
+    if last < frame_end:
+        key(last + 1, True)
+
+
+def _story001_car(world_col, index, x, y, rot, scale=.82):
+    """One parked car on the forecourt or queued down the avenue."""
+    car = place_instance(world_col, {"type": "car", "gx": 0, "gy": 0,
+                                     "seed": 9600 + index}, "story001_traffic")
+    car.scale = (scale, scale, scale)
+    car.location = (x, y, terrain_height(x, y) + .20)
+    car.rotation_euler = (0, 0, rot)
+    car["nb_render_only"] = True
+    return car
+
+
+# Forecourt and avenue positions, and the frame each car first appears on.
+# Shot 3 (f151) brings the pumps and the head of the queue; shot 4 (f241)
+# reveals how far back it really goes. Rows are (x, y, rot, appear).
+STORY001_CARS = (
+    (114.6, 311.9, 0.0,   151), (119.4, 311.9, 0.0,   151),
+    (114.6, 315.7, 0.0,   151), (119.4, 315.7, 0.0,   151),
+    (114.6, 319.4, 0.0,   241), (119.4, 319.4, 0.0,   241),
+    (124.2, 309.2, 0.62,  151), (127.4, 306.5, 0.0,   151),
+    (133.2, 306.5, 0.0,   241), (139.0, 306.5, 0.0,   241),
+    (144.8, 306.5, 0.0,   241), (150.6, 306.5, 0.0,   241),
+)
+
+
+def build_story001_price_sign(world_col, frame_end, dusk=False):
+    """Followville Stories #001. Render-only overlay on the filling station."""
+    if dusk:
+        # The board is dead and the forecourt is empty but for one car left
+        # crooked across a painted bay. Canopy downlights come up instead.
+        _story001_plate(world_col, "story001_price_out", "$0.00", .44,
+                        (.10, .10, .12))
+        _story001_car(world_col, 99, 123.4, 316.0, .55)
+        for lx in (DAY40_GAS_X - 4.3, DAY40_GAS_X - 1.2, DAY40_GAS_X + 1.9):
+            for ly in (DAY40_GAS_Y - 6.4, DAY40_GAS_Y - 1.6):
+                data = bpy.data.lights.new("story001_canopy", type="POINT")
+                data.color = (1.0, .86, .62)
+                data.shadow_soft_size = .55
+                lamp = bpy.data.objects.new("story001_canopy", data)
+                world_col.objects.link(lamp)
+                lamp["nb_render_only"] = True
+                lamp.location = (lx, ly, STORY001_SHELF + 4.70)
+                # Fluorescents strike, stutter once, then hold.
+                for frame, energy in ((1, 0.0), (44, 0.0), (47, 340.0),
+                                      (50, 60.0), (54, 400.0)):
+                    data.energy = energy
+                    data.keyframe_insert("energy", frame=frame)
+                for fc in obj_fcurves(data):
+                    for kp in fc.keyframe_points:
+                        kp.interpolation = "CONSTANT"
+        return
+
+    high = _story001_plate(world_col, "story001_price_high", "$4.29", .44,
+                           (.94, .93, .88))
+    low = _story001_plate(world_col, "story001_price_low", "$0.29", .44,
+                          (.97, .32, .24), emission=.9)
+    _story001_show(high, 1, STORY001_SWAP - 1, frame_end)
+    _story001_show(low, STORY001_SWAP, frame_end, frame_end)
+
+    for i, (x, y, rot, appear) in enumerate(STORY001_CARS):
+        car = _story001_car(world_col, i, x, y, rot)
+        _story001_show(car, appear, frame_end, frame_end)
+        # The two that arrive on camera in shot 3 roll the last 4m in rather
+        # than appearing parked. Everything else is already there -- a queue
+        # reads as a queue, not as twelve cars materialising.
+        if i in (1, 3):
+            car.location = (x + 4.0, y, terrain_height(x + 4.0, y) + .20)
+            car.keyframe_insert("location", frame=155)
+            car.location = (x, y, terrain_height(x, y) + .20)
+            car.keyframe_insert("location", frame=200)
+            for fc in obj_fcurves(car):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+
 
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
@@ -10387,6 +10548,106 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 ("day40_drone", 1, cam_obj),
                 ("day40_gasstation", DAY40_GAS_CUT, gas_obj)):
             marker = scene.timeline_markers.new(marker_name, frame=marker_frame)
+            marker.camera = marker_cam
+    elif cam in ("story001pricesign", "story001dusk"):
+        # Followville Stories #001. Four cameras cut by bound timeline markers
+        # in the day clip, exactly as day40reveal cuts to its station shot: a
+        # 20m jump is a cut, not a camera move. Shot 5 is its own --time dusk
+        # run because time of day is a whole-run setting.
+        #
+        # Portrait 9:16 fits the sensor to the TALL axis, so a 30mm lens covers
+        # only ~37 degrees horizontally. The station is 16m wide, which is why
+        # the establishing shots stand ~29m off rather than the ~25m that would
+        # frame it in landscape.
+        GX, GY, SH = DAY40_GAS_X, DAY40_GAS_Y, STORY001_SHELF
+        story_cams = []
+
+        def story_cam(name, lens, near, beats, up_axis="UP_Y"):
+            aim = bpy.data.objects.new(name + "Aim", None)
+            world_col.objects.link(aim)
+            data = bpy.data.cameras.new(name)
+            data.lens = lens
+            data.clip_start = near
+            data.clip_end = 4000.0
+            data.dof.use_dof = False
+            obj = bpy.data.objects.new(name, data)
+            world_col.objects.link(obj)
+            track = obj.constraints.new("TRACK_TO")
+            track.target = aim
+            track.track_axis = "TRACK_NEGATIVE_Z"
+            track.up_axis = up_axis
+            for frame, position, target in beats:
+                obj.location = position
+                aim.location = target
+                obj.keyframe_insert("location", frame=frame)
+                aim.keyframe_insert("location", frame=frame)
+            for item in (obj, aim):
+                for fc in obj_fcurves(item):
+                    for kp in fc.keyframe_points:
+                        kp.interpolation = "BEZIER"
+            story_cams.append(obj)
+            return obj
+
+        # WHY THE ESTABLISHING SHOTS ARE ELEVATED AND HEAD-ON, not the oblique
+        # ground-level three-quarters this started as:
+        #
+        # Northgate Avenue has houses on BOTH sides -- the north row at y=314.5
+        # (the station's own row) and the south row at y=297.5 -- leaving an
+        # 8.3m corridor between their facing walls. Worse, TYPE_FOOTPRINT gives
+        # a house y from -4.9 to +3.8, so the neighbours' south faces land at
+        # y=309.6, which is 1.6m CLOSER to the street than the station's own
+        # apron edge at 311.2. The station is set back behind its neighbours.
+        #
+        # So no oblique ground angle sees it: house 680 at (132.36, 314.5) eats
+        # the eastern third of the frame, totem included, from anywhere down the
+        # street, and the corridor itself is far too narrow to stand back the
+        # ~29m a 16m-wide subject needs in portrait. The only clear line is up
+        # and over the south row, looking straight in.
+        if cam == "story001dusk":
+            # Shot 5. Shot 1's framing exactly, locked off -- the match is the
+            # payoff, so nothing may drift.
+            story_cam("Story001Dusk", 30, 1.0,
+                      ((1, (GX, 291.0, SH + 19.0), (GX, 315.0, SH + 2.0)),))
+        else:
+            # Shot 1, 1-84: the station new, clean and empty. A 2.5m push.
+            # Sightline clears the south row's roofs by ~12m at its tightest.
+            story_cam("Story001Establish", 30, 1.0, (
+                (1,  (GX, 291.0, SH + 19.0), (GX, 315.0, SH + 2.0)),
+                (84, (GX, 293.5, SH + 17.5), (GX, 315.0, SH + 2.0))))
+            # Shot 2, 85-150: the totem, static, ~7.3m off the price face.
+            story_cam("Story001Totem", 30, .40, (
+                (85,  (129.0, 306.3, SH + 4.6),
+                 (STORY001_TOTEM_X, STORY001_PRICE_Y, STORY001_PRICE_Z)),
+                (150, (129.0, 306.3, SH + 4.6),
+                 (STORY001_TOTEM_X, STORY001_PRICE_Y, STORY001_PRICE_Z))))
+            # Shot 3, 151-240: elevated three-quarter from the south-east.
+            # Ground level here stood inside the south row, and every oblique
+            # angle low enough to feel like a street shot put house 680 across
+            # the forecourt. Solved by search: this is the shallowest position
+            # with a clear line to all seven station points AND the head of the
+            # queue, with every one of them inside the portrait frame.
+            #
+            # It shows the forecourt and the first cars turning in, NOT the
+            # whole queue: station plus full queue spans 40m along the frame's
+            # NARROW axis, which 9:16 cannot hold at any usable distance. How
+            # far the line really goes is shot 4's reveal, which is the order
+            # the story wants anyway.
+            story_cam("Story001Queue", 30, 1.0, (
+                (151, (142.0, 294.0, SH + 18.0), (124.0, 312.0, SH + 1.8)),
+                (240, (140.2, 295.4, SH + 17.4), (124.0, 312.0, SH + 1.8))))
+            # Shot 4, 241-330: top-down. UP_X puts the avenue along the frame's
+            # tall axis, which is the only way 50m of queue fits a 9:16 frame.
+            # 10m near clip, per the aerial-camera rule.
+            story_cam("Story001Overhead", 30, 10.0, (
+                (241, (126.0, 314.0, SH + 44.0), (126.0, 314.0, SH)),
+                (330, (131.0, 314.0, SH + 45.0), (131.0, 314.0, SH))),
+                up_axis="UP_X")
+
+        scene = bpy.context.scene
+        scene.camera = story_cams[0]
+        for marker_frame, marker_cam in zip((1, 85, 151, 241), story_cams):
+            marker = scene.timeline_markers.new(
+                "story001_%03d" % marker_frame, frame=marker_frame)
             marker.camera = marker_cam
     elif cam == "day39reveal":
         # Day 39, 20 seconds, one unbroken move in four beats:
@@ -12263,7 +12524,11 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day40reveal":
+    if cfg.get("cam") == "story001pricesign":
+        frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
+    elif cfg.get("cam") == "story001dusk":
+        frame_end = 126               # 4.2s, the payoff held
+    elif cfg.get("cam") == "day40reveal":
         frame_end = FPS * 27          # 21s drone run, then 6s on the station
     elif cfg.get("cam") == "day39reveal":
         frame_end = FPS * 20          # exactly twenty seconds, not "at least"
@@ -12746,6 +13011,9 @@ def main(cfg=None):
         build_day32_campaign_vignette(world_col, frame_end)
     if cfg.get("cam") == "football":
         build_football_vignette(world_col, state["buildings"], frame_end)
+    if cfg.get("cam") in ("story001pricesign", "story001dusk"):
+        build_story001_price_sign(world_col, frame_end,
+                                  dusk=cfg.get("cam") == "story001dusk")
     if cfg.get("godzilla"):
         build_godzilla_attack(world_col, state["buildings"], building_roots, frame_end)
     apply_mood(tod, season)
