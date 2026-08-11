@@ -162,6 +162,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day38reveal 16-second skyline, run east, Food Court rise
 #   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
+#   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
+#                     draw themselves on, 300 homes rise, low run home
 #   --cam day40reveal 27-second city overhead, one eastward drone run through
 #                     58 new homes, then the filling station in its own shot
 #   --gasstation     claim the reserve's next filling-station address
@@ -8925,6 +8927,28 @@ def animate_road_extend(empty, f_start, dur=36):
                 kp.easing = "EASE_OUT"
 
 
+def animate_road_build(obj, f_start, dur=90, reverse=False):
+    """Draw a suburban road ribbon ON along its own length.
+
+    animate_road_extend() cannot do this. It scales the object, and a suburban
+    street built by _add_road_strip holds its vertices in WORLD space with the
+    object origin left at (0,0,0) -- scaling one would sling it across the map
+    rather than shorten it. The ribbon's faces are, however, generated in order
+    along the centreline, so Blender's Build modifier reveals them end to end,
+    which is exactly "the road arrives" rather than "the road pops in".
+
+    Complete long before frame_end, or export_web bakes a half-built street:
+    the exporter evaluates the depsgraph at the last frame.
+    """
+    if obj is None or obj.type != "MESH":
+        return
+    mod = obj.modifiers.new("nb_road_build", "BUILD")
+    mod.frame_start = f_start
+    mod.frame_duration = max(1, dur)
+    mod.use_random_order = False
+    mod.use_reverse = reverse
+
+
 def animate_sink(empty, f_start, dur=20):
     """Follower lost: the house sinks back into the ground, then vanishes."""
     rest = tuple(empty.get("nb_rest_scale", empty.scale))
@@ -10421,6 +10445,81 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (1,   (hx + 88.0, hy - 84.0, 44.0), (hx + 4.0, hy + 2.0, 21.0)),
             (150, (hx + 72.0, hy - 70.0, 39.0), (hx + 3.0, hy + 2.0, 20.0)),
             (300, (hx + 57.0, hy - 57.0, 34.0), (hx + 2.0, hy + 2.0, 19.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day41reveal":
+        # Day 41, 30 seconds, one unbroken move. +300 in a day fills a whole
+        # quarter at once -- the rest of Foundry Street, all of Lantern Row,
+        # five north-south crosses, all of Southline Avenue and part of
+        # Millrace, spanning x -172..191 and y 321..473 -- so this is not a
+        # street-tracking shot like day 39 or 40. The drone goes UP and stays
+        # up while the grid builds itself underneath, then comes home low.
+        #
+        #   0-4.7s    overhead of the existing town, high and drifting north.
+        #   4.7-11s   one continuous arc out east and around to the north side
+        #             of the new quarter, the look rotating N -> WNW -> S as
+        #             the camera travels 900m. The turn is spread over the
+        #             whole transit precisely so it banks instead of whipping.
+        #   11-21.7s  held high, looking due south. The roads draw themselves
+        #             on along their own length, then three hundred homes rise
+        #             in a wave from the near edge to the far one, with the
+        #             existing town on the horizon beyond them.
+        #   21.7-30s  dive and run home low over the new streets toward the
+        #             city, still looking south. No turn: the camera was put
+        #             on the NORTH side of the quarter for the hold precisely
+        #             so the return leg is a continuation, not a reversal.
+        #
+        # 24mm, not the 28 day 40 used. Portrait 9:16 covers ~46 degrees
+        # horizontally at 24mm, and the quarter is 363m wide: framing it whole
+        # needs 430m of standoff at 24mm against 500m at 28mm, and the wider
+        # lens also suits the low run home.
+        QUARTER_X, QUARTER_Y = 9.5, 397.0
+        SHELF = 5.0
+
+        aim = bpy.data.objects.new("Day41RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day41RevealCamera")
+        cam_data.lens = 24
+        # 8m rather than the aerial rule's 10: this camera finishes 20m off the
+        # deck. Nothing comes within 8m of the lens, and 8/8000 still leaves
+        # ample depth precision for the 500m beats.
+        cam_data.clip_start = 8.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day41RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # establishing overhead of the town that already exists
+            (1,   (60.0, -300.0, 620.0), (20.0, 40.0, 6.0)),
+            (90,  (70.0, -180.0, 600.0), (25.0, 150.0, 6.0)),
+            # the long arc: out east, then north, turning to face back south
+            (180, (170.0, 60.0, 578.0),  (40.0, 300.0, 8.0)),
+            (250, (300.0, 330.0, 545.0), (60.0, 400.0, 8.0)),
+            (280, (285.0, 455.0, 530.0), (45.0, 430.0, 8.0)),
+            (310, (215.0, 555.0, 515.0), (35.0, 400.0, 8.0)),
+            # held high on the north side, looking due south over the quarter
+            (330, (105.0, 596.0, 502.0), (18.0, QUARTER_Y + 1.0, SHELF + 3.0)),
+            (480, (40.0, 590.0, 494.0),  (10.0, QUARTER_Y, SHELF + 3.0)),
+            (650, (-30.0, 580.0, 486.0), (2.0, QUARTER_Y - 1.0, SHELF + 3.0)),
+            # dive and run home low, still south, over the streets just built
+            (720, (-16.0, 470.0, 250.0), (6.0, 300.0, 10.0)),
+            (790, (-6.0, 330.0, 92.0),   (8.0, 190.0, 10.0)),
+            (850, (2.0, 230.0, 40.0),    (10.0, 100.0, 8.0)),
+            (900, (8.0, 130.0, 20.0),    (14.0, 0.0, 6.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -12528,6 +12627,8 @@ def main(cfg=None):
         frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
     elif cfg.get("cam") == "story001dusk":
         frame_end = 126               # 4.2s, the payoff held
+    elif cfg.get("cam") == "day41reveal":
+        frame_end = FPS * 30          # exactly thirty seconds, not "at least"
     elif cfg.get("cam") == "day40reveal":
         frame_end = FPS * 27          # 21s drone run, then 6s on the station
     elif cfg.get("cam") == "day39reveal":
@@ -12583,7 +12684,77 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day40reveal":
+    if cfg.get("cam") == "day41reveal":
+        # +300 in one day is a whole quarter at once, so nothing here tracks an
+        # individual house. The roads draw themselves on along their own
+        # length, then three hundred homes rise in one wave, all of it under a
+        # camera holding 500m up on the north side.
+        #
+        # ONLY today's streets are touched, and Foundry Street is deliberately
+        # NOT among them even though 58 of today's homes stand on it. Both
+        # animate_rise and the Build modifier HIDE what they animate until its
+        # turn, and day 40 already built nineteen homes along Foundry --
+        # drawing its ribbon on again would pull the road out from under houses
+        # that have been standing since yesterday. Same trap the Day 38 tour
+        # records, and the same reason day 40 left Northgate Avenue alone.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_ids = {b.get("plan_id") for b in state["buildings"]} - new_ids
+        old_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_ids}
+        new_streets = sorted({slot["street_index"]
+                              for slot in SUBURBAN_PLAN["houses"]
+                              if slot["plan_id"] in new_ids} - old_streets)
+        # The five north-south crosses go first, near enough together to read
+        # as one gesture -- they are what ties the new grid to the town. Then
+        # the avenues south to north, so the quarter grows outward from the
+        # streets that already exist. Millrace, the far edge, lands at 504.
+        ROAD_BEATS = {31: 315, 32: 318, 33: 321, 34: 324, 35: 327,
+                      30: 336, 36: 372, 37: 408}
+        RIBBONS = ("suburban_shoulder_", "suburban_road_", "suburban_path_")
+        for index in new_streets:
+            pieces = [obj for obj in world_col.objects
+                      if obj.get("nb_street_index") == index]
+            if not pieces:
+                continue
+            start = ROAD_BEATS.get(index, 330)
+            ribbons = [o for o in pieces if o.name.startswith(RIBBONS)]
+            trim = [o for o in pieces if not o.name.startswith(RIBBONS)]
+            for obj in ribbons:
+                animate_road_build(obj, start, dur=96)
+            # Dashes and lamps chase the paving down the street instead of
+            # arriving with it. Which axis to sort on comes from the street's
+            # own spread, so this holds for the east-west avenues and the
+            # north-south crosses alike.
+            if trim:
+                xs = [o.location.x for o in trim]
+                ys = [o.location.y for o in trim]
+                along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+                trim.sort(key=lambda o: o.location.x if along_x else o.location.y)
+                span = max(1, len(trim) - 1)
+                for order, obj in enumerate(trim):
+                    _keyframe_hidden(obj, 1, True)
+                    _keyframe_hidden(obj, start + 14 + int(96 * order / span),
+                                     False)
+
+        home_roots = [e for e in rise if e.name.startswith("house_d")]
+        if not 250 <= len(home_roots) <= 340:
+            raise RuntimeError(
+                "day41reveal is choreographed for a ~300-home day and got %d. "
+                "The road beats and the rise wave are both timed to it; use "
+                "--cam newgrowthoverhead for a different size."
+                % len(home_roots))
+        # South to north, which is both away from the town and away from the
+        # far edge of frame toward the camera, and -- not a coincidence -- the
+        # same order the roads finish in, so no home ever rises onto meadow.
+        # 0.55 frames apart: at three hundred homes this is a rolling wave
+        # rather than three hundred separate events, and the last one is up at
+        # 612, well before the dive home starts at 650.
+        for index, e in enumerate(sorted(home_roots, key=lambda o: o.location.y)):
+            animate_rise(e, 430 + int(index * 0.55), dur=18)
+        for e in rise:
+            if e not in home_roots:
+                animate_rise(e, 300)
+    elif cfg.get("cam") == "day40reveal":
         # Foundry Street's road first, then its eighteen homes west to east,
         # then Northgate Avenue's thirty-nine, then the filling station alone
         # in the second shot.
