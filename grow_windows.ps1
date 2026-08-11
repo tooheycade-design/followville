@@ -364,14 +364,55 @@ try {
         throw "WEB_EXPORT_FAILED -- export_web.py did not confirm a complete export"
     }
 
+    # Copy today's render to the Desktop. Both halves of this were wrong until
+    # 2026-08-11, and it failed SILENTLY -- it always copied *a* video and
+    # logged a DESKTOP line, so the log looked healthy while the wrong file
+    # arrived:
+    #
+    #  1. It globbed "$Dir\renders", the REPO's renders folder. Blender writes
+    #     next to the .blend (setup_render uses dirname(bpy.data.filepath)),
+    #     and the blend lives in the shared iCloud folder. The repo copy is
+    #     abandoned paper trail whose newest file is from day 15, so day 40
+    #     put a day-15 clip on the Desktop and day 41 a day-40 Story shot.
+    #     Reading the prefix off Blender's own VIDEO line removes the guess
+    #     entirely -- no directory assumption, and no way to pick up a stale
+    #     file from a previous day, because the prefix carries the day number
+    #     and the --tag.
+    #
+    #  2. [Environment]::GetFolderPath('Desktop') resolves to
+    #     $env:USERPROFILE\OneDrive\Desktop here, because OneDrive's Known
+    #     Folder Move has redirected it. Cade asked for the local Desktop:
+    #     these renders are 12-18MB each and should not sync to the cloud
+    #     daily. NOTE for whoever reads this next -- Windows still SHOWS the
+    #     OneDrive folder as the desktop, so a file written to the local one
+    #     will not appear among the on-screen icons until Desktop backup is
+    #     turned off in OneDrive settings.
     if ($Output | Select-String -Pattern '^VIDEO') {
-        $RendersDir = Join-Path $Dir 'renders'
-        $Newest = Get-ChildItem -Path $RendersDir -Filter *.mp4 -ErrorAction SilentlyContinue |
-                  Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $VideoLine = $Output | Select-String -Pattern '^VIDEO\s+(.+?)\s*$' |
+                     Select-Object -Last 1
+        $Newest = $null
+        if ($VideoLine) {
+            $Prefix = $VideoLine.Matches[0].Groups[1].Value
+            $RendersDir = Split-Path -Parent $Prefix
+            $Stem = Split-Path -Leaf $Prefix
+            if ($RendersDir -and (Test-Path -LiteralPath $RendersDir)) {
+                $Newest = Get-ChildItem -LiteralPath $RendersDir -Filter "$Stem*.mp4" `
+                              -ErrorAction SilentlyContinue |
+                          Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            }
+        }
         if ($Newest) {
-            $DesktopDir = [Environment]::GetFolderPath('Desktop')
-            Copy-Item -Path $Newest.FullName -Destination $DesktopDir -Force
+            $DesktopDir = Join-Path $env:USERPROFILE 'Desktop'
+            if (-not (Test-Path -LiteralPath $DesktopDir)) {
+                $DesktopDir = [Environment]::GetFolderPath('Desktop')
+            }
+            Copy-Item -LiteralPath $Newest.FullName -Destination $DesktopDir -Force
             Log-Line ("DESKTOP " + (Join-Path $DesktopDir $Newest.Name))
+        }
+        else {
+            # Say so rather than leaving a healthy-looking log with no DESKTOP
+            # line, which is how the old bug hid for two days.
+            Log-Line "DESKTOP_SKIPPED (no rendered .mp4 found for Blender's reported VIDEO prefix)"
         }
     }
 
