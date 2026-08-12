@@ -146,6 +146,9 @@ def northgate_arterial_points(step=3.0):
 # houses, roads, and tree belts from crowding the banks. The first crossing is
 # deliberately aligned with completed Summit Court and Day 28 Crossing Way.
 RIVER_CENTERLINE = (
+    # Continue past Northgate and Crown Quarter so the enlarged terrain does
+    # not reveal a dry carved channel beyond the old y=520 endpoint.
+    (365.0, 900.0), (348.0, 790.0), (360.0, 700.0), (346.0, 610.0),
     (352.0, 520.0), (365.0, 430.0), (350.0, 340.0),
     (368.0, 250.0), (356.0, 160.0), (372.0, 70.0),
     (360.0, -20.0), (378.0, -110.0), (362.0, -200.0),
@@ -341,6 +344,28 @@ STREETS = (
          specials={.28: "followmart", .70: "elementaryschool"},
          points=[(-190, 486), (-60, 486), (60, 486), (210, 486)]),
 )
+
+# ---------------------------------------------------------------- chapter four
+#
+# The West Quarter: 1,000 more homes and 22 reserved parcels, continuing the
+# same 70 x 36m block westward off the built edge.  It is declared in its own
+# module because it is a complete piece of town planning with its own
+# reasoning, and appended here because that is what makes it real: build_plan()
+# below places it, validate_plan() measures it, the generator consumes it and
+# the browser's walk surface carries its roads, with no new machinery anywhere.
+#
+# It is appended, never inserted.  Chapters one to three keep plan_ids 1..1126
+# and every one of their addresses stays exactly where it is.
+from west_quarter_plan import STREETS as WEST_QUARTER_STREETS
+
+STREETS = STREETS + tuple(dict(street) for street in WEST_QUARTER_STREETS)
+
+# The first plan_id chapter four owns. Everything below it is built or already
+# reserved and may not move, which is what gates the Crown Quarter road
+# clearance in build_plan() to this chapter alone.
+WEST_QUARTER_FIRST_ID = (sum(street["count"] for street in STREETS)
+                         - sum(street["count"] for street in WEST_QUARTER_STREETS)
+                         + 1)
 
 def _districts_from_streets():
     """(name, address count) per district, in the order the streets build."""
@@ -653,6 +678,34 @@ def build_plan():
                                    (b[0] + dx, b[1] + dy), street_index))
     world_footprints = []          # (corners, plan_id) for everything placed
 
+    # Crown Quarter's streets, which this module does not own but chapter four
+    # stands next to. They matter because metropolitan_plan's east/west streets
+    # now run west as far as x=-260 to meet the West Quarter's edge instead of
+    # dead-ending in meadow, so a chapter-four address on that edge could
+    # otherwise be placed in the middle of a downtown boulevard -- nothing here
+    # was looking at those roads at all.
+    #
+    # Deliberately gated to chapter four and no earlier, because build_plan
+    # re-solves a whole street at once: applying this to chapter three would
+    # recompute addresses that are already BUILT, and a built house's position
+    # lives in world_state.json while its road comes from here -- so the road
+    # would move and the house would not, leaving it standing in the street.
+    #
+    # That gate costs nothing today. Measured against the Day 41 state: zero
+    # built plan houses lie within clearance of any Crown Quarter street, and
+    # zero lie inside one.
+    metro_segments = []
+    try:
+        from metropolitan_plan import STREETS as METRO_STREETS
+    except ImportError:
+        METRO_STREETS = ()
+    for street in METRO_STREETS:
+        points = street["points"]
+        for a, b in zip(points, points[1:]):
+            metro_segments.append(((float(a[0]), float(a[1])),
+                                   (float(b[0]), float(b[1])),
+                                   street["width"] / 2.0))
+
     for street_index, street in enumerate(STREETS):
         path = street_paths[street_index]
         offset = DISTRICT_OFFSETS.get(street["district"], (0.0, 0.0))
@@ -696,6 +749,20 @@ def build_plan():
                         continue
                     rot = angle if side > 0 else angle + math.pi
                     world = (hx + offset[0], hy + offset[1])
+                    # Crown Quarter's roads. Chapter four only -- see the note
+                    # where metro_segments is built.
+                    if sequence >= WEST_QUARTER_FIRST_ID and metro_segments:
+                        corners = footprint_corners(world[0], world[1], rot,
+                                                    kind, sequence)
+                        if kind == "house":
+                            if any(_distance_to_segment(world, a, b)
+                                   < half + 3.75
+                                   for a, b, half in metro_segments):
+                                continue
+                        elif any(_polygon_segment_distance(corners, a, b)
+                                 < half + 2.0
+                                 for a, b, half in metro_segments):
+                            continue
                     if sequence > RIVER_RESERVE_CAPACITY and not _chapter_three_fits(
                             world, rot, kind, street_index, street["district"],
                             world_segments, world_footprints):

@@ -4484,6 +4484,7 @@ function redesignGaussian(x,z,cx,cz,sx,sz,height){
 }
 
 const RIVER_CENTERLINE_WORLD=[
+  [365,900],[348,790],[360,700],[346,610],
   [352,520],[365,430],[350,340],[368,250],[356,160],
   [372,70],[360,-20],[378,-110],[362,-200],[374,-285],[388,-330]
 ];
@@ -4554,6 +4555,25 @@ function regionalTerrainHeight(x,z){
     Math.max(0,Math.abs(y-400.0)-100.0));
   const terrace=1-redesignSmoothstep(0.0,65.0,terraceDistance);
   height=height*(1-terrace)+TERRACE_DATUM*terrace;
+  // Crown Quarter extends the same engineered datum north. The short east
+  // feather stops before the river; the south core overlaps the standing
+  // chapter-three terrace so existing addresses do not move.
+  const metroDistance=Math.hypot(
+    Math.max(0,(-230.0-x)*0.60,(x-290.0)*1.50),
+    Math.max(0,486.0-y,y-824.0));
+  const metroTerrace=1-redesignSmoothstep(0.0,75.0,metroDistance);
+  height=height*(1-metroTerrace)+TERRACE_DATUM*metroTerrace;
+  // Chapter four's West Quarter, same datum again. The south feather is 110m,
+  // the largest Willow Hills allows: from y=404 it dies at y=294, clear of its
+  // northernmost houses at y=272. The core stops 110m SHORT of the seam, at
+  // x=-300, and leaves that strip on natural ground -- it already runs a
+  // smooth 5.0-5.9m, so the avenues ramp into the built grid with no step,
+  // and terracing it moved Lantern Row by 0.203m.
+  const westDistance=Math.hypot(
+    Math.max(0,(-766.0-x)*0.55,(x+300.0)*4.00),
+    Math.max(0,404.0-y,y-826.0));
+  const westTerrace=1-redesignSmoothstep(0.0,110.0,westDistance);
+  height=height*(1-westTerrace)+TERRACE_DATUM*westTerrace;
   const riverDistance=Math.abs(x-riverCenterX(y));
   // Faithful port of downtown_visual_plan.terrain_height's river bank. A river
   // may not stand above its own meadow: riverWaterHeight is a pure function of
@@ -6069,7 +6089,9 @@ const HOME_MATERIAL_ROLES = {
   // lilac would throw away the one thing this district is for. Owners get the
   // foundation, the trim and the door, all of which read clearly from the
   // street and none of which is the food.
-  foodhouse: { wall:["NB_food_plinth"], roof:["NB_food_trim"], door:["NB_food_door"] }
+  foodhouse: { wall:["NB_food_plinth"], roof:["NB_food_trim"], door:["NB_food_door"] },
+  metrotower: { wall:["FV_metro_wall_"], roof:["FV_metro_accent_"],
+                 door:["FV_metro_lobby_glow"] }
 };
 
 function materialRoleFor(building, material){

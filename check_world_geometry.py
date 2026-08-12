@@ -126,7 +126,8 @@ def paved_envelope(buildings):
     """The rectangle the downtown grid's roads and sidewalks actually cover."""
     grid = [b for b in buildings
             if b["type"] not in ("parkdistrict", "ringhouse")
-            and not b.get("plan_id") and not b.get("feature_id")]
+            and not b.get("plan_id") and not b.get("metro_id")
+            and not b.get("feature_id")]
     if not grid:
         return None
     min_bx = min(min(b["gx"] // BLOCK_N for b in grid), -1)
@@ -174,6 +175,16 @@ def every_road(state):
                       [(x, y) for x, y, _z in timber_crossing_points()]))
     if active >= NORTHGATE_ARTERIAL_REVEAL:
         roads.append(("Northgate arterial", northgate_arterial_points()))
+    if any(b.get("type") == "metrotower" for b in buildings):
+        from metropolitan_plan import STREETS, RAMPS, expressway_points
+        for street in STREETS:
+            roads.append(("Crown Quarter " + street["name"],
+                          list(street["points"])))
+        roads.append(("Crown Expressway",
+                      [(x, y) for x, y, _z in expressway_points()]))
+        for ramp in RAMPS:
+            roads.append(("Crown interchange ramps",
+                          [(x, y) for x, y, _z in ramp["points"]]))
     return roads
 
 
