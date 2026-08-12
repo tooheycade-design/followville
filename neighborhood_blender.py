@@ -11502,10 +11502,13 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (150, (-112.0, 210.0, 104.0), (-245.0, 405.0, 8.0)),
             (180, (-205.0, 350.0, 78.0), (-330.0, 448.0, 7.0)),
             # Westbound FPV run: avenues recede through the tall portrait axis.
-            (220, (-302.0, 402.0, 58.0), (-430.0, 450.0, 7.0)),
-            (270, (-442.0, 408.0, 50.0), (-565.0, 450.0, 7.0)),
-            (320, (-575.0, 409.0, 49.0), (-694.0, 451.0, 7.0)),
-            (366, (-704.0, 420.0, 62.0), (-746.0, 452.0, 8.0)),
+            # Drop to a true low cinematic pass: roofs fill the lower frame
+            # and the rising rows layer against one another, while the camera
+            # remains safely above the 10-20m house envelopes.
+            (220, (-302.0, 402.0, 44.0), (-430.0, 450.0, 7.0)),
+            (270, (-442.0, 408.0, 35.0), (-565.0, 450.0, 7.0)),
+            (320, (-575.0, 409.0, 34.0), (-694.0, 451.0, 7.0)),
+            (366, (-704.0, 420.0, 43.0), (-746.0, 452.0, 8.0)),
             # Whip-climb into the finished-world payoff after the last rise.
             (410, (-650.0, 310.0, 225.0), (-430.0, 438.0, 8.0)),
             (448, (-505.0, 188.0, 390.0), (-255.0, 382.0, 7.0)),
