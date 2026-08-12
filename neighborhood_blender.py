@@ -175,6 +175,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day38reveal 16-second skyline, run east, Food Court rise
 #   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
+#   --cam day42reveal 16-second Founder skyline, FPV transfer, West Quarter wave
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11457,6 +11458,69 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day42reveal":
+        # Day 42, exactly sixteen seconds, one continuous FPV-style drone move.
+        # The batch is unusually wide: the final 109 Southline homes finish the
+        # built quarter, then 211 homes carry the city west into Harrow Green.
+        # A low street-following shot cannot honestly show all 320, so the move
+        # has three deliberate scales:
+        #
+        #   0-3s    an authored Founder-district skyline push, close enough for
+        #           the civic silhouettes and Burj spire to layer in portrait;
+        #   3-6s    a fast realtor-drone transfer north-west over the existing
+        #           city, rolling its look toward the new avenues;
+        #   6-12.2s a westbound run above the southern quarter while roads draw
+        #           and all 320 homes rise east-to-west just ahead of camera;
+        #   12.2-16s a sharp climb back from the western edge into a complete
+        #           city-and-quarter payoff, with the historic skyline beyond.
+        #
+        # The 22mm lens is intentional. Portrait crops horizontal field of view
+        # hard, while today's developed band is nearly a kilometre wide. The
+        # wide lens keeps speed readable during the transfer and lets the final
+        # climb hold both the new western edge and the established city.
+        aim = bpy.data.objects.new("Day42RevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day42RevealCamera")
+        cam_data.lens = 22
+        cam_data.clip_start = 7.0
+        cam_data.clip_end = 9000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day42RevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Founder skyline: a low southeast push, not another map view.
+            (1,   (150.0, -245.0, 150.0), (0.0, -4.0, 17.0)),
+            (45,  (126.0, -194.0, 126.0), (-3.0, 2.0, 18.0)),
+            (88,  (88.0, -116.0, 104.0), (-12.0, 28.0, 16.0)),
+            # Accelerate over the mature town and rotate toward chapter four.
+            (120, (20.0, 8.0, 112.0), (-110.0, 220.0, 10.0)),
+            (150, (-112.0, 210.0, 104.0), (-245.0, 405.0, 8.0)),
+            (180, (-205.0, 350.0, 78.0), (-330.0, 448.0, 7.0)),
+            # Westbound FPV run: avenues recede through the tall portrait axis.
+            (220, (-302.0, 402.0, 58.0), (-430.0, 450.0, 7.0)),
+            (270, (-442.0, 408.0, 50.0), (-565.0, 450.0, 7.0)),
+            (320, (-575.0, 409.0, 49.0), (-694.0, 451.0, 7.0)),
+            (366, (-704.0, 420.0, 62.0), (-746.0, 452.0, 8.0)),
+            # Whip-climb into the finished-world payoff after the last rise.
+            (410, (-650.0, 310.0, 225.0), (-430.0, 438.0, 8.0)),
+            (448, (-505.0, 188.0, 390.0), (-255.0, 382.0, 7.0)),
+            (480, (-330.0, 92.0, 545.0), (-155.0, 300.0, 6.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day41reveal":
         # Day 41, 30 seconds, one unbroken move. +300 in a day fills a whole
         # quarter at once -- the rest of Foundry Street, all of Lantern Row,
@@ -13672,6 +13736,8 @@ def main(cfg=None):
         frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
     elif cfg.get("cam") == "story001dusk":
         frame_end = 126               # 4.2s, the payoff held
+    elif cfg.get("cam") == "day42reveal":
+        frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
     elif cfg.get("cam") == "day41reveal":
         frame_end = FPS * 30          # exactly thirty seconds, not "at least"
     elif cfg.get("cam") == "metroreveal":
@@ -13759,6 +13825,56 @@ def main(cfg=None):
         for root in rise:
             if root not in home_roots and root not in tower_roots:
                 animate_rise(root, 250, dur=30)
+    elif cfg.get("cam") == "day42reveal":
+        # Roads and houses move in the same east-to-west direction as the
+        # camera. Only streets with no previously built addresses are animated:
+        # hiding a carried street would pull pavement out from under Day 41.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_ids = {b.get("plan_id") for b in state["buildings"]} - new_ids
+        old_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_ids}
+        new_streets = sorted({slot["street_index"]
+                              for slot in SUBURBAN_PLAN["houses"]
+                              if slot["plan_id"] in new_ids} - old_streets)
+        ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
+                          "suburban_path_")
+        for order, street_index in enumerate(new_streets):
+            pieces = [obj for obj in world_col.objects
+                      if obj.get("nb_street_index") == street_index]
+            start = 138 + min(order, 18) * 3
+            ribbons = [obj for obj in pieces
+                       if obj.name.startswith(ribbons_prefix)]
+            trim = [obj for obj in pieces if obj not in ribbons]
+            for obj in ribbons:
+                animate_road_build(obj, start, dur=58)
+            if trim:
+                xs = [obj.location.x for obj in trim]
+                ys = [obj.location.y for obj in trim]
+                along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+                trim.sort(key=lambda obj: (obj.location.x if along_x
+                                            else obj.location.y), reverse=True)
+                span = max(1, len(trim) - 1)
+                for index, obj in enumerate(trim):
+                    _keyframe_hidden(obj, 1, True)
+                    _keyframe_hidden(obj, start + 10 + int(58 * index / span),
+                                     False)
+
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 320:
+            raise RuntimeError(
+                "day42reveal is authored for exactly 320 homes and got %d. "
+                "Use the exact 1240 -> 1560 growth or choose another camera."
+                % len(home_roots))
+        # East to west, matching the westbound flight. A half-frame cadence
+        # makes 320 houses a legible rolling wave and completes the last roof
+        # before the final climb begins at frame 366.
+        for index, root in enumerate(sorted(home_roots,
+                                             key=lambda obj: obj.location.x,
+                                             reverse=True)):
+            animate_rise(root, 180 + int(index * .52), dur=18)
+        for root in rise:
+            if root not in home_roots:
+                animate_rise(root, 210, dur=24)
     elif cfg.get("cam") == "day41reveal":
         # +300 in one day is a whole quarter at once, so nothing here tracks an
         # individual house. The roads draw themselves on along their own
