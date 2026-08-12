@@ -10523,6 +10523,14 @@ def build_story001_price_sign(world_col, frame_end, dusk=False):
 
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
+    if cam == "day42reveal" and tod == "sunset":
+        # This release is meant to read unmistakably as sunset, not merely as
+        # daytime with a warm key. Keep the cool sky needed for material colour
+        # separation, but lower and redden the sun, deepen the blue ambient,
+        # and let the long shadows carry the westbound construction wave.
+        t = dict(t)
+        t.update(sun_e=2.95, sun_c=(1.00, 0.49, 0.23),
+                 sun_rot=(82, 0, 96), sky=(0.28, 0.37, 0.58), sky_s=.64)
     cx, cy, ext = city_center_and_extent(buildings)
     # 2026-07-10 cinematography pass (day 9, park district pushed the bounding
     # box way out -- ext jumped to ~258 -- and the old padding multipliers
@@ -11471,8 +11479,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         #           city, rolling its look toward the new avenues;
         #   6-12.2s a westbound run above the southern quarter while roads draw
         #           and all 320 homes rise east-to-west just ahead of camera;
-        #   12.2-16s a sharp climb back from the western edge into a complete
-        #           city-and-quarter payoff, with the historic skyline beyond.
+        #   12.2-16s a banking turn at the western edge, looking back east over
+        #           completed foreground homes into the full Founder skyline.
         #
         # The 22mm lens is intentional. Portrait crops horizontal field of view
         # hard, while today's developed band is nearly a kilometre wide. The
@@ -11509,10 +11517,13 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (270, (-442.0, 408.0, 35.0), (-565.0, 450.0, 7.0)),
             (320, (-575.0, 409.0, 34.0), (-694.0, 451.0, 7.0)),
             (366, (-704.0, 420.0, 43.0), (-746.0, 452.0, 8.0)),
-            # Whip-climb into the finished-world payoff after the last rise.
-            (410, (-650.0, 310.0, 225.0), (-430.0, 438.0, 8.0)),
-            (448, (-505.0, 188.0, 390.0), (-255.0, 382.0, 7.0)),
-            (480, (-330.0, 92.0, 545.0), (-155.0, 300.0, 6.0)),
+            # Bank around the western edge rather than climbing into a map.
+            # The camera finishes looking almost horizontally east: completed
+            # new homes in front, mature neighborhoods through the middle, and
+            # the Founder skyline layered on the sunset horizon.
+            (390, (-748.0, 408.0, 62.0), (-585.0, 420.0, 10.0)),
+            (430, (-735.0, 380.0, 82.0), (-300.0, 330.0, 15.0)),
+            (480, (-650.0, 350.0, 95.0), (-25.0, 180.0, 22.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -11523,6 +11534,16 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
+        # Preserve the 22mm FPV speed through the low pass, then smoothly
+        # compress the finished city during the turn. A fixed 22mm lens made
+        # the skyline technically present but visually tiny at the western
+        # stand-off; 36mm gives the horizontal finale the intended hierarchy.
+        for frame, lens in ((1, 22), (366, 22), (430, 30), (480, 36)):
+            cam_data.lens = lens
+            cam_data.keyframe_insert("lens", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
     elif cam == "day41reveal":
         # Day 41, 30 seconds, one unbroken move. +300 in a day fills a whole
@@ -13841,15 +13862,33 @@ def main(cfg=None):
                               if slot["plan_id"] in new_ids} - old_streets)
         ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
                           "suburban_path_")
+        def _camera_crossing_frame(x):
+            """Approximate when the low westbound camera reaches world x."""
+            # Camera beats are (-205, f180), (-302, f220), (-442, f270),
+            # (-575, f320), (-704, f366). Piecewise interpolation is needless
+            # here: the low pass is deliberately close to constant velocity.
+            return 180.0 + (-205.0 - x) * (186.0 / 499.0)
+
         for order, street_index in enumerate(new_streets):
             pieces = [obj for obj in world_col.objects
                       if obj.get("nb_street_index") == street_index]
-            start = 138 + min(order, 18) * 3
+            # Put paving about two seconds ahead of the camera. The street is
+            # complete before its house wave and remains visible as the drone
+            # passes through the newly finished block.
+            # Road ribbons keep world-space vertices and an origin at zero, so
+            # obj.location is not their position. Measure transformed bounds;
+            # otherwise every new road would falsely schedule as if downtown.
+            bounds_x = [float((obj.matrix_world @ Vector(corner)).x)
+                        for obj in pieces for corner in obj.bound_box]
+            piece_x = ((min(bounds_x) + max(bounds_x)) * .5
+                       if bounds_x else -205.0)
+            start = max(100, min(300,
+                                 int(_camera_crossing_frame(piece_x) - 62)))
             ribbons = [obj for obj in pieces
                        if obj.name.startswith(ribbons_prefix)]
             trim = [obj for obj in pieces if obj not in ribbons]
             for obj in ribbons:
-                animate_road_build(obj, start, dur=58)
+                animate_road_build(obj, start, dur=46)
             if trim:
                 xs = [obj.location.x for obj in trim]
                 ys = [obj.location.y for obj in trim]
@@ -13859,7 +13898,7 @@ def main(cfg=None):
                 span = max(1, len(trim) - 1)
                 for index, obj in enumerate(trim):
                     _keyframe_hidden(obj, 1, True)
-                    _keyframe_hidden(obj, start + 10 + int(58 * index / span),
+                    _keyframe_hidden(obj, start + 8 + int(46 * index / span),
                                      False)
 
         home_roots = [root for root in rise if root.name.startswith("house_d")]
@@ -13868,13 +13907,14 @@ def main(cfg=None):
                 "day42reveal is authored for exactly 320 homes and got %d. "
                 "Use the exact 1240 -> 1560 growth or choose another camera."
                 % len(home_roots))
-        # East to west, matching the westbound flight. A half-frame cadence
-        # makes 320 houses a legible rolling wave and completes the last roof
-        # before the final climb begins at frame 366.
-        for index, root in enumerate(sorted(home_roots,
-                                             key=lambda obj: obj.location.x,
-                                             reverse=True)):
-            animate_rise(root, 180 + int(index * .52), dur=18)
+        # Spatial rather than ordinal timing: each house begins about one
+        # second before the camera reaches its longitude and finishes while it
+        # is still ahead in frame. That produces the requested construction
+        # wave in front of the drone instead of a wave underneath or behind it.
+        for root in home_roots:
+            start = max(112, min(336,
+                                 int(_camera_crossing_frame(root.location.x) - 30)))
+            animate_rise(root, start, dur=18)
         for root in rise:
             if root not in home_roots:
                 animate_rise(root, 210, dur=24)
