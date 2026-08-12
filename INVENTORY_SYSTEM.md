@@ -127,7 +127,16 @@ worth money, revisit this **before** the money, not after.
 
 ## Verification
 
-Two fast local checks, both runnable with `pnpm test:inventory`:
+Two fast local checks, both runnable with `pnpm test:inventory`. They need two
+packages that are **deliberately not devDependencies** — CI runs
+`pnpm install --frozen-lockfile`, and making the browser job download a wasm
+PostgreSQL on every run buys CI nothing. Install them once:
+
+```
+pnpm add -D --no-frozen-lockfile jsdom @electric-sql/pglite
+```
+
+Both files exit with that exact instruction if the import is missing.
 
 - `tests/inventory_migration_test.mjs` applies the migration to a real
   PostgreSQL 18 engine (PGlite, Postgres compiled to wasm) and asserts 24

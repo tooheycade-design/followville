@@ -13,7 +13,16 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { PGlite } from "@electric-sql/pglite";
+
+// PGlite is intentionally not a devDependency — see package.json. Fail with the
+// fix rather than a bare module-not-found stack.
+let PGlite;
+try { ({ PGlite } = await import("@electric-sql/pglite")); }
+catch {
+  console.error("\ninventory migration test needs PGlite, which is not installed.\n" +
+                "  pnpm add -D --no-frozen-lockfile @electric-sql/pglite\n");
+  process.exit(1);
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const migration = readFileSync(join(here, "..", "supabase_migrations", "20260810_inventory_system_v1.sql"), "utf8");

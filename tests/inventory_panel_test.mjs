@@ -13,7 +13,16 @@ import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import { JSDOM } from "jsdom";
+
+// jsdom is intentionally not a devDependency — see package.json. Fail with the
+// fix rather than a bare module-not-found stack.
+let JSDOM;
+try { ({ JSDOM } = await import("jsdom")); }
+catch {
+  console.error("\ninventory panel test needs jsdom, which is not installed.\n" +
+                "  pnpm add -D --no-frozen-lockfile jsdom\n");
+  process.exit(1);
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const townPath = join(here, "..", "town.html");

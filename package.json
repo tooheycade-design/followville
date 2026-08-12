@@ -10,8 +10,14 @@
     "test:inventory": "node tests/inventory_panel_test.mjs && node tests/inventory_migration_test.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1",
-    "@electric-sql/pglite": "^0.5.4",
-    "jsdom": "^28.0.0"
-  }
+    "@playwright/test": "1.61.1"
+  },
+  "//optionalDevTools": [
+    "test:inventory needs jsdom and @electric-sql/pglite, deliberately NOT in",
+    "devDependencies: CI runs pnpm install --frozen-lockfile, and making the",
+    "browser job download a wasm PostgreSQL on every run buys CI nothing.",
+    "Install them once locally when you want that suite:",
+    "  pnpm add -D --no-frozen-lockfile jsdom @electric-sql/pglite",
+    "Both test files exit with that instruction if the import is missing."
+  ]
 }
