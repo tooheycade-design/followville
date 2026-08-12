@@ -270,8 +270,14 @@ walk-surface manifest 400m away.
 current values rather than any number written in prose. What must be preserved
 is that load and unload distances differ, not what they happen to be.
 
-**Lighting** final numbers: sun 1.0x at 4.5°, fill 0.07x, sky 1.0x. Don't
-re-boost without comparing a frame against `day_007_hero` on the same machine.
+**Lighting** day baseline: sun 1.0x at 4.5°, fill 0.07x, sky 1.0x. Day,
+sunset, dusk, night and storm are complete coordinated presets in `TODS`:
+key/fill, procedural horizon or sky color, AgX exposure, emissive windows and a
+capped set of render-only streetlight pools. Do not add world Volume Scatter or
+a camera-facing fog plane; atmospheric depth comes from the procedural horizon,
+because both earlier approaches can become a wall in aerial video. Validate
+preset structure with `check_video_lighting.py`. Don't re-boost day without
+comparing a frame against `day_007_hero` on the same machine.
 Camera framing defaults were tuned on day 9 — compare against
 `day_009_hero_fixed`/`day_009_overhead_condensed`, not day 7/8.
 

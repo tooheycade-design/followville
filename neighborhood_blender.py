@@ -9736,18 +9736,40 @@ def build_day34_fire_response(world_col, buildings, frame_end):
 # ═══════════════════════ TIME OF DAY / SEASONS (mood) ═══════════════════════════
 
 TODS = {
-    "day":    dict(sun_e=2.0, sun_c=(1.00, 0.95, 0.86), sun_rot=(50, 0, 120),
-                   sky=(0.54, 0.72, 0.86), sky_s=.72, win=0.0, lamp=0.0),
-    # Bright golden hour: warm low-angle key light, but a blue ambient sky
-    # preserves material color and avoids the old all-over beige sunset wash.
-    "sunset": dict(sun_e=2.65, sun_c=(1.00, 0.68, 0.42), sun_rot=(76, 0, 102),
-                   sky=(0.43, 0.61, 0.80), sky_s=.80, win=2.2, lamp=4.5),
-    "dusk":   dict(sun_e=.82, sun_c=(1.00, 0.58, 0.38), sun_rot=(79, 0, 108),
-                   sky=(0.16, 0.22, 0.34), sky_s=.68, win=6.0, lamp=18.0),
-    "night":  dict(sun_e=0.30, sun_c=(0.55, 0.65, 1.00), sun_rot=(55, 0, 140),
-                   sky=(0.05, 0.07, 0.14), sky_s=0.7, win=9.0, lamp=35.0),
-    "storm":  dict(sun_e=0.46, sun_c=(0.64, 0.73, 0.86), sun_rot=(58, 0, 132),
-                   sky=(0.105, 0.14, 0.19), sky_s=.42, win=3.4, lamp=12.0),
+    # A complete render preset lives in each row: key, sky, color management
+    # and practical-light behavior stay coordinated instead of being adjusted
+    # independently until the image turns flat or overexposed.
+    "day": dict(
+        sun_e=1.00, sun_c=(1.00, .94, .84), sun_rot=(50, 0, 120),
+        sun_angle=4.5, fill=.07, sky=(.54, .72, .88), sky_s=1.00,
+        sky_mode="nishita", sky_elev=32.0, air=.82, dust=.32, ozone=1.05,
+        exposure=.12, win=0.0, darkwin=0.0, lamp=0.0,
+        practical=0.0, practical_count=0),
+    # Low warm key + physically varied horizon. The blue skylight remains
+    # strong enough to preserve Followville's palette in the shadows.
+    "sunset": dict(
+        sun_e=1.20, sun_c=(1.00, .56, .28), sun_rot=(78, 0, 102),
+        sun_angle=3.2, fill=.045, sky=(.30, .46, .72), sky_s=.68,
+        sky_mode="nishita", sky_elev=4.5, air=1.05, dust=1.35, ozone=1.12,
+        exposure=.28, win=1.15, darkwin=.28, lamp=3.0, practical=85.0,
+        practical_count=20),
+    "dusk": dict(
+        sun_e=.38, sun_c=(1.00, .46, .24), sun_rot=(82, 0, 108),
+        sun_angle=5.5, fill=.09, sky=(.09, .14, .28), sky_s=.33,
+        sky_mode="color", exposure=.58, win=3.2, darkwin=1.05, lamp=8.0,
+        practical=180.0, practical_count=32),
+    # Moonlight establishes form; actual pools from existing streetlights and
+    # controlled emissive windows make the city inhabited without bleaching it.
+    "night": dict(
+        sun_e=.24, sun_c=(.46, .58, 1.00), sun_rot=(48, 0, 142),
+        sun_angle=7.5, fill=.20, sky=(.028, .050, .115), sky_s=.30,
+        sky_mode="color", exposure=1.35, win=6.2, darkwin=2.1, lamp=14.0,
+        practical=650.0, practical_count=60),
+    "storm": dict(
+        sun_e=.38, sun_c=(.60, .70, .86), sun_rot=(58, 0, 132),
+        sun_angle=8.0, fill=.10, sky=(.075, .105, .16), sky_s=.34,
+        sky_mode="color", exposure=.35, win=2.4, darkwin=.65, lamp=7.0,
+        practical=120.0, practical_count=26),
 }
 
 SEASONS = {
@@ -9801,9 +9823,106 @@ def _set_mat_emission(name, rgb, strength):
 def apply_mood(tod, season):
     t = TODS.get(tod, TODS["day"])
     _set_mat_emission("NB_window", (1.0, 0.82, 0.50), t["win"])
+    _set_mat_emission("NB_windark", (.62, .76, 1.0), t["darkwin"])
     _set_mat_emission("NB_bulb", (1.0, 0.90, 0.65), t["lamp"])
+    # These are authored practical surfaces, not every pane of blue glass.
+    # Emitting whole tower curtain walls would erase their nighttime massing.
+    for name in ("NB_cinema_warm_light", "NB_coffee_warm_light",
+                 "NB_salmon_warm_light", "NB_fire_warm_light",
+                 "FV_metro_lobby_glow", "FV_metro_shop_light",
+                 "FV_expressway_light_warm"):
+        _set_mat_emission(name, (1.0, .73, .38), t["lamp"] * .48)
     for name, rgb in SEASONS.get(season, SEASONS["summer"]).items():
         _set_mat_color(name, rgb)
+
+
+def _configure_video_sky(tod):
+    """Build a clean sky shader for the selected video preset.
+
+    No Volume Scatter node is created here. Earlier footage demonstrated that
+    camera-facing or dense volumetric fog can become a literal wall; atmospheric
+    depth now comes from the procedural horizon and ordinary aerial perspective.
+    """
+    t = TODS.get(tod, TODS["day"])
+    world = bpy.context.scene.world or bpy.data.worlds.new("World")
+    bpy.context.scene.world = world
+    world.use_nodes = True
+    nodes = world.node_tree.nodes
+    links = world.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputWorld")
+    background = nodes.new("ShaderNodeBackground")
+    background.name = "Followville Video Background"
+    background.inputs[1].default_value = t["sky_s"]
+    links.new(background.outputs["Background"], output.inputs["Surface"])
+    if t["sky_mode"] == "nishita":
+        sky = nodes.new("ShaderNodeTexSky")
+        sky.name = "Followville Procedural Horizon"
+        # Blender 5 names the Nishita-derived model MULTIPLE_SCATTERING;
+        # Blender 4.x exposed it as NISHITA. Keep the preset portable.
+        for sky_type in ("MULTIPLE_SCATTERING", "NISHITA"):
+            try:
+                sky.sky_type = sky_type
+                break
+            except TypeError:
+                continue
+        sky.sun_elevation = math.radians(t["sky_elev"])
+        sky.sun_rotation = math.radians(t["sun_rot"][2])
+        sky.altitude = .18
+        sky.air_density = t["air"]
+        if hasattr(sky, "aerosol_density"):
+            sky.aerosol_density = t["dust"]
+        else:
+            sky.dust_density = t["dust"]
+        sky.ozone_density = t["ozone"]
+        links.new(sky.outputs["Color"], background.inputs[0])
+    else:
+        background.inputs[0].default_value = (*t["sky"], 1.0)
+    world.color = t["sky"]
+
+
+def _build_video_practicals(world_col, tod):
+    """Add sparse render-only light pools beneath existing streetlights."""
+    t = TODS.get(tod, TODS["day"])
+    limit = int(t["practical_count"])
+    if limit <= 0 or t["practical"] <= 0:
+        return []
+    candidates = []
+    for obj in world_col.objects:
+        name = obj.name.lower()
+        collection_name = (obj.instance_collection.name.lower()
+                           if obj.instance_collection else "")
+        if ("suburban_light" in name or "metro_streetlight" in name
+                or "ast_light" in collection_name):
+            candidates.append(obj)
+    # Greedy spacing produces an even city-wide sample and caps Eevee's light
+    # count. The emissive lamp heads still appear at every other fixture.
+    selected = []
+    min_spacing = 40.0 if tod == "night" else 62.0
+    for obj in sorted(candidates, key=lambda item: (item.location.y,
+                                                    item.location.x,
+                                                    item.name)):
+        x, y = obj.location.x, obj.location.y
+        if all(math.hypot(x-p.location.x, y-p.location.y) >= min_spacing
+               for p in selected):
+            selected.append(obj)
+            if len(selected) >= limit:
+                break
+    lights = []
+    for index, fixture in enumerate(selected):
+        data = bpy.data.lights.new("VideoStreetPool_%02d" % index, "POINT")
+        data.color = (1.0, .66, .32)
+        data.energy = t["practical"]
+        data.shadow_soft_size = 2.2
+        data.use_shadow = False
+        light = bpy.data.objects.new("VideoStreetPool_%02d" % index, data)
+        light.location = (fixture.location.x, fixture.location.y,
+                          fixture.location.z + 4.15)
+        light["nb_render_only"] = True
+        light["nb_feature_role"] = "video-lighting"
+        world_col.objects.link(light)
+        lights.append(light)
+    return lights
 
 # ═══════════════════════════ ANIMATION / CAMERA / STAGE ═════════════════════════
 
@@ -12989,22 +13108,18 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
 
-    # sun -- 2026-07-09 lighting upgrade: softer shadow edges, plus a cool
-    # shadow-free "skylight" fill from the opposite side so shaded facades
-    # read as sky-lit instead of near-black. Same time-of-day moods as before.
+    # Coordinated key/fill pair. Day retains the documented 1.0 / .07 baseline;
+    # evening presets trade key strength for practical light instead of simply
+    # raising every source and flattening the image.
     sun_data = bpy.data.lights.new("Sun", type="SUN")
-    # 2026-07-09 night (Cade's PC): the "0.95x sun + 6.5deg + 0.15x fill" combo
-    # still washed the town out (fainter shadows + flatter color than day 7).
-    # Full sun strength + near-original shadow sharpness restore the contrast;
-    # the sky fill idea stays but much weaker (a subtle shaded-side lift only).
     sun_data.energy = t["sun_e"]
-    sun_data.angle = math.radians(4.5)
+    sun_data.angle = math.radians(t["sun_angle"])
     sun_data.color = t["sun_c"]
     sun = bpy.data.objects.new("Sun", sun_data)
     sun.rotation_euler = tuple(math.radians(a) for a in t["sun_rot"])
     world_col.objects.link(sun)
     fill_data = bpy.data.lights.new("Fill", type="SUN")
-    fill_data.energy = t["sun_e"] * 0.07
+    fill_data.energy = t["sun_e"] * t["fill"]
     fill_data.angle = math.radians(30)
     fill_data.color = tuple(min(1.0, c * 0.5 + 0.5) for c in t["sky"])
     try:
@@ -13014,15 +13129,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     fill = bpy.data.objects.new("Fill", fill_data)
     fill.rotation_euler = (math.radians(55), 0, math.radians(t["sun_rot"][2] + 170))
     world_col.objects.link(fill)
-
-    # sky
-    world = bpy.context.scene.world or bpy.data.worlds.new("World")
-    bpy.context.scene.world = world
-    world.use_nodes = True
-    bg = world.node_tree.nodes.get("Background")
-    if bg:
-        bg.inputs[0].default_value = (*t["sky"], 1.0)
-        bg.inputs[1].default_value = t["sky_s"]  # 2026-07-09 evening: brightness boost removed
+    _configure_video_sky(tod)
+    _build_video_practicals(world_col, tod)
 
 
 def build_storm_layer(world_col, frame_end):
@@ -13133,7 +13241,7 @@ def build_storm_layer(world_col, frame_end):
             bg.inputs[1].default_value = strength
             bg.inputs[1].keyframe_insert("default_value", frame=frame)
 
-def setup_render(state, frame_end, tag=None):
+def setup_render(state, frame_end, tag=None, tod="day"):
     sc = bpy.context.scene
     for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):  # 4.2+ / older & 5.x
         try:
@@ -13165,6 +13273,12 @@ def setup_render(state, frame_end, tag=None):
             pass
     try:
         sc.view_settings.look = "AgX - Medium High Contrast"
+    except Exception:
+        pass
+    # Exposure is part of the preset, not a camera-by-camera rescue value.
+    # AgX retains warm lamp color and highlight roll-off at sunset/night.
+    try:
+        sc.view_settings.exposure = TODS.get(tod, TODS["day"])["exposure"]
     except Exception:
         pass
     base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")
@@ -14422,7 +14536,7 @@ def main(cfg=None):
     if cfg.get("godzilla"):
         build_godzilla_attack(world_col, state["buildings"], building_roots, frame_end)
     apply_mood(tod, season)
-    setup_render(state, frame_end, cfg.get("tag"))
+    setup_render(state, frame_end, cfg.get("tag"), tod)
 
     # removed houses leave the saved city permanently
     if removed:
