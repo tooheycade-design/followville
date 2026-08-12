@@ -293,13 +293,31 @@ stored coordinates never move.
 
 **`neighborhood_plan.py`** deterministically reserves every future address:
 366 across six curved-road districts, then 250 more in the river chapter, then
-the gridded Northgate quarter. **Read the total from `HOUSE_CAPACITY`**, which
+the gridded Northgate quarter, then chapter four's West Quarter — 1,000 more
+homes and 22 empty parcels, declared in `west_quarter_plan.py` and appended to
+`STREETS`. **Read the total from `HOUSE_CAPACITY`**, which
 is derived from `STREETS` — how many addresses a street seats depends on how
 much room its specials take, so any figure written in prose goes stale. A
 handful of chapter-three addresses are civic buildings rather than houses, and
 are consumed in the same order. Planned roads and houses create no object until
 `+N` growth consumes their exact addresses, and existing geometry never moves.
-See `NEIGHBORHOOD_EXPANSION_PLAN.md`.
+See `NEIGHBORHOOD_EXPANSION_PLAN.md` and `WEST_QUARTER_PLAN.md`.
+
+**Sizing a new chapter's streets: the placer is the authority, not arithmetic.**
+`build_plan()` raises if a street cannot seat its declared `count`, and how much
+frontage an address really needs is not `length / spacing` — a crossing street
+costs about 20m, not the 13.5m `HOUSE_ROAD_CLEARANCE` implies, because the
+crossing's own corner address eats into this street's frontage too, and a
+reserved parcel costs its own width (36m for a fire station) rather than a
+house's. Estimate to get the shape, then **calibrate against `build_plan()`**
+and bake the measured counts in.
+
+After the ordinary reserve, **`metropolitan_plan.py`** supplies Crown Quarter:
+twenty individually claimable towers at 100 followers each, on a continuation
+of the Northgate/Southline grid with an elevated expressway and interchange.
+Partial hundreds earn a tower immediately and fill before the next tower is
+created. See `METROPOLITAN_EXPANSION_PLAN.md`; validate the assets with
+`check_metropolitan_assets.py`.
 
 Milestones auto-build at population 500 (fountain plaza — suppressed while the
 houses-only reserve runs), 2,000 (skyscraper), 10,000 (stadium).
@@ -444,11 +462,14 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `neighborhood_blender.py` | The generator. |
 | `export_web.py` | Bakes the WORLD collection to full + district GLBs. |
 | `neighborhood_plan.py` | The 366-house structural reserve. |
+| `west_quarter_plan.py` | Chapter four: 1,000 homes + 22 empty parcels, west. |
+| `metropolitan_plan.py` | The post-Northgate 20-tower / 2,000-follower reserve. |
 | `world_layout.py` | District offsets, authored roads, audit declarations. |
 | `downtown_visual_plan.py` | `terrain_height` and the shared terrain model. |
 | `check_town_glb.py` | Export completeness and state consistency. |
 | `check_world_geometry.py` | Is anything off the ground, on a road, in the street. |
 | `check_food_assets.py` | Are the ten Food Court home designs sound (needs Blender). |
+| `check_metropolitan_assets.py` | Are all twenty tower assets inside their parcels (needs Blender). |
 | `assets/asset_sources.json` | Approved third-party asset provenance and licenses. |
 | `assets/asset_library_manifest.json` | Generated hashes and geometry stats for the review library. |
 | `scripts/build_asset_library.py` | Syncs and verifies approved review assets without promoting them. |
@@ -473,7 +494,8 @@ panel or `profiles.inventory` — note the fish IDs are permanent and the
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `FOLLOWVILLE_STORIES.md` (read
 before writing, storyboarding or producing a Story video),
-`NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEB_VIEWER_CHANGELOG.md`.
+`NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEST_QUARTER_PLAN.md`,
+`WEB_VIEWER_CHANGELOG.md`.
 
 `condense_day9.py`, the `render_day9_*.command` scripts and the assorted
 Windows `.bat`/`.txt` scratch files are superseded paper trail. **Nobody

@@ -35,6 +35,19 @@ from neighborhood_plan import (PLAN as SUBURBAN_PLAN,
                                NORTHGATE_ARTERIAL_REVEAL,
                                SUBURBAN_TIGHT_PLAN_IDS,
                                northgate_arterial_points)
+from metropolitan_plan import (TOWER_PLAN as METRO_TOWER_PLAN,
+                               TOWER_COUNT as METRO_TOWER_COUNT,
+                               TOWER_RESIDENT_CAPACITY,
+                               DISTRICT as METRO_DISTRICT,
+                               STREETS as METRO_STREETS,
+                               RAMPS as METRO_RAMPS,
+                               NORTH_SOUTH_X as METRO_NS_X,
+                               EAST_WEST_Y as METRO_EW_Y,
+                               EXPRESSWAY_X, EXPRESSWAY_Y0, EXPRESSWAY_Y1,
+                               EXPRESSWAY_DECK_Z, EXPRESSWAY_WIDTH,
+                               INTERCHANGE_Y as METRO_INTERCHANGE_Y,
+                               TERRACE_DATUM as METRO_TERRACE_DATUM,
+                               expressway_points)
 from downtown_visual_plan import TERRAIN_BOUNDS, mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
@@ -164,6 +177,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
+#   --cam metroreveal 26-second historic-core to expressway to skyline reveal
 #   --cam day40reveal 27-second city overhead, one eastward drone run through
 #                     58 new homes, then the filling station in its own shot
 #   --gasstation     claim the reserve's next filling-station address
@@ -699,6 +713,38 @@ def add_uv_sphere(col, name, radius, x, y, z, material, rings=8, segments=12):
     obj = bpy.data.objects.new(name, me)
     obj.location = (x, y, z)
     obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+
+def add_torus(col, name, major_radius, minor_radius, x, y, z, material,
+              major_segments=16, minor_segments=6, rotation=(0.0, 0.0, 0.0)):
+    """Operator-free torus centered at x/y/z, with its ring in local XY."""
+    verts, faces = [], []
+    for major_index in range(major_segments):
+        theta = math.tau * major_index / major_segments
+        ct, st = math.cos(theta), math.sin(theta)
+        for minor_index in range(minor_segments):
+            phi = math.tau * minor_index / minor_segments
+            radius = major_radius + minor_radius * math.cos(phi)
+            verts.append((radius * ct, radius * st,
+                          minor_radius * math.sin(phi)))
+    for major_index in range(major_segments):
+        next_major = (major_index + 1) % major_segments
+        for minor_index in range(minor_segments):
+            next_minor = (minor_index + 1) % minor_segments
+            a = major_index * minor_segments + minor_index
+            b = next_major * minor_segments + minor_index
+            c = next_major * minor_segments + next_minor
+            d = major_index * minor_segments + next_minor
+            faces.append((a, b, c, d))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (x, y, z)
+    obj.rotation_euler = rotation
     col.objects.link(obj)
     return obj
 
@@ -2562,6 +2608,159 @@ def build_skyscraper(col, seed):
     add_ngon_cone(col, "antenna", 0.25, 0.02, 6.0, 6, 0, 0, h + 1.2, m["metal"])
     add_box(col, "lobby", w + 2.5, d + 2.5, 2.6, 0, 0, 0, frame)
 
+
+METRO_TOWER_PALETTES = (
+    ((.82, .88, .91), (.22, .42, .55), (.94, .72, .43)),
+    ((.88, .82, .78), (.26, .43, .49), (.69, .84, .72)),
+    ((.80, .86, .80), (.20, .39, .45), (.94, .79, .60)),
+    ((.88, .84, .92), (.29, .38, .57), (.82, .67, .52)),
+    ((.92, .86, .75), (.24, .45, .58), (.72, .84, .88)),
+    ((.78, .86, .91), (.19, .36, .50), (.91, .63, .58)),
+    ((.91, .79, .76), (.25, .40, .48), (.73, .85, .67)),
+    ((.83, .82, .90), (.22, .35, .52), (.94, .78, .50)),
+    ((.84, .90, .86), (.19, .40, .46), (.78, .66, .84)),
+    ((.91, .88, .82), (.28, .43, .54), (.66, .82, .89)),
+)
+
+
+def _metro_facade_section(col, prefix, w, d, h, z, wall, glass, trim,
+                          bands=6, vertical=False):
+    """One tower mass with sparse, readable low-poly façade articulation."""
+    add_box(col, prefix + "_mass", w, d, h, 0, 0, z, wall)
+    # Window ribbons are inset from corners and physically proud of the wall.
+    # Their hidden half remains embedded; their visible face clears by 6cm.
+    panel_depth = .12
+    usable_w, usable_d = max(3.0, w - 2.0), max(3.0, d - 2.0)
+    for level in range(bands):
+        pz = z + 3.0 + (h - 6.0) * (level + .5) / max(1, bands)
+        if vertical:
+            stripe_w = max(1.5, usable_w / 3.6)
+            for sx in (-usable_w * .27, usable_w * .27):
+                add_box(col, prefix + "_glass_ns", stripe_w, panel_depth,
+                        max(1.1, h / bands * .52), sx, -d / 2, pz, glass)
+                add_box(col, prefix + "_glass_ns", stripe_w, panel_depth,
+                        max(1.1, h / bands * .52), sx, d / 2, pz, glass)
+            stripe_d = max(1.5, usable_d / 3.6)
+            for sy in (-usable_d * .27, usable_d * .27):
+                add_box(col, prefix + "_glass_ew", panel_depth, stripe_d,
+                        max(1.1, h / bands * .52), -w / 2, sy, pz, glass)
+                add_box(col, prefix + "_glass_ew", panel_depth, stripe_d,
+                        max(1.1, h / bands * .52), w / 2, sy, pz, glass)
+        else:
+            band_h = max(.75, min(1.35, h / bands * .17))
+            add_box(col, prefix + "_glass_ns", usable_w, panel_depth, band_h,
+                    0, -d / 2, pz, glass)
+            add_box(col, prefix + "_glass_ns", usable_w, panel_depth, band_h,
+                    0, d / 2, pz, glass)
+            add_box(col, prefix + "_glass_ew", panel_depth, usable_d, band_h,
+                    -w / 2, 0, pz, glass)
+            add_box(col, prefix + "_glass_ew", panel_depth, usable_d, band_h,
+                    w / 2, 0, pz, glass)
+    # A recessed shadow line gives every section a clear top rather than a
+    # texture-like stripe sharing the roof plane.
+    add_box(col, prefix + "_cornice", w + .28, d + .28, .22,
+            0, 0, z + h + .04, trim)
+
+
+def build_metro_tower(col, variant):
+    """One of twenty authored Crown Quarter tower silhouettes.
+
+    The design language stays Followville: simple scripted solids, optimistic
+    pastels, dark blue-green glazing, warm accents, and strong roof shapes.
+    Variation comes from massing and proportion rather than random decoration.
+    """
+    slot = METRO_TOWER_PLAN[int(variant) % len(METRO_TOWER_PLAN)]
+    height = float(slot["height"])
+    palette = METRO_TOWER_PALETTES[int(variant) % len(METRO_TOWER_PALETTES)]
+    wall = mat("FV_metro_wall_%02d" % (variant % 10), palette[0], .78)
+    glass = mat("FV_metro_glass_%02d" % (variant % 10), palette[1], .20,
+                metallic=.08, coat=.18)
+    accent = mat("FV_metro_accent_%02d" % (variant % 10), palette[2], .62)
+    concrete = mat("FV_metro_podium", (.45, .45, .43), .94)
+    dark = mat("FV_metro_frame", (.18, .22, .24), .58, metallic=.18)
+    warm = mat("FV_metro_lobby_glow", (1.0, .78, .45), .28)
+    green = mat("FV_metro_planter", (.27, .52, .31), .96)
+
+    # Every claimable address has a complete ground interface: serviceable
+    # podium, transparent lobby, weather protection, and small forecourt.
+    add_box(col, "metro_podium_slab", 38.0, 40.0, .32, 0, 0, 0, concrete)
+    add_box(col, "metro_podium", 31.0, 32.0, 6.2, 0, 1.0, .32, wall)
+    add_box(col, "metro_lobby", 12.0, .18, 3.9, 0, -15.08, .62, glass)
+    add_box(col, "metro_lobby_door", 3.0, .20, 3.35, 0, -15.20, .62, warm)
+    add_box(col, "metro_canopy", 13.5, 3.8, .32, 0, -16.5, 4.5, accent)
+    for x in (-11.5, -6.0, 6.0, 11.5):
+        add_box(col, "metro_retail_window", 4.0, .15, 2.5,
+                x, -15.1, .72, glass)
+    for x in (-15.5, 15.5):
+        add_box(col, "metro_planter_box", 3.0, 2.2, .55,
+                x, -17.2, .32, concrete)
+        add_ngon_cone(col, "metro_planter_tree", 1.15, .55, 2.7, 7,
+                      x, -17.2, .87, green)
+
+    profile = int(variant) % 5
+    vertical = (int(variant) // 5) % 2 == 1
+    base_z = 6.54
+    if profile == 0:  # three-step commercial tower
+        h1 = height * .54
+        h2 = height * .28
+        h3 = height - h1 - h2
+        _metro_facade_section(col, "metro_lower", 25.0, 25.0, h1, base_z,
+                              wall, glass, dark, 6, vertical)
+        _metro_facade_section(col, "metro_mid", 20.5, 21.5, h2,
+                              base_z + h1 + .28, wall, glass, accent, 4, not vertical)
+        _metro_facade_section(col, "metro_upper", 15.5, 17.0, h3,
+                              base_z + h1 + h2 + .56, wall, glass, dark, 3, vertical)
+    elif profile == 1:  # offset slab and lantern crown
+        _metro_facade_section(col, "metro_slab", 18.0, 29.0, height * .78,
+                              base_z, wall, glass, dark, 8, vertical)
+        _metro_facade_section(col, "metro_lantern", 13.5, 20.0, height * .22,
+                              base_z + height * .78 + .28, accent, glass, dark, 3, False)
+    elif profile == 2:  # broad base, narrow setback tower
+        _metro_facade_section(col, "metro_base", 28.0, 24.0, height * .34,
+                              base_z, wall, glass, accent, 4, False)
+        _metro_facade_section(col, "metro_shaft", 19.0, 18.0, height * .66,
+                              base_z + height * .34 + .28, wall, glass, dark, 7, vertical)
+    elif profile == 3:  # faceted civic-looking tower
+        add_ngon_cone(col, "metro_faceted_mass", 14.0, 10.5, height, 8,
+                      0, 0, base_z, glass, rot=math.pi / 8)
+        for level in range(7):
+            pz = base_z + 5.0 + (height - 8.0) * level / 6.0
+            add_ngon_cone(col, "metro_faceted_band", 14.18, 14.18, .24, 8,
+                          0, 0, pz, accent, rot=math.pi / 8)
+    else:  # paired wings around a bright central spine
+        wing_h = height * .86
+        _metro_facade_section(col, "metro_west_wing", 10.5, 23.0, wing_h,
+                              base_z, wall, glass, dark, 7, vertical)
+        _metro_facade_section(col, "metro_east_wing", 10.5, 23.0, wing_h,
+                              base_z, wall, glass, dark, 7, not vertical)
+        # Move the wing objects as coherent authored masses before instancing.
+        for obj in list(col.objects):
+            if obj.name.startswith("metro_west_wing"):
+                obj.location.x -= 6.2
+            elif obj.name.startswith("metro_east_wing"):
+                obj.location.x += 6.2
+        add_box(col, "metro_center_spine", 4.2, 17.0, height,
+                0, 0, base_z, accent)
+
+    roof_z = base_z + height + .9
+    crown = int(variant) % 4
+    if crown == 0:
+        add_ngon_cone(col, "metro_crown", 7.0, 2.4, 5.0, 6,
+                      0, 0, roof_z, accent, rot=math.pi / 6)
+    elif crown == 1:
+        add_box(col, "metro_roof_frame", 11.0, 11.0, 3.2,
+                0, 0, roof_z, dark)
+        add_box(col, "metro_roof_lantern", 8.2, 8.2, 2.5,
+                0, 0, roof_z + .35, warm)
+    elif crown == 2:
+        add_ngon_cone(col, "metro_crown", 6.5, 6.5, 2.2, 8,
+                      0, 0, roof_z, accent, rot=math.pi / 8)
+        add_ngon_cone(col, "metro_spire", .48, .08, 9.0, 8,
+                      0, 0, roof_z + 2.25, dark)
+    else:
+        for x in (-4.2, 0.0, 4.2):
+            add_box(col, "metro_crown_fin", 1.0, 10.0,
+                    4.0 + (4.2 - abs(x)) * .45, x, 0, roof_z, accent)
 def build_stadium(col, seed):
     """Milestone: stadium, fills a whole block (pop 10,000)."""
     m = std_mats()
@@ -5809,6 +6008,8 @@ ASSET_VARIANTS = {
     "cottagehouse":  [("AST_cottage_0", lambda c: build_cottage_house(c, 2100))],
     "plaza":       [("AST_plaza_0", lambda c: build_plaza(c, 700))],
     "skyscraper":  [("AST_sky_%d" % i, lambda c, i=i: build_skyscraper(c, 800 + i)) for i in range(2)],
+    "metrotower":  [("AST_metro_%02d" % i, lambda c, i=i: build_metro_tower(c, i))
+                     for i in range(METRO_TOWER_COUNT)],
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
@@ -5908,7 +6109,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
         "cottagehouse": 1, "pond": 1, "ringhouse": 1, "parkdistrict": 1,
-        "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2, "stadium": 3,
+        "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2,
+        "metrotower": 1, "stadium": 3,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
@@ -5925,13 +6127,15 @@ for _type, _lots in LANDMARK_GRID_SIZE.items():
         "world_layout.LANDMARK_GRID_SIZE says %s is %d lots, SIZE says %s"
         % (_type, _lots, SIZE.get(_type)))
 
-# unlocked automatically the day population crosses the threshold
-MILESTONES = [(500, "plaza"), (2000, "skyscraper"), (10000, "stadium")]
+# The old generic population-2,000 skyscraper is superseded by Crown Quarter's
+# deterministic 100-resident tower reserve.  Keeping both would drop an extra
+# unrelated tower into the historic grid on the same day the new skyline grows.
+MILESTONES = [(500, "plaza"), (10000, "stadium")]
 
 def footprint(b):
     # Planned suburban houses use exact world positions on curving roads, not
     # grid lots.  They therefore reserve no legacy 3x3-grid cell.
-    if (b.get("plan_id") or b.get("feature_id") or
+    if (b.get("plan_id") or b.get("metro_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
                           "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex",
                           "foodhouse", "foodcourt")):
@@ -6042,9 +6246,13 @@ def place_instance(world_col, b, name):
         variants = RIVER_ASSET_VARIANTS
     elif b["type"] == "house" and not b.get("plan_id") and "px" not in b:
         variants = URBAN_ASSET_VARIANTS
+    elif b["type"] == "metrotower":
+        variants = ASSET_VARIANTS["metrotower"]
     else:
         variants = ASSET_VARIANTS[b["type"]]
-    vname, builder = variants[b["seed"] % len(variants)]
+    variant_index = ((int(b["metro_id"]) - 1) if b.get("metro_id")
+                     else b["seed"] % len(variants))
+    vname, builder = variants[variant_index % len(variants)]
     asset = get_asset(vname, builder)
     empty = bpy.data.objects.new(name, None)
     empty.instance_type = "COLLECTION"
@@ -6979,6 +7187,708 @@ def build_suburban_roads(world_col, buildings, m):
     return [obj for obj in river_reveal_objects if obj is not None]
 
 
+def _metro_add_chair(col, created, name, x, y, z, angle, seat_mat, metal):
+    """A compact slatted café chair with a readable seat, legs and back."""
+    ca, sa = math.cos(angle), math.sin(angle)
+
+    def point(dx, dy):
+        return x + dx*ca-dy*sa, y + dx*sa+dy*ca
+
+    seat = add_box(col, name+"_seat", .72, .72, .12, x, y, z+.48, seat_mat)
+    seat.rotation_euler.z = angle
+    created.append(seat)
+    for dx in (-.27, .27):
+        for dy in (-.27, .27):
+            lx, ly = point(dx, dy)
+            created.append(add_box(col, name+"_leg", .09, .09, .48,
+                                   lx, ly, z, metal))
+    for dx in (-.28, .28):
+        bx, by = point(dx, .31)
+        created.append(add_box(col, name+"_back_post", .08, .08, .72,
+                               bx, by, z+.50, metal))
+    back = add_box(col, name+"_back", .66, .09, .38,
+                   *point(0, .33), z+.80, seat_mat)
+    back.rotation_euler.z = angle
+    created.append(back)
+
+
+def _metro_add_cafe_set(col, created, x, y, z, accent, timber, metal):
+    """Street café ensemble detailed enough to survive close screenshots."""
+    stem = add_ngon_cone(col, "metro_cafe_table_stem", .11, .11, .71, 10,
+                         x, y, z, metal)
+    foot = add_ngon_cone(col, "metro_cafe_table_foot", .34, .28, .08, 12,
+                         x, y, z, metal)
+    top = add_ngon_cone(col, "metro_cafe_table_top", .86, .86, .10, 16,
+                        x, y, z+.71, timber)
+    rim = add_torus(col, "metro_cafe_table_rim", .79, .035,
+                    x, y, z+.82, metal, 16, 5)
+    created.extend((stem, foot, top, rim))
+    for cx, cy, angle in ((x-1.18, y, -math.pi/2),
+                          (x+1.18, y, math.pi/2),
+                          (x, y+1.18, math.pi)):
+        _metro_add_chair(col, created, "metro_cafe_chair", cx, cy, z,
+                         angle, accent, metal)
+
+
+def _metro_add_planter(col, created, x, y, z, planter_mat, earth_mat,
+                       leaf_a, leaf_b, flower_mat):
+    """Layered planter with soil, varied foliage and small flowering accents."""
+    planter = add_box(col, "metro_corner_planter", 2.9, 1.35, .58,
+                      x, y, z, planter_mat)
+    soil = add_box(col, "metro_planter_soil", 2.58, 1.05, .08,
+                   x, y, z+.59, earth_mat)
+    created.extend((planter, soil))
+    foliage = ((-.88, -.18, .47), (-.34, .20, .58), (.25, -.18, .54),
+               (.82, .16, .43), (.02, .22, .40))
+    for index, (dx, dy, radius) in enumerate(foliage):
+        shrub = add_uv_sphere(col, "metro_planter_foliage", radius,
+                              x+dx, y+dy, z+.64+radius*.72,
+                              leaf_a if index % 2 else leaf_b, 7, 10)
+        shrub.scale.z = .82 + .12*(index % 3)
+        created.append(shrub)
+    for index, dx in enumerate((-.68, -.12, .52)):
+        stem = add_ngon_cone(col, "metro_flower_stem", .018, .014, .40, 6,
+                             x+dx, y-.34+(index % 2)*.55, z+.64, leaf_a)
+        flower = add_uv_sphere(col, "metro_planter_flower", .09,
+                               x+dx, y-.34+(index % 2)*.55, z+1.07,
+                               flower_mat, 5, 8)
+        created.extend((stem, flower))
+
+
+def _metro_add_bicycle(col, created, x, y, z, frame_mat, metal, rubber):
+    """Complete upright bicycle: two tires, hubs, frame, fork, bars and seat."""
+    rear = Vector((x, y-.67, z+.47))
+    front = Vector((x, y+.67, z+.47))
+    crank = Vector((x, y-.04, z+.48))
+    saddle_joint = Vector((x, y-.31, z+1.08))
+    head = Vector((x, y+.43, z+1.06))
+    for center in (rear, front):
+        created.append(add_torus(col, "metro_bicycle_tire", .43, .052,
+                                 center.x, center.y, center.z, rubber,
+                                 18, 6, (0, math.pi/2, 0)))
+        created.append(add_beam_between(
+            col, "metro_bicycle_hub",
+            (center.x-.07, center.y, center.z),
+            (center.x+.07, center.y, center.z), .075, metal))
+    for start, end in ((rear, crank), (crank, saddle_joint),
+                       (saddle_joint, rear), (saddle_joint, head),
+                       (head, crank), (head, front)):
+        created.append(add_beam_between(col, "metro_bicycle_frame",
+                                        start, end, .065, frame_mat))
+    seat = add_box(col, "metro_bicycle_saddle", .15, .40, .08,
+                   x, y-.36, z+1.10, rubber)
+    bar = add_box(col, "metro_bicycle_handlebar", .56, .08, .08,
+                  x, y+.48, z+1.17, metal)
+    pedal = add_box(col, "metro_bicycle_pedal", .42, .07, .07,
+                    x, y-.04, z+.48, metal)
+    created.extend((seat, bar, pedal))
+
+
+def build_metropolitan_district(world_col, buildings, m):
+    """Build Crown Quarter infrastructure after its first tower is earned."""
+    active = max((int(b.get("metro_id", 0)) for b in buildings), default=0)
+    if active < 1:
+        return []
+
+    created = []
+    asphalt = m["road"]
+    concrete = mat("FV_metro_sidewalk", (.56, .55, .51), .96)
+    curb = mat("FV_metro_curb", (.38, .39, .38), .98)
+    paver = mat("FV_metro_paver", (.63, .54, .47), .94)
+    marking = mat("FV_metro_marking", (.91, .87, .66), .82)
+    white = mat("FV_metro_crosswalk", (.84, .84, .80), .88)
+    metal = mat("FV_metro_street_metal", (.20, .24, .25), .72, metallic=.18)
+    shelter_glass = mat("FV_metro_shelter_glass", (.43, .65, .70), .24,
+                        alpha=.62, transmission=.12, coat=.12)
+    timber = mat("FV_metro_bench", (.48, .29, .16), .90)
+    green = mat("FV_metro_green", (.30, .55, .31), .98)
+    lawn = mat("FV_metro_interim_lawn", (.39, .61, .34), 1.0)
+    earth = mat("FV_metro_construction_earth", (.56, .45, .31), 1.0)
+    safety = mat("FV_metro_construction_safety", (.94, .49, .12), .76)
+    highway_concrete = mat("FV_expressway_concrete", (.42, .43, .42), .97)
+    highway_rail = mat("FV_expressway_rail", (.22, .25, .25), .78, metallic=.18)
+    sign_green = mat("FV_expressway_sign", (.08, .30, .22), .76)
+    warm_light = mat("FV_expressway_light_warm", (.96, .73, .38), .42,
+                     metallic=.04)
+    cafe_red = mat("FV_metro_cafe_red", (.76, .20, .17), .74)
+    cafe_gold = mat("FV_metro_cafe_gold", (.94, .63, .16), .76)
+    civic_blue = mat("FV_metro_civic_blue", (.16, .43, .61), .70)
+    utility_green = mat("FV_metro_utility_green", (.20, .39, .30), .88)
+    rubber = mat("FV_metro_rubber", (.075, .085, .09), .94)
+    cardboard = mat("FV_metro_cardboard", (.61, .42, .24), .94)
+    leaf_dark = mat("FV_metro_leaf_dark", (.10, .31, .16), .92)
+    leaf_light = mat("FV_metro_leaf_light", (.30, .58, .27), .90)
+    flower = mat("FV_metro_flower", (.94, .34, .31), .74)
+    storefront = mat("FV_metro_storefront_glass", (.18, .37, .43), .20,
+                     alpha=.78, transmission=.08, coat=.18)
+    steel_light = mat("FV_metro_brushed_steel", (.48, .52, .52), .52,
+                      metallic=.30)
+    bus_white = mat("FV_metro_bus_white", (.78, .82, .80), .72)
+    lamp_glow = mat("FV_metro_shop_light", (1.0, .72, .30), .34,
+                    metallic=.03)
+
+    # Streets continue the inherited coordinates from Northgate/Southline.
+    for index, street in enumerate(METRO_STREETS):
+        points = [(x, y, METRO_TERRACE_DATUM) for x, y in street["points"]]
+        road = _add_road_strip(world_col, "metro_road_%02d" % index, points,
+                               asphalt, width=street["width"],
+                               bottom_offset=.02, top_offset=.19)
+        road["nb_feature_role"] = "metro-road"
+        created.append(road)
+        # Lane discipline: local center line, or four-lane boulevard divider.
+        (x0, y0), (x1, y1) = street["points"]
+        length = math.hypot(x1-x0, y1-y0)
+        angle = math.atan2(y1-y0, x1-x0)
+        if street["kind"] == "boulevard":
+            offsets = (-3.45, 0.0, 3.45)
+        else:
+            offsets = (0.0,)
+        nx, ny = -math.sin(angle), math.cos(angle)
+        for line_index, offset in enumerate(offsets):
+            line = add_box(world_col, "metro_lane_line", length-4.0, .13, .025,
+                           (x0+x1)/2 + nx*offset, (y0+y1)/2 + ny*offset,
+                           METRO_TERRACE_DATUM+.195, marking)
+            line.rotation_euler.z = angle
+            created.append(line)
+
+    # Sidewalks and kerbs belong to block edges, so they stop at junctions
+    # rather than running visibly across the roadway.
+    for row in range(4):
+        y0, y1 = METRO_EW_Y[row], METRO_EW_Y[row+1]
+        south_half = 7.0 if y0 in (588.0, METRO_INTERCHANGE_Y) else 4.0
+        north_half = 7.0 if y1 in (588.0, METRO_INTERCHANGE_Y) else 4.0
+        for column in range(5):
+            x0, x1 = METRO_NS_X[column], METRO_NS_X[column+1]
+            inner_x0, inner_x1 = x0+4.0, x1-4.0
+            inner_y0, inner_y1 = y0+south_half, y1-north_half
+            block_w = inner_x1-inner_x0
+            block_d = inner_y1-inner_y0
+            for name, x, y, w, d in (
+                ("south", (inner_x0+inner_x1)/2, inner_y0+1.6, block_w, 3.2),
+                ("north", (inner_x0+inner_x1)/2, inner_y1-1.6, block_w, 3.2),
+                ("west", inner_x0+1.6, (inner_y0+inner_y1)/2,
+                 3.2, max(.2, block_d-6.4)),
+                ("east", inner_x1-1.6, (inner_y0+inner_y1)/2,
+                 3.2, max(.2, block_d-6.4)),
+            ):
+                walk = add_box(world_col, "metro_sidewalk_"+name, w, d, .16,
+                               x, y, METRO_TERRACE_DATUM+.12, concrete)
+                created.append(walk)
+            for name, x, y, w, d in (
+                ("south", (inner_x0+inner_x1)/2, inner_y0+.18, block_w, .36),
+                ("north", (inner_x0+inner_x1)/2, inner_y1-.18, block_w, .36),
+                ("west", inner_x0+.18, (inner_y0+inner_y1)/2,
+                 .36, max(.2, block_d-.72)),
+                ("east", inner_x1-.18, (inner_y0+inner_y1)/2,
+                 .36, max(.2, block_d-.72)),
+            ):
+                edge = add_box(world_col, "metro_curb_"+name, w, d, .27,
+                               x, y, METRO_TERRACE_DATUM+.11, curb)
+                created.append(edge)
+
+            slot = METRO_TOWER_PLAN[row*5+column]
+            if int(slot["metro_id"]) <= active:
+                # A warm paved forecourt makes each earned tower meet its sidewalk.
+                forecourt = add_box(world_col, "metro_forecourt", 42.0, 43.0, .07,
+                                    slot["x"], slot["y"],
+                                    METRO_TERRACE_DATUM+.055, paver)
+                created.append(forecourt)
+
+                # The tower itself occupies the middle of the parcel; the side
+                # strips are where downtown life accumulates.  West is a café
+                # terrace, south is the front door, and east is the working
+                # service edge.  Keeping those roles consistent makes all 20
+                # blocks feel planned without cloning one identical plaza.
+                sx, sy = slot["x"], slot["y"]
+                metro_id = int(slot["metro_id"])
+                for bollard_x in (-7.0, -3.5, 3.5, 7.0):
+                    bollard = add_ngon_cone(
+                        world_col, "metro_entry_bollard", .16, .13, .82, 8,
+                        sx+bollard_x, sy-22.2, METRO_TERRACE_DATUM+.17, metal)
+                    created.append(bollard)
+                # Sidewalk extensions make the café and service functions read
+                # as purpose-built public realm instead of props dropped on grass.
+                cafe_pad = add_box(world_col, "metro_cafe_paving", 6.4, 38.0,
+                                   .08, sx-24.0, sy,
+                                   METRO_TERRACE_DATUM+.07, paver)
+                service_pad = add_box(world_col, "metro_service_paving", 6.4,
+                                      38.0, .08, sx+24.0, sy,
+                                      METRO_TERRACE_DATUM+.07, asphalt)
+                created.extend((cafe_pad, service_pad))
+
+                # Glazed shopfront bays, mullions and shallow awnings animate
+                # the tower podium where the first close render looked blank.
+                for shop_index, shop_y in enumerate((-10.5, -3.5, 3.5, 10.5)):
+                    glass = add_box(world_col, "metro_shopfront_glass", .13,
+                                    5.3, 2.45, sx-19.18, sy+shop_y,
+                                    METRO_TERRACE_DATUM+.42, storefront)
+                    mullion = add_box(world_col, "metro_shopfront_mullion",
+                                      .18, .10, 2.54, sx-19.26, sy+shop_y,
+                                      METRO_TERRACE_DATUM+.39, steel_light)
+                    awning = add_box(world_col, "metro_shopfront_awning", 1.25,
+                                     5.65, .16, sx-19.80, sy+shop_y,
+                                     METRO_TERRACE_DATUM+2.90,
+                                     cafe_red if (metro_id+shop_index)%2 else cafe_gold)
+                    created.extend((glass, mullion, awning))
+                for table_index, table_y in enumerate((-7.2, 5.8)):
+                    _metro_add_cafe_set(
+                        world_col, created, sx-23.7, sy+table_y,
+                        METRO_TERRACE_DATUM+.17,
+                        cafe_red if (metro_id+table_index)%2 else cafe_gold,
+                        timber, steel_light)
+                pole = add_ngon_cone(world_col, "metro_cafe_umbrella_pole",
+                                     .07, .07, 2.55, 10, sx-23.7, sy+5.8,
+                                     METRO_TERRACE_DATUM+.17, steel_light)
+                canopy = add_ngon_cone(world_col, "metro_cafe_umbrella", 2.25,
+                                       .16, .54, 14, sx-23.7, sy+5.8,
+                                       METRO_TERRACE_DATUM+2.47,
+                                       cafe_red if metro_id%2 else civic_blue,
+                                       rot=math.pi/14)
+                finial = add_uv_sphere(world_col, "metro_umbrella_finial", .10,
+                                        sx-23.7, sy+5.8,
+                                        METRO_TERRACE_DATUM+3.05,
+                                        cafe_gold, 6, 10)
+                created.extend((pole, canopy, finial))
+
+                # Bicycle parking faces the lobby and doubles as a protective
+                # buffer between pedestrians and the service side of the lot.
+                for rack_index in range(3):
+                    rack_y = sy-14.0+rack_index*3.8
+                    for post_y in (-.55, .55):
+                        post = add_box(world_col, "metro_bike_rack_post",
+                                       .13, .13, .82, sx+23.8,
+                                       rack_y+post_y,
+                                       METRO_TERRACE_DATUM+.17, metal)
+                        created.append(post)
+                    rail = add_box(world_col, "metro_bike_rack_rail", .13,
+                                   1.23, .13, sx+23.8, rack_y,
+                                   METRO_TERRACE_DATUM+.90, metal)
+                    created.append(rail)
+                bike_color = cafe_red if metro_id % 2 else cafe_gold
+                _metro_add_bicycle(world_col, created, sx+23.55, sy-13.8,
+                                   METRO_TERRACE_DATUM+.17,
+                                   bike_color, steel_light, rubber)
+                if metro_id % 3 == 0:
+                    _metro_add_bicycle(world_col, created, sx+23.35, sy-6.2,
+                                       METRO_TERRACE_DATUM+.17,
+                                       civic_blue, steel_light, rubber)
+
+                # A real downtown also needs an unglamorous back-of-house.
+                dumpster = add_box(world_col, "metro_dumpster", 2.8, 1.55,
+                                   1.35, sx+24.0, sy+13.5,
+                                   METRO_TERRACE_DATUM+.17, utility_green)
+                lid = add_box(world_col, "metro_dumpster_lid", 2.9, 1.65,
+                              .15, sx+24.0, sy+13.5,
+                              METRO_TERRACE_DATUM+1.54, rubber)
+                utility = add_box(world_col, "metro_utility_box", 1.25, .72,
+                                  1.35, sx+24.5, sy+18.0,
+                                  METRO_TERRACE_DATUM+.17, metal)
+                created.extend((dumpster, lid, utility))
+                for rib_x in (-1.02, -.34, .34, 1.02):
+                    rib = add_box(world_col, "metro_dumpster_rib", .09, 1.61,
+                                  1.08, sx+24.0+rib_x, sy+13.5,
+                                  METRO_TERRACE_DATUM+.29, steel_light)
+                    created.append(rib)
+                for caster_x in (-1.0, 1.0):
+                    caster = add_uv_sphere(world_col, "metro_dumpster_caster",
+                                           .16, sx+24.0+caster_x, sy+13.5,
+                                           METRO_TERRACE_DATUM+.22, rubber, 6, 10)
+                    created.append(caster)
+                for crate_index in range(2+(metro_id % 2)):
+                    crate = add_box(world_col, "metro_delivery_crate", .82,
+                                    .72, .55, sx+21.8+crate_index*.9,
+                                    sy+16.2, METRO_TERRACE_DATUM+.17,
+                                    cardboard)
+                    created.append(crate)
+                # Loading hatch, drain and yellow clearance bars supply the
+                # little functional details that make a service lane believable.
+                hatch = add_box(world_col, "metro_service_hatch", .12, 4.4,
+                                2.7, sx+19.20, sy+15.6,
+                                METRO_TERRACE_DATUM+.30, metal)
+                hatch_frame = add_box(world_col, "metro_service_hatch_frame",
+                                      .16, 4.75, .16, sx+19.10, sy+15.6,
+                                      METRO_TERRACE_DATUM+3.02, cafe_gold)
+                drain = add_box(world_col, "metro_service_drain", 1.1, 2.7,
+                                .035, sx+24.0, sy+7.8,
+                                METRO_TERRACE_DATUM+.165, steel_light)
+                created.extend((hatch, hatch_frame, drain))
+                for stripe_y in (-.8, -.27, .27, .8):
+                    stripe = add_box(world_col, "metro_drain_slot", .72, .08,
+                                     .025, sx+24.0, sy+7.8+stripe_y,
+                                     METRO_TERRACE_DATUM+.202, rubber)
+                    created.append(stripe)
+                for guard_y in (11.9, 15.2):
+                    guard = add_ngon_cone(world_col, "metro_service_guard",
+                                          .11, .11, .88, 8, sx+21.0,
+                                          sy+guard_y,
+                                          METRO_TERRACE_DATUM+.17, cafe_gold)
+                    created.append(guard)
+
+                # Small repeated signals of care at corners: planters, a
+                # hydrant and newspaper/parcel boxes.  Positions alternate so
+                # an aerial view does not read as a copy-pasted prop grid.
+                for planter_index, (px, py) in enumerate(
+                        ((sx-24.0, sy-17.0), (sx+24.0, sy+21.0))):
+                    _metro_add_planter(world_col, created, px, py,
+                                       METRO_TERRACE_DATUM+.17, curb, earth,
+                                       leaf_dark, leaf_light,
+                                       flower if planter_index == 0 else cafe_gold)
+                hydrant = add_ngon_cone(world_col, "metro_fire_hydrant", .25,
+                                        .19, .78, 8, sx+26.0, sy-22.5,
+                                        METRO_TERRACE_DATUM+.17, cafe_red)
+                hydrant_cap = add_uv_sphere(world_col, "metro_hydrant_cap", .23,
+                                             sx+26.0, sy-22.5,
+                                             METRO_TERRACE_DATUM+1.00,
+                                             cafe_red, 5, 8)
+                news = add_box(world_col, "metro_news_box", .78, .64, 1.12,
+                               sx-25.2, sy+18.0,
+                               METRO_TERRACE_DATUM+.17, civic_blue)
+                news_glass = add_box(world_col, "metro_news_box_window", .52,
+                                     .05, .34, sx-25.2, sy+17.66,
+                                     METRO_TERRACE_DATUM+.82, storefront)
+                wall_light = add_box(world_col, "metro_service_wall_light",
+                                     .20, .42, .24, sx+19.08, sy+12.0,
+                                     METRO_TERRACE_DATUM+3.18, lamp_glow)
+                created.extend((hydrant, hydrant_cap, news, news_glass,
+                                wall_light))
+            elif int(slot["metro_id"]) % 3 == 0:
+                # Surface parking is an ordinary interim downtown land use,
+                # not a permanent sea of asphalt. It disappears when claimed.
+                parking = add_box(world_col, "metro_interim_parking", 43.0, 40.0, .07,
+                                  slot["x"], slot["y"],
+                                  METRO_TERRACE_DATUM+.055, asphalt)
+                created.append(parking)
+                for line_x in range(-18, 19, 6):
+                    stripe = add_box(world_col, "metro_parking_stripe", .11, 8.5, .02,
+                                     slot["x"]+line_x, slot["y"]-12.0,
+                                     METRO_TERRACE_DATUM+.13, white)
+                    created.append(stripe)
+                for car_index, line_x in enumerate((-12.0, 6.0)):
+                    car = place_instance(
+                        world_col,
+                        {"type": "car", "gx": 0, "gy": 0,
+                         "seed": 26000+int(slot["metro_id"])*7+car_index},
+                        "metro_parked_car")
+                    car.scale = (.72, .72, .72)
+                    car.location = (slot["x"]+line_x, slot["y"]-12.0,
+                                    METRO_TERRACE_DATUM+.17)
+                    car.rotation_euler.z = math.pi/2
+                    created.append(car)
+            elif int(slot["metro_id"]) % 3 == 1:
+                # Interim green space prevents the reserve from reading as a
+                # collection of blank construction pads between growth days.
+                park_pad = add_box(world_col, "metro_interim_park", 43.0, 40.0, .07,
+                                   slot["x"], slot["y"],
+                                   METRO_TERRACE_DATUM+.055, lawn)
+                path_ns = add_box(world_col, "metro_interim_park_path", 3.0, 36.0, .04,
+                                  slot["x"], slot["y"],
+                                  METRO_TERRACE_DATUM+.13, paver)
+                path_ew = add_box(world_col, "metro_interim_park_path", 39.0, 3.0, .04,
+                                  slot["x"], slot["y"],
+                                  METRO_TERRACE_DATUM+.13, paver)
+                created.extend((park_pad, path_ns, path_ew))
+                for dx, dy in ((-13.0, -11.0), (13.0, -11.0),
+                               (-13.0, 11.0), (13.0, 11.0)):
+                    trunk = add_ngon_cone(world_col, "metro_interim_tree_trunk",
+                                          .22, .18, 2.4, 7,
+                                          slot["x"]+dx, slot["y"]+dy,
+                                          METRO_TERRACE_DATUM+.13, timber)
+                    crown = add_ngon_cone(world_col, "metro_interim_tree_crown",
+                                          1.6, .6, 3.0, 8,
+                                          slot["x"]+dx, slot["y"]+dy,
+                                          METRO_TERRACE_DATUM+2.5, green)
+                    created.extend((trunk, crown))
+            else:
+                # A prepared parcel with foundation marks and safety fencing.
+                site = add_box(world_col, "metro_future_construction", 43.0, 40.0, .07,
+                               slot["x"], slot["y"],
+                               METRO_TERRACE_DATUM+.055, earth)
+                created.append(site)
+                for side in (-1, 1):
+                    fence_ns = add_box(world_col, "metro_construction_fence",
+                                       .18, 38.0, 1.25,
+                                       slot["x"]+side*20.5, slot["y"],
+                                       METRO_TERRACE_DATUM+.13, safety)
+                    fence_ew = add_box(world_col, "metro_construction_fence",
+                                       41.0, .18, 1.25,
+                                       slot["x"], slot["y"]+side*18.8,
+                                       METRO_TERRACE_DATUM+.13, safety)
+                    created.extend((fence_ns, fence_ew))
+                for grid_x in (-9.0, 0.0, 9.0):
+                    footing = add_box(world_col, "metro_future_footing", 2.2, 24.0, .22,
+                                      slot["x"]+grid_x, slot["y"],
+                                      METRO_TERRACE_DATUM+.13, highway_concrete)
+                    created.append(footing)
+
+    # Zebra crossings concentrate on the two boulevards and Kettle seam.
+    for y in (522.0, 588.0, METRO_INTERCHANGE_Y):
+        road_half = 7.0 if y in (588.0, METRO_INTERCHANGE_Y) else 4.0
+        for x in METRO_NS_X:
+            for stripe in (-1.8, -.6, .6, 1.8):
+                north = add_box(world_col, "metro_crosswalk", .54,
+                                road_half*2-.8, .025, x+stripe, y,
+                                METRO_TERRACE_DATUM+.205, white)
+                created.append(north)
+            # Curb ramps are separate lower pads, not paint on the sidewalk.
+            for side in (-1, 1):
+                ramp = add_box(world_col, "metro_curb_ramp", 3.2, 1.15, .07,
+                               x, y+side*(road_half+.58),
+                               METRO_TERRACE_DATUM+.17, concrete)
+                created.append(ramp)
+
+    # Crown Boulevard receives a planted median between junctions.
+    for a, b in zip(METRO_NS_X, METRO_NS_X[1:]):
+        median = add_box(world_col, "metro_boulevard_median", b-a-12.0, 1.35, .24,
+                         (a+b)/2, METRO_INTERCHANGE_Y,
+                         METRO_TERRACE_DATUM+.205, curb)
+        created.append(median)
+        for x in ((a+b)/2-13.0, (a+b)/2+13.0):
+            planter = add_box(world_col, "metro_median_planter", 3.4, 1.05, .34,
+                              x, METRO_INTERCHANGE_Y,
+                              METRO_TERRACE_DATUM+.445, green)
+            created.append(planter)
+
+    # Human-scale furnishing repeats consistently without becoming clutter.
+    for xi, x in enumerate(METRO_NS_X):
+        for yi, y in enumerate(METRO_EW_Y):
+            if yi == len(METRO_EW_Y)-1:
+                continue
+            lamp_data = {"type": "streetlight", "gx": 0, "gy": 0,
+                         "seed": 23000+xi*31+yi}
+            lamp = place_instance(world_col, lamp_data, "metro_streetlight")
+            lamp.location = (x+5.9, y+5.9, METRO_TERRACE_DATUM+.28)
+            created.append(lamp)
+            if xi < len(METRO_NS_X)-1:
+                tx, ty = x+35.0, y+8.0
+                trunk = add_ngon_cone(world_col, "metro_tree_trunk", .22, .18,
+                                      2.5, 7, tx, ty,
+                                      METRO_TERRACE_DATUM+.28, timber)
+                crown = add_ngon_cone(world_col, "metro_tree_crown", 1.65, .65,
+                                      3.2, 8, tx, ty,
+                                      METRO_TERRACE_DATUM+2.75, green)
+                created.extend((trunk, crown))
+
+    # Four sheltered bus stops serve both boulevards.  They are modeled here
+    # to match Followville materials instead of importing an unrelated pack.
+    for index, (x, y, rot) in enumerate(((-82.0, 588.0, 0.0),
+                                         (52.0, 588.0, math.pi),
+                                         (-82.0, METRO_INTERCHANGE_Y, 0.0),
+                                         (52.0, METRO_INTERCHANGE_Y, math.pi))):
+        side = 1 if rot == 0.0 else -1
+        sy = y+side*9.0
+        shelter = add_box(world_col, "metro_bus_shelter_glass", 6.4, .14, 2.7,
+                          x, sy, METRO_TERRACE_DATUM+.28, shelter_glass)
+        roof = add_box(world_col, "metro_bus_shelter_roof", 7.0, 2.4, .20,
+                       x, sy-side*.9, METRO_TERRACE_DATUM+2.98, metal)
+        bench = add_box(world_col, "metro_bus_bench", 3.8, .65, .55,
+                        x, sy-side*.55, METRO_TERRACE_DATUM+.31, timber)
+        bin_obj = add_ngon_cone(world_col, "metro_litter_bin", .34, .34, .88, 8,
+                                x+3.0, sy, METRO_TERRACE_DATUM+.28, metal)
+        flag = add_box(world_col, "metro_bus_stop_flag", 1.15, .10, .75,
+                       x-3.0, sy, METRO_TERRACE_DATUM+2.25, sign_green)
+        created.extend((shelter, roof, bench, bin_obj, flag))
+
+    # Parked curbside vehicles, short loading bays and a dedicated city bus
+    # make the grid read as occupied even in a still.  They remain well clear
+    # of every crosswalk and tower lobby.
+    for row_index, y in enumerate(METRO_EW_Y[1:-1], start=1):
+        for column in range(5):
+            if (row_index+column) % 2:
+                continue
+            x = (METRO_NS_X[column]+METRO_NS_X[column+1])/2
+            side = -1 if (row_index+column) % 4 else 1
+            car = place_instance(
+                world_col,
+                {"type": "car", "gx": 0, "gy": 0,
+                 "seed": 28000+row_index*17+column},
+                "metro_curbside_car")
+            car.scale = (.78, .78, .78)
+            car.location = (x, y+side*2.65, METRO_TERRACE_DATUM+.20)
+            car.rotation_euler.z = 0.0 if side > 0 else math.pi
+            created.append(car)
+            loading = add_box(world_col, "metro_loading_mark", 8.0, .14,
+                              .025, x+12.0, y+side*2.65,
+                              METRO_TERRACE_DATUM+.205, cafe_gold)
+            created.append(loading)
+
+    bus_x, bus_y = -16.0, 588.0
+    bus_center_y = bus_y-2.7
+    bus_chassis = add_box(world_col, "metro_city_bus_chassis", 10.35, 2.48,
+                          .28, bus_x, bus_center_y,
+                          METRO_TERRACE_DATUM+.34, rubber)
+    bus_body = add_tapered_box(world_col, "metro_city_bus_body",
+                               10.2, 2.55, 9.85, 2.45, 2.30,
+                               bus_x, bus_center_y,
+                               METRO_TERRACE_DATUM+.49, 0, 0, civic_blue)
+    bus_roof = add_box(world_col, "metro_city_bus_roof", 9.55, 2.30, .20,
+                       bus_x-.10, bus_center_y,
+                       METRO_TERRACE_DATUM+2.80, bus_white)
+    belt = add_box(world_col, "metro_city_bus_belt", 9.90, 2.59, .14,
+                   bus_x, bus_center_y, METRO_TERRACE_DATUM+1.37, bus_white)
+    created.extend((bus_chassis, bus_body, bus_roof, belt))
+    # Individual glazing bays and mullions keep the bus from reading as a
+    # single blue box; each side also gets a double passenger door.
+    for side in (-1, 1):
+        wy = bus_center_y + side*1.286
+        for window_index, wx in enumerate((-3.75, -2.35, -.95, .45, 1.85, 3.25)):
+            if side < 0 and window_index in (4, 5):
+                continue
+            window = add_box(world_col, "metro_city_bus_window", 1.15, .055,
+                             .78, bus_x+wx, wy,
+                             METRO_TERRACE_DATUM+1.55, shelter_glass)
+            created.append(window)
+        if side < 0:
+            for door_x in (2.25, 3.35):
+                door = add_box(world_col, "metro_city_bus_door", .96, .06,
+                               1.52, bus_x+door_x, wy-.015,
+                               METRO_TERRACE_DATUM+.66, storefront)
+                door_bar = add_box(world_col, "metro_city_bus_door_bar", .07,
+                                   .075, 1.53, bus_x+door_x+.48, wy-.025,
+                                   METRO_TERRACE_DATUM+.66, steel_light)
+                created.extend((door, door_bar))
+    windshield = add_box(world_col, "metro_city_bus_windshield", .065, 2.02,
+                         .82, bus_x+5.11, bus_center_y,
+                         METRO_TERRACE_DATUM+1.54, storefront)
+    rear_glass = add_box(world_col, "metro_city_bus_rear_window", .065, 1.88,
+                         .72, bus_x-5.11, bus_center_y,
+                         METRO_TERRACE_DATUM+1.62, shelter_glass)
+    destination = add_box(world_col, "metro_city_bus_destination", .07, 1.52,
+                          .28, bus_x+5.16, bus_center_y,
+                          METRO_TERRACE_DATUM+2.45, sign_green)
+    created.extend((windshield, rear_glass, destination))
+    for side in (-1, 1):
+        mirror_arm = add_beam_between(
+            world_col, "metro_city_bus_mirror_arm",
+            (bus_x+4.55, bus_center_y+side*1.20, METRO_TERRACE_DATUM+2.15),
+            (bus_x+4.82, bus_center_y+side*1.55, METRO_TERRACE_DATUM+2.12),
+            .055, steel_light)
+        mirror = add_box(world_col, "metro_city_bus_mirror", .18, .10, .30,
+                         bus_x+4.85, bus_center_y+side*1.57,
+                         METRO_TERRACE_DATUM+1.98, rubber)
+        created.extend((mirror_arm, mirror))
+    for side in (-1, 1):
+        for light_y in (-.70, .70):
+            headlight = add_box(world_col, "metro_city_bus_headlight", .07,
+                                .28, .22, bus_x+5.17,
+                                bus_center_y+light_y,
+                                METRO_TERRACE_DATUM+.75,
+                                lamp_glow if side > 0 else cafe_red)
+            if side < 0:
+                headlight.location.x = bus_x-5.17
+            created.append(headlight)
+    for wheel_x in (-3.45, 3.45):
+        for wheel_y in (-1.36, 1.36):
+            wheel = add_torus(world_col, "metro_city_bus_wheel", .40, .12,
+                              bus_x+wheel_x, bus_center_y+wheel_y,
+                              METRO_TERRACE_DATUM+.78, rubber,
+                              18, 7, (math.pi/2, 0, 0))
+            hub = add_uv_sphere(world_col, "metro_city_bus_hub", .18,
+                                bus_x+wheel_x, bus_center_y+wheel_y,
+                                METRO_TERRACE_DATUM+.80, steel_light, 6, 10)
+            hub.scale.y = .42
+            created.extend((wheel, hub))
+
+    # Four compact corner kiosks add errands and light without becoming new
+    # claimable buildings.  Their canopies use Followville's civic palette.
+    for kiosk_index, (kx, ky) in enumerate(((-155.0, 570.0), (125.0, 606.0),
+                                             (-155.0, 636.0), (125.0, 768.0))):
+        body = add_box(world_col, "metro_corner_kiosk", 3.2, 2.5, 2.5,
+                       kx, ky, METRO_TERRACE_DATUM+.17,
+                       cafe_gold if kiosk_index % 2 else civic_blue)
+        canopy = add_box(world_col, "metro_kiosk_canopy", 4.0, 3.25, .20,
+                         kx, ky, METRO_TERRACE_DATUM+2.67,
+                         cafe_red if kiosk_index % 2 else sign_green)
+        counter = add_box(world_col, "metro_kiosk_counter", 2.45, .42, .78,
+                          kx, ky-1.42, METRO_TERRACE_DATUM+.82, timber)
+        service_window = add_box(world_col, "metro_kiosk_window", 2.15, .06,
+                                 .92, kx, ky-1.272,
+                                 METRO_TERRACE_DATUM+1.36, storefront)
+        sign = add_box(world_col, "metro_kiosk_sign", 1.65, .08, .42,
+                       kx, ky-1.31, METRO_TERRACE_DATUM+2.26,
+                       cafe_gold if kiosk_index%2 == 0 else bus_white)
+        menu = add_box(world_col, "metro_kiosk_menu", .68, .06, .90,
+                       kx+1.28, ky-1.31, METRO_TERRACE_DATUM+.78,
+                       sign_green)
+        created.extend((body, canopy, counter, service_window, sign, menu))
+
+    # Six-lane expressway: continuous deck, median, lane markings, barriers,
+    # paired piers, and a diamond interchange into Crown Boulevard.
+    highway_points = list(expressway_points())
+    structure = _add_road_strip(world_col, "metro_expressway_structure",
+                                highway_points, highway_concrete,
+                                width=EXPRESSWAY_WIDTH+1.8,
+                                bottom_offset=-1.05, top_offset=-.04)
+    deck = _add_road_strip(world_col, "metro_expressway_deck", highway_points,
+                           asphalt, width=EXPRESSWAY_WIDTH,
+                           bottom_offset=-.03, top_offset=.18)
+    created.extend((structure, deck))
+    highway_length = EXPRESSWAY_Y1-EXPRESSWAY_Y0
+    highway_mid = (EXPRESSWAY_Y0+EXPRESSWAY_Y1)/2
+    for xoff in (-12.05, 0.0, 12.05):
+        barrier = add_box(world_col, "metro_expressway_barrier", .38,
+                          highway_length, .82, EXPRESSWAY_X+xoff,
+                          highway_mid, EXPRESSWAY_DECK_Z+.18, highway_rail)
+        created.append(barrier)
+    # Broken lane separators read correctly at driving height; solid edge
+    # lines keep the outer shoulders legible from the skyline camera.
+    for xoff in (-11.0, 11.0):
+        edge_line = add_box(world_col, "metro_expressway_edge_line", .13,
+                            highway_length-8.0, .025, EXPRESSWAY_X+xoff,
+                            highway_mid, EXPRESSWAY_DECK_Z+.185, white)
+        created.append(edge_line)
+    for xoff in (-8.0, -4.0, 4.0, 8.0):
+        for y in range(int(EXPRESSWAY_Y0)+8, int(EXPRESSWAY_Y1)-5, 12):
+            lane_dash = add_box(world_col, "metro_expressway_lane_dash", .13,
+                                4.0, .025, EXPRESSWAY_X+xoff, y,
+                                EXPRESSWAY_DECK_Z+.185, white)
+            created.append(lane_dash)
+    # Paired, inward-facing lights give the viaduct its own night-time rhythm
+    # without competing with the gantries at the Crown Boulevard interchange.
+    for y in range(int(EXPRESSWAY_Y0)+28, int(EXPRESSWAY_Y1)-18, 56):
+        for side in (-1, 1):
+            x = EXPRESSWAY_X + side*11.55
+            pole = add_box(world_col, "metro_expressway_light_pole", .20, .20,
+                           6.4, x, y, EXPRESSWAY_DECK_Z+.18, metal)
+            arm = add_box(world_col, "metro_expressway_light_arm", 1.45, .16,
+                          .16, x-side*.70, y, EXPRESSWAY_DECK_Z+6.50, metal)
+            lamp = add_box(world_col, "metro_expressway_light", .72, .38, .18,
+                           x-side*1.30, y, EXPRESSWAY_DECK_Z+6.35, warm_light)
+            created.extend((pole, arm, lamp))
+    for y in range(int(EXPRESSWAY_Y0)+24, int(EXPRESSWAY_Y1)-20, 38):
+        ground = terrain_height(EXPRESSWAY_X, y)
+        for xoff in (-6.2, 6.2):
+            pier = add_ngon_cone(world_col, "metro_expressway_pier", .95, .72,
+                                 EXPRESSWAY_DECK_Z-ground-1.02, 8,
+                                 EXPRESSWAY_X+xoff, y, ground, highway_concrete)
+            created.append(pier)
+        cap = add_box(world_col, "metro_expressway_pier_cap", 17.0, 1.2, .75,
+                      EXPRESSWAY_X, y, EXPRESSWAY_DECK_Z-1.72, highway_concrete)
+        created.append(cap)
+    for index, ramp in enumerate(METRO_RAMPS):
+        ramp_obj = _add_road_strip(world_col, "metro_interchange_ramp_%d" % index,
+                                   list(ramp["points"]), asphalt, width=5.4,
+                                   bottom_offset=-.34, top_offset=.14)
+        created.append(ramp_obj)
+
+    # Overhead wayfinding gives the regional road a credible purpose.
+    for y, label_side in ((566.0, -1), (742.0, 1)):
+        for xoff in (-9.5, 9.5):
+            post = add_box(world_col, "metro_sign_post", .32, .32, 5.4,
+                           EXPRESSWAY_X+xoff, y, EXPRESSWAY_DECK_Z+.18, metal)
+            created.append(post)
+        beam = add_box(world_col, "metro_sign_gantry", 20.0, .36, .36,
+                       EXPRESSWAY_X, y, EXPRESSWAY_DECK_Z+5.35, metal)
+        sign = add_box(world_col, "metro_expressway_sign", 8.8, .22, 2.4,
+                       EXPRESSWAY_X+label_side*4.8, y,
+                       EXPRESSWAY_DECK_Z+4.15, sign_green)
+        created.extend((beam, sign))
+
+    for obj in created:
+        if obj is not None:
+            obj["nb_feature_role"] = obj.get("nb_feature_role", "metropolitan")
+    return [obj for obj in created if obj is not None]
+
+
 def build_river_chapter(world_col, buildings, m):
     """Build the permanent river valley, riparian belt, and first crossing.
 
@@ -7023,8 +7933,8 @@ def build_river_chapter(world_col, buildings, m):
     stone = mat("FV_river_boulder", (.30, .32, .31), .98)
     bank_trees = []
     rafting_active = any(b.get("type") == "raftingstation" for b in buildings)
-    for index in range(120):
-        y = -322.0+index*(832.0/119.0)
+    for index in range(176):
+        y = -322.0+index*(1212.0/175.0)
         if abs(y+215.0) < 42.0:
             continue
         side = -1 if index % 2 else 1
@@ -8106,6 +9016,48 @@ def animate_traffic(world_col, buildings, frame_end, day):
         for fc in obj_fcurves(e):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
+
+    # Crown Quarter has its own traffic scale.  Legacy block extents end south
+    # of the new district, so the ordinary traffic pass above can never put a
+    # moving vehicle between its towers or on the elevated expressway.
+    if any(b.get("type") == "metrotower" for b in buildings):
+        metro_routes = (
+            ((-215.0, 585.4, METRO_TERRACE_DATUM+.20),
+             (185.0, 585.4, METRO_TERRACE_DATUM+.20), 0.0),
+            ((185.0, 590.6, METRO_TERRACE_DATUM+.20),
+             (-215.0, 590.6, METRO_TERRACE_DATUM+.20), math.pi),
+            ((-122.4, 490.0, METRO_TERRACE_DATUM+.20),
+             (-122.4, 835.0, METRO_TERRACE_DATUM+.20), math.pi/2),
+            ((22.4, 835.0, METRO_TERRACE_DATUM+.20),
+             (22.4, 490.0, METRO_TERRACE_DATUM+.20), -math.pi/2),
+            ((EXPRESSWAY_X-10.0, EXPRESSWAY_Y0+8.0, EXPRESSWAY_DECK_Z+.22),
+             (EXPRESSWAY_X-10.0, EXPRESSWAY_Y1-8.0, EXPRESSWAY_DECK_Z+.22),
+             math.pi/2),
+            ((EXPRESSWAY_X-6.0, EXPRESSWAY_Y1-8.0, EXPRESSWAY_DECK_Z+.22),
+             (EXPRESSWAY_X-6.0, EXPRESSWAY_Y0+8.0, EXPRESSWAY_DECK_Z+.22),
+             -math.pi/2),
+            ((EXPRESSWAY_X+6.0, EXPRESSWAY_Y0+8.0, EXPRESSWAY_DECK_Z+.22),
+             (EXPRESSWAY_X+6.0, EXPRESSWAY_Y1-8.0, EXPRESSWAY_DECK_Z+.22),
+             math.pi/2),
+            ((EXPRESSWAY_X+10.0, EXPRESSWAY_Y1-8.0, EXPRESSWAY_DECK_Z+.22),
+             (EXPRESSWAY_X+10.0, EXPRESSWAY_Y0+8.0, EXPRESSWAY_DECK_Z+.22),
+             -math.pi/2),
+        )
+        for route_index, (start, finish, rotation) in enumerate(metro_routes):
+            vehicle = place_instance(
+                world_col,
+                {"type": "car", "gx": 0, "gy": 0,
+                 "seed": 29000+day*19+route_index},
+                "metro_moving_traffic")
+            vehicle.scale = (.78, .78, .78)
+            vehicle.rotation_euler.z = rotation
+            vehicle.location = start
+            vehicle.keyframe_insert("location", frame=1)
+            vehicle.location = finish
+            vehicle.keyframe_insert("location", frame=frame_end)
+            for fc in obj_fcurves(vehicle):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
 
 def animate_ducks(world_col, buildings, frame_end):
     """Ducks paddle slow loops around every pond in town -- the water version
@@ -10456,6 +11408,55 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "metroreveal":
+        # Reusable first-day Crown Quarter reveal. One continuous northward
+        # journey establishes the historic core, follows the inherited grid,
+        # crosses to the expressway, then settles inside the new downtown.
+        aim = bpy.data.objects.new("MetroRevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("MetroRevealCamera")
+        cam_data.lens = 25
+        cam_data.clip_start = 8.0
+        cam_data.clip_end = 10000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("MetroRevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Historic grid and the Northgate arterial: prove continuity first.
+            # Stay over built fabric until the metro roads are substantially
+            # drawn. Flying north at frame 210 used to spend five seconds
+            # staring into the empty terrain shelf while roads built offscreen.
+            (1,   (35.0, -285.0, 560.0), (5.0, 80.0, 8.0)),
+            (150, (30.0, -60.0, 500.0),  (0.0, 300.0, 9.0)),
+            (300, (20.0, 180.0, 420.0),  (0.0, 430.0, 10.0)),
+            (390, (15.0, 315.0, 350.0),  (0.0, 520.0, 12.0)),
+            # Arc east after the street ribbons finish, revealing the viaduct
+            # and interchange while the first tower starts to rise.
+            (470, (300.0, 455.0, 300.0), (105.0, 625.0, 18.0)),
+            (550, (335.0, 690.0, 245.0), (85.0, 655.0, 22.0)),
+            # Swing north of the skyline so the towers layer against old town.
+            (630, (185.0, 875.0, 220.0), (5.0, 665.0, 32.0)),
+            (700, (35.0, 835.0, 150.0),  (0.0, 650.0, 35.0)),
+            # Touch boulevard scale, then climb to a complete three-tower
+            # portrait for --still and the final video hold.
+            (740, (15.0, 735.0, 78.0),   (15.0, 630.0, 18.0)),
+            (780, (-85.0, 790.0, 180.0), (-85.0, 555.0, 30.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day41reveal":
         # Day 41, 30 seconds, one unbroken move. +300 in a day fills a whole
         # quarter at once -- the rest of Foundry Street, all of Lantern Row,
@@ -12415,13 +13416,51 @@ def main(cfg=None):
                     n -= take
                     if n <= 0:
                         continue
-                # regular houses stay out of blocks that hold custom homes
-                custom_blocks = set()
-                for b in state["buildings"]:
-                    if b["type"].endswith("house") and b["type"] != "house":
-                        for cgx, cgy in footprint(b):
-                            custom_blocks.add((cgx // BLOCK_N, cgy // BLOCK_N))
-                lots = find_free_lots(n, size, occupied, custom_blocks, fill_mode=fill_mode)
+                # Once the deterministic ordinary reserve is exhausted, new
+                # followers occupy Crown Quarter at 100 residents per tower.
+                # A partial tower is filled before another address is created;
+                # the first partial group still earns the building, matching
+                # Cade's approved ceil(overage/100) reveal rule.
+                existing_towers = sorted(
+                    (b for b in state["buildings"] if b.get("type") == "metrotower"),
+                    key=lambda b: int(b.get("metro_id", 0)))
+                for tower in existing_towers:
+                    if n <= 0:
+                        break
+                    current = int(tower.get("residents", TOWER_RESIDENT_CAPACITY))
+                    room = max(0, TOWER_RESIDENT_CAPACITY-current)
+                    moved = min(n, room)
+                    if moved:
+                        tower["residents"] = current+moved
+                        n -= moved
+                built_metro_ids = {int(b.get("metro_id", 0))
+                                   for b in existing_towers}
+                for slot in METRO_TOWER_PLAN:
+                    if n <= 0:
+                        break
+                    if int(slot["metro_id"]) in built_metro_ids:
+                        continue
+                    residents = min(TOWER_RESIDENT_CAPACITY, n)
+                    tower = {
+                        "type": "metrotower", "gx": 0, "gy": 0,
+                        "px": slot["x"], "py": slot["y"], "pz": slot["z"],
+                        "rot": slot["rot"], "metro_id": slot["metro_id"],
+                        "district": slot["district"], "street": slot["street"],
+                        "resident_capacity": TOWER_RESIDENT_CAPACITY,
+                        "residents": residents,
+                        "seed": state["seed_counter"], "day": state["day"],
+                    }
+                    state["seed_counter"] += 1
+                    state["buildings"].append(tower)
+                    new_batch.append(tower)
+                    built_metro_ids.add(int(slot["metro_id"]))
+                    n -= residents
+                if n > 0:
+                    raise RuntimeError(
+                        "Crown Quarter is full: %d followers exceed its remaining "
+                        "%d-person tower reserve" %
+                        (n, METRO_TOWER_COUNT*TOWER_RESIDENT_CAPACITY))
+                continue
             else:
                 lots = find_free_lots(n, size, occupied, fill_mode=fill_mode)
             for gx, gy in lots:
@@ -12575,6 +13614,10 @@ def main(cfg=None):
             e["nb_world_district"] = str(b["district"])
         if b.get("plan_id"):
             e["nb_world_plan_id"] = int(b["plan_id"])
+        if b.get("metro_id"):
+            e["nb_world_metro_id"] = int(b["metro_id"])
+            e["nb_resident_capacity"] = int(b.get("resident_capacity", 100))
+            e["nb_residents"] = int(b.get("residents", 0))
         if id(b) in new_ids:
             rise.append(e)
         elif id(b) in rem_ids:
@@ -12589,6 +13632,8 @@ def main(cfg=None):
     river_road_objects = build_suburban_roads(
         world_col, keep or state["buildings"], m)
     river_objects = build_river_chapter(world_col, keep or state["buildings"], m)
+    metro_objects = build_metropolitan_district(
+        world_col, keep or state["buildings"], m)
     build_hillside_foundations(world_col, keep or state["buildings"])
     build_storybook_street(world_col, keep or state["buildings"])
     # Isolated, state-free public-realm layer. The module owns no houses,
@@ -12629,6 +13674,8 @@ def main(cfg=None):
         frame_end = 126               # 4.2s, the payoff held
     elif cfg.get("cam") == "day41reveal":
         frame_end = FPS * 30          # exactly thirty seconds, not "at least"
+    elif cfg.get("cam") == "metroreveal":
+        frame_end = FPS * 26          # historic city -> highway -> boulevard
     elif cfg.get("cam") == "day40reveal":
         frame_end = FPS * 27          # 21s drone run, then 6s on the station
     elif cfg.get("cam") == "day39reveal":
@@ -12684,7 +13731,35 @@ def main(cfg=None):
     for e in sink:
         animate_sink(e, f)
         f += stagger
-    if cfg.get("cam") == "day41reveal":
+    if cfg.get("cam") == "metroreveal":
+        home_roots = sorted(
+            (e for e in rise if e.name.startswith("house_d")),
+            key=lambda o: (o.location.y, o.location.x))
+        tower_roots = sorted(
+            (e for e in rise if e.name.startswith("metrotower_d")),
+            key=lambda o: int(o.get("nb_world_metro_id", 0)))
+        for index, root in enumerate(home_roots):
+            animate_rise(root, 205 + int(index*1.15), dur=24)
+
+        first_metro_day = any(int(e.get("nb_world_metro_id", 0)) == 1
+                              for e in tower_roots)
+        if first_metro_day:
+            ribbon_prefixes = ("metro_road_", "metro_expressway_structure",
+                               "metro_expressway_deck", "metro_interchange_ramp_")
+            ribbons = [obj for obj in metro_objects
+                       if obj.name.startswith(ribbon_prefixes)]
+            trim = [obj for obj in metro_objects if obj not in ribbons]
+            for index, obj in enumerate(ribbons):
+                animate_road_build(obj, 285 + min(index, 10)*4, dur=112)
+            for index, obj in enumerate(trim):
+                _keyframe_hidden(obj, 1, True)
+                _keyframe_hidden(obj, 372 + min(index, 70), False)
+        for index, root in enumerate(tower_roots):
+            animate_rise(root, 430 + index*38, dur=62)
+        for root in rise:
+            if root not in home_roots and root not in tower_roots:
+                animate_rise(root, 250, dur=30)
+    elif cfg.get("cam") == "day41reveal":
         # +300 in one day is a whole quarter at once, so nothing here tracks an
         # individual house. The roads draw themselves on along their own
         # length, then three hundred homes rise in one wave, all of it under a

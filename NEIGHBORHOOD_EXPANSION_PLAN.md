@@ -7,10 +7,11 @@ Chapter three adds addresses 617-1126 on a gridded quarter north of the
 town -- see "Chapter three" below, and note that ten of those addresses are
 deliberately not houses.
 
-Current progress: addresses 1-576 are built through Day 34 (population 720).
-The permanent Followville First Alert Weather station is a separate civic
-landmark record and does not consume an address or change population; address
-577 remains next.
+Current progress: ordinary growth has reached address 1014 through Day 41
+(population 1,240). Plan IDs 1015-1126 remain; 109 are ordinary houses and
+three are reserved civic addresses that ordinary growth steps over. After
+those 109 houses, growth continues into the 20-tower Crown Quarter reserve in
+`metropolitan_plan.py`; see `METROPOLITAN_EXPANSION_PLAN.md`.
 Day 15 added addresses 111-115 plus ten separate Kaleidoscope Crest
 `storybookhouse` feature homes; those feature homes do not consume ordinary
 reserve addresses. Day 16 consumed addresses 116-128, completing Willow Hills

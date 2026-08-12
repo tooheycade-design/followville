@@ -4,7 +4,7 @@ import math
 
 from neighborhood_plan import RIVER_CENTERLINE, RIVER_HALF_WIDTH
 
-TERRAIN_BOUNDS = (-520.0, 800.0, -360.0, 540.0)
+TERRAIN_BOUNDS = (-520.0, 800.0, -360.0, 920.0)
 FACADE_ATTACHMENT_EMBED = 0.01
 MIN_VISIBLE_SURFACE_CLEARANCE = 0.05
 
@@ -193,6 +193,66 @@ def terrain_height(x, y):
         max(0.0, abs(y-400.0)-100.0))
     terrace = 1.0-_smoothstep(0.0, 65.0, terrace_distance)
     height = height*(1.0-terrace)+TERRACE_DATUM*terrace
+
+    # Crown Quarter continues the Northgate/Southline engineering datum north
+    # instead of creating a separate platform.  The south core overlaps the
+    # existing terrace, so no standing address moves; west and north feather
+    # into open hills, while the short east feather finishes before the river.
+    metro_distance = math.hypot(
+        max(0.0, (-230.0-x)*0.60, (x-290.0)*1.50),
+        max(0.0, 486.0-y, y-824.0))
+    metro_terrace = 1.0-_smoothstep(0.0, 75.0, metro_distance)
+    height = height*(1.0-metro_terrace)+TERRACE_DATUM*metro_terrace
+
+    # Chapter four's West Quarter -- the westward continuation of Southline
+    # Avenue, Millrace Street and Kettle Row, and the arm that runs north up
+    # the outside of Crown Quarter. Same 5.00m datum again, for the same
+    # reason: it is the same grid carried on, and a second datum would put a
+    # step through the middle of three streets the town already drives down.
+    #
+    # The core runs x=-766..-180 and y=404..826. Its eastern end overlaps the
+    # built quarter, which is the point -- the seam has to be one continuous
+    # surface -- and everything it overlaps is already sitting at exactly this
+    # datum, so the lerp there is 5.00 toward 5.00 and moves nothing.
+    #
+    # The cut is real on the western half: the ridge stands at 24.7m under
+    # Southline Avenue West's far end and the quarter is graded down to 5.00.
+    #
+    # SOUTH is the feather that decides everything, and 110m is not a taste --
+    # it is the largest number Willow Hills allows. Its northernmost houses
+    # stand at (-241.5, 268.0) on 12.15m ground and (-213.3, 272.2) on 9.08m,
+    # and existing geometry never moves. From the core edge at y=404 a 110m
+    # feather dies at y=294, twenty-two metres clear of them. That is also why
+    # the quarter starts at Southline Avenue rather than carrying Northgate
+    # Avenue west as well: a core edge at y=296 would have put a 0.93-weight
+    # lerp straight through those gardens.
+    #
+    # WEST is 0.55 (200m effective) because the ground falls away that side and
+    # a long feather costs nothing there.
+    #
+    # EAST stops at x=-300, not at the seam, and that is the whole trick. The
+    # obvious core ran east to x=-180 so the quarter's avenues would meet the
+    # built grid on one flat surface -- and it moved the built world: 7.5mm
+    # under a standing Northgate house and 0.203m along Lantern Row, twenty
+    # times the 1cm this project holds itself to. The cause is that chapter
+    # three's own terrace is not quite at full weight out there, so its ground
+    # sits at 5.01-5.18m rather than exactly 5.00, and lerping it again pulled
+    # it down.
+    #
+    # Stopping at -300 leaves the 110m strip between the terrace and the seam
+    # on natural ground, which turns out to be exactly right: it already runs a
+    # smooth 5.0 to 5.9m, about 1.5% across the strip, so the three avenues
+    # ramp gently from the new quarter up into the built grid with no step and
+    # nothing engineered. A flat surface was never the requirement -- a
+    # continuous one was.
+    #
+    # Re-verified after this change over all 1,236 standing buildings, all
+    # 1,126 previously reserved addresses and every existing plan road.
+    west_distance = math.hypot(
+        max(0.0, (-766.0-x)*0.55, (x+300.0)*4.00),
+        max(0.0, 404.0-y, y-826.0))
+    west_terrace = 1.0-_smoothstep(0.0, 110.0, west_distance)
+    height = height*(1.0-west_terrace)+TERRACE_DATUM*west_terrace
 
     distance = river_distance(x, y)
 

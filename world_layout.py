@@ -327,6 +327,8 @@ LANDMARK_FOOTPRINTS = {
     "elementaryschool": (-14.20, 14.20, -14.20, 14.20, False),
     "followmart":      (-17.00, 17.00, -17.00, 17.00, False),
     "firestation":     (-18.00, 18.00, -18.00, 18.00, False),
+    # Crown Quarter podium slab; the tower mass stays inside this envelope.
+    "metrotower":      (-19.00, 19.00, -20.00, 20.00, False),
 }
 
 # Authored ground that stands above the terrain. A road whose deck is taken
@@ -407,6 +409,8 @@ INTENTIONALLY_RAISED_ROADS = [
     # abutments sit lower than the water between them and the span is arched to
     # keep 0.90m of daylight over it.
     ("Timber Bend Crossing deck", 332.0, 400.0, 137.0, 147.0),
+    ("Crown Expressway viaduct", 208.0, 236.0, 250.0, 858.0),
+    ("Crown interchange ramps", 183.0, 261.0, 580.0, 730.0),
 ]
 
 # Water surfaces that must be level, with how far their rim may fall across
@@ -438,7 +442,8 @@ LANDMARK_APPROACHES = {
 # Roads that carry their own authored heights rather than following the
 # terrain. These are allowed inside KEEP_OUT_REGIONS, because climbing onto
 # the raised ground is the whole point of them.
-AUTHORED_ELEVATION_ROADS = {"Kaleidoscope Crest access"}
+AUTHORED_ELEVATION_ROADS = {"Kaleidoscope Crest access",
+                            "Crown Expressway", "Crown interchange ramps"}
 
 
 def rafting_access_points(step=3.0):
@@ -659,6 +664,24 @@ def walk_surface_manifest(state):
             [(x, y, terrain_height(x, y) + .085)
              for x, y in northgate_arterial_points()],
             ARTERIAL_HALF_WIDTH)
+
+    if any(building.get("type") == "metrotower"
+           for building in state.get("buildings", [])):
+        from metropolitan_plan import (STREETS as METRO_STREETS,
+                                       RAMPS as METRO_RAMPS,
+                                       TERRACE_DATUM as METRO_DATUM,
+                                       EXPRESSWAY_WIDTH,
+                                       expressway_points)
+        for street in METRO_STREETS:
+            append_graded_road(
+                [(x, y, METRO_DATUM + .19) for x, y in street["points"]],
+                street["width"] / 2.0)
+        append_graded_road(
+            [(x, y, z + .18) for x, y, z in expressway_points()],
+            EXPRESSWAY_WIDTH / 2.0)
+        for ramp in METRO_RAMPS:
+            append_graded_road(
+                [(x, y, z + .14) for x, y, z in ramp["points"]], 2.7)
 
     salmon_shop = next((building for building in state.get("buildings", [])
                         if building.get("type") == "salmonproshop"), None)
