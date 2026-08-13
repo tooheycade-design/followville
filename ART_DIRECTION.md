@@ -13,6 +13,14 @@ Friendly low-poly Instagram town. Readable on a phone. Colorful, clean, walkable
 6. **Castle (seed 5)** and all claimable homes stay unless Zach/Cade explicitly say otherwise.
 7. **Procedural massing towers** only on truly empty blocks; placing Mart removes that block’s tower.
 8. **Forest** = edge district only (`North Woods`), not random street trees.
+9. **No box-built humanoids or paper-cutout identity tags in cinematic work.**
+   Rendered people must use the approved Followville avatar library (or a
+   separately reviewed, license-cleared character asset) at believable human
+   scale. Do not assemble visible characters from rectangular torso/limb
+   primitives; this reads as Minecraft and is outside Followville's style.
+   Floating usernames must be spatial materials with real thickness, rounded
+   geometry, transmission/reflection and lighting response. A flat opaque card
+   with an outline is not "liquid glass" and must not ship.
 
 ## Scale
 
