@@ -247,6 +247,9 @@ function Sync-Houses {
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
             'civicsquare', 'fishingpond', 'weatherstation', 'constructionzone', 'movietheater',
             'forestreserve',
+            # Followville Point Station -- a power station, not a home. Without
+            # this the sync offers a nuclear reactor as a claimable property.
+            'nuclearplant',
             'tree', 'bush', 'rock', 'duck'
         )
         $NewRows = @()

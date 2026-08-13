@@ -49,6 +49,10 @@ NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "s
                        # one and live in it. Every other chapter-three special
                        # was already covered above.
                        "gasstation", "restaurant",
+                       # Followville Point Station. It is a power station, not
+                       # a home, and without this line the sync would offer a
+                       # nuclear reactor as a claimable property.
+                       "nuclearplant",
                        "tree", "bush", "rock", "duck"}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
