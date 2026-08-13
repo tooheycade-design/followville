@@ -175,6 +175,10 @@ def every_road(state):
                       [(x, y) for x, y, _z in timber_crossing_points()]))
     if active >= NORTHGATE_ARTERIAL_REVEAL:
         roads.append(("Northgate arterial", northgate_arterial_points()))
+    if "nuclearplant" in present:
+        from world_layout import point_road_points, station_trail_points
+        roads.append(("Point Road", point_road_points()))
+        roads.append(("Station Trail", station_trail_points()))
     if any(b.get("type") == "metrotower" for b in buildings):
         from metropolitan_plan import STREETS, RAMPS, expressway_points
         for street in STREETS:

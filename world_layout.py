@@ -193,6 +193,86 @@ def _spine_y(x):
     return pts[-1][1]
 
 
+# ── Followville Point Station ───────────────────────────────────────────────
+#
+# The nuclear station, on the east bank north of Eastbank Village.
+#
+# The siting is measured, not chosen. A plant needs cooling water, so it has to
+# be ON the river; it needs a buffer from housing; and it needs to reach a road
+# that already goes somewhere. Scoring the whole corridor against those found:
+#
+#   * the reach SOUTH of the Timber Bend Crossing is floodplain -- the east
+#     bank there sits 0.5-1.3m BELOW the river surface, because that is where
+#     the river runs perched above its own meadow;
+#   * the bank beside the log houses is taken -- Eastbank Village's reserve
+#     puts addresses 3-70m away;
+#   * and NO point on this river is 150m from a home. Both banks are lined by
+#     the reserve. That is the geography, not a failure of searching.
+#
+# This site is the best available: about 150m of buffer, flat, 100m from the
+# water, and past the last neighbourhood -- which is where such a plant goes.
+NUCLEAR_PLANT_CENTER = (446.0, 556.0)
+# Local footprint, x0 x1 y0 y1. Wider on -X than the fenced pad because the
+# cooling intake runs off that side toward the river and must be audited too.
+NUCLEAR_PLANT_FOOTPRINT = (-62.0, 38.0, -30.0, 34.0)
+
+# Point Road: the road that goes out there. It leaves Ferry Street where that
+# street is still running, not at its cul-de-sac bulb, and carries on past the
+# plant to a river overlook -- so it is a road to somewhere, and the plant
+# happens to be on it, rather than a private spur drawn across a meadow.
+POINT_ROAD_SPINE = [
+    (452.0, 397.0), (458.0, 416.0), (464.0, 442.0), (469.0, 470.0),
+    (471.0, 498.0), (471.0, 524.0), (469.0, 550.0), (465.0, 576.0),
+    (458.0, 600.0), (448.0, 620.0), (436.0, 634.0), (424.0, 642.0),
+]
+# Station Trail: the dirt service track off Point Road to the plant gate. It
+# is short on purpose -- the gate is 30m off the road, and a long private
+# drive is exactly what this siting exists to avoid.
+STATION_TRAIL_SPINE = [
+    (471.0, 497.0), (464.0, 501.0), (456.0, 508.0), (449.0, 516.0),
+    (445.0, 522.0), (444.0, 526.0),
+]
+NUCLEAR_TRAIL_HALF_WIDTH = 2.1
+NUCLEAR_ROAD_HALF_WIDTH = 3.1
+
+
+def _densify(spine, step):
+    import math
+    points = []
+    for a, b in zip(spine, spine[1:]):
+        count = max(1, int(math.ceil(math.hypot(b[0] - a[0], b[1] - a[1]) / step)))
+        for index in range(count):
+            t = index / count
+            points.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    points.append(tuple(spine[-1]))
+    return points
+
+
+def point_road_points(step=3.0):
+    """Point Road's centreline, sampled at the three metres every authored
+    road here uses -- the walk surface takes these points as given."""
+    return _densify(POINT_ROAD_SPINE, step)
+
+
+def station_trail_points(step=2.5):
+    return _densify(STATION_TRAIL_SPINE, step)
+
+
+def nuclear_plant_base_height():
+    """Level datum for the station's pad, pinned above its HIGHEST corner.
+
+    Same rule as the Salmon Pro Shop: the terrain mesh comes from
+    terrain_height(), so a pad set any lower has the ground rising through its
+    own switchyard.
+    """
+    from downtown_visual_plan import terrain_height
+    cx, cy = NUCLEAR_PLANT_CENTER
+    x0, x1, y0, y1 = NUCLEAR_PLANT_FOOTPRINT
+    return max(terrain_height(cx + dx, cy + dy)
+               for dx in (x0, (x0 + x1) / 2.0, x1)
+               for dy in (y0, (y0 + y1) / 2.0, y1)) + .05
+
+
 # Followville First Alert Weather sits on a retained terrace immediately north
 # of the legacy grid. Its diagonal drive climbs from the north edge street
 # without extending the flat downtown road grid into the surrounding hillside.
@@ -329,6 +409,10 @@ LANDMARK_FOOTPRINTS = {
     "firestation":     (-18.00, 18.00, -18.00, 18.00, False),
     # Crown Quarter podium slab; the tower mass stays inside this envelope.
     "metrotower":      (-19.00, 19.00, -20.00, 20.00, False),
+    # Followville Point Station. Rural: it belongs outside the paved town, and
+    # the -X extent covers the cooling intake running toward the river, which
+    # reaches well past the fenced pad.
+    "nuclearplant":    (-62.00, 38.00, -30.00, 34.00, True),
 }
 
 # Authored ground that stands above the terrain. A road whose deck is taken
@@ -437,6 +521,9 @@ LANDMARK_APPROACHES = {
     "salmonproshop": {"Salmon Pro Shop approach"},
     "apartmentcomplex": {"Followville Commons approach"},
     "weatherstation": {"First Alert Weather access"},
+    # The trail exists to reach the gate, and Point Road runs along the site's
+    # eastern fence on its way north to the overlook.
+    "nuclearplant": {"Station Trail", "Point Road"},
 }
 
 # Roads that carry their own authored heights rather than following the
@@ -682,6 +769,16 @@ def walk_surface_manifest(state):
         for ramp in METRO_RAMPS:
             append_graded_road(
                 [(x, y, z + .14) for x, y, z in ramp["points"]], 2.7)
+
+    # Point Road and the station trail appear with the station they serve.
+    if any(building.get("type") == "nuclearplant"
+           for building in state.get("buildings", [])):
+        append_graded_road(
+            [(x, y, terrain_height(x, y) + .085) for x, y in point_road_points()],
+            NUCLEAR_ROAD_HALF_WIDTH)
+        append_graded_road(
+            [(x, y, terrain_height(x, y) + .06) for x, y in station_trail_points()],
+            NUCLEAR_TRAIL_HALF_WIDTH)
 
     salmon_shop = next((building for building in state.get("buildings", [])
                         if building.get("type") == "salmonproshop"), None)

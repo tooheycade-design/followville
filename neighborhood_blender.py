@@ -219,6 +219,7 @@ def _cli():
              "--salmonproshop": "salmonproshop",
              "--commons": "apartmentcomplex",
              "--gasstation": "gasstation",
+             "--nuclearplant": "nuclearplant",
              "--foodcourt": "foodcourt"}
     keys = {"--pop": "pop", "--gained": "gained", "--lost": "lost",
             "--followers": "followers", "--houses": "gained",
@@ -536,6 +537,26 @@ def _link_only(obj, col):
         c.objects.unlink(obj)
     col.objects.link(obj)
 
+def mat_emissive(name, rgb, rough=.34, strength=1.0):
+    """A flat colour that also emits.
+
+    mat() has no emission argument and widening it would touch every material
+    in the town, so the Principled node is reached directly here. The input is
+    called "Emission Color" on current Blender and "Emission" on older builds,
+    hence the lookup rather than a fixed key.
+    """
+    m = mat(name, rgb, rough)
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        for key in ("Emission Color", "Emission"):
+            if key in bsdf.inputs:
+                bsdf.inputs[key].default_value = (rgb[0], rgb[1], rgb[2], 1.0)
+                break
+        if "Emission Strength" in bsdf.inputs:
+            bsdf.inputs["Emission Strength"].default_value = strength
+    return m
+
+
 def add_box(col, name, w, d, h, x, y, z, material):
     """Box of size w,d,h whose BOTTOM sits at z."""
     verts, faces = [], []
@@ -651,6 +672,97 @@ def add_offset_pyramid(col, name, w, d, h, x, y, z, apex_dx, apex_dy, material):
     obj.location = (x, y, z)
     col.objects.link(obj)
     return obj
+
+def add_ring_sector(col, name, r_inner, r_outer, a0, a1, thickness,
+                    x, y, z, material, facing=None, segments=8):
+    """A flat annular sector lying in local XY, extruded by `thickness`.
+
+    Built for signage: a radiation trefoil is three of these plus a disc, and
+    nothing else in the toolkit can cut a wedge out of a ring.
+
+    `facing` is a horizontal angle in radians. Given one, the sector is turned
+    so its face points that way -- Blender's XYZ euler applies Rz*Ry, and
+    Ry(90 deg) already maps local +Z onto +X, so (0, pi/2, facing) aims the
+    face along (cos facing, sin facing, 0). That is what lets a sign stand
+    proud of a curved wall instead of lying on the ground.
+    """
+    verts, faces = [], []
+    for i in range(segments + 1):
+        a = a0 + (a1 - a0) * i / segments
+        ca, sa = math.cos(a), math.sin(a)
+        verts += [(r_inner * ca, r_inner * sa, 0.0),
+                  (r_outer * ca, r_outer * sa, 0.0),
+                  (r_inner * ca, r_inner * sa, thickness),
+                  (r_outer * ca, r_outer * sa, thickness)]
+    for i in range(segments):
+        b, n = 4 * i, 4 * (i + 1)
+        faces += [(b, b + 1, n + 1, n),                 # underside
+                  (b + 2, n + 2, n + 3, b + 3),         # face
+                  (b + 1, b + 3, n + 3, n + 1),         # outer rim
+                  (b, n, n + 2, b + 2)]                 # inner rim
+    last = 4 * segments
+    faces += [(0, 2, 3, 1), (last, last + 1, last + 3, last + 2)]
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    obj.location = (x, y, z)
+    if facing is not None:
+        obj.rotation_euler = (0.0, math.pi / 2, facing)
+    obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
+
+def add_wrapped_sector(col, name, cx, cy, theta0, z0, r_inner, r_outer,
+                       a0, a1, standoff, thickness, radius_at, material,
+                       segments=10):
+    """An annular sector WRAPPED onto a vertical surface of revolution.
+
+    Signage on a round tower cannot be a flat plate. A flat disc tangent to a
+    curved wall sinks into it away from the tangent point -- for a 3.4m disc on
+    an 11.5m tower the edges are 0.51m inside the shell, which is exactly the
+    "phasing through the building" it looks like. Standing the plate far enough
+    off to clear the curve turns it into a billboard hanging in the air, and
+    the standoff grows with the square of the sign's size, so it gets worse the
+    bigger the sign.
+
+    So the sign is built in the wall's own geometry instead. The sector is laid
+    out in unwrapped coordinates -- u along the surface, v up it -- and every
+    vertex is mapped back onto the surface at ``radius_at(z) + standoff``.
+    ``radius_at`` is a callable so the sign follows a taper: a cooling tower
+    loses 0.2m of radius per metre of height, so a ten-metre sign at constant
+    radius would still bury its lower edge.
+    """
+    verts, faces = [], []
+    for i in range(segments + 1):
+        a = a0 + (a1 - a0) * i / segments
+        ca, sa = math.cos(a), math.sin(a)
+        for r in (r_inner, r_outer):
+            u, v = r * ca, r * sa
+            z = z0 + v
+            base = radius_at(z) + standoff
+            for depth in (0.0, thickness):
+                angle = theta0 + u / max(.001, base)
+                rad = base + depth
+                verts.append((cx + rad * math.cos(angle),
+                              cy + rad * math.sin(angle), z))
+    for i in range(segments):
+        b, n = 4 * i, 4 * (i + 1)
+        faces += [(b, b + 2, n + 2, n),                 # inner rim
+                  (b + 1, n + 1, n + 3, b + 3),         # outer rim
+                  (b + 2, b + 3, n + 3, n + 2),         # face
+                  (b, n, n + 1, b + 1)]                 # back
+    last = 4 * segments
+    faces += [(0, 1, 3, 2), (last, last + 2, last + 3, last + 1)]
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    obj.data.materials.append(material)
+    col.objects.link(obj)
+    return obj
+
 
 def add_prism_roof(col, name, w, d, h, x, y, z, material):
     """Gable roof: triangular prism, ridge along x. Bottom at z."""
@@ -4251,6 +4363,473 @@ def build_food_house(col, variant):
     _merge_asset_meshes(col, "food_house_%02d" % variant)
 
 
+def build_nuclear_plant(col, seed):
+    """Followville Point Station: cooling tower, containment, turbine hall.
+
+    Authored front-on-local-minus-Y like every other landmark, so the access
+    road can arrive at the gate with no special casing in placement.
+
+    The silhouette is the whole job. At the distance this will usually be seen
+    -- across the river, from the log houses, from an aerial -- what reads is
+    the hyperboloid cooling tower and the containment dome beside it, so those
+    two carry the shape and everything else is supporting mass at a lower
+    height. The tower is built as five stacked frusta rather than a true
+    hyperboloid: at twenty sides the silhouette is indistinguishable and it
+    stays inside the low-poly budget the rest of the town is built to.
+
+    Every stacked segment OVERLAPS the one below by BITE rather than resting on
+    it. A cone whose bottom face lands exactly on another's top face puts two
+    coplanar faces in the scene; they are hidden inside the tower, but the
+    depth rule is about not authoring them at all, and an overlap costs
+    nothing. The same applies to everything standing on the pad, which goes
+    through `seated`.
+
+    Ground plan, all inside the declared envelope x[-38,38] y[-30,34]:
+        cooling tower north-west, containment + turbine hall through the
+        middle, switchyard east, admin and gate south, intake pipe running
+        off the west edge toward the river.
+    """
+    BITE = .06
+
+    def seated(name, w, d, h, x, y, surface, material, bite=BITE):
+        add_box(col, name, w, d, h + bite, x, y, surface - bite, material)
+
+    # The palette is deliberately not one grey. A first pass built every mass
+    # out of the same pale concrete and the result read as a white blob from
+    # any distance -- no separation between tower, hall and dome. Followville's
+    # buildings carry real colour, so the plant gets a slate-and-teal
+    # industrial identity that still sits inside the town's pastel range: warm
+    # concrete for the two round masses, slate blue for the hall, teal for
+    # every roof, and genuinely dark steel in the switchyard so the yard has
+    # something to read against.
+    # Cartoon grey: the masses stay grey, but the greys are separated hard --
+    # near-white concrete against genuinely dark slate and steel -- instead of
+    # the narrow mid-grey band the first pass used, which averaged out to one
+    # white blob at distance. Colour is spent only where it means something:
+    # teal roofs, and radioactive green on the signage.
+    concrete = mat("NB_np_concrete", (.88, .88, .87), .92)
+    concrete_dim = mat("NB_np_concrete_dim", (.47, .48, .50), .94)
+    pad_mat = mat("NB_np_pad", (.60, .61, .59), .95)
+    asphalt = mat("NB_np_asphalt", (.24, .25, .28), .94)
+    hall = mat("NB_np_hall", (.60, .67, .74), .62, .20)
+    rib = mat("NB_np_rib", (.26, .34, .44), .66, .30)
+    steel = mat("NB_np_steel", (.52, .55, .60), .44, .60)
+    steel_dark = mat("NB_np_steel_dark", (.28, .31, .36), .50, .65)
+    glass = mat("NB_np_glass", (.26, .52, .64), .14, .10, 1.0, 0.0, .58)
+    warn_red = mat("NB_np_warn_red", (.88, .22, .18), .78)
+    warn_white = mat("NB_np_warn_white", (.95, .95, .93), .72)
+    yellow = mat("NB_np_yellow", (.98, .82, .18), .76)
+    dark = mat("NB_np_dark", (.15, .17, .20), .86)
+    trim = mat("NB_np_trim", (.16, .62, .58), .78)
+    cream = mat("NB_np_cream", (.95, .93, .88), .88)
+    # The trefoils are meant to GLOW, so the emission is high -- but the base
+    # colour is deep rather than bright. That is the whole trick: a light green
+    # driven hard turns white and stops reading as radioactive at all, which is
+    # what an earlier pass at strength 1.7 on a pale green did. A deep green
+    # driven harder still reads green while throwing light.
+    rad_green = mat_emissive("NB_np_rad_green", (.10, .70, .12), .34, 2.60)
+    rad_plate = mat("NB_np_rad_plate", (.16, .18, .20), .82)
+
+    PAD_TOP = .35
+    add_box(col, "np_pad", 76.0, 64.0, PAD_TOP, 0.0, 2.0, 0.0, pad_mat)
+    # Yard surfacing, inset from the pad edge so their side walls never align.
+    add_box(col, "np_yard", 70.0, 57.0, .10, 0.0, 2.0, PAD_TOP - .02, asphalt)
+
+    # ── cooling tower ──────────────────────────────────────────────────────
+    # Five frusta: waist at 0.62 of the base radius is what makes it read as a
+    # cooling tower rather than a silo.
+    TX, TY = -19.0, 13.0
+    tower = ((15.0, 12.4, 0.0, 11.0), (12.4, 10.4, 11.0, 10.0),
+             (10.4, 9.3, 21.0, 9.0), (9.3, 9.6, 30.0, 6.0),
+             (9.6, 10.9, 36.0, 5.0))
+    for index, (r0, r1, z0, h) in enumerate(tower):
+        add_ngon_cone(col, "np_tower_%d" % index, r0, r1, h + BITE, 20,
+                      TX, TY, PAD_TOP + z0 - (BITE if index else 0.0), concrete)
+    # Rim lip, and a dark disc set BELOW the rim so the throat reads as open
+    # rather than as a capped cylinder.
+    add_ngon_cone(col, "np_tower_rim", 11.4, 11.4, .55, 20, TX, TY,
+                  PAD_TOP + 40.6, concrete_dim)
+    add_ngon_cone(col, "np_tower_throat", 9.3, 9.3, .12, 20, TX, TY,
+                  PAD_TOP + 39.2, dark)
+    # Air intake louvres round the base: a ring of legs, which is what gives
+    # the base its distinctive gapped look.
+    for index in range(20):
+        a = index / 20.0 * math.tau + math.pi / 20.0
+        add_box(col, "np_tower_leg_%d" % index, 1.5, 1.1, 4.2,
+                TX + 14.2 * math.cos(a), TY + 14.2 * math.sin(a),
+                PAD_TOP - BITE, concrete_dim)
+    # Two grey bands, so the tower is not one unbroken face at distance.
+    for index, (z, h) in enumerate(((13.0, 1.1), (24.0, .9))):
+        r = 12.4 - (z - 11.0) / 10.0 * 2.0 + .10
+        add_ngon_cone(col, "np_tower_band_%d" % index, r, r - .12, h, 20,
+                      TX, TY, PAD_TOP + z, concrete_dim)
+
+    # ── radiation trefoils on the tower ────────────────────────────────────
+    #
+    # Three of them, at 120 degrees, so one reads from wherever the camera is.
+    # The blades stand 0.34m proud of the shell and the backing disc 0.14m,
+    # both well over the 5cm the depth rule wants, so nothing here is coplanar
+    # with the curved facet behind it -- a sign painted flat onto a face is
+    # exactly the z-fighting the rule exists to stop.
+    def tower_radius(z):
+        """The shell radius at height z above the pad, following the taper."""
+        for r0, r1, z0, h in tower:
+            if z0 <= z <= z0 + h:
+                return r0 + (r1 - r0) * (z - z0) / h
+        return tower[0][0] if z < 0.0 else tower[-1][1]
+
+    # 5.0m radius -- ten metres across, about half the tower's width, which is
+    # what Cade asked for and what a real plant paints on. It can be this big
+    # only because it is WRAPPED: the disc spans z=11..21, exactly the second
+    # frustum, and follows the taper across that whole span.
+    SIGN_Z = 16.0
+    for index, facing in enumerate((math.radians(300.0), math.radians(60.0),
+                                    math.radians(180.0))):
+        add_wrapped_sector(col, "np_trefoil_disc_%d" % index, TX, TY, facing,
+                           PAD_TOP + SIGN_Z, 0.0, 5.0, 0.0, math.tau,
+                           .10, .14, tower_radius, rad_plate, segments=28)
+        # Blades stand off 0.32 against the disc's 0.24 front face: 8cm, over
+        # the 5cm the depth rule wants between two visible surfaces.
+        add_wrapped_sector(col, "np_trefoil_hub_%d" % index, TX, TY, facing,
+                           PAD_TOP + SIGN_Z, 0.0, 1.05, 0.0, math.tau,
+                           .32, .16, tower_radius, rad_green, segments=16)
+        for blade in range(3):
+            a0 = math.radians(90.0 + blade * 120.0 - 30.0)
+            add_wrapped_sector(col, "np_trefoil_blade_%d_%d" % (index, blade),
+                               TX, TY, facing, PAD_TOP + SIGN_Z,
+                               1.70, 4.50, a0, a0 + math.radians(60.0),
+                               .32, .16, tower_radius, rad_green, segments=8)
+
+    # ── containment ────────────────────────────────────────────────────────
+    CX, CY = 8.0, 15.0
+    add_ngon_cone(col, "np_containment_base", 10.4, 10.4, 1.6, 18,
+                  CX, CY, PAD_TOP - BITE, concrete_dim)
+    add_ngon_cone(col, "np_containment", 9.5, 9.5, 13.0, 18,
+                  CX, CY, PAD_TOP + 1.5, concrete)
+    dome = ((9.5, 8.1, 14.5, 2.6), (8.1, 6.0, 17.1, 2.4),
+            (6.0, 3.2, 19.5, 2.1), (3.2, 0.0, 21.6, 1.9))
+    for index, (r0, r1, z0, h) in enumerate(dome):
+        add_ngon_cone(col, "np_dome_%d" % index, r0, r1, h + BITE, 18,
+                      CX, CY, PAD_TOP + z0 - BITE, concrete)
+    # A single band, sized between the shell and the base so no two walls align.
+    add_ngon_cone(col, "np_containment_band", 9.8, 9.8, .7, 18,
+                  CX, CY, PAD_TOP + 8.2, trim)
+    # A trefoil on the containment too, facing the gate. Wrapped for the same
+    # reason as the tower's -- flat on a 9.5m cylinder, a 3m disc buries its
+    # edges 0.49m into the shell.
+    face = math.radians(258.0)
+
+    def containment_radius(_z):
+        return 9.5
+
+    add_wrapped_sector(col, "np_dome_sign_disc", CX, CY, face,
+                       PAD_TOP + 6.6, 0.0, 3.1, 0.0, math.tau,
+                       .10, .13, containment_radius, rad_plate, segments=22)
+    add_wrapped_sector(col, "np_dome_sign_hub", CX, CY, face,
+                       PAD_TOP + 6.6, 0.0, .66, 0.0, math.tau,
+                       .30, .15, containment_radius, rad_green, segments=14)
+    for blade in range(3):
+        a0 = math.radians(90.0 + blade * 120.0 - 30.0)
+        add_wrapped_sector(col, "np_dome_sign_%d" % blade, CX, CY, face,
+                           PAD_TOP + 6.6, 1.06, 2.80, a0,
+                           a0 + math.radians(60.0), .30, .15,
+                           containment_radius, rad_green, segments=8)
+
+    # ── turbine hall ───────────────────────────────────────────────────────
+    HX, HY = 6.0, -8.0
+    seated("np_hall", 36.0, 15.0, 11.0, HX, HY, PAD_TOP, hall)
+    add_box(col, "np_hall_roof", 34.4, 13.6, 1.1, HX, HY, PAD_TOP + 11.0, rib)
+    for index in range(9):
+        add_box(col, "np_hall_rib_%d" % index, 1.2, 14.4, .5,
+                HX - 15.0 + index * 3.75, HY, PAD_TOP + 12.1, rib)
+    for index in range(8):
+        add_box(col, "np_hall_glass_%d" % index, 2.6, .22, 4.2,
+                HX - 14.0 + index * 4.0, HY - 7.62, PAD_TOP + 4.2, glass)
+    # Link bridge from containment to the hall, thinner than either.
+    add_box(col, "np_link", 5.2, 9.0, 5.4, CX - 1.0, (CY + HY) / 2.0 + 1.0,
+            PAD_TOP + 2.0, concrete_dim)
+
+    # ── stack ──────────────────────────────────────────────────────────────
+    SX, SY = 24.0, 18.0
+    add_ngon_cone(col, "np_stack", 2.3, 1.5, 30.0, 12, SX, SY,
+                  PAD_TOP - BITE, concrete)
+    for index in range(4):
+        r = 2.05 - index * .13
+        add_ngon_cone(col, "np_stack_band_%d" % index, r, r, 1.7, 12,
+                      SX, SY, PAD_TOP + 5.0 + index * 6.6,
+                      warn_red if index % 2 == 0 else warn_white)
+
+    # ── switchyard ─────────────────────────────────────────────────────────
+    for index in range(3):
+        x = 26.0 + index * 0.0
+        y = -2.0 + index * 7.5
+        seated("np_transformer_%d" % index, 5.4, 4.2, 3.6, x, y, PAD_TOP,
+               steel_dark)
+        add_box(col, "np_transformer_cap_%d" % index, 4.6, 3.4, .5, x, y,
+                PAD_TOP + 3.6, dark)
+        for fin in range(4):
+            add_box(col, "np_transformer_fin_%d_%d" % (index, fin), .18, 3.6,
+                    2.6, x - 2.0 + fin * 1.35, y, PAD_TOP + .4, dark)
+        add_ngon_cone(col, "np_bushing_%d" % index, .22, .16, 1.8, 8,
+                      x - 1.2, y, PAD_TOP + 4.1, warn_white)
+    for index in range(4):
+        x = 33.0
+        y = -8.0 + index * 8.0
+        for leg in ((-1.1, -1.1), (1.1, -1.1), (1.1, 1.1), (-1.1, 1.1)):
+            add_box(col, "np_pylon_leg_%d_%d%d" % (index, leg[0] > 0, leg[1] > 0),
+                    .34, .34, 13.0, x + leg[0], y + leg[1], PAD_TOP - BITE, steel)
+        for brace in range(3):
+            add_box(col, "np_pylon_brace_%d_%d" % (index, brace), 2.9, 2.9, .22,
+                    x, y, PAD_TOP + 3.4 + brace * 3.4, steel)
+        add_box(col, "np_pylon_arm_%d" % index, 8.4, .5, .42, x, y,
+                PAD_TOP + 13.2, steel)
+
+    # ── admin block and gate ───────────────────────────────────────────────
+    AX, AY = -25.0, -19.0
+    seated("np_admin", 15.0, 9.4, 7.4, AX, AY, PAD_TOP, cream)
+    add_box(col, "np_admin_roof", 15.8, 10.2, .6, AX, AY, PAD_TOP + 7.4, trim)
+    for floor in range(2):
+        for index in range(5):
+            add_box(col, "np_admin_glass_%d_%d" % (floor, index), 1.9, .22, 1.7,
+                    AX - 5.4 + index * 2.7, AY - 4.76,
+                    PAD_TOP + 1.5 + floor * 3.2, glass)
+    seated("np_gatehouse", 4.4, 3.6, 3.2, -2.0, -26.5, PAD_TOP, concrete)
+    add_box(col, "np_gatehouse_roof", 5.2, 4.4, .45, -2.0, -26.5,
+            PAD_TOP + 3.2, trim)
+    add_box(col, "np_barrier", 7.0, .3, .3, 3.6, -26.5, PAD_TOP + 1.5, warn_red)
+
+    # Perimeter fence. Posts and a top rail only -- a solid panel would read as
+    # a wall at this scale and hide the yard the video needs to see.
+    fx, fy = 36.0, 30.0
+    for index in range(-12, 13):
+        x = index * 3.0
+        for y in (2.0 - fy, 2.0 + fy):
+            if y < 0 and -6.0 < x < 6.0:
+                continue          # the gate opening
+            add_box(col, "np_fence_p_%d_%d" % (index, y > 0), .18, .18, 2.4,
+                    x, y, PAD_TOP - BITE, steel)
+    for index in range(-9, 10):
+        y = 2.0 + index * 3.2
+        for x in (-fx, fx):
+            add_box(col, "np_fence_q_%d_%d" % (index, x > 0), .18, .18, 2.4,
+                    x, y, PAD_TOP - BITE, steel)
+    for y in (2.0 - fy, 2.0 + fy):
+        add_box(col, "np_fence_rail_%d" % (y > 0), 72.0, .12, .14, 0.0, y,
+                PAD_TOP + 2.3, steel)
+    for x in (-fx, fx):
+        add_box(col, "np_fence_rail_x_%d" % (x > 0), .12, 60.0, .14, x, 2.0,
+                PAD_TOP + 2.3, steel)
+
+    # ── intake, at the west edge, pointing at the river ────────────────────
+    #
+    # The pipe LIES DOWN. add_ngon_cone's `rot` turns the section about its own
+    # axis, it does not tip the axis over, so the first version stood five
+    # cylinders on end outside the fence and they read as a row of stray silos
+    # in a field. The cone is built upright and then rotated about Y here.
+    seated("np_pumphouse", 8.0, 6.0, 4.0, -28.0, 6.0, PAD_TOP, concrete_dim)
+    add_box(col, "np_pumphouse_roof", 8.8, 6.8, .5, -28.0, 6.0,
+            PAD_TOP + 4.0, trim)
+    pipe = add_ngon_cone(col, "np_intake_pipe", 1.15, 1.15, 25.0, 10,
+                         -32.4, 6.0, PAD_TOP + 1.9, steel)
+    pipe.rotation_euler = (0.0, math.radians(90.0), 0.0)
+    for index in range(4):
+        add_box(col, "np_intake_saddle_%d" % index, 1.9, 2.6, 1.35,
+                -36.0 - index * 6.4, 6.0, PAD_TOP - BITE, concrete_dim)
+    # A screen house where the pipe leaves the site, so the run ends at
+    # something rather than in mid-air.
+    seated("np_screenhouse", 4.6, 5.2, 2.8, -57.6, 6.0, PAD_TOP - .30,
+           concrete_dim)
+    add_box(col, "np_screenhouse_roof", 5.4, 6.0, .42, -57.6, 6.0,
+            PAD_TOP + 2.5, trim)
+
+    # Yard markings and a few parked cars' worth of bays, so the site reads as
+    # worked-in rather than sealed.
+    for index in range(6):
+        add_box(col, "np_bay_%d" % index, .16, 4.6, .03,
+                -14.0 + index * 3.4, -22.0, PAD_TOP + .09, warn_white)
+    add_box(col, "np_hazard", 9.0, .5, .04, -2.0, -23.6, PAD_TOP + .09, yellow)
+    # Green marker lamps along the gate run and on the stack, so the site
+    # carries the same radioactive green at ground level and at the skyline.
+    for index in range(7):
+        add_box(col, "np_gate_lamp_%d" % index, .34, .34, .34,
+                -21.0 + index * 6.4, -28.0, PAD_TOP + 2.5, rad_green)
+    add_ngon_cone(col, "np_stack_lamp", .95, .95, .7, 12, SX, SY,
+                  PAD_TOP + 30.2, rad_green)
+    return col
+
+
+def build_reactor_hall_interior(col, seed):
+    """TEMPORARY interior set for the nuclear station video. Render-only.
+
+    This is a stage, not a building. It exists so the camera can cut inside
+    the plant for one sequence and is deleted afterwards -- it is never placed
+    by growth, never exported to a GLB, never referenced by world_state.json,
+    and nothing in the town depends on it.
+
+    Built as an enclosed room the camera sits INSIDE, so the walls face inward
+    and there is no exterior to speak of. Everything a shot might need to move
+    is a separate named object -- crane bridge, trolley, hook, beacon domes,
+    the pool surface -- because animating a merged mesh means animating the
+    room with it.
+
+    The set is lit by what is in it: the refuelling pool and the console
+    screens are emissive, so the room reads as working machinery rather than
+    as a grey box with a lamp pointed at it.
+    """
+    BITE = .05
+    W, D, H = 46.0, 32.0, 17.0
+
+    def seated(name, w, d, h, x, y, surface, material, bite=BITE):
+        add_box(col, name, w, d, h + bite, x, y, surface - bite, material)
+
+    floor_mat = mat("NB_rh_floor", (.32, .33, .35), .93)
+    wall = mat("NB_rh_wall", (.58, .59, .60), .92)
+    wall_low = mat("NB_rh_wall_low", (.40, .42, .45), .90)
+    steel = mat("NB_rh_steel", (.55, .58, .62), .44, .60)
+    steel_dark = mat("NB_rh_steel_dark", (.27, .29, .33), .52, .62)
+    vessel = mat("NB_rh_vessel", (.72, .73, .75), .40, .55)
+    yellow = mat("NB_rh_yellow", (.95, .78, .16), .74)
+    hazard = mat("NB_rh_hazard", (.15, .16, .18), .86)
+    # Deep base colours at modest strength. Driving a light green hard is what
+    # turned the pool into a white rectangle -- an emissive surface saturates
+    # to white long before it saturates to its own hue, so the colour has to
+    # come from the base and only the lift from the strength.
+    pool_glow = mat_emissive("NB_rh_pool", (.05, .52, .24), .18, 2.40)
+    screen = mat_emissive("NB_rh_screen", (.08, .46, .52), .22, 1.50)
+    beacon = mat_emissive("NB_rh_beacon", (.62, .06, .04), .30, 2.20)
+    strip = mat_emissive("NB_rh_strip", (.74, .78, .72), .30, 1.10)
+    rad_green = mat_emissive("NB_rh_rad", (.06, .48, .08), .34, 1.60)
+
+    # ── shell ──────────────────────────────────────────────────────────────
+    add_box(col, "rh_floor", W, D, .6, 0.0, 0.0, -.6, floor_mat)
+    for name, w, d, x, y in (("n", W, .8, 0.0, D / 2), ("s", W, .8, 0.0, -D / 2),
+                             ("e", .8, D, W / 2, 0.0), ("w", .8, D, -W / 2, 0.0)):
+        add_box(col, "rh_wall_%s" % name, w, d, H, x, y, 0.0, wall)
+        # A darker dado, inset so its face never lands on the wall's plane.
+        add_box(col, "rh_dado_%s" % name, w - .10 if w > 1 else w + .22,
+                d - .10 if d > 1 else d + .22, 2.6, x, y, 0.0, wall_low)
+    add_box(col, "rh_ceiling", W, D, .7, 0.0, 0.0, H, wall_low)
+    for index in range(7):
+        add_box(col, "rh_beam_%d" % index, 1.0, D - 1.8, .8,
+                -18.0 + index * 6.0, 0.0, H - .8, steel_dark)
+    for index in range(6):
+        add_box(col, "rh_striplight_%d" % index, 3.4, .5, .18,
+                -15.0 + index * 6.0, 8.0, H - 1.0, strip)
+        add_box(col, "rh_striplight_b_%d" % index, 3.4, .5, .18,
+                -15.0 + index * 6.0, -9.0, H - 1.0, strip)
+
+    # ── reactor vessel ─────────────────────────────────────────────────────
+    VX, VY = -9.0, 2.0
+    add_ngon_cone(col, "rh_vessel_plinth", 7.2, 7.2, 1.1, 16, VX, VY, 0.0,
+                  wall_low)
+    add_ngon_cone(col, "rh_vessel_ring", 6.4, 6.4, .35, 16, VX, VY, 1.05,
+                  rad_green)
+    add_ngon_cone(col, "rh_vessel", 5.4, 5.4, 8.4, 16, VX, VY, 1.35, vessel)
+    add_ngon_cone(col, "rh_vessel_head", 5.4, 3.4, 2.0, 16, VX, VY, 9.70,
+                  steel)
+    add_ngon_cone(col, "rh_vessel_cap", 3.4, 0.0, 1.5, 16, VX, VY, 11.65,
+                  steel)
+    for index in range(8):
+        a = index / 8.0 * math.tau
+        add_ngon_cone(col, "rh_vessel_rod_%d" % index, .22, .22, 3.6, 6,
+                      VX + 4.1 * math.cos(a), VY + 4.1 * math.sin(a), 11.4,
+                      steel_dark)
+    for index in range(3):
+        add_ngon_cone(col, "rh_vessel_band_%d" % index, 5.55, 5.55, .3, 16,
+                      VX, VY, 2.6 + index * 2.5, steel_dark)
+
+    # ── refuelling pool, the room's main light source ──────────────────────
+    # A RAISED basin, not a sunken pit. The floor is one unbroken slab and
+    # add_box cannot cut a hole in it, so a pit put the glowing water inside a
+    # sealed box under an opaque floor: invisible, and the room went dark
+    # because this is what lights it. A basin standing proud of the floor
+    # reads the same at this scale and actually shows.
+    PX, PY = 11.0, 1.0
+    add_box(col, "rh_pool_basin", 17.0, 12.0, .42, PX, PY, 0.0, wall_low)
+    # ON the basin, not inside it. Sunk into the basin the water was sealed in
+    # an opaque box for the second time -- the basin's own top face was all
+    # that showed, which is why the pool read as a dark rectangle. It bites 2cm
+    # into the basin so the two tops are not coplanar, and finishes 4cm below
+    # the kerb so the kerb still reads as a rim.
+    add_box(col, "rh_pool_water", 15.2, 10.2, .10, PX, PY, .40, pool_glow)
+    for side, (w, d, x, y) in (("n", (17.4, .34, PX, PY + 5.83)),
+                               ("s", (17.4, .34, PX, PY - 5.83)),
+                               ("e", (.34, 12.4, PX + 8.33, PY)),
+                               ("w", (.34, 12.4, PX - 8.33, PY))):
+        add_box(col, "rh_pool_kerb_%s" % side, w, d, .12, x, y, .42, yellow)
+        for post in range(6):
+            if w > d:
+                px, py = x - w / 2 + 1.2 + post * (w - 2.4) / 5.0, y
+            else:
+                px, py = x, y - d / 2 + 1.2 + post * (d - 2.4) / 5.0
+            add_box(col, "rh_pool_post_%s_%d" % (side, post), .16, .16, 1.15,
+                    px, py, .54, steel)
+        add_box(col, "rh_pool_rail_%s" % side,
+                w - .6 if w > d else .12, .12 if w > d else d - .6, .12,
+                x, y, 1.61, steel)
+
+    # ── gantry crane, named for animation ──────────────────────────────────
+    for y in (D / 2 - 2.4, -D / 2 + 2.4):
+        add_box(col, "rh_crane_rail_%d" % (y > 0), W - 2.0, .9, .5, 0.0, y,
+                12.4, steel_dark)
+    add_box(col, "rh_crane_bridge", 2.2, D - 4.0, 1.4, 2.0, 0.0, 12.9, steel)
+    add_box(col, "rh_crane_trolley", 3.0, 3.4, 1.2, 2.0, 3.0, 11.8, steel_dark)
+    add_box(col, "rh_crane_cable", .16, .16, 4.6, 2.0, 3.0, 7.2, steel_dark)
+    add_box(col, "rh_crane_hook", 1.5, 1.5, 1.0, 2.0, 3.0, 6.2, yellow)
+
+    # ── control mezzanine ──────────────────────────────────────────────────
+    MX, MY = -14.0, -11.0
+    add_box(col, "rh_mezz_deck", 20.0, 7.0, .55, MX, MY, 4.2, wall_low)
+    for index in range(5):
+        add_box(col, "rh_mezz_col_%d" % index, .55, .55, 4.2,
+                MX - 8.5 + index * 4.25, MY, 0.0, steel_dark)
+    for index in range(9):
+        add_box(col, "rh_mezz_post_%d" % index, .14, .14, 1.15,
+                MX - 9.0 + index * 2.25, MY + 3.2, 4.75, steel)
+    add_box(col, "rh_mezz_rail", 19.2, .12, .12, MX, MY + 3.2, 5.82, steel)
+    for index in range(4):
+        x = MX - 6.6 + index * 4.4
+        seated("rh_console_%d" % index, 3.2, 1.5, 1.05, x, MY - 1.0, 4.75,
+               steel_dark)
+        add_box(col, "rh_console_face_%d" % index, 2.7, .18, .62,
+                x, MY - 1.76, 5.20, screen)
+        add_box(col, "rh_console_top_%d" % index, 2.9, 1.1, .12, x, MY - 1.0,
+                5.80, hazard)
+    add_box(col, "rh_wall_display", 9.0, .22, 3.2, MX, MY - 3.30, 6.6, screen)
+    add_box(col, "rh_wall_display_frame", 9.8, .16, 3.8, MX, MY - 3.42, 6.3,
+            hazard)
+
+    # ── pipework along the east wall ───────────────────────────────────────
+    for index in range(4):
+        pipe = add_ngon_cone(col, "rh_pipe_%d" % index, .85, .85, 26.0, 10,
+                             W / 2 - 1.6, -12.0 + index * 3.0,
+                             3.4 + index * 2.4, steel)
+        pipe.rotation_euler = (math.radians(90.0), 0.0, 0.0)
+        for wheel in range(3):
+            add_ngon_cone(col, "rh_valve_%d_%d" % (index, wheel), .62, .62, .16,
+                          10, W / 2 - 1.6, -9.0 + wheel * 8.0,
+                          4.25 + index * 2.4, yellow)
+
+    # ── beacons and floor markings ─────────────────────────────────────────
+    for index, (x, y) in enumerate(((-W / 2 + 1.1, 9.0), (-W / 2 + 1.1, -9.0),
+                                    (W / 2 - 1.1, 9.0), (0.0, D / 2 - 1.1))):
+        add_box(col, "rh_beacon_base_%d" % index, .9, .9, .5, x, y, 9.4,
+                hazard)
+        add_ngon_cone(col, "rh_beacon_%d" % index, .55, .38, .75, 10, x, y,
+                      9.9, beacon)
+    for index in range(9):
+        add_box(col, "rh_floor_stripe_%d" % index, .9, 5.0, .04,
+                -20.0 + index * 2.2, -D / 2 + 4.0, .02, yellow)
+    add_ring_sector(col, "rh_floor_trefoil_disc", 0.0, 3.2, 0.0, math.tau, .05,
+                    -9.0, -12.5, .03, hazard, segments=18)
+    for blade in range(3):
+        a0 = math.radians(90.0 + blade * 120.0 - 30.0)
+        add_ring_sector(col, "rh_floor_trefoil_%d" % blade, 1.05, 2.85, a0,
+                        a0 + math.radians(60.0), .05, -9.0, -12.5, .09,
+                        rad_green, segments=6)
+    return col
+
+
 def build_gas_station(col, seed):
     """A filling station: forecourt, canopy on four columns, two pump islands.
 
@@ -6030,6 +6609,7 @@ ASSET_VARIANTS = {
     "gasstation": [("AST_gasstation_0", lambda c: build_gas_station(c, 8200))],
     "restaurant": [("AST_restaurant_0", lambda c: build_restaurant(c, 8300))],
     "weatherstation": [("AST_weatherstation_0", lambda c: build_weather_station(c, 3700))],
+    "nuclearplant": [("AST_nuclearplant_0", lambda c: build_nuclear_plant(c, 8400))],
     "forestreserve": [("AST_eastwoods_0", lambda c: build_east_woods(c, 3400))],
     "duck":        [("AST_duck_%d" % i, lambda c, i=i: build_duck(c, 2200 + i)) for i in range(3)],
     # Park-ring residents keep their exact seed/claim/position/rotation, but
@@ -6117,7 +6697,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
         "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
         "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1,
-        "gasstation": 1, "restaurant": 1}
+        "gasstation": 1, "restaurant": 1, "nuclearplant": 1}
 
 # check_world_geometry.py needs a grid landmark's lot size to know where its
 # geometry is centred, and it cannot import this module because this module
@@ -6978,6 +7558,70 @@ def _add_road_surface_dash(col, name, points, center_distance, length,
     obj = bpy.data.objects.new(name, mesh)
     col.objects.link(obj)
     return obj
+
+
+def build_point_road(world_col, buildings, m):
+    """Point Road and the station's dirt access trail.
+
+    Two roads, deliberately of different kinds, because that is what Cade
+    asked for and what a plant this size actually gets:
+
+    Point Road is proper asphalt with a shoulder and centre dashes. It leaves
+    Ferry Street where that street is still running -- not at its cul-de-sac
+    bulb, where a junction would read as an afterthought -- and carries on
+    NORTH PAST the plant to a river overlook. That is what stops it being a
+    private driveway: it is a road to somewhere, and the station happens to sit
+    on it.
+
+    Station Trail is dirt: no dashes, no shoulder, a narrower and rougher
+    surface, running the last thirty metres from Point Road to the gate.
+
+    Both centrelines live in world_layout, because the browser's walk surface
+    and check_world_geometry need the same line and copies drift.
+    """
+    if not any(b.get("type") == "nuclearplant" for b in buildings):
+        return []
+    from world_layout import (point_road_points, station_trail_points,
+                              NUCLEAR_ROAD_HALF_WIDTH,
+                              NUCLEAR_TRAIL_HALF_WIDTH)
+
+    shoulder_mat = mat("FV_point_road_shoulder", (.24, .27, .25), .99)
+    lane_mat = mat("FV_point_road_marking", (.61, .60, .47), 1.0)
+    dirt_mat = mat("FV_station_trail_dirt", (.44, .38, .30), 1.0)
+    dirt_edge = mat("FV_station_trail_edge", (.35, .32, .26), 1.0)
+
+    made = []
+    road = [(x, y, terrain_height(x, y)) for x, y in point_road_points()]
+    # Distinct layer tops, as everywhere else: shoulder .045, deck .085,
+    # dashes .095, so no two surfaces land on one plane.
+    made.append(_add_road_strip(world_col, "point_road_shoulder", road,
+                                shoulder_mat,
+                                width=NUCLEAR_ROAD_HALF_WIDTH * 2 + 2.2,
+                                bottom_offset=.005, top_offset=.045,
+                                terrain_conform=True))
+    made.append(_add_road_strip(world_col, "point_road", road, m["road"],
+                                width=NUCLEAR_ROAD_HALF_WIDTH * 2,
+                                bottom_offset=.015, top_offset=.085,
+                                terrain_conform=True))
+    for index in range(0, len(road) - 3, 4):
+        made.append(_add_road_strip(world_col, "point_road_dash",
+                                    road[index:index + 2], lane_mat,
+                                    width=.22, bottom_offset=.02,
+                                    top_offset=.095, terrain_conform=True))
+
+    trail = [(x, y, terrain_height(x, y)) for x, y in station_trail_points()]
+    # The trail gets an edge band instead of a shoulder and no markings at
+    # all -- a dirt track with a painted centre line would not be a dirt track.
+    made.append(_add_road_strip(world_col, "station_trail_edge", trail,
+                                dirt_edge,
+                                width=NUCLEAR_TRAIL_HALF_WIDTH * 2 + 1.4,
+                                bottom_offset=.004, top_offset=.035,
+                                terrain_conform=True))
+    made.append(_add_road_strip(world_col, "station_trail", trail, dirt_mat,
+                                width=NUCLEAR_TRAIL_HALF_WIDTH * 2,
+                                bottom_offset=.012, top_offset=.065,
+                                terrain_conform=True))
+    return made
 
 
 def build_northgate_arterial(world_col, buildings, m):
@@ -13686,6 +14330,25 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(fishing_pond)
             new_batch.append(fishing_pond)
+        if cfg.get("nuclearplant"):
+            if any(b["type"] == "nuclearplant" for b in state["buildings"]):
+                raise RuntimeError("Followville Point Station already exists")
+            from world_layout import (NUCLEAR_PLANT_CENTER,
+                                      nuclear_plant_base_height)
+            # pz is pinned above the site's HIGHEST corner, like the Salmon Pro
+            # Shop's. The terrain mesh comes from terrain_height(), so a pad
+            # set to the average or the centre has the ground rising through
+            # its own switchyard on the high side.
+            plant = {
+                "type": "nuclearplant", "gx": 0, "gy": 0,
+                "px": NUCLEAR_PLANT_CENTER[0], "py": NUCLEAR_PLANT_CENTER[1],
+                "pz": round(nuclear_plant_base_height(), 4),
+                "rot": 0.0, "seed": state["seed_counter"],
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(plant)
+            new_batch.append(plant)
         if cfg.get("gasstation"):
             # The first reserved NON-house address the project has ever
             # claimed. Chapter three holds ten of them -- two filling stations,
@@ -13831,6 +14494,7 @@ def main(cfg=None):
     # decorative mound pass is intentionally omitted to avoid intersecting
     # houses and roads with scenery that has no shared elevation model.
     build_northgate_arterial(world_col, keep or state["buildings"], m)
+    build_point_road(world_col, keep or state["buildings"], m)
     river_road_objects = build_suburban_roads(
         world_col, keep or state["buildings"], m)
     river_objects = build_river_chapter(world_col, keep or state["buildings"], m)

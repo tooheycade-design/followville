@@ -469,6 +469,7 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `export_web.py` | Bakes the WORLD collection to full + district GLBs. |
 | `neighborhood_plan.py` | The 366-house structural reserve. |
 | `west_quarter_plan.py` | Chapter four: 1,000 homes + 22 empty parcels, west. |
+| `NUCLEAR_STATION.md` | The nuclear plant, its roads, and the temporary interior set. |
 | `metropolitan_plan.py` | The post-Northgate 20-tower / 2,000-follower reserve. |
 | `world_layout.py` | District offsets, authored roads, audit declarations. |
 | `downtown_visual_plan.py` | `terrain_height` and the shared terrain model. |
