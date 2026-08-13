@@ -10482,14 +10482,14 @@ def apply_mood(tod, season):
         _set_mat_color(name, rgb)
 
 
-def _configure_video_sky(tod):
+def _configure_video_sky(tod, preset=None):
     """Build a clean sky shader for the selected video preset.
 
     No Volume Scatter node is created here. Earlier footage demonstrated that
     camera-facing or dense volumetric fog can become a literal wall; atmospheric
     depth now comes from the procedural horizon and ordinary aerial perspective.
     """
-    t = TODS.get(tod, TODS["day"])
+    t = preset or TODS.get(tod, TODS["day"])
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
     bpy.context.scene.world = world
     world.use_nodes = True
@@ -11089,7 +11089,12 @@ def build_background_ground(world_col, material, center_x, center_y):
     touch the regional terrain at its outer boundary; they never overlap it.
     """
     terrain_x0, terrain_x1, terrain_y0, terrain_y1 = TERRAIN_BOUNDS
-    half_extent = 2000.0
+    # Keep the physical horizon outside every production camera's far clip.
+    # At 2km the slab's outer vertical face read as a black stripe in Day 43's
+    # low sunset previews even though the nearby West Quarter seam was closed.
+    # Four 100km boxes add no top-surface tessellation and make the horizon real
+    # ground from every planned low angle instead of a framing assumption.
+    half_extent = 50000.0
     outer_x0 = min(center_x - half_extent, terrain_x0)
     outer_x1 = max(center_x + half_extent, terrain_x1)
     outer_y0 = min(center_y - half_extent, terrain_y0)
@@ -11297,8 +11302,10 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # separation, but lower and redden the sun, deepen the blue ambient,
         # and let the long shadows carry the westbound construction wave.
         t = dict(t)
-        t.update(sun_e=2.95, sun_c=(1.00, 0.49, 0.23),
-                 sun_rot=(82, 0, 96), sky=(0.28, 0.37, 0.58), sky_s=.64)
+        t.update(sun_e=1.62, sun_c=(1.00, 0.42, 0.18),
+                 sun_rot=(82, 0, 96), sky=(0.18, 0.29, 0.52), sky_s=.48,
+                 sky_elev=1.4, air=1.18, dust=2.15, ozone=1.18,
+                 exposure=-.08)
     cx, cy, ext = city_center_and_extent(buildings)
     # 2026-07-10 cinematography pass (day 9, park district pushed the bounding
     # box way out -- ext jumped to ~258 -- and the old padding multipliers
@@ -12265,12 +12272,12 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (218, (-490.0, 438.0, 28.0), (-625.0, 481.0, 7.0)),
             (258, (-654.0, 449.0, 28.0), (-735.0, 496.0, 7.5)),
             # Bank north through the three new avenues as their wave climbs.
-            (292, (-718.0, 506.0, 35.0), (-575.0, 595.0, 9.0)),
-            (326, (-590.0, 638.0, 43.0), (-400.0, 735.0, 10.0)),
-            (350, (-430.0, 735.0, 56.0), (-250.0, 742.0, 12.0)),
+            (292, (-610.0, 515.0, 32.0), (-410.0, 585.0, 5.0)),
+            (326, (-500.0, 625.0, 38.0), (-338.0, 710.0, 5.0)),
+            (350, (-430.0, 718.0, 45.0), (-322.0, 765.0, 5.0)),
             # One decisive cross-city acceleration into the station approach.
             (382, (-70.0, 690.0, 70.0), (260.0, 585.0, 15.0)),
-            (410, (340.0, 500.0, 42.0), (438.0, 552.0, 17.0)),
+            (410, (300.0, 510.0, 48.0), (432.0, 557.0, 17.0)),
             # Level south-west reveal: entire station, tower and dome against sky.
             (440, (474.0, 427.0, 25.0), (435.0, 560.0, 16.0)),
             (480, (500.0, 438.0, 22.0), (431.0, 561.0, 17.0)),
@@ -12322,18 +12329,22 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # Hard cut to a nearly stationary human viewpoint straight up road.
             (56,  (-330.0, 646.0, eye_z), (-330.0, 780.0, north_eye)),
             (220, (-330.0, 653.0, eye_z), (-330.0, 787.0, north_eye)),
-            # Hard cut to a close overhead that travels across the same grid.
-            (221, (-205.0, 520.0, 112.0), (-390.0, 610.0, 6.5)),
-            (275, (-360.0, 520.0, 94.0), (-525.0, 600.0, 6.0)),
-            (326, (-610.0, 566.0, 86.0), (-555.0, 670.0, 7.0)),
-            (350, (-520.0, 690.0, 80.0), (-360.0, 720.0, 8.0)),
+            # Hard cut to a genuinely close overhead.  The steep pitch keeps
+            # the active lots filling the portrait instead of letting a low
+            # terrain crest hide the construction wave at the horizon.
+            (221, (-330.0, 515.0, 105.0), (-330.0, 515.0, 6.5)),
+            (275, (-330.0, 590.0, 100.0), (-330.0, 590.0, 6.0)),
+            (326, (-330.0, 690.0, 86.0), (-330.0, 690.0, 7.0)),
+            (350, (-330.0, 755.0, 76.0), (-330.0, 755.0, 8.0)),
             # Fast diagonal transition to the river side of Point Station.
-            (390, (120.0, 590.0, 74.0), (390.0, 560.0, 15.0)),
-            (414, (302.0, 520.0, 47.0), (424.0, 561.0, 17.0)),
-            # Different low three-quarter: cooling tower foreground, dome and
-            # Point Road layered behind it against the sunset skyline.
-            (440, (304.0, 510.0, 35.0), (425.0, 562.0, 17.0)),
-            (480, (322.0, 530.0, 27.0), (428.0, 562.0, 17.0)),
+            (390, (180.0, 575.0, 62.0), (410.0, 560.0, 16.0)),
+            (414, (292.0, 520.0, 42.0), (425.0, 561.0, 17.0)),
+            # Different low three-quarter from the north-west river bank.  A
+            # wider lens and lateral separation keep the cooling tower,
+            # containment dome, turbine hall and surrounding site readable as
+            # one complete reveal instead of letting the tower crop the plant.
+            (440, (275.0, 650.0, 43.0), (440.0, 560.0, 16.0)),
+            (480, (305.0, 635.0, 32.0), (442.0, 560.0, 17.0)),
         )
         for frame, position, target in beats:
             cam_obj.location = position
@@ -12347,7 +12358,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # Lens changes reinforce the cuts: natural street perspective, then a
         # wider close drone, then compressed three-quarter station massing.
         for frame, lens in ((1, 29), (55, 29), (56, 35), (220, 35),
-                            (221, 25), (350, 25), (414, 31), (480, 40)):
+                            (221, 25), (350, 25), (414, 30), (480, 34)):
             cam_data.lens = lens
             cam_data.keyframe_insert("lens", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -13898,7 +13909,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     fill = bpy.data.objects.new("Fill", fill_data)
     fill.rotation_euler = (math.radians(55), 0, math.radians(t["sun_rot"][2] + 170))
     world_col.objects.link(fill)
-    _configure_video_sky(tod)
+    _configure_video_sky(tod, t)
     _build_video_practicals(world_col, tod)
 
 
@@ -14028,7 +14039,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
         # short vertical construction rises crisp enough to read.
         try:
             sc.render.use_motion_blur = True
-            sc.render.motion_blur_shutter = .28
+            sc.render.motion_blur_shutter = .12
         except Exception:
             pass
     for attr, val in [("use_gtao", True), ("use_bloom", False),
@@ -14055,7 +14066,10 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     # Exposure is part of the preset, not a camera-by-camera rescue value.
     # AgX retains warm lamp color and highlight roll-off at sunset/night.
     try:
-        sc.view_settings.exposure = TODS.get(tod, TODS["day"])["exposure"]
+        exposure = TODS.get(tod, TODS["day"])["exposure"]
+        if cam in ("day43fpv", "day43pov") and tod == "sunset":
+            exposure = -.08
+        sc.view_settings.exposure = exposure
     except Exception:
         pass
     base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~")
