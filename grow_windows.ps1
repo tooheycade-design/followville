@@ -187,9 +187,16 @@ function Sync-Houses {
             throw "world_state.json at $StateFile has no buildings (empty-default fallback? refusing to sync)"
         }
         $Headers = @{ apikey = $SbKey; Authorization = "Bearer $SbKey" }
-        $Existing = Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?select=id&limit=100000') -Headers $Headers -Method Get
         $ExistingIds = @{}
-        foreach ($row in @($Existing)) { $ExistingIds[[int64]$row.id] = $true }
+        $PageSize = 1000
+        $Offset = 0
+        do {
+            # PostgREST may enforce a 1,000-row server cap regardless of a
+            # larger requested limit, so page through every existing address.
+            $Existing = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + "/rest/v1/houses?select=id&order=id&limit=$PageSize&offset=$Offset") -Headers $Headers -Method Get)
+            foreach ($row in $Existing) { $ExistingIds[[int64]$row.id] = $true }
+            $Offset += $PageSize
+        } while ($Existing.Count -eq $PageSize)
         $RestoredSchool = @($State.buildings | Where-Object {
             [int64]$_.seed -eq 172 -and $_.type -eq 'elementaryschool'
         })

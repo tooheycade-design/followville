@@ -112,8 +112,22 @@ def main():
         return 1
 
     try:
-        existing = rest(url, key, "GET", "/rest/v1/houses?select=id&limit=100000")
-        existing_ids = {row["id"] for row in existing}
+        # Supabase/PostgREST commonly caps each response at 1,000 rows even
+        # when a larger limit is requested. Page explicitly or a mature city
+        # appears to be missing every address after the first thousand.
+        existing_ids = set()
+        page_size = 1000
+        offset = 0
+        while True:
+            page = rest(
+                url, key, "GET",
+                "/rest/v1/houses?select=id&order=id&limit=%d&offset=%d"
+                % (page_size, offset),
+            )
+            existing_ids.update(row["id"] for row in page)
+            if len(page) < page_size:
+                break
+            offset += page_size
     except urllib.error.HTTPError as e:
         print("HOUSES_SYNC_FAILED fetching existing ids: HTTP %s %s" % (e.code, e.read().decode()[:300]))
         return 1
