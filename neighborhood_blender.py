@@ -195,6 +195,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --fishingpond    add the permanent off-grid fishing pond north of the grid
 #   --constructionzone add the cleared downtown vote site at block (-2, 1)
 #   --movietheater  replace the canonical vote site with Followville Cinema
+#   --arcade       replace verified-unclaimed downtown seed 129 with the arcade
 #   --eastwoods      add the permanent raised East Woods reserve
 #   --raftingstation add the permanent west-bank rafting outpost and launch
 #   --godzilla       temporary city-destruction layer for cinematic replays
@@ -216,6 +217,7 @@ def _cli():
              "--fishingpond": "fishingpond",
              "--constructionzone": "constructionzone",
              "--movietheater": "movietheater",
+             "--arcade": "arcade",
              "--eastwoods": "eastwoods",
              "--raftingstation": "raftingstation",
              "--salmonproshop": "salmonproshop",
@@ -438,13 +440,9 @@ STORYBOOK_SLOTS = _storybook_slots()
 # ═══════════════════════════════ STATE PERSISTENCE ══════════════════════════════
 
 def state_path():
-    # NEIGHBORHOOD_STATE_DIR lets the caller redirect world_state.json somewhere
-    # other than "next to the .blend" -- specifically, grow_windows.ps1/grow.sh
-    # can point this at a git repo clone instead of the iCloud-synced folder,
-    # so the one file that gets read-modified-written every growth day never
-    # sits inside iCloud's sync path (see HISTORY.md's iCloud race-condition
-    # writeup, 2026-07-08, for why that matters). Unset = old behavior,
-    # unchanged, so this is a no-op for anyone who hasn't opted in.
+    # NEIGHBORHOOD_STATE_DIR lets guarded launchers use the authoritative Git
+    # repository and lets audits use disposable test-state folders. Unset keeps
+    # the local .blend-adjacent behavior for direct development sessions.
     override = os.environ.get("NEIGHBORHOOD_STATE_DIR")
     if override:
         return os.path.join(override, "world_state.json")
@@ -1338,6 +1336,441 @@ def build_movie_theater(col, seed):
         add_box(col, "cinema_side_belt_r", .22, 3.4, .28, 14.02, y,
                 WALK_TOP + 6.6, brass)
     _merge_asset_meshes(col, "movie_theater_batched")
+
+
+def build_followville_arcade(col, seed):
+    """Three-level urban arcade for the unclaimed seed-129 downtown parcel.
+
+    The public frontage faces local -Y.  The shell is deliberately open behind
+    the glazing, so the cabinet floor is real visible geometry rather than a
+    picture pasted onto an opaque facade.  All facade layers have at least 5cm
+    of physical separation from their support planes.
+    """
+    rng = random.Random(seed)
+    navy = mat("NB_arcade_navy", (.035, .065, .13), .62)
+    navy_hi = mat("NB_arcade_navy_hi", (.07, .13, .23), .52)
+    brick = mat("NB_arcade_brick", (.31, .105, .095), .86)
+    cream = mat("NB_arcade_cream", (.82, .73, .57), .82)
+    charcoal = mat("NB_arcade_charcoal", (.055, .06, .075), .68)
+    brass = mat("NB_arcade_brass", (.72, .43, .12), .34, .62)
+    pavement = mat("NB_arcade_pavement", (.48, .47, .44), .96)
+    floor = mat("NB_arcade_floor", (.075, .085, .11), .48)
+    glass = mat("NB_arcade_glass", (.045, .22, .31), .10, .08, .42, .48, .72)
+    glass_dark = mat("NB_arcade_glass_dark", (.018, .075, .12), .12, .12,
+                     .58, .34, .70)
+    magenta = mat_emissive("NB_arcade_magenta", (.95, .055, .42), .26, 5.0)
+    cyan = mat_emissive("NB_arcade_cyan", (.02, .78, .92), .24, 4.6)
+    gold = mat_emissive("NB_arcade_gold", (1.0, .55, .08), .30, 3.8)
+    warm = mat_emissive("NB_arcade_warm", (1.0, .58, .22), .30, 2.8)
+    screen_mats = (
+        mat_emissive("NB_arcade_screen_cyan", (.025, .58, .78), .20, 2.8),
+        mat_emissive("NB_arcade_screen_pink", (.88, .035, .32), .20, 2.8),
+        mat_emissive("NB_arcade_screen_gold", (.95, .48, .035), .20, 2.6),
+        mat_emissive("NB_arcade_screen_green", (.08, .72, .38), .20, 2.5),
+    )
+    foliage = mat("NB_arcade_foliage", (.18, .42, .22), .96)
+    soil = mat("NB_arcade_soil", (.18, .10, .055), 1.0)
+
+    PAD_TOP = .18
+    SHELL_FRONT = -4.78
+    # One-lot civic-quality ground interface, with a distinct flush approach.
+    add_box(col, "arcade_lot_pad", 12.35, 12.35, PAD_TOP, 0, 0, 0, pavement)
+    add_box(col, "arcade_entry_inlay", 5.6, 1.62, .025, 0, -5.28,
+            PAD_TOP, navy)
+    for x in (-2.35, -1.18, 0, 1.18, 2.35):
+        add_box(col, "arcade_entry_inlay_bar", .055, 1.46, .018, x, -5.28,
+                PAD_TOP + .025, brass)
+
+    # Real ground-floor room.  Nothing opaque sits behind the storefront.
+    add_box(col, "arcade_ground_floor", 9.55, 9.35, .16, 0, -.12,
+            PAD_TOP, floor)
+    add_box(col, "arcade_ground_rear", 10.15, .46, 4.05, 0, 4.34,
+            PAD_TOP + .16, brick)
+    add_box(col, "arcade_ground_left", .50, 9.05, 4.05, -4.83, -.12,
+            PAD_TOP + .16, brick)
+    add_box(col, "arcade_ground_right", .50, 9.05, 4.05, 4.83, -.12,
+            PAD_TOP + .16, brick)
+    add_box(col, "arcade_ground_ceiling", 9.65, 8.95, .22, 0, -.05,
+            PAD_TOP + 4.21, charcoal)
+
+    # Upper stories step backward and sideways instead of forming a plain box.
+    add_box(col, "arcade_upper_main", 9.75, 8.65, 7.15, -.12, .18,
+            PAD_TOP + 4.43, navy)
+    add_box(col, "arcade_upper_step", 6.65, 7.65, 2.25, -1.45, .52,
+            PAD_TOP + 11.58, navy_hi)
+    add_box(col, "arcade_sign_tower", 3.15, 6.9, 4.75, -2.42, .38,
+            PAD_TOP + 10.62, brick)
+    add_box(col, "arcade_tower_cap", 3.72, 7.25, .38, -2.42, .38,
+            PAD_TOP + 15.37, brass)
+    add_box(col, "arcade_roof_crown", 5.20, 2.30, 1.15, .85, .60,
+            PAD_TOP + 13.83, charcoal)
+    # Offset fins make a skyline-readable controller / equalizer crown.
+    for index, (x, h, material) in enumerate((
+            (-1.35, 2.00, magenta), (-.55, 2.85, cyan),
+            (.30, 3.65, gold), (1.15, 2.65, cyan), (2.0, 1.80, magenta))):
+        add_box(col, "arcade_crown_fin_%d" % index, .30, .44, h, x, -.42,
+                PAD_TOP + 14.40, material)
+    add_box(col, "arcade_crown_beam", 4.10, .48, .28, .32, -.43,
+            PAD_TOP + 14.15, brass)
+
+    # Two-storey front composition: recessed portal plus large reveal windows.
+    add_box(col, "arcade_front_left_pier", 1.28, .56, 4.08, -4.23,
+            SHELL_FRONT, PAD_TOP + .16, brick)
+    add_box(col, "arcade_front_right_pier", 1.28, .56, 4.08, 4.23,
+            SHELL_FRONT, PAD_TOP + .16, brick)
+    add_box(col, "arcade_front_lintel", 7.40, .56, .48, 0, SHELL_FRONT,
+            PAD_TOP + 3.76, cream)
+    add_box(col, "arcade_storefront_glass", 7.15, .12, 3.43, 0,
+            SHELL_FRONT - .35, PAD_TOP + .28, glass)
+    for x in (-3.55, -1.72, 0, 1.72, 3.55):
+        add_box(col, "arcade_storefront_mullion", .13, .20, 3.56, x,
+                SHELL_FRONT - .44, PAD_TOP + .22, brass)
+    add_box(col, "arcade_storefront_transom", 7.20, .20, .13, 0,
+            SHELL_FRONT - .44, PAD_TOP + 2.92, brass)
+
+    # Deep entrance portal and actual paired glazed doors.
+    add_box(col, "arcade_portal_left", .48, 1.15, 3.62, -1.42, -5.03,
+            PAD_TOP + .20, cream)
+    add_box(col, "arcade_portal_right", .48, 1.15, 3.62, 1.42, -5.03,
+            PAD_TOP + .20, cream)
+    add_box(col, "arcade_portal_head", 3.32, 1.15, .48, 0, -5.03,
+            PAD_TOP + 3.34, cream)
+    for x in (-.68, .68):
+        add_box(col, "arcade_entry_door", 1.16, .12, 3.05, x, -5.39,
+                PAD_TOP + .24, glass_dark)
+        add_box(col, "arcade_door_handle", .065, .17, .78,
+                x + (-.28 if x < 0 else .28), -5.50, PAD_TOP + 1.25, brass)
+
+    # Angled marquee projects far enough to own entrance push-in shots.
+    add_tapered_box(col, "arcade_marquee", 8.65, 1.95, 7.65, 1.18,
+                    .62, 0, -5.20, PAD_TOP + 3.92, 0, -.16, navy_hi)
+    add_box(col, "arcade_marquee_edge", 8.10, .18, .44, 0, -6.02,
+            PAD_TOP + 4.12, magenta)
+    for x in (-3.35, -2.25, -1.15, 0, 1.15, 2.25, 3.35):
+        add_ngon_cone(col, "arcade_marquee_bulb", .09, .09, .10, 8, x,
+                      -6.09, PAD_TOP + 4.25, warm)
+
+    # Exact, restrained branding integrated into the architecture.
+    add_box(col, "arcade_main_sign_back", 8.72, .30, 2.28, .35, -4.83,
+            PAD_TOP + 7.98, charcoal)
+    add_text(col, "arcade_followville_text", "FOLLOWVILLE", .72, .055,
+             .35, -5.03, PAD_TOP + 9.48, gold)
+    add_text(col, "arcade_arcade_text", "ARCADE", 1.42, .075,
+             .35, -5.05, PAD_TOP + 8.42, cyan)
+    # Side blade reads on the long east approach without duplicating branding.
+    add_box(col, "arcade_blade_back", .42, 2.55, 5.10, 5.18, -2.15,
+            PAD_TOP + 6.25, charcoal)
+    add_text(col, "arcade_blade_text", "ARCADE", .62, .055, 5.42, -2.15,
+             PAD_TOP + 8.80, magenta, rotation=(math.pi / 2, 0, math.pi / 2))
+
+    # Upper glazing and fins supply parallax from both oblique sides.
+    for floor_z in (5.10, 8.05):
+        for x in (-3.18, -.94, 1.30, 3.54):
+            add_box(col, "arcade_upper_window_frame", 1.68, .28, 2.18, x,
+                    -4.23, PAD_TOP + floor_z, cream)
+            add_box(col, "arcade_upper_window", 1.36, .12, 1.84, x,
+                    -4.42, PAD_TOP + floor_z + .18, glass_dark)
+    for x in (-4.65, 4.52):
+        add_box(col, "arcade_vertical_light", .16, .23, 6.85, x, -4.56,
+                PAD_TOP + 4.62, magenta if x < 0 else cyan)
+    for y in (-2.55, .10, 2.75):
+        add_box(col, "arcade_side_window_frame", .30, 1.72, 1.95, 4.82, y,
+                PAD_TOP + 5.35, cream)
+        add_box(col, "arcade_side_window", .14, 1.40, 1.62, 5.02, y,
+                PAD_TOP + 5.52, glass_dark)
+
+    # Detailed visible interior: varied machine families still leave a 2.6m
+    # camera aisle. Helpers rotate every component as one authored machine.
+    def machine_box(name, w, d, h, x, y, z, material, rot=0.0,
+                    local_x=0.0, local_y=0.0):
+        wx = x + local_x * math.cos(rot) - local_y * math.sin(rot)
+        wy = y + local_x * math.sin(rot) + local_y * math.cos(rot)
+        obj = add_box(col, name, w, d, h, wx, wy, z, material)
+        obj.rotation_euler[2] = rot
+        return obj
+
+    def upright_cabinet(index, x, y, rot):
+        body_mat = (navy_hi, brick, charcoal)[index % 3]
+        machine_box("arcade_cabinet_body", .88, .92, 1.52, x, y,
+                    PAD_TOP + .20, body_mat, rot)
+        hood = add_tapered_box(col, "arcade_cabinet_hood", .92, .82, .86, .58,
+                               .82, x, y, PAD_TOP + 1.72, 0, -.10, body_mat)
+        hood.rotation_euler[2] = rot
+        # Screen and controls sit 6cm proud of the cabinet face.
+        machine_box("arcade_cabinet_screen", .62, .08, .60, x, y,
+                    PAD_TOP + 2.08, screen_mats[index % 4], rot,
+                    local_y=-.47)
+        machine_box("arcade_cabinet_controls", .76, .36, .13, x, y,
+                    PAD_TOP + 1.58, brass, rot, local_y=-.40)
+        for local_x, material in ((-.18, magenta), (.18, cyan)):
+            machine_box("arcade_cabinet_button", .12, .12, .07, x, y,
+                        PAD_TOP + 1.71, material, rot, local_x, -.53)
+
+    def claw_machine(index, x, y, rot):
+        body_mat = (navy_hi, brick)[index % 2]
+        machine_box("arcade_claw_base", .96, .88, .72, x, y,
+                    PAD_TOP + .20, body_mat, rot)
+        machine_box("arcade_claw_glass", .88, .76, 1.22, x, y,
+                    PAD_TOP + .92, glass, rot)
+        machine_box("arcade_claw_header", 1.00, .88, .28, x, y,
+                    PAD_TOP + 2.14, screen_mats[index % 4], rot)
+        machine_box("arcade_claw_control", .74, .28, .15, x, y,
+                    PAD_TOP + .78, brass, rot, local_y=-.48)
+        # A real hanging claw and a small pile of distinct prizes.
+        machine_box("arcade_claw_rail", .62, .08, .08, x, y,
+                    PAD_TOP + 1.95, charcoal, rot)
+        machine_box("arcade_claw_cable", .035, .035, .42, x, y,
+                    PAD_TOP + 1.55, brass, rot, local_x=.12)
+        for prize_index, (local_x, local_y, material) in enumerate((
+                (-.24, -.12, magenta), (.08, .04, cyan),
+                (.27, -.18, gold), (-.05, .22, warm))):
+            machine_box("arcade_claw_prize_%d" % prize_index, .22, .20,
+                        .18 + .04 * (prize_index % 2), x, y, PAD_TOP + .98,
+                        material, rot, local_x, local_y)
+
+    def pinball_machine(index, x, y, rot):
+        body_mat = (brick, navy_hi)[index % 2]
+        machine_box("arcade_pinball_pedestal", .58, .58, .72, x, y,
+                    PAD_TOP + .20, body_mat, rot, local_y=.18)
+        table = machine_box("arcade_pinball_table", .82, 1.18, .18, x, y,
+                            PAD_TOP + .94, charcoal, rot, local_y=-.12)
+        table.rotation_euler[0] = math.radians(-7)
+        machine_box("arcade_pinball_playfield", .66, .88, .08, x, y,
+                    PAD_TOP + 1.10, screen_mats[index % 4], rot,
+                    local_y=-.23)
+        machine_box("arcade_pinball_backbox", .80, .22, .72, x, y,
+                    PAD_TOP + 1.18, body_mat, rot, local_y=.48)
+        machine_box("arcade_pinball_score", .60, .08, .38, x, y,
+                    PAD_TOP + 1.42, screen_mats[(index + 1) % 4], rot,
+                    local_y=.62)
+        for local_x in (-.22, .22):
+            machine_box("arcade_pinball_leg", .07, .07, .82, x, y,
+                        PAD_TOP + .20, brass, rot, local_x, -.38)
+
+    def racing_machine(index, x, y, rot):
+        body_mat = (charcoal, navy_hi)[index % 2]
+        machine_box("arcade_racer_console", .96, .78, 1.42, x, y,
+                    PAD_TOP + .20, body_mat, rot, local_y=-.16)
+        machine_box("arcade_racer_screen", .72, .08, .62, x, y,
+                    PAD_TOP + 1.36, screen_mats[index % 4], rot,
+                    local_y=-.58)
+        # Low-poly steering wheel, column, pedals and bucket seat.
+        wheel = add_ngon_cone(col, "arcade_racer_wheel", .25, .25, .08, 10,
+                              x + math.sin(rot) * .67,
+                              y - math.cos(rot) * .67,
+                              PAD_TOP + 1.06, brass)
+        wheel.rotation_euler = (math.pi / 2, 0, rot)
+        machine_box("arcade_racer_column", .09, .36, .09, x, y,
+                    PAD_TOP + .91, brass, rot, local_y=-.54)
+        machine_box("arcade_racer_seat", .72, .62, .62, x, y,
+                    PAD_TOP + .20, brick, rot, local_y=.72)
+        machine_box("arcade_racer_seat_back", .72, .18, 1.02, x, y,
+                    PAD_TOP + .38, brick, rot, local_y=1.00)
+        for local_x in (-.20, .20):
+            machine_box("arcade_racer_pedal", .15, .25, .05, x, y,
+                        PAD_TOP + .25, brass, rot, local_x, -.62)
+
+    def rhythm_machine(index, x, y, rot):
+        body_mat = (navy_hi, brick)[index % 2]
+        machine_box("arcade_rhythm_tower", .92, .72, 1.82, x, y,
+                    PAD_TOP + .20, body_mat, rot, local_y=.12)
+        machine_box("arcade_rhythm_screen", .68, .08, .70, x, y,
+                    PAD_TOP + 1.10, screen_mats[index % 4], rot,
+                    local_y=-.28)
+        machine_box("arcade_rhythm_marquee", .98, .18, .30, x, y,
+                    PAD_TOP + 2.02, magenta, rot, local_y=.02)
+        # Two speaker discs and a four-zone illuminated dance pad.
+        for local_x in (-.25, .25):
+            speaker = add_ngon_cone(
+                col, "arcade_rhythm_speaker", .14, .14, .07, 10,
+                x + local_x * math.cos(rot) + math.sin(rot) * .30,
+                y + local_x * math.sin(rot) - math.cos(rot) * .30,
+                PAD_TOP + .72, charcoal)
+            speaker.rotation_euler = (math.pi / 2, 0, rot)
+        machine_box("arcade_rhythm_pad_base", 1.08, .92, .10, x, y,
+                    PAD_TOP + .20, charcoal, rot, local_y=-.76)
+        for local_x, local_y, material in ((-.27, -.98, cyan),
+                                             (.27, -.98, magenta),
+                                             (-.27, -.57, gold),
+                                             (.27, -.57, cyan)):
+            machine_box("arcade_rhythm_pad", .42, .34, .035, x, y,
+                        PAD_TOP + .30, material, rot, local_x, local_y)
+        for local_x in (-.45, .45):
+            machine_box("arcade_rhythm_rail", .08, .08, 1.05, x, y,
+                        PAD_TOP + .30, brass, rot, local_x, -.24)
+        machine_box("arcade_rhythm_rail_top", .98, .08, .08, x, y,
+                    PAD_TOP + 1.28, brass, rot, local_y=-.24)
+
+    def machine(index, x, y, rot, kind="upright"):
+        if kind == "claw":
+            claw_machine(index, x, y, rot)
+        elif kind == "pinball":
+            pinball_machine(index, x, y, rot)
+        elif kind == "racer":
+            racing_machine(index, x, y, rot)
+        elif kind == "rhythm":
+            rhythm_machine(index, x, y, rot)
+        else:
+            upright_cabinet(index, x, y, rot)
+
+    left_kinds = ("upright", "claw", "rhythm", "pinball", "upright")
+    right_kinds = ("racer", "upright", "claw", "rhythm", "pinball")
+    for index, y in enumerate((-2.65, -1.15, .35, 1.85, 3.32)):
+        machine(index, -3.12, y, math.pi / 2, left_kinds[index])
+        machine(index + 5, 3.12, y, -math.pi / 2, right_kinds[index])
+
+    # Custom redemption table replaces the old flat back-wall display. Every
+    # prize is modeled in 3D and readable from the entrance camera path.
+    add_box(col, "arcade_prize_table_top", 5.45, 1.02, .20, 0, 3.45,
+            PAD_TOP + 1.02, cream)
+    add_box(col, "arcade_prize_table_apron", 5.10, .20, .42, 0, 2.99,
+            PAD_TOP + .74, navy_hi)
+    add_box(col, "arcade_prize_table_shelf", 4.78, .76, .14, 0, 3.48,
+            PAD_TOP + .42, brick)
+    for x in (-2.22, 2.22):
+        for y in (3.12, 3.78):
+            add_box(col, "arcade_prize_table_leg", .18, .18, .88, x, y,
+                    PAD_TOP + .14, brass)
+    add_box(col, "arcade_prize_header", 5.60, .18, .86, 0, 4.06,
+            PAD_TOP + 2.92, charcoal)
+    add_text(col, "arcade_prize_vault_text", "PRIZE VAULT", .38, .035,
+             0, 3.93, PAD_TOP + 3.36, gold)
+
+    prize_z = PAD_TOP + 1.24
+    # Faceted ball.
+    add_uv_sphere(col, "arcade_prize_ball", .34, -2.02, 3.36,
+                  prize_z + .34, magenta, rings=6, segments=8)
+    # Trophy with stepped base, stem, open-looking cup and handles.
+    add_box(col, "arcade_prize_trophy_base", .52, .38, .16, -1.10, 3.36,
+            prize_z, brass)
+    add_ngon_cone(col, "arcade_prize_trophy_stem", .10, .10, .34, 8,
+                  -1.10, 3.36, prize_z + .16, gold)
+    add_ngon_cone(col, "arcade_prize_trophy_cup", .18, .38, .42, 8,
+                  -1.10, 3.36, prize_z + .50, gold)
+    for x in (-1.48, -.72):
+        add_box(col, "arcade_prize_trophy_handle", .18, .10, .20, x, 3.36,
+                prize_z + .60, brass)
+    # Rocket with contrasting nose and fins.
+    add_ngon_cone(col, "arcade_prize_rocket_body", .20, .18, .68, 8,
+                  -.20, 3.36, prize_z, cyan)
+    add_ngon_cone(col, "arcade_prize_rocket_nose", .20, 0, .30, 8,
+                  -.20, 3.36, prize_z + .68, magenta)
+    for x in (-.42, .02):
+        add_box(col, "arcade_prize_rocket_fin", .18, .10, .26, x, 3.36,
+                prize_z, gold)
+    # Toy car with a raised cabin and four low-poly wheels.
+    add_box(col, "arcade_prize_car_body", .78, .42, .24, .78, 3.36,
+            prize_z + .12, brick)
+    add_tapered_box(col, "arcade_prize_car_cabin", .42, .34, .30, .28, .24,
+                    .78, 3.36, prize_z + .36, 0, 0, glass_dark)
+    for x in (.48, 1.08):
+        for y in (3.12, 3.60):
+            wheel = add_ngon_cone(col, "arcade_prize_car_wheel", .12, .12,
+                                  .10, 8, x, y, prize_z + .10, charcoal)
+            wheel.rotation_euler[0] = math.pi / 2
+    # Small robot/plush prize with a distinct face, antenna and blocky feet.
+    add_box(col, "arcade_prize_robot_body", .48, .34, .48, 1.75, 3.36,
+            prize_z + .12, navy_hi)
+    add_box(col, "arcade_prize_robot_head", .60, .42, .46, 1.75, 3.36,
+            prize_z + .60, cream)
+    for x in (1.60, 1.90):
+        add_box(col, "arcade_prize_robot_eye", .10, .08, .10, x, 3.05,
+                prize_z + .80, cyan)
+    add_box(col, "arcade_prize_robot_mouth", .25, .07, .06, 1.75, 3.05,
+            prize_z + .68, magenta)
+    add_box(col, "arcade_prize_robot_antenna", .05, .05, .30, 1.75, 3.36,
+            prize_z + 1.06, brass)
+    add_uv_sphere(col, "arcade_prize_robot_tip", .09, 1.75, 3.36,
+                  prize_z + 1.40, gold, rings=5, segments=8)
+    for x in (1.58, 1.92):
+        add_box(col, "arcade_prize_robot_foot", .22, .38, .14, x, 3.36,
+                prize_z, brick)
+    for x, material in ((-.72, cyan), (0, gold), (.72, magenta)):
+        add_box(col, "arcade_aisle_strip", .10, 5.35, .018, x, -.38,
+                PAD_TOP + .17, material)
+    # Change kiosk, ticket checker and low-poly wall graphics make the room
+    # operational rather than a row of props.
+    add_box(col, "arcade_change_kiosk", .72, .54, 1.42, -4.18, -3.10,
+            PAD_TOP + .20, cream)
+    add_box(col, "arcade_change_screen", .50, .08, .42, -4.18, -3.42,
+            PAD_TOP + 1.12, cyan)
+    add_box(col, "arcade_change_slot", .28, .08, .07, -4.18, -3.43,
+            PAD_TOP + .72, charcoal)
+    add_box(col, "arcade_ticket_checker", .48, .44, 1.02, 4.25, -3.30,
+            PAD_TOP + .20, navy_hi)
+    add_box(col, "arcade_ticket_glow", .34, .08, .24, 4.25, -3.56,
+            PAD_TOP + .85, magenta)
+    for side in (-1, 1):
+        wall_x = side * 4.54
+        for index, (wall_y, z, material) in enumerate((
+                (-1.55, 2.72, cyan), (-.88, 2.18, magenta),
+                (-.20, 2.84, gold), (.48, 2.30, cyan), (1.16, 2.72, magenta))):
+            add_box(col, "arcade_wall_pixel_%d" % index, .08, .46, .42,
+                    wall_x, wall_y, PAD_TOP + z, material)
+    # Ceiling baffles and light bars give the room a finished acoustic grid.
+    for x in (-3.55, -2.40, 2.40, 3.55):
+        add_box(col, "arcade_ceiling_baffle", .18, 7.15, .28, x, .18,
+                PAD_TOP + 3.78, navy_hi)
+    for y in (-2.45, -.55, 1.35, 3.18):
+        add_box(col, "arcade_ceiling_light", 2.25, .16, .075, 0, y,
+                PAD_TOP + 4.02, cyan if int((y + 3) * 10) % 2 else magenta)
+
+    # Street-scale details stay inside the parcel and preserve the clear portal.
+    for x in (-4.75, 4.75):
+        add_box(col, "arcade_planter", 1.35, .95, .58, x, -5.30,
+                PAD_TOP + .02, navy_hi)
+        add_box(col, "arcade_planter_soil", 1.15, .75, .12, x, -5.30,
+                PAD_TOP + .58, soil)
+        for offset in (-.34, 0, .34):
+            add_ngon_cone(col, "arcade_planter_leaf", .30, .10,
+                          .72 + rng.uniform(-.08, .10), 7, x + offset,
+                          -5.30 + rng.uniform(-.14, .14), PAD_TOP + .68, foliage,
+                          rot=rng.random() * math.tau)
+    # Bike hoops and a short bench occupy the quieter east edge.
+    for y in (-4.30, -3.45):
+        for x in (4.92, 5.62):
+            add_box(col, "arcade_bike_rack_post", .10, .10, .82, x, y,
+                    PAD_TOP + .04, brass)
+        add_box(col, "arcade_bike_rack_top", .80, .10, .10, 5.27, y,
+                PAD_TOP + .81, brass)
+    add_box(col, "arcade_bench_seat", 2.20, .58, .17, -4.62, -3.78,
+            PAD_TOP + .46, cream)
+    add_box(col, "arcade_bench_back", 2.20, .16, .82, -4.62, -3.50,
+            PAD_TOP + .53, navy)
+    for x in (-5.40, -3.84):
+        add_box(col, "arcade_bench_leg", .14, .42, .48, x, -3.78,
+                PAD_TOP + .04, brass)
+
+    # Screened roof plant gives overhead views an authored, believable finish.
+    add_box(col, "arcade_roof_screen_front", 4.25, .20, 1.20, 1.75, 2.12,
+            PAD_TOP + 11.58, navy_hi)
+    add_box(col, "arcade_roof_screen_rear", 4.25, .20, 1.20, 1.75, 4.05,
+            PAD_TOP + 11.58, navy_hi)
+    for x in (-.27, 3.77):
+        add_box(col, "arcade_roof_screen_side", .20, 1.72, 1.20, x, 3.08,
+                PAD_TOP + 11.58, navy_hi)
+    for x in (.70, 2.80):
+        add_box(col, "arcade_hvac", 1.35, 1.28, .72, x, 3.05,
+                PAD_TOP + 11.60, charcoal)
+        add_ngon_cone(col, "arcade_hvac_fan", .42, .42, .08, 10, x, 3.05,
+                      PAD_TOP + 12.33, brass)
+
+    # Four practicals are enough for the entrance and interior, and remain
+    # cheap compared with the town's capped render-only streetlight pools.
+    for index, (x, y, z, energy, color) in enumerate((
+            (-2.0, -1.0, 3.55, 95, (1.0, .18, .46)),
+            (2.0, 1.65, 3.55, 95, (.08, .70, 1.0)),
+            (-3.55, -5.18, 3.30, 70, (1.0, .44, .12)),
+            (3.55, -5.18, 3.30, 70, (.10, .65, 1.0)))):
+        data = bpy.data.lights.new("arcade_practical_%d" % index, type="POINT")
+        data.energy = energy
+        data.color = color
+        data.shadow_soft_size = 1.10
+        obj = bpy.data.objects.new("arcade_practical_%d" % index, data)
+        obj.location = (x, y, PAD_TOP + z)
+        col.objects.link(obj)
+
+    _merge_asset_meshes(col, "followville_arcade_batched")
 
 SUBURBAN_PALETTES = [
     # wall, roof, door, shutter -- restrained colors keep whole streets cohesive
@@ -6597,6 +7030,7 @@ ASSET_VARIANTS = {
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
     "constructionzone": [("AST_constructionzone_0", lambda c: build_construction_zone(c, 3300))],
     "movietheater": [("AST_movietheater_0", lambda c: build_movie_theater(c, 3500))],
+    "arcade": [("AST_arcade_0", lambda c: build_followville_arcade(c, 129))],
     "followmart":  [("AST_followmart_4", lambda c: build_followmart(c, 2600))],
     "coffeetruck": [("AST_coffeetruck_0", lambda c: build_coffee_truck(c, 2700))],
     "firestation": [("AST_firestation_0", lambda c: build_fire_station(c, 2800))],
@@ -6695,6 +7129,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2,
         "metrotower": 1, "stadium": 3,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
+        "arcade": 1,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
         "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
@@ -6881,7 +7316,7 @@ def place_instance(world_col, b, name):
         # hatch toward it so customers order from the sidewalk side.
         empty.rotation_euler = (0, 0, math.pi)
     elif b["type"] in ("elementaryschool", "constructionzone", "movietheater",
-                       "followmart", "firestation"):
+                       "followmart", "firestation", "arcade"):
         # Campus assets are authored with main doors facing local -Y;
         # keep that deliberate frontage instead of lot-house rotation.
         empty.rotation_euler = (0, 0, 0)
@@ -14264,7 +14699,7 @@ def main(cfg=None):
         if (gained or lost or n_apart or n_parks or n_trees or n_mush or
                 specials or cfg.get("cityhall") or cfg.get("civicsquare") or
                 cfg.get("fishingpond") or cfg.get("constructionzone") or
-                cfg.get("movietheater") or
+                cfg.get("movietheater") or cfg.get("arcade") or
                 cfg.get("eastwoods") or cfg.get("raftingstation") or
                 cfg.get("gasstation") or cfg.get("salmonproshop")):
             state["day"] += 1
@@ -14589,6 +15024,21 @@ def main(cfg=None):
             theater["type"] = "movietheater"
             theater["day"] = state["day"]
             new_batch.append(theater)
+        if cfg.get("arcade"):
+            arcades = [b for b in state["buildings"] if b["type"] == "arcade"]
+            if arcades:
+                raise RuntimeError("Followville Arcade already exists")
+            candidates = [b for b in state["buildings"]
+                          if int(b.get("seed", -1)) == 129]
+            if len(candidates) != 1:
+                raise RuntimeError("Arcade requires canonical downtown seed 129")
+            arcade = candidates[0]
+            if arcade.get("type") != "house" or arcade.get("gx") != 4 or arcade.get("gy") != -3:
+                raise RuntimeError("Arcade seed 129 is no longer the expected downtown house")
+            arcade["type"] = "arcade"
+            arcade["day"] = state["day"]
+            arcade["name"] = "Followville Arcade"
+            new_batch.append(arcade)
         if cfg.get("eastwoods"):
             if any(b["type"] == "forestreserve" for b in state["buildings"]):
                 raise RuntimeError("East Woods already exists")

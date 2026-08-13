@@ -21,25 +21,25 @@ changelog, and this file is not.
 
 ## Authoritative workflow
 
-- **Git is the only executable source** for code, `world_state.json`, web
-  assets and current docs. On Windows: `C:\Users\cadet\followville_repo`.
-- The **shared authoritative scene** is
-  `C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend`. The repo copy
-  is a synchronized safety copy and the two must hash-match.
-- Growth launchers run the generator and exporter **from Git** against the
-  Blend **from iCloud**, in one Blender session. They fail before Blender
-  starts unless the repo is on clean `main`, matches `origin/main`, and both
-  Blend copies agree.
-- **Retired, not fallbacks:** `--no-git`, iCloud-only state, unguarded Blender
-  growth, an unset Mac repo path, and automatic `wip` sharing. Direct Blender
+- **Git is the only source** for code, `world_state.json`, web assets, current
+  docs and the authoritative Blend. On Windows everything lives in
+  `C:\Users\cadet\followville_repo`.
+- The **authoritative scene** is the tracked repo file
+  `C:\Users\cadet\followville_repo\neighborhood.blend`. iCloud is not a source
+  or required mirror.
+- Growth launchers run the generator, exporter and guarded Blend save **from
+  Git** in one Blender session. They fail before Blender starts unless the repo
+  is on clean `main` and matches `origin/main`.
+- **Retired, not fallbacks:** `--no-git`, iCloud state or scene copies,
+  unguarded Blender growth, an unset Mac repo path, and automatic `wip`
+  sharing. Direct Blender
   GUI growth is locked unless its embedded generator hash matches the repo.
   After generator changes, refresh embedded text only through the guarded repo
   `_refresh_text.py` with `FOLLOWVILLE_REPO_DIR`/`NEIGHBORHOOD_STATE_DIR` set.
-  Never load a numbered iCloud generator copy.
+  Never load a numbered sync-conflict generator copy.
 - **Numbered/parenthesized files** (`world_state 3.json`, `CLAUDE(1).md`) are
-  iCloud sync artefacts, never source. Don't delete them without checking their
-  contents — one has held the only copy of canonical state before. Don't trust
-  bash's `ls`/`stat`/`tail` for freshness on iCloud paths; read the content.
+  retired sync artefacts, never source. Don't delete them without checking
+  their contents — one has held the only copy of canonical state before.
 - The old `deploy_website.*` and `share_progress.*` scripts are legacy recovery
   tools. Don't use them for routine work, and never let one switch the
   authoritative clone to `wip`.
@@ -55,8 +55,8 @@ grow_windows.bat +N --render
 Mac: set `FOLLOWVILLE_REPO_DIR` to the local clone, then run the guarded
 `grow.sh`. Run `--preflight-only` first after any workflow change.
 
-`+N` / `-N` / `=N` / `replay`. `replay` never touches `world_state.json` or the
-Blend, so it is the safe way to re-export.
+`+N` / `-N` / `=N` / `replay`. `replay` never changes `world_state.json`; it
+does refresh exports and the repo Blend's saved WORLD snapshot.
 
 Logs end `ALL_DONE` or `ALL_FAILED`. **`ALL_FAILED` is real — read the log.**
 Don't re-run and hope. If you open the Blend read-only to inspect something,
@@ -75,9 +75,9 @@ are **render-only** and never change state, GLBs or the Blend.
 ### Deploying
 
 Live at `https://followville-kappa.vercel.app`; Vercel deploys every push to
-`main`. Guarded production growth commits and pushes only `world_state.json`,
-`town.glb`, `town_manifest.json` and `town_chunks/`. Everything else needs an
-intentional reviewed commit.
+`main`. Guarded production growth commits and pushes `world_state.json`, the
+authoritative `neighborhood.blend`, `town.glb`, `town_manifest.json` and
+`town_chunks/`. Everything else needs an intentional reviewed commit.
 
 ### Cost discipline
 
@@ -96,8 +96,8 @@ intentional reviewed commit.
 ```
 
 It probes what this session can actually do — interpreter, repo modules, state,
-pygltflib, git, node, Playwright, Chromium, the preview port, Blender, both
-Blend copies — and prints the exact fix for anything missing, grouped by whether
+pygltflib, git, node, Playwright, Chromium, the preview port, Blender and the
+repo Blend — and prints the exact fix for anything missing, grouped by whether
 it blocks inspecting, verifying or changing the world. It installs nothing and
 writes nothing. Findings below are the ones it cannot probe for you.
 
@@ -464,8 +464,10 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | File | What it is |
 | --- | --- |
 | `world_state.json` | **The city.** Day, population, every building record. |
-| `neighborhood.blend` | The scene (GUI panel: N key → City tab). |
+| `neighborhood.blend` | The authoritative Git-tracked scene (GUI panel: N key → City tab). |
 | `neighborhood_blender.py` | The generator. |
+| `save_canonical_blend.py` | Guarded post-export save that aligns the Blend's WORLD snapshot with state. |
+| `FOLLOWVILLE_ARCADE.md` | Canonical site, design, machine/prize inventory, performance, and integration record. |
 | `export_web.py` | Bakes the WORLD collection to full + district GLBs. |
 | `neighborhood_plan.py` | The 366-house structural reserve. |
 | `west_quarter_plan.py` | Chapter four: 1,000 homes + 22 empty parcels, west. |

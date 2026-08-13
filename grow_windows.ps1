@@ -29,20 +29,13 @@ $ErrorActionPreference = "Stop"
 $Dir = $PSScriptRoot
 $Blender = "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 
-# 2026-07-17: the Git clone is the only executable source for code/state/web
-# assets. The shared iCloud folder owns only the authoritative Blender scene.
-# A generator beside the Blend is never executed or required because iCloud may
-# rename it; the repository generator is the sole source. Override paths only
-# for a deliberate machine setup.
+# The Git clone is the only source for code, state, web assets, and the
+# authoritative Blender scene. Everything needed to build Followville lives in
+# one repository; no iCloud mirror or fallback participates in growth.
 $RepoDir = if ($env:FOLLOWVILLE_REPO_DIR) {
     $env:FOLLOWVILLE_REPO_DIR
 } else {
     "C:\Users\cadet\followville_repo"
-}
-$SharedDir = if ($env:FOLLOWVILLE_SHARED_DIR) {
-    $env:FOLLOWVILLE_SHARED_DIR
-} else {
-    "C:\Users\cadet\iCloudDrive\neighborhood"
 }
 
 # pull an optional "--log <name>" out of $args by hand; everything else passes
@@ -109,7 +102,6 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
 
     $RepoGenerator = Join-Path $RepoDir 'neighborhood_blender.py'
     $RepoBlend = Join-Path $RepoDir 'neighborhood.blend'
-    $SharedBlend = Join-Path $SharedDir 'neighborhood.blend'
     $Required = @(
         $RepoGenerator,
         (Join-Path $RepoDir 'export_web.py'),
@@ -118,7 +110,7 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
         (Join-Path $RepoDir 'town_manifest.json'),
         (Join-Path $RepoDir 'town_chunks\base.glb'),
         $RepoBlend,
-        $SharedBlend
+        (Join-Path $RepoDir 'save_canonical_blend.py')
     )
     foreach ($file in $Required) {
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
@@ -154,16 +146,10 @@ function Assert-FollowvilleInputs([bool]$PullMain) {
         Pop-Location
     }
 
-    $RepoBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $RepoBlend).Hash
-    $SharedBlendHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SharedBlend).Hash
-    if ($RepoBlendHash -ne $SharedBlendHash) {
-        throw "Repository and iCloud neighborhood.blend differ. Reconcile the authoritative scene before growing."
-    }
-
     $env:FOLLOWVILLE_REPO_DIR = $RepoDir
     $env:NEIGHBORHOOD_REPO_DIR = $RepoDir
     $env:NEIGHBORHOOD_STATE_DIR = $RepoDir
-    Log-Line "PREFLIGHT_OK repo=$RepoDir shared=$SharedDir commit=$Head"
+    Log-Line "PREFLIGHT_OK repo=$RepoDir blend=$RepoBlend commit=$Head"
 }
 
 # 2026-07-09: claimable-homes feature (see CLAIMING_SETUP.md). After a growth
@@ -240,12 +226,34 @@ function Sync-Houses {
                 throw 'Seed 524 is not the expected non-claimable zone/cinema row'
             }
         }
+        $CompletedArcade = @($State.buildings | Where-Object {
+            [int64]$_.seed -eq 129 -and $_.type -eq 'arcade'
+        })
+        if ($CompletedArcade.Count -eq 1) {
+            $Row129 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.129&select=id,building_type,claimable,day_built') -Headers $Headers -Method Get)
+            if ($Row129.Count -ne 1) {
+                throw 'Expected exactly one houses row for canonical seed 129'
+            }
+            $Claims129 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/claims?house_id=eq.129&select=house_id') -Headers $Headers -Method Get)
+            if ($Claims129.Count -ne 0) {
+                throw 'Seed 129 has a citizen claim; refusing arcade conversion'
+            }
+            if ($Row129[0].building_type -eq 'house' -and [bool]$Row129[0].claimable) {
+                $PatchBody = @{ building_type = 'arcade'; claimable = $false; day_built = [int]$CompletedArcade[0].day } | ConvertTo-Json -Compress
+                $PatchHeaders = $Headers.Clone()
+                $PatchHeaders['Content-Type'] = 'application/json'
+                Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/houses?id=eq.129') -Headers $PatchHeaders -Method Patch -Body $PatchBody | Out-Null
+                Write-Host 'HOUSES_CORRECTION_OK seed 129 unclaimed house -> arcade'
+            } elseif ($Row129[0].building_type -ne 'arcade' -or [bool]$Row129[0].claimable) {
+                throw 'Seed 129 is not the expected unclaimed house/arcade row'
+            }
+        }
         # keep in sync with NON_CLAIMABLE_TYPES in sync_houses.py
         $NonClaimable = @(
             'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
             'streetlight', 'car', 'elementaryschool', 'followmart',
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
-            'civicsquare', 'fishingpond', 'weatherstation', 'constructionzone', 'movietheater',
+            'civicsquare', 'fishingpond', 'weatherstation', 'constructionzone', 'movietheater', 'arcade',
             'forestreserve',
             # Followville Point Station -- a power station, not a home. Without
             # this the sync offers a nuclear reactor as a claimable property.
@@ -305,11 +313,12 @@ try {
         }
     }
 
-    $BlendFile   = Join-Path $SharedDir 'neighborhood.blend'
+    $BlendFile   = Join-Path $RepoDir 'neighborhood.blend'
     $GeneratorPy = Join-Path $RepoDir 'neighborhood_blender.py'
     $ExportPy    = Join-Path $RepoDir 'export_web.py'
+    $SaveBlendPy = Join-Path $RepoDir 'save_canonical_blend.py'
 
-    foreach ($f in @($BlendFile, $GeneratorPy, $ExportPy)) {
+    foreach ($f in @($BlendFile, $GeneratorPy, $ExportPy, $SaveBlendPy)) {
         if (-not (Test-Path -LiteralPath $f)) { throw "Missing required file: $f" }
     }
 
@@ -319,6 +328,7 @@ try {
         '--background', $BlendFile,
         '--python', $GeneratorPy,
         '--python', $ExportPy,
+        '--python', $SaveBlendPy,
         '--'
     ) + $Flags + $Extra
 
@@ -373,10 +383,7 @@ try {
     # arrived:
     #
     #  1. It globbed "$Dir\renders", the REPO's renders folder. Blender writes
-    #     next to the .blend (setup_render uses dirname(bpy.data.filepath)),
-    #     and the blend lives in the shared iCloud folder. The repo copy is
-    #     abandoned paper trail whose newest file is from day 15, so day 40
-    #     put a day-15 clip on the Desktop and day 41 a day-40 Story shot.
+    #     next to the .blend (setup_render uses dirname(bpy.data.filepath)).
     #     Reading the prefix off Blender's own VIDEO line removes the guess
     #     entirely -- no directory assumption, and no way to pick up a stale
     #     file from a previous day, because the prefix carries the day number
@@ -419,10 +426,10 @@ try {
         }
     }
 
-    Log-Line "-- git add/commit/push (state + full/streamed town assets) --"
+    Log-Line "-- git add/commit/push (state + Blend + full/streamed town assets) --"
     Push-Location $RepoDir
     try {
-        $AddOutput = Invoke-Git @('add', 'world_state.json', 'town.glb', 'town_manifest.json', 'town_chunks')
+        $AddOutput = Invoke-Git @('add', 'world_state.json', 'neighborhood.blend', 'town.glb', 'town_manifest.json', 'town_chunks')
         $AddOutput | Out-File -FilePath $LogFile -Append -Encoding utf8
         if ($script:LastGitExit -ne 0) {
             throw "git add failed after growing. State/assets remain local; resolve Git before another growth."

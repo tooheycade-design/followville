@@ -409,6 +409,8 @@ LANDMARK_FOOTPRINTS = {
     "firestation":     (-18.00, 18.00, -18.00, 18.00, False),
     # Crown Quarter podium slab; the tower mass stays inside this envelope.
     "metrotower":      (-19.00, 19.00, -20.00, 20.00, False),
+    # One-lot urban landmark replacing verified-unclaimed seed 129.
+    "arcade":           (-6.18,  6.18,  -6.18,  6.18, False),
     # Followville Point Station. Rural: it belongs outside the paved town, and
     # the -X extent covers the cooling intake running toward the river, which
     # reaches well past the fenced pad.
@@ -434,6 +436,7 @@ LANDMARK_GRID_SIZE = {
     "elementaryschool": 3, "followmart": 3, "firestation": 3,
     "park": 2, "pond": 1, "gasstation": 1, "restaurant": 1,
     "cityhall": 4, "civicsquare": 3,
+    "arcade": 1,
 }
 
 # Walk pads whose deck deliberately stands clear of the ground, each with the

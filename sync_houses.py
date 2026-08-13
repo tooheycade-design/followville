@@ -4,8 +4,9 @@
 Insert-only by design: rows already in the table are NEVER touched, so any
 manual edits Cade makes (e.g. flipping `claimable`) survive every sync. The
 guarded exceptions are canonical seed 172's Day 26 school restoration and
-seed 524's Day 27 construction-site-to-cinema conversion. Both verify the old
-non-claimable row before changing only civic metadata.
+seed 524's Day 27 construction-site-to-cinema conversion, and seed 129's Day
+44 unclaimed-house-to-arcade conversion. Every correction verifies the exact
+old row before changing only civic/commercial metadata.
 
 Stdlib only (urllib) — no pip installs needed. Cross-platform (Mac/Linux/
 Windows). On Windows the grow pipeline actually uses the PowerShell-native
@@ -40,7 +41,7 @@ NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "s
                        "cityhallroad", "cityhall",
                        "civicsquare", "fishingpond", "raftingstation",
                        "weatherstation",
-                       "constructionzone", "movietheater",
+                       "constructionzone", "movietheater", "arcade",
                        "forestreserve",
                        # Chapter three's filling stations and diners. They hold
                        # a growth address each -- "+N followers" still means the
@@ -180,6 +181,42 @@ def main():
             return 1
         except Exception as e:  # noqa: BLE001
             print("HOUSES_SYNC_FAILED theater correction: %s" % e)
+            return 1
+    completed_arcade = state_by_seed.get(129)
+    if completed_arcade and completed_arcade.get("type") == "arcade":
+        try:
+            rows_129 = rest(
+                url, key, "GET",
+                "/rest/v1/houses?id=eq.129&select=id,building_type,claimable,day_built",
+            )
+            if len(rows_129) != 1:
+                raise RuntimeError("expected exactly one houses row for seed 129")
+            claims_129 = rest(
+                url, key, "GET",
+                "/rest/v1/claims?house_id=eq.129&select=house_id",
+            )
+            if claims_129:
+                raise RuntimeError("seed 129 has a citizen claim; refusing arcade conversion")
+            current = rows_129[0]
+            if current.get("building_type") == "house" and current.get("claimable") is True:
+                rest(
+                    url, key, "PATCH", "/rest/v1/houses?id=eq.129",
+                    {"building_type": "arcade", "claimable": False,
+                     "day_built": int(completed_arcade.get("day", 44))},
+                    prefer="return=minimal",
+                )
+                print("HOUSES_CORRECTION_OK seed 129 unclaimed house -> arcade")
+            elif not (current.get("building_type") == "arcade"
+                      and current.get("claimable") is False):
+                raise RuntimeError(
+                    "seed 129 is not the expected unclaimed house/arcade row"
+                )
+        except urllib.error.HTTPError as e:
+            print("HOUSES_SYNC_FAILED arcade correction: HTTP %s %s"
+                  % (e.code, e.read().decode()[:300]))
+            return 1
+        except Exception as e:  # noqa: BLE001
+            print("HOUSES_SYNC_FAILED arcade correction: %s" % e)
             return 1
     rows = []
     for b in buildings:

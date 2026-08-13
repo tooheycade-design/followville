@@ -29,11 +29,11 @@ rest, and you are expected to have read it.
 - **`world_state.json` is the city's only memory.** Never edit or delete it
   casually. Back it up before anything risky. It lives in the Git repo
   (`C:\Users\cadet\followville_repo`), never in iCloud.
-- **Git is the only executable source.** The authoritative Blend is the iCloud
-  one. Grow only through the guarded launchers (`grow_windows.bat`, `grow.sh`),
-  which refuse to run unless the repo is clean `main`, matches `origin/main`,
-  and both Blend copies hash-match. `--no-git`, iCloud-only state and unguarded
-  Blender growth are retired, not fallbacks.
+- **Git is the only source.** The authoritative Blend is the tracked
+  `neighborhood.blend` in this repo. Grow only through the guarded launchers
+  (`grow_windows.bat`, `grow.sh`), which refuse to run unless the repo is clean
+  `main` and matches `origin/main`. `--no-git`, iCloud state/scene copies and
+  unguarded Blender growth are retired, not fallbacks.
 - **Before committing anything that moves a landmark or a road**, run
   `check_world_geometry.py` and then `check_world_geometry.py --self-test`, with
   the Blender Python — see `CLAUDE.md`'s Environment section for the path, why

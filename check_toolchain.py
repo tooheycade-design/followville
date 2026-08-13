@@ -36,7 +36,6 @@ BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 BLENDER_PYTHON = (r"C:\Program Files\Blender Foundation\Blender 5.1\5.1"
                   r"\python\bin\python.exe")
 NODE_DIR = r"C:\Program Files\nodejs"
-SHARED_BLEND = r"C:\Users\cadet\iCloudDrive\neighborhood\neighborhood.blend"
 BLENDER_MCP_DIR = os.path.join(os.path.expanduser("~"), ".codex",
                                "integrations", "blender-mcp-6641189")
 BLENDER_MCP_ADDON = os.path.join(
@@ -229,25 +228,14 @@ def check_blender_mcp():
            "update the maintained checkout and synchronize addon.py; then restart Codex")
 
 
-def check_blends():
+def check_blend():
     repo_blend = os.path.join(REPO, "neighborhood.blend")
-    for path in (repo_blend, SHARED_BLEND):
-        if not os.path.exists(path):
-            record("build", os.path.basename(path), False, "missing at %s" % path)
-            return
-
-    def digest(path):
-        sha = hashlib.sha256()
-        with open(path, "rb") as handle:
-            for block in iter(lambda: handle.read(1 << 20), b""):
-                sha.update(block)
-        return sha.hexdigest()
-
-    same = digest(repo_blend) == digest(SHARED_BLEND)
-    record("build", "Blend copies", same,
-           "repo and iCloud match" if same else
-           "repo and iCloud DIFFER -- every growth launcher will refuse to run",
-           None if same else "reconcile the authoritative scene before growing")
+    present = os.path.isfile(repo_blend)
+    detail = ("Git-repository authority at %s (%0.1f MiB)" %
+              (repo_blend, os.path.getsize(repo_blend) / (1024 * 1024))
+              if present else "missing at %s" % repo_blend)
+    record("build", "Authoritative Blend", present, detail,
+           None if present else "restore neighborhood.blend from Git")
 
 
 def check_supabase_env():
@@ -263,7 +251,7 @@ def check_supabase_env():
 def main():
     for check in (check_python, check_repo_modules, check_state,
                   check_pygltflib, check_git, check_node, check_playwright,
-                  check_preview_port, check_blender, check_blends,
+                  check_preview_port, check_blender, check_blend,
                   check_blender_mcp, check_supabase_env):
         try:
             check()

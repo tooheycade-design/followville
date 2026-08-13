@@ -1,5 +1,5 @@
 {
- "day": 43,
+ "day": 44,
  "pop": 1784,
  "seed_counter": 1782,
  "buildings": [
@@ -1028,11 +1028,12 @@
    "day": 9
   },
   {
-   "type": "house",
+   "type": "arcade",
    "gx": 4,
    "gy": -3,
    "seed": 129,
-   "day": 9
+   "day": 44,
+   "name": "Followville Arcade"
   },
   {
    "type": "house",

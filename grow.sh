@@ -1,14 +1,12 @@
 #!/bin/bash
 # Followville guarded Mac growth runner.
 #
-# Code/state/web assets always come from the Git repository. The authoritative
-# neighborhood.blend comes from the shared iCloud folder. No iCloud-only state
-# fallback exists: a missing/stale path aborts before Blender starts.
+# Code, state, web assets, and the authoritative neighborhood.blend all come
+# from one Git repository. No iCloud mirror or fallback participates in growth.
 set -euo pipefail
 
 BLENDER="${FOLLOWVILLE_BLENDER:-/Applications/Blender.app/Contents/MacOS/Blender}"
 REPO="${FOLLOWVILLE_REPO_DIR:-${NEIGHBORHOOD_REPO_DIR:-}}"
-SHARED="${FOLLOWVILLE_SHARED_DIR:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/neighborhood}"
 PREFLIGHT_ONLY=0
 
 ARGS=()
@@ -30,7 +28,7 @@ else
 fi
 
 if [ -z "$REPO" ]; then
-  echo "FOLLOWVILLE_REPO_DIR (or NEIGHBORHOOD_REPO_DIR) is required. Refusing iCloud-only growth." >&2
+  echo "FOLLOWVILLE_REPO_DIR (or NEIGHBORHOOD_REPO_DIR) is required." >&2
   exit 1
 fi
 if [ ! -d "$REPO/.git" ]; then
@@ -46,7 +44,7 @@ REQUIRED=(
   "$REPO/town_manifest.json"
   "$REPO/town_chunks/base.glb"
   "$REPO/neighborhood.blend"
-  "$SHARED/neighborhood.blend"
+  "$REPO/save_canonical_blend.py"
 )
 for file in "${REQUIRED[@]}"; do
   [ -f "$file" ] || { echo "Missing required Followville file: $file" >&2; exit 1; }
@@ -68,15 +66,10 @@ fi
 HEAD="$(git -C "$REPO" rev-parse HEAD)"
 ORIGIN_MAIN="$(git -C "$REPO" rev-parse origin/main)"
 [ "$HEAD" = "$ORIGIN_MAIN" ] || { echo "Local main does not match origin/main." >&2; exit 1; }
-cmp -s "$REPO/neighborhood.blend" "$SHARED/neighborhood.blend" || {
-  echo "Repository and iCloud neighborhood.blend differ. Reconcile the scene before growing." >&2
-  exit 1
-}
-
 export FOLLOWVILLE_REPO_DIR="$REPO"
 export NEIGHBORHOOD_REPO_DIR="$REPO"
 export NEIGHBORHOOD_STATE_DIR="$REPO"
-echo "PREFLIGHT_OK repo=$REPO shared=$SHARED commit=$HEAD"
+echo "PREFLIGHT_OK repo=$REPO blend=$REPO/neighborhood.blend commit=$HEAD"
 if [ "$PREFLIGHT_ONLY" -eq 1 ]; then
   exit 0
 fi
@@ -96,9 +89,10 @@ esac
 
 # Generator + export remain in one Blender process; the freshly rebuilt WORLD
 # is exported before the process exits.
-OUT="$("$BLENDER" --background "$SHARED/neighborhood.blend" \
+OUT="$("$BLENDER" --background "$REPO/neighborhood.blend" \
   --python "$REPO/neighborhood_blender.py" \
-  --python "$REPO/export_web.py" -- "${FLAGS[@]}" "$@" 2>&1)" || {
+  --python "$REPO/export_web.py" \
+  --python "$REPO/save_canonical_blend.py" -- "${FLAGS[@]}" "$@" 2>&1)" || {
     echo "$OUT" | tail -20
     exit 1
   }
@@ -116,7 +110,7 @@ fi
 
 (
   cd "$REPO"
-  git add world_state.json town.glb town_manifest.json town_chunks
+  git add world_state.json neighborhood.blend town.glb town_manifest.json town_chunks
   if git diff --cached --quiet; then
     echo "NOCHANGES -- state and town assets already match the last commit"
   else
@@ -127,7 +121,7 @@ fi
 )
 
 if [[ "$OUT" == *$'\n'"VIDEO "* ]]; then
-  NEWEST="$(ls -t "$SHARED"/renders/*.mp4 2>/dev/null | head -1 || true)"
+  NEWEST="$(ls -t "$REPO"/renders/*.mp4 2>/dev/null | head -1 || true)"
   if [ -n "$NEWEST" ]; then
     cp "$NEWEST" "$HOME/Desktop/"
     echo "DESKTOP $HOME/Desktop/$(basename "$NEWEST")"
@@ -137,8 +131,6 @@ fi
 SYNC_ENV=""
 if [ -f "$REPO/supabase_sync.env" ]; then
   SYNC_ENV="$REPO/supabase_sync.env"
-elif [ -f "$SHARED/supabase_sync.env" ]; then
-  SYNC_ENV="$SHARED/supabase_sync.env"
 fi
 if [ -n "$SYNC_ENV" ]; then
   echo "-- houses table sync (claimable homes) --"
