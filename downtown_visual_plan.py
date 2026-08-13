@@ -4,7 +4,12 @@ import math
 
 from neighborhood_plan import RIVER_CENTERLINE, RIVER_HALF_WIDTH
 
-TERRAIN_BOUNDS = (-520.0, 800.0, -360.0, 920.0)
+# The West Quarter reaches x=-766 and Day 42's final camera exposed the old
+# x=-520 mesh edge as a sky-coloured slit above the low background slab.  Keep
+# the continuous analytic terrain comfortably past every planned western lot;
+# `_terrain_mesh()` closes this perimeter with a real skirt, so the boundary is
+# valid geometry rather than a camera-framing assumption.
+TERRAIN_BOUNDS = (-960.0, 800.0, -360.0, 920.0)
 FACADE_ATTACHMENT_EMBED = 0.01
 MIN_VISIBLE_SURFACE_CLEARANCE = 0.05
 

@@ -176,6 +176,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
 #   --cam day37reveal 24-second orbit, Commons rise, and the mayor's plinth
 #   --cam day42reveal 16-second Founder skyline, FPV transfer, West Quarter wave
+#   --cam day43fpv   16-second skyline, low construction wave, Point Station reveal
+#   --cam day43pov   16-second street POV, close overhead wave, alternate station reveal
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11094,7 +11096,10 @@ def build_background_ground(world_col, material, center_x, center_y):
     outer_y1 = max(center_y + half_extent, terrain_y1)
     slab_bottom = -0.10
     slab_height = 0.10
-    boundary_gap = 0.05
+    # The regional mesh now has a real perimeter skirt.  Meet it exactly:
+    # sharing an edge has no coplanar area, while the former 5cm clearance was
+    # an actual open hole visible in Day 42's western turn.
+    boundary_gap = 0.0
 
     rectangles = (
         ("ground_west", outer_x0, terrain_x0 - boundary_gap, outer_y0, outer_y1),
@@ -11286,7 +11291,7 @@ def build_story001_price_sign(world_col, frame_end, dusk=False):
 
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
-    if cam == "day42reveal" and tod == "sunset":
+    if cam in ("day42reveal", "day43fpv", "day43pov") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12228,6 +12233,126 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day43fpv":
+        # Day 43 film one: a continuous FPV-style trailer move.  The route
+        # establishes the Founder skyline, accelerates into Harrow Green,
+        # runs low beside the westbound construction wave, banks north through
+        # Bramble Park, then crosses the city at speed to a level station
+        # approach.  It never relies on a high map-like master.
+        aim = bpy.data.objects.new("Day43FPVAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day43FPVCamera")
+        cam_data.lens = 23
+        cam_data.clip_start = 1.2
+        cam_data.clip_end = 12000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day43FPVCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+        beats = (
+            # Strong skyline opener with foreground roofs and long-shadow depth.
+            (1,   (154.0, -238.0, 132.0), (-8.0, 12.0, 17.0)),
+            (50,  (112.0, -154.0, 106.0), (-42.0, 112.0, 15.0)),
+            # Rapid real-estate-drone approach toward the first new street.
+            (92,  (18.0, 72.0, 92.0), (-205.0, 405.0, 10.0)),
+            (126, (-176.0, 350.0, 58.0), (-330.0, 455.0, 8.0)),
+            # Low westbound pass: houses rise directly ahead and beside camera.
+            (170, (-316.0, 426.0, 34.0), (-455.0, 474.0, 7.0)),
+            (218, (-490.0, 438.0, 28.0), (-625.0, 481.0, 7.0)),
+            (258, (-654.0, 449.0, 28.0), (-735.0, 496.0, 7.5)),
+            # Bank north through the three new avenues as their wave climbs.
+            (292, (-718.0, 506.0, 35.0), (-575.0, 595.0, 9.0)),
+            (326, (-590.0, 638.0, 43.0), (-400.0, 735.0, 10.0)),
+            (350, (-430.0, 735.0, 56.0), (-250.0, 742.0, 12.0)),
+            # One decisive cross-city acceleration into the station approach.
+            (382, (-70.0, 690.0, 70.0), (260.0, 585.0, 15.0)),
+            (410, (340.0, 500.0, 42.0), (438.0, 552.0, 17.0)),
+            # Level south-west reveal: entire station, tower and dome against sky.
+            (440, (474.0, 427.0, 25.0), (435.0, 560.0, 16.0)),
+            (480, (500.0, 438.0, 22.0), (431.0, 561.0, 17.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+        for frame, lens in ((1, 28), (50, 25), (126, 22), (350, 22),
+                            (410, 26), (440, 32), (480, 37)):
+            cam_data.lens = lens
+            cam_data.keyframe_insert("lens", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day43pov":
+        # Day 43 film two: intentionally cut, immersive, and suspenseful.
+        # A brief oblique establish cuts to a human eye at the centre of Wicker
+        # Avenue.  The north-to-south construction wave reaches and passes the
+        # viewer before a close drone cut finishes the remaining streets.  The
+        # finale comes from across the river, never repeating film one's gate
+        # approach.
+        aim = bpy.data.objects.new("Day43POVAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day43POVCamera")
+        cam_data.lens = 30
+        cam_data.clip_start = .18
+        cam_data.clip_end = 12000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day43POVCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+        eye_z = terrain_height(-330.0, 650.0) + 1.72
+        north_eye = terrain_height(-330.0, 780.0) + 1.72
+        beats = (
+            # Oblique establish: compact and dimensional, not a whole-town map.
+            (1,   (-120.0, 250.0, 162.0), (-430.0, 575.0, 10.0)),
+            (55,  (-190.0, 335.0, 126.0), (-455.0, 610.0, 8.0)),
+            # Hard cut to a nearly stationary human viewpoint straight up road.
+            (56,  (-330.0, 646.0, eye_z), (-330.0, 780.0, north_eye)),
+            (220, (-330.0, 653.0, eye_z), (-330.0, 787.0, north_eye)),
+            # Hard cut to a close overhead that travels across the same grid.
+            (221, (-205.0, 520.0, 112.0), (-390.0, 610.0, 6.5)),
+            (275, (-360.0, 520.0, 94.0), (-525.0, 600.0, 6.0)),
+            (326, (-610.0, 566.0, 86.0), (-555.0, 670.0, 7.0)),
+            (350, (-520.0, 690.0, 80.0), (-360.0, 720.0, 8.0)),
+            # Fast diagonal transition to the river side of Point Station.
+            (390, (120.0, 590.0, 74.0), (390.0, 560.0, 15.0)),
+            (414, (302.0, 520.0, 47.0), (424.0, 561.0, 17.0)),
+            # Different low three-quarter: cooling tower foreground, dome and
+            # Point Road layered behind it against the sunset skyline.
+            (440, (304.0, 510.0, 35.0), (425.0, 562.0, 17.0)),
+            (480, (322.0, 530.0, 27.0), (428.0, 562.0, 17.0)),
+        )
+        for frame, position, target in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+        for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        # Lens changes reinforce the cuts: natural street perspective, then a
+        # wider close drone, then compressed three-quarter station massing.
+        for frame, lens in ((1, 29), (55, 29), (56, 35), (220, 35),
+                            (221, 25), (350, 25), (414, 31), (480, 40)):
+            cam_data.lens = lens
+            cam_data.keyframe_insert("lens", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
     elif cam == "day42reveal":
         # Day 42, exactly sixteen seconds, one continuous FPV-style drone move.
@@ -13885,7 +14010,7 @@ def build_storm_layer(world_col, frame_end):
             bg.inputs[1].default_value = strength
             bg.inputs[1].keyframe_insert("default_value", frame=frame)
 
-def setup_render(state, frame_end, tag=None, tod="day"):
+def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc = bpy.context.scene
     for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):  # 4.2+ / older & 5.x
         try:
@@ -13898,6 +14023,14 @@ def setup_render(state, frame_end, tag=None, tod="day"):
     sc.render.fps = FPS
     sc.frame_start = 1
     sc.frame_end = frame_end
+    if cam in ("day43fpv", "day43pov"):
+        # Restrained motion blur smooths the FPV transfers while leaving the
+        # short vertical construction rises crisp enough to read.
+        try:
+            sc.render.use_motion_blur = True
+            sc.render.motion_blur_shutter = .28
+        except Exception:
+            pass
     for attr, val in [("use_gtao", True), ("use_bloom", False),
                       ("use_ssr", False), ("use_raytracing", False),
                       # 2026-07-09 lighting upgrade (each is best-effort
@@ -14538,6 +14671,104 @@ def main(cfg=None):
         frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
     elif cfg.get("cam") == "story001dusk":
         frame_end = 126               # 4.2s, the payoff held
+    elif cfg.get("cam") in ("day43fpv", "day43pov"):
+        frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
+        camera_name = cfg.get("cam")
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 224 or len(rise) != 224:
+            raise RuntimeError(
+                "%s is authored for exactly 224 ordinary Day 43 homes and "
+                "no landmark. Got %d homes / %d rising records. Use the exact "
+                "1560 -> 1784 growth; Followville Point Station already exists."
+                % (camera_name, len(home_roots), len(rise)))
+
+        # Only genuinely new streets animate.  Millrace West 3 is carried from
+        # Day 42, so hiding it would pull pavement out from under standing
+        # homes.  The seven remaining Day 43 streets draw on before their house
+        # waves and are complete at the export frame.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_ids = {b.get("plan_id") for b in state["buildings"]} - new_ids
+        old_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_ids}
+        new_streets = sorted({slot["street_index"]
+                              for slot in SUBURBAN_PLAN["houses"]
+                              if slot["plan_id"] in new_ids} - old_streets)
+        ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
+                          "suburban_path_")
+        if camera_name == "day43fpv":
+            road_beats = {53: 92, 54: 116, 55: 142, 56: 190,
+                          57: 202, 58: 214, 59: 222, 60: 236}
+        else:
+            # Wicker Avenue reaches toward the stationary viewer first.  The
+            # rest begin as the film cuts into its close overhead continuation.
+            road_beats = {57: 62, 56: 188, 58: 198, 53: 214,
+                          54: 224, 55: 234, 59: 244, 60: 254}
+        for street_index in new_streets:
+            pieces = [obj for obj in world_col.objects
+                      if obj.get("nb_street_index") == street_index]
+            start = road_beats.get(street_index, 210)
+            ribbons = [obj for obj in pieces
+                       if obj.name.startswith(ribbons_prefix)]
+            trim = [obj for obj in pieces if obj not in ribbons]
+            for obj in ribbons:
+                animate_road_build(obj, start, dur=58,
+                                   reverse=(camera_name == "day43pov"
+                                            and street_index == 57))
+            if trim:
+                xs = [obj.location.x for obj in trim]
+                ys = [obj.location.y for obj in trim]
+                along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+                trim.sort(key=lambda obj: (obj.location.x if along_x
+                                            else obj.location.y),
+                          reverse=(camera_name == "day43pov"
+                                   and street_index == 57))
+                span = max(1, len(trim)-1)
+                for index, obj in enumerate(trim):
+                    _keyframe_hidden(obj, 1, True)
+                    _keyframe_hidden(obj, start+10+int(58*index/span), False)
+
+        if camera_name == "day43fpv":
+            for root in home_roots:
+                x, y = root.location.x, root.location.y
+                if y < 505.0:
+                    # During the low westbound pass, begin 0.8-1.2 seconds
+                    # before the camera reaches each longitude.
+                    crossing = 126.0 + (-176.0-x)*(132.0/478.0)
+                    start = int(max(108, min(252, crossing-30.0)))
+                else:
+                    # The bank north follows the wave's latitude, keeping the
+                    # next rows above the nose instead of already behind it.
+                    start = int(max(222, min(330, 224.0+(y-509.0)*.38)))
+                animate_rise(root, start, dur=18)
+            plant_start, plant_dur = 414, 44
+        else:
+            for root in home_roots:
+                x, y = root.location.x, root.location.y
+                on_wicker = abs(x+330.0) < 12.0 and y > 500.0
+                if on_wicker:
+                    # Far north to south: the paired houses race at the human
+                    # eye, reach y=650 around mid-shot, then continue behind it.
+                    start = int(78.0+(787.5-y)*.43)
+                elif y > 500.0:
+                    # The adjacent avenues continue under the close overhead.
+                    start = int(218.0+(787.5-y)*.36)
+                else:
+                    # Southern rows sweep east-to-west with the overhead move.
+                    start = int(232.0+(-200.0-x)*.20)
+                animate_rise(root, max(72, min(338, start)), dur=18)
+            plant_start, plant_dur = 416, 46
+
+        # The station is already canonical Day 42 geometry.  Its only Day 43
+        # treatment is this temporary animation: hidden until the finale, then
+        # the existing root rises intact.  It never enters new_batch, state, or
+        # the follower count, and export_web bakes the fully standing end frame.
+        plant_roots = [root for root in building_roots
+                       if root.get("nb_world_type") == "nuclearplant"]
+        if len(plant_roots) != 1:
+            raise RuntimeError("Day 43 finale requires exactly one existing "
+                               "Followville Point Station; found %d"
+                               % len(plant_roots))
+        animate_rise(plant_roots[0], plant_start, dur=plant_dur)
     elif cfg.get("cam") == "day42reveal":
         frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
     elif cfg.get("cam") == "day41reveal":
@@ -14627,6 +14858,10 @@ def main(cfg=None):
         for root in rise:
             if root not in home_roots and root not in tower_roots:
                 animate_rise(root, 250, dur=30)
+    elif cfg.get("cam") in ("day43fpv", "day43pov"):
+        # Day 43's spatial road/house/station schedule is installed alongside
+        # its exact frame length above, before the generic stagger is reached.
+        pass
     elif cfg.get("cam") == "day42reveal":
         # Roads and houses move in the same east-to-west direction as the
         # camera. Only streets with no previously built addresses are animated:
@@ -15200,7 +15435,7 @@ def main(cfg=None):
     if cfg.get("godzilla"):
         build_godzilla_attack(world_col, state["buildings"], building_roots, frame_end)
     apply_mood(tod, season)
-    setup_render(state, frame_end, cfg.get("tag"), tod)
+    setup_render(state, frame_end, cfg.get("tag"), tod, cfg.get("cam"))
 
     # removed houses leave the saved city permanently
     if removed:
@@ -15221,6 +15456,34 @@ def main(cfg=None):
     print("=" * 50)
     print("RESULT " + json.dumps(summary))
 
+    # Production previews render selected full-quality frames from an isolated
+    # state copy before anyone commits to 480 frames.  This is deliberately an
+    # environment hook rather than another camera mode: it exercises the exact
+    # same scene, timing, lighting, terrain, and render settings as the movie.
+    preview_spec = os.environ.get("FOLLOWVILLE_PREVIEW_FRAMES", "").strip()
+    if preview_spec:
+        frames = sorted({int(value.strip()) for value in preview_spec.split(",")
+                         if value.strip()})
+        if not frames or frames[0] < 1 or frames[-1] > frame_end:
+            raise RuntimeError("FOLLOWVILLE_PREVIEW_FRAMES must stay inside "
+                               "1..%d" % frame_end)
+        preview_root = os.environ.get(
+            "FOLLOWVILLE_PREVIEW_DIR",
+            os.path.join(os.path.dirname(bpy.data.filepath), "renders",
+                         "day_%03d_%s_previews" %
+                         (state["day"], cfg.get("cam") or "camera")))
+        os.makedirs(preview_root, exist_ok=True)
+        try:
+            bpy.context.scene.render.image_settings.media_type = "IMAGE"
+        except Exception:
+            pass
+        bpy.context.scene.render.image_settings.file_format = "PNG"
+        for frame in frames:
+            bpy.context.scene.frame_set(frame)
+            path = os.path.join(preview_root, "frame_%04d.png" % frame)
+            bpy.context.scene.render.filepath = path
+            bpy.ops.render.render(write_still=True)
+            print("PREVIEW " + path)
     if cfg.get("render"):
         bpy.ops.render.render(animation=True)
         print("VIDEO " + bpy.context.scene.render.filepath)

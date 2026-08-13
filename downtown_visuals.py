@@ -133,7 +133,10 @@ def _terrain_mesh(collection):
     x0, x1, y0, y1 = TERRAIN_BOUNDS
     # Dense enough that browser-side analytic height sampling and the visible
     # mesh agree within a few centimetres on neighborhood grades.
-    nx, ny = 165, 113
+    # Preserve the established ~8m sampling pitch after extending the western
+    # edge from -520 to -960 for the West Quarter.  Leaving nx at 165 would
+    # make the visible mesh diverge unnecessarily from terrain_height().
+    nx, ny = 220, 113
     vertices = []
     for iy in range(ny):
         y = y0+(y1-y0)*iy/(ny-1)
@@ -146,6 +149,27 @@ def _terrain_mesh(collection):
         for ix in range(nx-1):
             a=iy*nx+ix; b=a+1; c=a+nx+1; d=a+nx
             faces.append((a,b,c,d))
+    # Close the finite terrain volume down to the surrounding horizon ground.
+    # Previously the meadow stopped as an open single-surface mesh and the
+    # background slabs began 5cm away at z=-.05; low oblique turns could see
+    # literal sky through that gap.  A clockwise boundary ring plus vertical
+    # faces makes the world watertight at every authored camera angle.  The
+    # bottom sits inside the background slabs, whose tops now meet this exact
+    # x/y boundary without overlapping the meadow's horizontal surface.
+    boundary = (
+        [ix for ix in range(nx)]
+        + [iy*nx+(nx-1) for iy in range(1, ny)]
+        + [(ny-1)*nx+ix for ix in range(nx-2, -1, -1)]
+        + [iy*nx for iy in range(ny-2, 0, -1)]
+    )
+    bottom_start = len(vertices)
+    for top_index in boundary:
+        x, y, _z = vertices[top_index]
+        vertices.append((x, y, -.10))
+    for index, top_index in enumerate(boundary):
+        next_index = (index+1) % len(boundary)
+        faces.append((top_index, boundary[next_index],
+                      bottom_start+next_index, bottom_start+index))
     mesh = bpy.data.meshes.new("regional_walkable_terrain_mesh")
     mesh.from_pydata(vertices, [], faces)
     # One continuous material avoids artificial contour bands. Vertex color
