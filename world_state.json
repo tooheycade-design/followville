@@ -1,7 +1,7 @@
 {
  "day": 42,
  "pop": 1560,
- "seed_counter": 1557,
+ "seed_counter": 1558,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -19405,6 +19405,17 @@
    "district": "Harrow Green",
    "street": "Millrace Street West 3",
    "seed": 1556,
+   "day": 42
+  },
+  {
+   "type": "nuclearplant",
+   "gx": 0,
+   "gy": 0,
+   "px": 446.0,
+   "py": 556.0,
+   "pz": 4.75,
+   "rot": 0.0,
+   "seed": 1557,
    "day": 42
   }
  ],
