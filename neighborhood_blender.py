@@ -188,6 +188,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day44alldrone   wide drone flight carrying the complete growth front
 #   --cam day44allfield   fixed distant field zoom framing the full growth area
 #   --cam day44fullarc    full-city overhead -> growth wave -> full-city overhead
+#   --cam day44southfpv   16-second south skyline FPV construction chase
+#   --cam day44swrooftop 16-second south-west skyline rooftop/street run
+#   --cam day44westbank  16-second west skyline bank and diagonal dive
+#   --cam day44sereverse 16-second south-east skyline reverse-wave flight
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11745,7 +11749,9 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44approach", "day44street", "day44drone",
                "day44field", "day44overhead", "day44downtown",
                "day44allapproach", "day44alldrone",
-               "day44allfield", "day44fullarc") and tod == "sunset":
+               "day44allfield", "day44southfpv", "day44swrooftop",
+               "day44westbank", "day44sereverse",
+               "day44fullarc") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12820,6 +12826,104 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam in ("day44southfpv", "day44swrooftop", "day44westbank",
+                 "day44sereverse"):
+        # Four independent Day 44 skyline films.  Each begins outside the
+        # established city with a nearly horizontal, layered skyline, then
+        # follows a different continuous low FPV route into the same 186-home
+        # construction event.  The final keys stay oblique and low; none turns
+        # into an overhead/map composition.
+        aim = bpy.data.objects.new("Day44SkylineAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day44SkylineCamera")
+        cam_data.clip_start = .35
+        cam_data.clip_end = 15000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day44SkylineCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        if cam == "day44southfpv":
+            beats = (
+                # South: true skyline, lateral parallax, then a direct punch
+                # through the old grid into Bramble Park and west to Ember.
+                (1,   (92.0, -246.0, 49.0), (-4.0, 20.0, 25.0), 31),
+                (42,  (24.0, -205.0, 46.0), (-16.0, 42.0, 24.0), 29),
+                (78,  (-4.0, -118.0, 39.0), (-42.0, 125.0, 20.0), 27),
+                (118, (-72.0, 85.0, 34.0), (-182.0, 330.0, 13.0), 24),
+                (158, (-205.0, 360.0, 29.0), (-300.0, 548.0, 8.0), 22),
+                (215, (-286.0, 535.0, 23.0), (-336.0, 655.0, 7.0), 21),
+                (278, (-322.0, 664.0, 25.0), (-360.0, 785.0, 7.0), 22),
+                (338, (-454.0, 760.0, 28.0), (-610.0, 718.0, 8.0), 23),
+                (400, (-650.0, 735.0, 25.0), (-748.0, 650.0, 8.0), 26),
+                (480, (-724.0, 700.0, 31.0), (-340.0, 390.0, 22.0), 32),
+            )
+        elif cam == "day44swrooftop":
+            beats = (
+                # South-west: roofs wipe laterally across the skyline before
+                # the drone hooks round the mature west side and runs a new
+                # street west-to-east, finishing south toward the old city.
+                (1,   (-226.0, -150.0, 39.0), (-18.0, 34.0, 24.0), 34),
+                (48,  (-292.0, -92.0, 37.0), (-32.0, 74.0, 23.0), 32),
+                (88,  (-270.0, 32.0, 31.0), (-116.0, 205.0, 17.0), 29),
+                (130, (-292.0, 220.0, 31.0), (-380.0, 402.0, 10.0), 25),
+                (172, (-430.0, 420.0, 27.0), (-585.0, 540.0, 7.0), 23),
+                (220, (-690.0, 566.0, 16.0), (-590.0, 594.0, 7.0), 22),
+                (282, (-620.0, 630.0, 15.0), (-455.0, 666.0, 7.0), 22),
+                (338, (-520.0, 701.0, 17.0), (-350.0, 738.0, 7.0), 23),
+                (396, (-402.0, 770.0, 21.0), (-315.0, 808.0, 8.0), 26),
+                (480, (-335.0, 786.0, 19.0), (-338.0, 510.0, 18.0), 31),
+            )
+        elif cam == "day44westbank":
+            beats = (
+                # West: trees and outer roofs layer against the downtown
+                # silhouette, followed by a clockwise bank and diagonal dive
+                # across both Day 44 districts.
+                (1,   (-520.0, 112.0, 47.0), (-38.0, 55.0, 25.0), 33),
+                (46,  (-520.0, 188.0, 44.0), (-20.0, 88.0, 24.0), 31),
+                (86,  (-474.0, 275.0, 40.0), (-120.0, 250.0, 18.0), 28),
+                (126, (-395.0, 365.0, 35.0), (-285.0, 500.0, 10.0), 24),
+                (170, (-305.0, 492.0, 30.0), (-360.0, 615.0, 7.0), 22),
+                (218, (-350.0, 602.0, 22.0), (-470.0, 675.0, 7.0), 21),
+                (270, (-430.0, 680.0, 19.0), (-575.0, 726.0, 7.0), 21),
+                (326, (-555.0, 746.0, 20.0), (-690.0, 770.0, 7.0), 22),
+                (390, (-710.0, 790.0, 25.0), (-650.0, 650.0, 8.0), 27),
+                (480, (-690.0, 754.0, 29.0), (-275.0, 400.0, 24.0), 34),
+            )
+        else:  # day44sereverse
+            beats = (
+                # South-east: a separate civic/Founder skyline angle, then a
+                # northern wrap that meets the construction front from the
+                # opposite (north-west to south-east) direction.
+                (1,   (198.0, -172.0, 45.0), (8.0, 35.0, 25.0), 32),
+                (46,  (145.0, -118.0, 42.0), (-8.0, 72.0, 24.0), 30),
+                (88,  (100.0, 8.0, 36.0), (-15.0, 180.0, 19.0), 27),
+                (128, (34.0, 230.0, 34.0), (-205.0, 490.0, 11.0), 24),
+                (170, (-170.0, 520.0, 31.0), (-390.0, 760.0, 8.0), 22),
+                (214, (-375.0, 836.0, 27.0), (-560.0, 790.0, 7.0), 21),
+                (270, (-610.0, 822.0, 20.0), (-720.0, 742.0, 7.0), 21),
+                (326, (-748.0, 735.0, 17.0), (-680.0, 620.0, 7.0), 22),
+                (384, (-620.0, 640.0, 19.0), (-470.0, 590.0, 7.0), 24),
+                (430, (-472.0, 580.0, 21.0), (-330.0, 552.0, 8.0), 27),
+                (480, (-420.0, 560.0, 24.0), (-90.0, 245.0, 22.0), 33),
+            )
+
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
         bpy.context.scene.camera = cam_obj
     elif cam == "day43fpv":
         # Day 43 film one: a continuous FPV-style trailer move.  The route
@@ -14616,7 +14720,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_end = frame_end
     if cam in ("day43fpv", "day43pov", "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
-               "day44fullarc"):
+               "day44southfpv", "day44swrooftop", "day44westbank",
+               "day44sereverse", "day44fullarc"):
         # Restrained motion blur smooths the FPV transfers while leaving the
         # short vertical construction rises crisp enough to read.
         try:
@@ -14652,7 +14757,9 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
         if cam in ("day43fpv", "day43pov", "day44approach", "day44street",
                    "day44drone", "day44field", "day44overhead",
                    "day44downtown", "day44allapproach", "day44alldrone",
-                   "day44allfield", "day44fullarc") and tod == "sunset":
+                   "day44allfield", "day44southfpv", "day44swrooftop",
+                   "day44westbank", "day44sereverse",
+                   "day44fullarc") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -15362,6 +15469,80 @@ def main(cfg=None):
         for root in home_roots:
             start = 165 + int((-268.0-root.location.x) / 504.5 * 205.0)
             animate_rise(root, max(155, min(375, start)), dur=36)
+    elif cfg.get("cam") in ("day44southfpv", "day44swrooftop",
+                            "day44westbank", "day44sereverse"):
+        frame_end = FPS * 16          # exact brief: 16 seconds / 480 frames
+        camera_name = cfg.get("cam")
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 186 or len(rise) != 186:
+            raise RuntimeError(
+                "%s requires exactly the 186 Day 44 houses and no landmark; "
+                "got %d homes / %d rising records. Replay with --focus-type house."
+                % (camera_name, len(home_roots), len(rise)))
+
+        # Granary Street (index 60) already held Day 43 homes and must never be
+        # hidden.  These ten indices are the genuinely new Day 44 ribbons.
+        new_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_ids = {b.get("plan_id") for b in state["buildings"]} - new_ids
+        old_streets = {slot["street_index"] for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_ids}
+        new_streets = sorted({slot["street_index"]
+                              for slot in SUBURBAN_PLAN["houses"]
+                              if slot["plan_id"] in new_ids} - old_streets)
+        if new_streets != list(range(61, 71)):
+            raise RuntimeError("Day 44 road suite expected new street indices "
+                               "61..70; got %r" % new_streets)
+        road_beats = {
+            "day44southfpv": {68: 118, 69: 130, 70: 142, 61: 166, 62: 184,
+                              63: 202, 64: 220, 65: 238, 66: 256, 67: 274},
+            "day44swrooftop": {68: 132, 69: 146, 70: 160, 61: 180, 62: 196,
+                               63: 212, 64: 228, 65: 244, 66: 260, 67: 276},
+            "day44westbank": {61: 132, 62: 150, 63: 168, 68: 174, 64: 190,
+                              69: 204, 65: 218, 70: 234, 66: 252, 67: 270},
+            "day44sereverse": {67: 132, 66: 150, 65: 168, 68: 176, 69: 188,
+                               70: 200, 64: 218, 63: 238, 62: 258, 61: 278},
+        }[camera_name]
+        ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
+                          "suburban_path_")
+        for street_index in new_streets:
+            pieces = [obj for obj in world_col.objects
+                      if obj.get("nb_street_index") == street_index]
+            start = road_beats[street_index]
+            reverse = ((camera_name in ("day44southfpv", "day44westbank")
+                        and street_index < 68) or
+                       (camera_name == "day44sereverse" and street_index >= 68))
+            ribbons = [obj for obj in pieces
+                       if obj.name.startswith(ribbons_prefix)]
+            trim = [obj for obj in pieces if obj not in ribbons]
+            for obj in ribbons:
+                animate_road_build(obj, start, dur=44, reverse=reverse)
+            if trim:
+                xs = [obj.location.x for obj in trim]
+                ys = [obj.location.y for obj in trim]
+                along_x = (max(xs)-min(xs)) >= (max(ys)-min(ys))
+                trim.sort(key=lambda obj: obj.location.x if along_x
+                          else obj.location.y, reverse=reverse)
+                span = max(1, len(trim)-1)
+                for index, obj in enumerate(trim):
+                    _keyframe_hidden(obj, 1, True)
+                    _keyframe_hidden(obj, start+8+int(44*index/span), False)
+
+        for root in home_roots:
+            x, y = root.location.x, root.location.y
+            if camera_name == "day44southfpv":
+                start = (148 + int((y-510.0)/308.0*150.0)
+                         if x > -500.0 else
+                         286 + int((-610.0-x)/148.5*60.0))
+            elif camera_name == "day44swrooftop":
+                start = 174 + int((x+758.5)/490.1*158.0)
+            elif camera_name == "day44westbank":
+                diagonal = (.58*(x+758.5)/490.1 + .42*(y-510.0)/308.0)
+                start = 152 + int(diagonal*184.0)
+            else:
+                reverse_wave = (.54*(x+758.5)/490.1 +
+                                .46*(818.5-y)/308.0)
+                start = 142 + int(reverse_wave*190.0)
+            animate_rise(root, max(136, min(344, start)), dur=18)
     elif cfg.get("cam") in ("day44overhead", "day44downtown"):
         frame_end = FPS * 10
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
@@ -15554,7 +15735,9 @@ def main(cfg=None):
     elif cfg.get("cam") in ("day44approach", "day44street", "day44drone",
                             "day44field", "day44overhead", "day44downtown",
                             "day44allapproach", "day44alldrone",
-                            "day44allfield", "day44fullarc"):
+                            "day44allfield", "day44southfpv",
+                            "day44swrooftop", "day44westbank",
+                            "day44sereverse", "day44fullarc"):
         # Day 44 animation was installed with its exact frame length above.
         pass
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
