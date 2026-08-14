@@ -178,6 +178,12 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day42reveal 16-second Founder skyline, FPV transfer, West Quarter wave
 #   --cam day43fpv   16-second skyline, low construction wave, Point Station reveal
 #   --cam day43pov   16-second street POV, close overhead wave, alternate station reveal
+#   --cam day44approach  city overview diving into the Day 44 house wave
+#   --cam day44street    grounded street view; houses rise toward the viewer
+#   --cam day44drone     low drone companion flight with the construction wave
+#   --cam day44field     fixed grass-field viewpoint with an optical zoom
+#   --cam day44overhead  completed-city sunset overhead
+#   --cam day44downtown  completed-city low downtown street flight
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11731,7 +11737,9 @@ def build_story001_price_sign(world_col, frame_end, dusk=False):
 
 def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=None):
     t = TODS.get(tod, TODS["day"])
-    if cam in ("day42reveal", "day43fpv", "day43pov") and tod == "sunset":
+    if cam in ("day42reveal", "day43fpv", "day43pov",
+               "day44approach", "day44street", "day44drone",
+               "day44field", "day44overhead", "day44downtown") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12672,6 +12680,89 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             cam_obj.keyframe_insert("location", frame=frame)
             aim.keyframe_insert("location", frame=frame)
         for obj in (cam_obj, aim):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam in ("day44approach", "day44street", "day44drone",
+                 "day44field", "day44overhead", "day44downtown"):
+        # Day 44 is delivered as six independent clips so the edit can choose
+        # between four genuinely different construction viewpoints and two
+        # completed-city closers.  Every camera is continuous inside its clip.
+        aim = bpy.data.objects.new("Day44Aim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day44Camera")
+        cam_data.clip_start = (10.0 if cam == "day44overhead" else .20)
+        cam_data.clip_end = 15000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day44Camera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        if cam == "day44approach":
+            # Whole-city opener, then one unbroken descent into Bramble Park.
+            beats = (
+                (1,   (135.0, -225.0, 590.0), (-175.0, 335.0, 10.0), 30),
+                (72,  (20.0, 35.0, 410.0),   (-265.0, 545.0, 9.0), 27),
+                (150, (-105.0, 300.0, 205.0), (-325.0, 650.0, 7.0), 25),
+                (238, (-230.0, 510.0, 72.0), (-345.0, 710.0, 6.5), 24),
+                (360, (-326.0, 638.0, 13.0), (-334.0, 790.0, 6.0), 28),
+            )
+        elif cam == "day44street":
+            # Human-height view down West Line Road North.  The camera barely
+            # breathes forward while the north-to-south rise wave runs toward it.
+            z0 = terrain_height(-756.8, 492.0) + 1.72
+            z1 = terrain_height(-756.8, 507.0) + 1.72
+            beats = (
+                (1,   (-756.8, 492.0, z0), (-756.8, 690.0, 7.0), 34),
+                (360, (-756.8, 507.0, z1), (-756.8, 705.0, 7.0), 36),
+            )
+        elif cam == "day44drone":
+            # Fly with the northbound construction front, then bank west so
+            # Ember Ridge joins the same moving reveal rather than becoming a cut.
+            beats = (
+                (1,   (-320.0, 500.0, 42.0), (-325.0, 610.0, 6.0), 25),
+                (120, (-330.0, 610.0, 36.0), (-330.0, 720.0, 6.5), 23),
+                (225, (-342.0, 748.0, 38.0), (-420.0, 780.0, 7.0), 23),
+                (300, (-505.0, 760.0, 42.0), (-655.0, 710.0, 7.0), 24),
+                (360, (-650.0, 720.0, 36.0), (-756.0, 655.0, 7.0), 27),
+            )
+        elif cam == "day44field":
+            # A literal fixed observer in the western meadow.  Only focal
+            # length changes, giving the requested camera zoom without a dolly.
+            field_z = terrain_height(-925.0, 650.0) + 1.72
+            beats = (
+                (1,   (-925.0, 650.0, field_z), (-635.0, 665.0, 8.0), 24),
+                (360, (-925.0, 650.0, field_z), (-635.0, 665.0, 8.0), 92),
+            )
+        elif cam == "day44overhead":
+            # Completed-town sunset master with enough pitch for long shadows
+            # and a visible horizon; aerial near clip protects roads and water.
+            beats = (
+                (1,   (520.0, -520.0, 1180.0), (-175.0, 335.0, 8.0), 34),
+                (300, (170.0, -40.0, 1040.0), (-225.0, 410.0, 8.0), 38),
+            )
+        else:  # day44downtown
+            # Low centreline run through the original downtown.  The path is
+            # long enough for buildings to pass on both sides of the lens.
+            beats = (
+                (1,   (-3.0, -112.0, 2.20), (-3.0, -20.0, 3.0), 29),
+                (105, (-3.0, -55.0, 2.20),  (-3.0, 38.0, 3.0), 29),
+                (210, (-3.0, 4.0, 2.20),    (-3.0, 98.0, 3.0), 31),
+                (300, (-3.0, 58.0, 2.20),   (-3.0, 148.0, 3.0), 34),
+            )
+
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
@@ -14469,7 +14560,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.render.fps = FPS
     sc.frame_start = 1
     sc.frame_end = frame_end
-    if cam in ("day43fpv", "day43pov"):
+    if cam in ("day43fpv", "day43pov", "day44approach", "day44drone",
+               "day44downtown"):
         # Restrained motion blur smooths the FPV transfers while leaving the
         # short vertical construction rises crisp enough to read.
         try:
@@ -14502,7 +14594,9 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     # AgX retains warm lamp color and highlight roll-off at sunset/night.
     try:
         exposure = TODS.get(tod, TODS["day"])["exposure"]
-        if cam in ("day43fpv", "day43pov") and tod == "sunset":
+        if cam in ("day43fpv", "day43pov", "day44approach", "day44street",
+                   "day44drone", "day44field", "day44overhead",
+                   "day44downtown") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -15135,6 +15229,42 @@ def main(cfg=None):
         frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
     elif cfg.get("cam") == "story001dusk":
         frame_end = 126               # 4.2s, the payoff held
+    elif cfg.get("cam") in ("day44approach", "day44street", "day44drone",
+                            "day44field"):
+        frame_end = FPS * 12
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 186 or len(rise) != 186:
+            raise RuntimeError(
+                "%s is authored for exactly 186 Day 44 homes. Got %d homes / "
+                "%d rising records. Use the exact 1784 -> 1970 growth, and "
+                "use --focus-type house for replay renders."
+                % (cfg.get("cam"), len(home_roots), len(rise)))
+
+        camera_name = cfg.get("cam")
+        for root in home_roots:
+            x, y = root.location.x, root.location.y
+            if camera_name == "day44street":
+                # North to south: paired roadside houses visibly approach the
+                # viewer along West Line Road, while the rest follow the same wave.
+                start = 50 + int((832.5-y) / 322.0 * 245.0)
+            elif camera_name == "day44drone":
+                # The drone travels north, then west; Bramble rises with the
+                # first leg and Ember follows the bank into the second.
+                if x > -500.0:
+                    start = 45 + int((y-510.0) / 322.0 * 190.0)
+                else:
+                    start = 225 + int((-500.0-x) / 272.5 * 72.0)
+            elif camera_name == "day44field":
+                # Distant Bramble first, then the westward wave reaches the
+                # fixed observer as the optical zoom closes in.
+                start = 48 + int((-268.0-x) / 504.5 * 245.0)
+            else:
+                # Construction fills northward while the city overview dives
+                # into the active streets, keeping arrivals ahead of the lens.
+                start = 78 + int((y-510.0) / 322.0 * 205.0)
+            animate_rise(root, max(40, min(300, start)), dur=20)
+    elif cfg.get("cam") in ("day44overhead", "day44downtown"):
+        frame_end = FPS * 10
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
         frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
         camera_name = cfg.get("cam")
@@ -15322,6 +15452,10 @@ def main(cfg=None):
         for root in rise:
             if root not in home_roots and root not in tower_roots:
                 animate_rise(root, 250, dur=30)
+    elif cfg.get("cam") in ("day44approach", "day44street", "day44drone",
+                            "day44field", "day44overhead", "day44downtown"):
+        # Day 44 animation was installed with its exact frame length above.
+        pass
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
         # Day 43's spatial road/house/station schedule is installed alongside
         # its exact frame length above, before the generic stagger is reached.
