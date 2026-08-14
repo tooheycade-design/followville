@@ -187,6 +187,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day44allapproach full-growth overview descending into the house wave
 #   --cam day44alldrone   wide drone flight carrying the complete growth front
 #   --cam day44allfield   fixed distant field zoom framing the full growth area
+#   --cam day44fullarc    full-city overhead -> growth wave -> full-city overhead
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11744,7 +11745,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44approach", "day44street", "day44drone",
                "day44field", "day44overhead", "day44downtown",
                "day44allapproach", "day44alldrone",
-               "day44allfield") and tod == "sunset":
+               "day44allfield", "day44fullarc") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12691,7 +12692,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         bpy.context.scene.camera = cam_obj
     elif cam in ("day44approach", "day44street", "day44drone",
                  "day44field", "day44overhead", "day44downtown",
-                 "day44allapproach", "day44alldrone", "day44allfield"):
+                 "day44allapproach", "day44alldrone", "day44allfield",
+                 "day44fullarc"):
         # Day 44 is delivered as six independent clips so the edit can choose
         # between four genuinely different construction viewpoints and two
         # completed-city closers.  Every camera is continuous inside its clip.
@@ -12708,7 +12710,23 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         track.track_axis = "TRACK_NEGATIVE_Z"
         track.up_axis = "UP_Y"
 
-        if cam == "day44allapproach":
+        if cam == "day44fullarc":
+            # One uninterrupted twenty-second round trip: establish every
+            # developed district, descend into a wide view of the complete
+            # Day 44 construction front, then climb back to the same full-city
+            # scale after all 186 homes stand.  There are no duplicate keys or
+            # one-frame jumps here, so interpolation cannot create a hidden cut.
+            beats = (
+                (1,   (300.0, -430.0, 1180.0), (-180.0, 350.0, 10.0), 31),
+                (90,  (220.0, -320.0, 1080.0), (-235.0, 420.0, 9.0), 30),
+                (190, (40.0, -30.0, 790.0),   (-340.0, 555.0, 8.0), 27),
+                (290, (-125.0, 285.0, 525.0), (-455.0, 655.0, 7.0), 24),
+                (390, (-285.0, 535.0, 305.0), (-560.0, 685.0, 7.0), 22),
+                (445, (-385.0, 650.0, 230.0), (-620.0, 670.0, 7.0), 23),
+                (510, (-85.0, 155.0, 690.0),  (-365.0, 545.0, 8.0), 27),
+                (600, (300.0, -430.0, 1180.0), (-180.0, 350.0, 10.0), 31),
+            )
+        elif cam == "day44allapproach":
             # Revision: retain the original overview-to-low idea, but stay
             # wide long enough to watch the entire 504x322m Day 44 footprint
             # build before descending into the western edge of the same wave.
@@ -14597,7 +14615,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_start = 1
     sc.frame_end = frame_end
     if cam in ("day43fpv", "day43pov", "day44approach", "day44drone",
-               "day44downtown", "day44allapproach", "day44alldrone"):
+               "day44downtown", "day44allapproach", "day44alldrone",
+               "day44fullarc"):
         # Restrained motion blur smooths the FPV transfers while leaving the
         # short vertical construction rises crisp enough to read.
         try:
@@ -14633,7 +14652,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
         if cam in ("day43fpv", "day43pov", "day44approach", "day44street",
                    "day44drone", "day44field", "day44overhead",
                    "day44downtown", "day44allapproach", "day44alldrone",
-                   "day44allfield") and tod == "sunset":
+                   "day44allfield", "day44fullarc") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -15329,6 +15348,20 @@ def main(cfg=None):
                 # west toward the stationary observer while the lens tightens.
                 start = 92 + int((-268.0-x) / 504.5 * 210.0)
             animate_rise(root, max(72, min(330, start)), dur=32)
+    elif cfg.get("cam") == "day44fullarc":
+        frame_end = FPS * 20
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 186 or len(rise) != 186:
+            raise RuntimeError(
+                "day44fullarc is authored for the full 186-home Day 44 growth. "
+                "Got %d homes / %d rising records. Replay with --focus-type house."
+                % (len(home_roots), len(rise)))
+        # The complete east-to-west front runs while the camera is descending
+        # and holding its wide low aerial.  The last home finishes before the
+        # climb begins, so the closing overhead proves the full result.
+        for root in home_roots:
+            start = 165 + int((-268.0-root.location.x) / 504.5 * 205.0)
+            animate_rise(root, max(155, min(375, start)), dur=36)
     elif cfg.get("cam") in ("day44overhead", "day44downtown"):
         frame_end = FPS * 10
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
@@ -15521,7 +15554,7 @@ def main(cfg=None):
     elif cfg.get("cam") in ("day44approach", "day44street", "day44drone",
                             "day44field", "day44overhead", "day44downtown",
                             "day44allapproach", "day44alldrone",
-                            "day44allfield"):
+                            "day44allfield", "day44fullarc"):
         # Day 44 animation was installed with its exact frame length above.
         pass
     elif cfg.get("cam") in ("day43fpv", "day43pov"):
