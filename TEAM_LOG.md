@@ -1,5 +1,7 @@
 # Team log — Followville
 
+2026-08-14 — Cade (via Windows Codex) — [WORLD] rebuilt and twice-QA'd the isolated North Crown review: 1,000 road-clear homes, 20 grounded detailed apartments across four types, a complete gated/pool/parking campus, planned Crown downtown, divided signalized parkway, and highway exit; delivered eight replacement renders while leaving canonical city/state files unchanged.
+
 Plain-English log of who added/changed what, in order. Not a technical changelog
 (see WEB_VIEWER_CHANGELOG.md for that) — just enough so Cade and Zach (and whichever
 AI is helping each of them) can see what the other did on their turn.
