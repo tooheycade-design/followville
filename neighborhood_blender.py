@@ -15703,9 +15703,9 @@ def main(cfg=None):
         new_streets = sorted({slot["street_index"]
                               for slot in SUBURBAN_PLAN["houses"]
                               if slot["plan_id"] in new_plan_ids} - old_streets)
-        if new_streets != list(range(71, 82)):
+        if new_streets != list(range(71, 83)):
             raise RuntimeError("Day 45 road suite expected new street indices "
-                               "71..81; got %r" % new_streets)
+                               "71..82; got %r" % new_streets)
         ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
                           "suburban_path_")
         for offset, street_index in enumerate(new_streets):
