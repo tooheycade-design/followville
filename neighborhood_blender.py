@@ -60,6 +60,7 @@ from world_layout import (rafting_access_points, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, STORYBOOK_LAYOUT_CENTER,
                           WEATHER_STATION_CENTER,
                           WEATHER_STATION_HALF_EXTENTS,
+                          NORTH_CROWN_CAMPUS_ACCESS,
                           weather_station_access_points,
                           weather_station_base_height,
                           transform_building_point, transform_point)
@@ -171,6 +172,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day36reveal 16-second held skyline, fast transfer, 13 Heron Reach rises
 #   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
 #   --commons        add Followville Commons, the permanent apartment complex
+#   --northcrowncampus add North Crown's permanent planned apartment campus
+#                     with four finished blocks and sixteen grass parcels
 #   --foodcourt      add the Food Court ring of food-shaped homes
 #   --cam day38reveal 16-second skyline, run east, Food Court rise
 #   --cam day38foodtour 20-second city drone -> Food Court rise -> street level
@@ -236,6 +239,7 @@ def _cli():
              "--raftingstation": "raftingstation",
              "--salmonproshop": "salmonproshop",
              "--commons": "apartmentcomplex",
+             "--northcrowncampus": "northcrowncampus",
              "--gasstation": "gasstation",
              "--nuclearplant": "nuclearplant",
              "--foodcourt": "foodcourt"}
@@ -408,6 +412,13 @@ APARTMENTS_Y = -300.0
 # Terrain falls 1.41m across the podium; the deck sits just over the high
 # corner and stands 1.47m proud at the low one, inside DEFAULT_MAX_PAD_STAND.
 APARTMENTS_PAD_Z = 1.84
+
+# Permanent planned campus immediately north of the Day 45 Ember Ridge front.
+# The shared terrain is level to less than a millimetre across the enclosure,
+# so buildings and parking sit directly on grade rather than on raised blocks.
+NORTH_CROWN_CAMPUS_X = -370.0
+NORTH_CROWN_CAMPUS_Y = 1088.0
+NORTH_CROWN_CAMPUS_Z = 5.332
 
 WALLS = [(0.96, 0.90, 0.81), (0.91, 0.84, 0.77), (0.97, 0.82, 0.79),
          (0.85, 0.89, 0.87), (0.90, 0.89, 0.94), (0.98, 0.93, 0.82),
@@ -5707,6 +5718,146 @@ def build_apartment_complex(col, seed):
              6.0, HY - 2.62, z + 1.52, slate)
 
 
+def build_north_crown_campus(col, seed):
+    """North Crown's permanent 20-parcel apartment campus, phase one.
+
+    Four detailed blocks stand along the entrance row.  The other sixteen
+    parcels deliberately remain grass, while the complete circulation,
+    parking, perimeter gate and pool are already constructed.  All local
+    heights start on the terrain datum stored by the state record; there is no
+    common podium and therefore no raised-building effect on the level site.
+    """
+    m = std_mats()
+    cream = mat("NB_nc_campus_cream", (.86, .81, .71), .87)
+    peach = mat("NB_nc_campus_peach", (.76, .50, .40), .86)
+    blue = mat("NB_nc_campus_blue", (.38, .54, .63), .80)
+    sage = mat("NB_nc_campus_sage", (.43, .58, .48), .87)
+    slate = mat("NB_nc_campus_slate", (.20, .24, .29), .72, .08)
+    glass = mat("NB_nc_campus_glass", (.10, .25, .34), .18, .06,
+                1.0, 0.0, .58)
+    rail = mat("NB_nc_campus_rail", (.90, .89, .84), .62)
+    lawn = mat("NB_nc_campus_lawn", (.35, .57, .30), .98)
+    pave = mat("NB_nc_campus_pave", (.66, .64, .60), .94)
+    asphalt = mat("NB_nc_campus_asphalt", (.18, .20, .22), .97)
+    paint = mat("NB_nc_campus_paint", (.91, .86, .66), .72)
+    brick = mat("NB_nc_campus_brick", (.48, .28, .21), .91)
+    water = mat("NB_nc_campus_water", (.10, .50, .70), .12, .04,
+                1.0, .20, .70)
+    hedge = mat("NB_nc_campus_hedge", (.20, .41, .21), .98)
+
+    # A thin lawn owns the visible campus surface and sits 8cm above the
+    # shared terrain; every later hardscape layer starts above its top.
+    add_box(col, "north_crown_campus_lawn", 200.0, 280.0, .08,
+            0, 0, 0, lawn)
+
+    # Complete circulation for all twenty parcels: a central spine, four
+    # parking courts and pedestrian walks.  The future building pads are not
+    # paved; they stay honest grass until later phases are approved.
+    add_box(col, "north_crown_campus_spine", 8.5, 270.0, .08,
+            0, 0, .08, asphalt)
+    for side in (-1, 1):
+        add_box(col, "north_crown_campus_spine_walk", 2.1, 270.0, .07,
+                side * 5.55, 0, .16, pave)
+    # Carry the road and both walks through the gate to the exact endpoint of
+    # NORTH_CROWN_CAMPUS_ACCESS (world y=943).  The lawn begins at y=948, so
+    # this short apron is what removes the otherwise-visible grass gap.
+    add_box(col, "north_crown_gate_apron", 8.5, 11.0, .08,
+            0, -140.5, .08, asphalt)
+    for side in (-1, 1):
+        add_box(col, "north_crown_gate_apron_walk", 2.1, 11.0, .07,
+                side * 5.55, -140.5, .16, pave)
+    parking_rows = (-70.0, -10.0, 50.0, 110.0)
+    for row_index, y in enumerate(parking_rows):
+        add_box(col, "north_crown_campus_parking", 190.0, 16.0, .08,
+                0, y, .08, asphalt)
+        for x in range(-92, 93, 8):
+            for side in (-1, 1):
+                add_box(col, "north_crown_campus_stall", .10, 5.1, .025,
+                        x, y + side * 5.35, .165, paint)
+        add_box(col, "north_crown_campus_centerline", 190.0, .10, .025,
+                0, y, .165, paint)
+        # Four planted islands per court break up the asphalt without
+        # occupying any future building footprint.
+        for x in (-88.0, -32.0, 32.0, 88.0):
+            add_box(col, "north_crown_campus_island", 3.4, 2.4, .18,
+                    x, y, .17, hedge)
+
+    # Phase one: four different-colour, five-storey blocks.  The shared
+    # detailed builder provides proper balconies, glazing, bands and roof
+    # equipment without any geometry hanging below the roof plane.
+    blocks = ((-72.0, cream, blue), (-24.0, peach, sage),
+              (24.0, blue, cream), (72.0, sage, peach))
+    for index, (x, wall, accent) in enumerate(blocks, 1):
+        _commons_block(col, "north_crown_phase1_%d" % index,
+                       x, -106.0, 32.0, 20.0, 5, .20,
+                       wall, accent, slate, glass, rail, m)
+        add_box(col, "north_crown_entry_walk", 4.0, 9.0, .07,
+                x, -89.5, .16, pave)
+
+    # Pool behind the western entrance block, fenced separately from the
+    # campus perimeter.  Basin and water are vertically separated; no level
+    # water shares a plane with the deck or lawn.
+    px, py = -60.0, -40.0
+    add_box(col, "north_crown_pool_basin", 18.0, 12.0, .70,
+            px, py, -.62, slate)
+    add_box(col, "north_crown_pool_water", 17.2, 11.2, .10,
+            px, py, .09, water)
+    for side in (-1, 1):
+        add_box(col, "north_crown_pool_deck_x", 22.0, 3.0, .10,
+                px, py + side * 7.5, .16, pave)
+        add_box(col, "north_crown_pool_deck_y", 2.0, 12.0, .10,
+                px + side * 10.0, py, .16, pave)
+        add_box(col, "north_crown_pool_fence_x", 22.0, .10, 1.35,
+                px, py + side * 9.0, .26, slate)
+        add_box(col, "north_crown_pool_fence_y", .10, 18.0, 1.35,
+                px + side * 11.0, py, .26, slate)
+        _commons_lounger(col, px + side * 7.2, py - 7.2, .26, slate, accent)
+
+    # Continuous perimeter with a controlled 16m opening, real gate leaves,
+    # gatehouse and identity beam at the south entrance.
+    for y in range(-138, 139, 7):
+        for x in (-99.0, 99.0):
+            add_box(col, "north_crown_fence_post", .18, .18, 2.1,
+                    x, y, .20, slate)
+    for x in list(range(-98, -8, 7)) + list(range(8, 99, 7)):
+        for y in (-138.0, 138.0):
+            add_box(col, "north_crown_fence_post", .18, .18, 2.1,
+                    x, y, .20, slate)
+    for x in (-99.0, 99.0):
+        for z in (.55, 1.25, 2.0):
+            add_box(col, "north_crown_fence_rail", .12, 276.0, .12,
+                    x, 0, z, slate)
+    for y in (-138.0, 138.0):
+        for x, width in ((-53.0, 90.0), (53.0, 90.0)):
+            for z in (.55, 1.25, 2.0):
+                add_box(col, "north_crown_fence_rail", width, .12, .12,
+                        x, y, z, slate)
+    for side in (-1, 1):
+        add_box(col, "north_crown_gate_leaf", 7.6, .18, 1.65,
+                side * 4.0, -138.0, .34, slate)
+        add_box(col, "north_crown_gate_pier", .85, .85, 2.65,
+                side * 8.2, -138.0, .20, brick)
+    add_box(col, "north_crown_gatehouse", 8.0, 5.0, 3.5,
+            -14.0, -130.0, .20, brick)
+    add_box(col, "north_crown_gatehouse_glass", 5.2, .14, 1.55,
+            -14.0, -132.57, 1.05, glass)
+    add_box(col, "north_crown_entry_beam", 12.0, .42, 1.15,
+            0, -134.0, 3.15, brick)
+
+    # Warm practical fixtures carry the pool finale at night.  They remain
+    # emissive in the web export while the render adds controlled light pools.
+    for y in (-118.0, -82.0, -22.0, 38.0, 98.0, 128.0):
+        for x in (-7.0, 7.0):
+            add_ngon_cone(col, "north_crown_lamp_post", .12, .10, 4.5, 7,
+                          x, y, .20, slate)
+            add_box(col, "north_crown_lamp_head", .55, .40, .22,
+                    x, y, 4.70, m["bulb"])
+
+    # One merged collection instance keeps website streaming manageable and
+    # makes the four completed buildings rise together in the Day 45 film.
+    _merge_asset_meshes(col, "north_crown_campus")
+
+
 def build_day37_statue(world_col, buildings, frame_end):
     """Render-only: the next mayor's plinth, in FRONT of City Hall.
 
@@ -7055,6 +7206,7 @@ ASSET_VARIANTS = {
     "raftingstation": [("AST_raftingstation_0", lambda c: build_rafting_station(c, 3600))],
     "salmonproshop": [("AST_salmonproshop_0", lambda c: build_salmon_pro_shop(c, 3800))],
     "apartmentcomplex": [("AST_apartmentcomplex_0", lambda c: build_apartment_complex(c, 7300))],
+    "northcrowncampus": [("AST_northcrowncampus_0", lambda c: build_north_crown_campus(c, 8500))],
     "foodcourt": [("AST_foodcourt_0", lambda c: build_food_court(c, 8100))],
     "gasstation": [("AST_gasstation_0", lambda c: build_gas_station(c, 8200))],
     "restaurant": [("AST_restaurant_0", lambda c: build_restaurant(c, 8300))],
@@ -7110,6 +7262,8 @@ def web_chunk_id(b):
         return "salmon-pro-shop"
     if b.get("type") == "apartmentcomplex":
         return "apartment-complex"
+    if b.get("type") == "northcrowncampus":
+        return "north-crown-campus"
     if b.get("type") in ("foodhouse", "foodcourt"):
         return "food-court"
     if b.get("type") == "weatherstation":
@@ -7147,7 +7301,8 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
         "raftingstation": 1, "weatherstation": 1, "salmonproshop": 1,
-        "apartmentcomplex": 1, "foodhouse": 1, "foodcourt": 1,
+        "apartmentcomplex": 1, "northcrowncampus": 1,
+        "foodhouse": 1, "foodcourt": 1,
         "gasstation": 1, "restaurant": 1, "nuclearplant": 1}
 
 # check_world_geometry.py needs a grid landmark's lot size to know where its
@@ -7170,7 +7325,7 @@ def footprint(b):
     if (b.get("plan_id") or b.get("metro_id") or b.get("feature_id") or
             b["type"] in ("cityhallroad", "cityhall", "civicsquare", "fishingpond",
                           "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex",
-                          "foodhouse", "foodcourt")):
+                          "northcrowncampus", "foodhouse", "foodcourt")):
         return []
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
@@ -8262,6 +8417,45 @@ def build_suburban_roads(world_col, buildings, m):
                 obj["nb_street_index"] = street_index
         if street_index >= 18:
             river_reveal_objects.extend(street_objects)
+    if any(b.get("type") == "northcrowncampus" for b in buildings):
+        # A real, terrain-following connection from Ember Ridge street 72 to
+        # the gated campus.  Keeping it outside the merged landmark asset
+        # makes it part of the same audited and walkable road system as every
+        # residential street in the website export.
+        access_points = [(x, y, terrain_height(x, y))
+                         for x, y in NORTH_CROWN_CAMPUS_ACCESS]
+        access_objects = [
+            _add_road_strip(world_col, "north_crown_access_shoulder",
+                            access_points, shoulder_mat, width=8.1,
+                            bottom_offset=.005, top_offset=.045,
+                            terrain_conform=True),
+            _add_road_strip(world_col, "north_crown_access_road",
+                            access_points, m["road"], width=6.5,
+                            bottom_offset=.015, top_offset=.085,
+                            terrain_conform=True),
+        ]
+        for side in (-1, 1):
+            access_objects.append(_add_road_strip(
+                world_col, "north_crown_access_path_%s" % side,
+                _offset_terrain_path(access_points, side * 4.65), path_mat,
+                width=1.35, bottom_offset=.005, top_offset=.035,
+                terrain_conform=True))
+        total = sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                    for a, b in zip(access_points, access_points[1:]))
+        distance = 6.0
+        while distance < total - 3.0:
+            x, y, angle = _polyline_sample(access_points, distance)
+            dash = add_box(world_col, "north_crown_access_dash",
+                           1.75, .17, .018, x, y,
+                           terrain_height(x, y) + .095, lane_mat)
+            dash.rotation_euler.z = angle
+            access_objects.append(dash)
+            distance += 10.0
+        for obj in access_objects:
+            if obj is not None:
+                obj["nb_north_crown_access"] = True
+        junction_points.extend((NORTH_CROWN_CAMPUS_ACCESS[0],
+                                NORTH_CROWN_CAMPUS_ACCESS[-1]))
     # Rounded, terrain-following covers turn independent road ribbons into one
     # visually continuous network at bends and junctions. The one-centimetre
     # lift over each ribbon prevents depth fighting without a visible step.
@@ -12696,6 +12890,63 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day45northcrown":
+        # Day 45: one uninterrupted 20-second move.  It begins high enough to
+        # hold every developed district, advances over the single synchronized
+        # 214-home construction event, then descends along the same geographic
+        # line into North Crown's pool courtyard.  No cut hides the relationship
+        # between the old city, Ember Ridge and the new apartment campus.
+        aim = bpy.data.objects.new("Day45NorthCrownAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day45NorthCrownCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 16000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day45NorthCrownCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            (1,   (520.0, -540.0, 1250.0), (-180.0, 350.0, 10.0), 31),
+            (100, (300.0, -300.0, 1100.0), (-260.0, 500.0, 9.0), 29),
+            (220, (40.0, 50.0, 800.0),    (-430.0, 640.0, 8.0), 25),
+            (330, (-150.0, 330.0, 520.0), (-520.0, 690.0, 8.0), 23),
+            (420, (-350.0, 680.0, 250.0), (-430.0, 950.0, 8.0), 25),
+            (500, (-430.0, 920.0, 90.0),  (-430.0, 1030.0, 10.0), 29),
+            (560, (-430.0, 1075.0, 20.0), (-405.0, 992.0, 14.0), 34),
+            (600, (-430.0, 1062.0, 7.6),  (-405.0, 985.0, 15.0), 38),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+        # Preserve aerial precision, then relax the near plane only during the
+        # final descent where the camera enters the courtyard.
+        for frame, near, far in ((1, 10.0, 16000.0),
+                                 (440, 10.0, 16000.0),
+                                 (520, 2.0, 5000.0),
+                                 (560, .35, 1800.0),
+                                 (600, .35, 1800.0)):
+            cam_data.clip_start, cam_data.clip_end = near, far
+            cam_data.keyframe_insert("clip_start", frame=frame)
+            cam_data.keyframe_insert("clip_end", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path in ("clip_start", "clip_end"):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
     elif cam in ("day44approach", "day44street", "day44drone",
                  "day44field", "day44overhead", "day44downtown",
                  "day44allapproach", "day44alldrone", "day44allfield",
@@ -14595,6 +14846,26 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     world_col.objects.link(fill)
     _configure_video_sky(tod, t)
     _build_video_practicals(world_col, tod)
+    if cam == "day45northcrown" and tod in ("dusk", "night"):
+        # Courtyard practicals are render-only.  The web keeps the authored
+        # emissive lamp heads, while the cinematic file gets soft amber pools
+        # that model the apartments and water in the final close shot.
+        practicals = ((-430.0, 1048.0, 10.5, 720.0),
+                      (-452.0, 1002.0, 10.0, 520.0),
+                      (-408.0, 1002.0, 10.0, 520.0),
+                      (-370.0, 970.0, 9.5, 480.0),
+                      (-370.0, 1088.0, 9.5, 480.0))
+        for index, (x, y, z, energy) in enumerate(practicals):
+            data = bpy.data.lights.new("Day45CampusPractical_%02d" % index,
+                                       "POINT")
+            data.color = (1.0, .58, .26)
+            data.energy = energy
+            data.shadow_soft_size = 2.2
+            lamp = bpy.data.objects.new("Day45CampusPractical_%02d" % index,
+                                        data)
+            lamp.location = (x, y, z)
+            lamp["nb_render_only"] = True
+            world_col.objects.link(lamp)
 
 
 def build_storm_layer(world_col, frame_end):
@@ -14718,7 +14989,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.render.fps = FPS
     sc.frame_start = 1
     sc.frame_end = frame_end
-    if cam in ("day43fpv", "day43pov", "day44approach", "day44drone",
+    if cam in ("day45northcrown", "day43fpv", "day43pov",
+               "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
                "day44southfpv", "day44swrooftop", "day44westbank",
                "day44sereverse", "day44fullarc"):
@@ -14958,7 +15230,8 @@ def main(cfg=None):
                 cfg.get("fishingpond") or cfg.get("constructionzone") or
                 cfg.get("movietheater") or cfg.get("arcade") or
                 cfg.get("eastwoods") or cfg.get("raftingstation") or
-                cfg.get("gasstation") or cfg.get("salmonproshop")):
+                cfg.get("gasstation") or cfg.get("salmonproshop") or
+                cfg.get("northcrowncampus")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -15254,6 +15527,25 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(commons)
             new_batch.append(commons)
+        if cfg.get("northcrowncampus"):
+            if any(b["type"] == "northcrowncampus"
+                   for b in state["buildings"]):
+                raise RuntimeError("North Crown apartment campus already exists")
+            campus = {
+                "type": "northcrowncampus", "gx": 0, "gy": 0,
+                "px": NORTH_CROWN_CAMPUS_X,
+                "py": NORTH_CROWN_CAMPUS_Y,
+                "pz": NORTH_CROWN_CAMPUS_Z,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "name": "North Crown Apartments — Phase One",
+                "district": "North Crown Campus",
+                "completed_apartments": 4,
+                "planned_apartments": 20,
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(campus)
+            new_batch.append(campus)
         if cfg.get("constructionzone"):
             existing_zone = [b for b in state["buildings"]
                              if b["type"] == "constructionzone"]
@@ -15388,7 +15680,77 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "story001pricesign":
+    if cfg.get("cam") == "day45northcrown":
+        frame_end = FPS * 20
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        campus_roots = [root for root in rise
+                        if root.name.startswith("northcrowncampus_d")]
+        if len(home_roots) != 214 or len(campus_roots) != 1 or len(rise) != 215:
+            raise RuntimeError(
+                "day45northcrown requires exactly 214 follower homes and one "
+                "North Crown campus; got %d homes, %d campuses, %d rising records"
+                % (len(home_roots), len(campus_roots), len(rise)))
+
+        # New road ribbons draw on before the synchronized building event.
+        # Street 70 already carried Day 44 homes, so its newly revealed end is
+        # left standing rather than hiding pavement under existing residents.
+        new_plan_ids = {b["plan_id"] for b in new_batch if b.get("plan_id")}
+        built_plan_ids = ({b.get("plan_id") for b in state["buildings"]}
+                          - new_plan_ids)
+        old_streets = {slot["street_index"]
+                       for slot in SUBURBAN_PLAN["houses"]
+                       if slot["plan_id"] in built_plan_ids}
+        new_streets = sorted({slot["street_index"]
+                              for slot in SUBURBAN_PLAN["houses"]
+                              if slot["plan_id"] in new_plan_ids} - old_streets)
+        if new_streets != list(range(71, 82)):
+            raise RuntimeError("Day 45 road suite expected new street indices "
+                               "71..81; got %r" % new_streets)
+        ribbons_prefix = ("suburban_shoulder_", "suburban_road_",
+                          "suburban_path_")
+        for offset, street_index in enumerate(new_streets):
+            pieces = [obj for obj in world_col.objects
+                      if obj.get("nb_street_index") == street_index]
+            start = 92 + offset * 6
+            ribbons = [obj for obj in pieces
+                       if obj.name.startswith(ribbons_prefix)]
+            trim = [obj for obj in pieces if obj not in ribbons]
+            for obj in ribbons:
+                animate_road_build(obj, start, dur=54,
+                                   reverse=(street_index % 2 == 0))
+            if trim:
+                xs = [obj.location.x for obj in trim]
+                ys = [obj.location.y for obj in trim]
+                along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+                trim.sort(key=lambda obj: (obj.location.x if along_x
+                                            else obj.location.y))
+                span = max(1, len(trim) - 1)
+                for index, obj in enumerate(trim):
+                    _keyframe_hidden(obj, 1, True)
+                    _keyframe_hidden(obj, start + 10 + int(54 * index / span),
+                                     False)
+
+        access_pieces = [obj for obj in world_col.objects
+                         if obj.get("nb_north_crown_access")]
+        access_ribbons = [obj for obj in access_pieces
+                          if obj.name.startswith(("north_crown_access_shoulder",
+                                                  "north_crown_access_road",
+                                                  "north_crown_access_path_"))]
+        access_trim = [obj for obj in access_pieces
+                       if obj not in access_ribbons]
+        for obj in access_ribbons:
+            animate_road_build(obj, 142, dur=46)
+        for index, obj in enumerate(access_trim):
+            _keyframe_hidden(obj, 1, True)
+            _keyframe_hidden(obj, 152 + index * 2, False)
+
+        # The brief asks for one large simultaneous population event rather
+        # than a machine-gun sequence.  All 214 homes and all four apartment
+        # blocks (inside one campus root) therefore rise on the same frames.
+        for root in home_roots:
+            animate_rise(root, 190, dur=34)
+        animate_rise(campus_roots[0], 190, dur=34)
+    elif cfg.get("cam") == "story001pricesign":
         frame_end = 330               # 11.0s: 2.8 + 2.2 + 3.0 + 3.0
     elif cfg.get("cam") == "story001dusk":
         frame_end = 126               # 4.2s, the payoff held

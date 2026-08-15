@@ -376,6 +376,9 @@ LANDMARK_FOOTPRINTS = {
     # Turned a quarter turn to face the city, so the pad is 56 wide by 50 deep.
     "salmonproshop":   (-28.0,   28.0,  -25.0,   25.0, True),
     "apartmentcomplex": (-34.0,  34.0,  -22.0,   22.0, True),
+    # Phase-one campus includes four finished blocks and sixteen grass parcels;
+    # the full 200x280m fence/parking envelope is one permanent public realm.
+    "northcrowncampus": (-100.0, 100.0, -140.0, 140.0, True),
     "weatherstation":  (-15.5,   15.5,  -13.5,   13.5, False),
     # The chapter-three reserve's ten non-house addresses. These are the same
     # authored ground extents neighborhood_plan.TYPE_FOOTPRINT places against,
@@ -573,6 +576,19 @@ DISTRICT_CONNECTORS = {
     "North Ridge": [(70.0, -93.0), (91.0, -99.0), (114.0, -111.0), (133.0, -123.0)],
 }
 
+# The permanent, terrain-following link from Ember Ridge's northern street
+# terminus to the North Crown apartment gate.  It is declared here (rather
+# than hidden inside the apartment mesh) so Blender, the browser walk surface,
+# and check_world_geometry all audit the exact same road.
+NORTH_CROWN_CAMPUS_ACCESS = [
+    (-470.0, 810.0),
+    (-470.0, 850.0),
+    (-451.0, 884.0),
+    (-416.0, 918.0),
+    (-386.0, 938.0),
+    (-370.0, 943.0),
+]
+
 
 def offset_for(district=None, building_type=None, feature_id=None):
     if district in DISTRICT_OFFSETS:
@@ -667,6 +683,11 @@ def walk_surface_manifest(state):
         ax, ay = transform_point(*segment["a"], district=segment.get("district"))
         bx, by = transform_point(*segment["b"], district=segment.get("district"))
         append_road(ax, ay, bx, by)
+    if any(building.get("type") == "northcrowncampus"
+           for building in state.get("buildings", [])):
+        for (ax, ay), (bx, by) in zip(NORTH_CROWN_CAMPUS_ACCESS,
+                                      NORTH_CROWN_CAMPUS_ACCESS[1:]):
+            append_road(ax, ay, bx, by)
     bulbs = []
     for bulb in PLAN["turnarounds"]:
         if bulb["reveal_at"] > active:

@@ -39,6 +39,7 @@ from neighborhood_plan import (PLAN, RIVER_HALF_WIDTH,
                                northgate_arterial_points)
 from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           DISTRICT_CONNECTORS, INTENTIONALLY_RAISED_ROADS,
+                          NORTH_CROWN_CAMPUS_ACCESS,
                           KEEP_OUT_REGIONS, LANDMARK_APPROACHES,
                           LANDMARK_FOOTPRINTS, LANDMARK_GRID_SIZE,
                           LEVEL_WATER, RETAINED_PADS,
@@ -179,6 +180,9 @@ def every_road(state):
         from world_layout import point_road_points, station_trail_points
         roads.append(("Point Road", point_road_points()))
         roads.append(("Station Trail", station_trail_points()))
+    if "northcrowncampus" in present:
+        roads.append(("North Crown campus access",
+                      list(NORTH_CROWN_CAMPUS_ACCESS)))
     if any(b.get("type") == "metrotower" for b in buildings):
         from metropolitan_plan import STREETS, RAMPS, expressway_points
         for street in STREETS:
