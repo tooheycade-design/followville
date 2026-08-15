@@ -136,7 +136,9 @@ def _terrain_mesh(collection):
     # Preserve the established ~8m sampling pitch after extending the western
     # edge from -520 to -960 for the West Quarter.  Leaving nx at 165 would
     # make the visible mesh diverge unnecessarily from terrain_height().
-    nx, ny = 220, 113
+    # North Crown extends to y=1228. Keep the new northern terrain at the
+    # established ~8m sampling pitch used across the web walk surface.
+    nx, ny = 220, 206
     vertices = []
     for iy in range(ny):
         y = y0+(y1-y0)*iy/(ny-1)
