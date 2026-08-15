@@ -43,6 +43,10 @@ NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "s
                        "weatherstation",
                        "constructionzone", "movietheater", "arcade",
                        "forestreserve",
+                       # One canonical record owns each complete apartment
+                       # campus, so it is public infrastructure rather than a
+                       # single claimable dwelling.
+                       "apartmentcomplex", "northcrowncampus",
                        # Chapter three's filling stations and diners. They hold
                        # a growth address each -- "+N followers" still means the
                        # next N addresses appear -- but the whole point is that

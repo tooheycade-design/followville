@@ -193,10 +193,15 @@ function Sync-Houses {
         do {
             # PostgREST may enforce a 1,000-row server cap regardless of a
             # larger requested limit, so page through every existing address.
-            $Existing = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + "/rest/v1/houses?select=id&order=id&limit=$PageSize&offset=$Offset") -Headers $Headers -Method Get)
-            foreach ($row in $Existing) { $ExistingIds[[int64]$row.id] = $true }
-            $Offset += $PageSize
-        } while ($Existing.Count -eq $PageSize)
+            $Existing = Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + "/rest/v1/houses?select=id&order=id&limit=$PageSize&offset=$Offset") -Headers $Headers -Method Get
+            # Windows PowerShell 5.1 can deserialize a JSON result set as one
+            # object whose `id` property is an Object[] instead of an array of
+            # row objects.  Enumerate the projected ids themselves so both
+            # response shapes page and cast identically.
+            $PageIds = @($Existing.id)
+            foreach ($id in $PageIds) { $ExistingIds[[int64]$id] = $true }
+            $Offset += $PageIds.Count
+        } while ($PageIds.Count -eq $PageSize)
         $RestoredSchool = @($State.buildings | Where-Object {
             [int64]$_.seed -eq 172 -and $_.type -eq 'elementaryschool'
         })
@@ -260,8 +265,11 @@ function Sync-Houses {
             'pond', 'park', 'parkdistrict', 'lanestreet', 'plaza',
             'streetlight', 'car', 'elementaryschool', 'followmart',
             'coffeetruck', 'firestation', 'cityhallroad', 'cityhall',
-            'civicsquare', 'fishingpond', 'weatherstation', 'constructionzone', 'movietheater', 'arcade',
+            'civicsquare', 'fishingpond', 'raftingstation', 'weatherstation',
+            'constructionzone', 'movietheater', 'arcade',
             'forestreserve',
+            'gasstation', 'restaurant', 'apartmentcomplex',
+            'northcrowncampus',
             # Followville Point Station -- a power station, not a home. Without
             # this the sync offers a nuclear reactor as a claimable property.
             'nuclearplant',
