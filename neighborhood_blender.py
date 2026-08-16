@@ -195,6 +195,7 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day44swrooftop 16-second south-west skyline rooftop/street run
 #   --cam day44westbank  16-second west skyline bank and diagonal dive
 #   --cam day44sereverse 16-second south-east skyline reverse-wave flight
+#   --cam day46sunsetdrone 16-second skyline, low 47-home wave, city pullback
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11945,7 +11946,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44allapproach", "day44alldrone",
                "day44allfield", "day44southfpv", "day44swrooftop",
                "day44westbank", "day44sereverse",
-               "day44fullarc") and tod == "sunset":
+               "day44fullarc", "day46sunsetdrone") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12889,6 +12890,67 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             for fc in obj_fcurves(obj):
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day46sunsetdrone":
+        # Day 46: one exact 16-second sunset flight authored from Zach's two
+        # reel references.  The opening five seconds hover on the established
+        # south-east skyline, the middle drops to a higher version of the
+        # reference street flight and runs just behind the construction wave,
+        # and the ending climbs rapidly into a finished-city scale reveal.
+        aim = bpy.data.objects.new("Day46SunsetDroneAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day46SunsetDroneCamera")
+        cam_data.lens = 32
+        cam_data.clip_start = 2.0
+        cam_data.clip_end = 18000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day46SunsetDroneCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Five-second skyline hover: low enough to preserve recognizable
+            # buildings and the horizon, with only a quiet lateral drift.
+            (1,   (215.0, -205.0, 95.0), (-15.0, 75.0, 24.0), 32),
+            (75,  (200.0, -180.0, 92.0), (-25.0, 100.0, 24.0), 32),
+            (150, (175.0, -135.0, 88.0), (-45.0, 140.0, 22.0), 31),
+            # Fast transfer into Ember Ridge, then a 15-25m-above-rooftop
+            # chase across the three new streets.  The aim stays a few blocks
+            # ahead, so the next houses rise in view rather than behind us.
+            (195, (-35.0, 145.0, 90.0), (-320.0, 520.0, 12.0), 27),
+            (225, (-330.0, 520.0, 65.0), (-470.0, 685.0, 8.0), 25),
+            (275, (-430.0, 600.0, 50.0), (-555.0, 690.0, 8.0), 23),
+            (325, (-535.0, 620.0, 44.0), (-650.0, 688.0, 7.0), 23),
+            (365, (-650.0, 625.0, 48.0), (-725.0, 690.0, 8.0), 25),
+            # Fast celebratory lift, then two seconds of high completed-city
+            # scale so the film lands on "look how far we have come".
+            (420, (-120.0, 0.0, 930.0), (-300.0, 430.0, 10.0), 30),
+            (480, (480.0, -520.0, 1230.0), (-180.0, 370.0, 10.0), 32),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+        # Aerial precision matters most in the final climb; the low pass keeps
+        # a 2m near plane so nearby roofs do not disappear under the camera.
+        for frame, near in ((1, 2.0), (365, 2.0), (420, 10.0), (480, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
         bpy.context.scene.camera = cam_obj
     elif cam == "day45northcrown":
         # Day 45: one uninterrupted 20-second move.  It begins high enough to
@@ -14989,7 +15051,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.render.fps = FPS
     sc.frame_start = 1
     sc.frame_end = frame_end
-    if cam in ("day45northcrown", "day43fpv", "day43pov",
+    if cam in ("day45northcrown", "day46sunsetdrone", "day43fpv", "day43pov",
                "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
                "day44southfpv", "day44swrooftop", "day44westbank",
@@ -15031,7 +15093,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44downtown", "day44allapproach", "day44alldrone",
                    "day44allfield", "day44southfpv", "day44swrooftop",
                    "day44westbank", "day44sereverse",
-                   "day44fullarc") and tod == "sunset":
+                   "day44fullarc", "day46sunsetdrone") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -15680,7 +15742,29 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day45northcrown":
+    if cfg.get("cam") == "day46sunsetdrone":
+        frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 47 or len(rise) != 47:
+            raise RuntimeError(
+                "day46sunsetdrone requires exactly 47 Day 46 follower homes; "
+                "got %d homes / %d rising records. Use the exact 2184 -> 2231 "
+                "growth, or replay with --focus-type house."
+                % (len(home_roots), len(rise)))
+
+        # The streets are complete from frame one.  The story is the follower
+        # homes, not pavement, and standing roads make the low pass legible.
+        # East-to-west starts just after the five-second skyline hold, a few
+        # blocks ahead of the westbound drone.  Three adjacent streets are
+        # mixed into one broad spatial front instead of rising in seed order.
+        east_x = max(root.location.x for root in home_roots)
+        west_x = min(root.location.x for root in home_roots)
+        span_x = max(1.0, east_x - west_x)
+        for root in home_roots:
+            progress = (east_x - root.location.x) / span_x
+            start = 168 + int(progress * 166.0)
+            animate_rise(root, start, dur=22)
+    elif cfg.get("cam") == "day45northcrown":
         frame_end = FPS * 20
         home_roots = [root for root in rise if root.name.startswith("house_d")]
         campus_roots = [root for root in rise
@@ -16094,6 +16178,9 @@ def main(cfg=None):
         for root in rise:
             if root not in home_roots and root not in tower_roots:
                 animate_rise(root, 250, dur=30)
+    elif cfg.get("cam") == "day46sunsetdrone":
+        # Day 46's exact spatial wave is installed with its frame length above.
+        pass
     elif cfg.get("cam") in ("day44approach", "day44street", "day44drone",
                             "day44field", "day44overhead", "day44downtown",
                             "day44allapproach", "day44alldrone",
