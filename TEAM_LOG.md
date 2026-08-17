@@ -1,5 +1,7 @@
 # Team log — Followville
 
+2026-08-17 — Cade (via his Claude) — [WORLD] grew Day 47 (+37 to 2,268) into Ember Ridge, added the continuous 24s `day47reveal` camera (new-area overview → 37 homes rising one by one → climb-out to the original city), and fixed a Windows-only `Sync-Houses` bug where PowerShell 5.1 counted a zero-row claims result as 1, aborting every sync since seed 129 became the arcade and leaving the day's homes unclaimable.
+
 2026-08-14 — Cade (via Windows Codex) — [WORLD] rebuilt and twice-QA'd the isolated North Crown review: 1,000 road-clear homes, 20 grounded detailed apartments across four types, a complete gated/pool/parking campus, planned Crown downtown, divided signalized parkway, and highway exit; delivered eight replacement renders while leaving canonical city/state files unchanged.
 
 Plain-English log of who added/changed what, in order. Not a technical changelog

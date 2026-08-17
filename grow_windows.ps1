@@ -246,8 +246,18 @@ function Sync-Houses {
             if ($Row129.Count -ne 1) {
                 throw 'Expected exactly one houses row for canonical seed 129'
             }
-            $Claims129 = @(Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/claims?house_id=eq.129&select=house_id') -Headers $Headers -Method Get)
-            if ($Claims129.Count -ne 0) {
+            # Count by ENUMERATING, never by wrapping. Windows PowerShell 5.1
+            # wraps a pipeline-produced empty array as a single element, so the
+            # obvious `@(Invoke-RestMethod ...).Count` reports 1 for a zero-row
+            # PostgREST result. Once seed 129 became the arcade this guard was
+            # therefore true on every Windows growth even with no claim at all,
+            # and because it throws, the whole insert-only sync aborted before
+            # the new day's houses were added -- Day 47's 37 homes shipped
+            # unclaimable. Verified against live rows: house 129 (body "[]")
+            # counts 0, and a genuinely claimed house counts 1, so the
+            # protection itself is unchanged.
+            $Claims129Raw = Invoke-RestMethod -Uri ($SbUrl.TrimEnd('/') + '/rest/v1/claims?house_id=eq.129&select=house_id') -Headers $Headers -Method Get
+            if (($Claims129Raw | Measure-Object).Count -ne 0) {
                 throw 'Seed 129 has a citizen claim; refusing arcade conversion'
             }
             if ($Row129[0].building_type -eq 'house' -and [bool]$Row129[0].claimable) {
