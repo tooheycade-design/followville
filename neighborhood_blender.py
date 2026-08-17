@@ -12937,13 +12937,22 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # the ground reads as ground before anything stands on it.
             (1,   (-320.0, 738.0, 10.5), (-450.0, 738.0, 8.5), 26),
             (150, (-370.0, 738.0, 10.5), (-500.0, 738.0, 8.5), 26),
-            # Eleven seconds gliding west down the centreline at about 25m/s
-            # while the homes rise. The camera keeps roughly 45m of lead on
-            # the wave: any nearer and a home at 8.5m off the centreline
-            # falls outside the narrow horizontal field before it finishes
-            # rising. Checked by projecting all 37 homes at their own rise
-            # frame -- 37/37 are on screen at the moment they appear.
-            (330, (-535.0, 738.0, 10.5), (-660.0, 738.0, 8.5), 26),
+            # Eleven seconds gliding west down the centreline at a steady
+            # ~0.9m/frame while the homes rise. The camera keeps roughly 45m
+            # of lead on the wave: any nearer and a home at 8.5m off the
+            # centreline falls outside the narrow horizontal field before it
+            # finishes rising. Checked by projecting all 37 homes at their
+            # own rise frame -- 37/37 are on screen as they appear.
+            (300, (-505.0, 738.0, 11.0), (-640.0, 738.0, 9.0), 26),
+            # Cooper Street is NOT continuous yet. Roughly x -575..-530, at
+            # the Cooper Street 2/3 boundary, is still unbuilt ground: the
+            # first cut of this shot flew over it at 5m and the film simply
+            # crossed an empty field for two seconds. No Day 47 home sits in
+            # that stretch either, so the camera arcs over it and drops back
+            # onto the road, which reads as a drone hopping an unbuilt block
+            # instead of a hole in the street.
+            (350, (-550.0, 738.0, 30.0), (-690.0, 738.0, 14.0), 26),
+            (400, (-595.0, 738.0, 12.0), (-730.0, 738.0, 9.5), 26),
             (500, (-690.0, 738.0, 11.5), (-800.0, 738.0, 9.0), 26),
             # Lift out of the street and whip south-east. The ending stays
             # low -- 130m over the historic core, not the 1180m of the first
