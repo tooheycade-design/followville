@@ -196,8 +196,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day44westbank  16-second west skyline bank and diagonal dive
 #   --cam day44sereverse 16-second south-east skyline reverse-wave flight
 #   --cam day46sunsetdrone 16-second skyline, low 47-home wave, city pullback
-#   --cam day47reveal 24-second Ember Ridge overview, 37 homes rising one by
-#                     one, then one continuous climb out to the original city
+#   --cam day47reveal 24-second sunset street flight down the Ember Ridge
+#                     centreline, 37 homes rising one by one past the lens,
+#                     then a low climb-out over the original city.
+#                     Authored for --time sunset.
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11948,7 +11950,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44allapproach", "day44alldrone",
                "day44allfield", "day44southfpv", "day44swrooftop",
                "day44westbank", "day44sereverse",
-               "day44fullarc", "day46sunsetdrone") and tod == "sunset":
+               "day44fullarc", "day46sunsetdrone",
+               "day47reveal") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -12894,26 +12897,32 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                     kp.interpolation = "BEZIER"
         bpy.context.scene.camera = cam_obj
     elif cam == "day47reveal":
-        # Day 47: one uninterrupted 24-second move, no cuts anywhere.  The
-        # brief is "overview of the new area, houses loading in one by one,
-        # then fly out to the original city", so the flight is three
-        # movements sharing a single continuous path.
+        # Day 47: one uninterrupted 24-second sunset move, no cuts anywhere.
+        # Authored down IN the street rather than above it -- the first cut of
+        # this shot was a 250m aerial and read as a map, not as a town.
         #
-        # Ember Ridge's Day 47 homes are two east-west streets spanning
-        # x -733.7..-415.9 at y 693.5..746.5.  The opening frames all of them
-        # in a three-quarter view from the south-east; because the reel is
-        # 9:16, the 318m street span is the binding axis and it is the
-        # HORIZONTAL field of view that is narrow (36mm sensor lands on the
-        # 1920px side under AUTO fit), so these positions were checked by
-        # projecting every one of the 37 real coordinates through each beat.
-        # The wave travels east to west, so the camera arcs gently west and
-        # OUTWARD rather than pushing in -- descending here crops the last
-        # houses to rise right as they rise.
+        # The geometry it is built on, all measured rather than assumed:
+        #   * the 37 homes are ONE street, not two -- 18 at y=729.5 facing
+        #     north and 17 at y=746.5 facing south, so the centreline is
+        #     y=738.0 and the camera flies straight down it;
+        #   * Ember Ridge is a level shelf, terrain_height == 5.0 everywhere
+        #     along the corridor, so no terrain following is needed;
+        #   * houses measure 8.2m tall (9.55m worst case) off that shelf, so
+        #     the 10.5m camera sits just under the 13.2m rooflines and the
+        #     homes rise past the lens instead of below it;
+        #   * the worst-case facade sits 4.26m from the centreline, which is
+        #     why the near plane stays at 2m for the whole street run.
+        #
+        # Sunset light travels west and slightly south (sun_rot 78/0/102, a
+        # 12-degree sun), so east-facing walls are the strongly lit ones.
+        # Flying WEST puts the sun behind the camera and every facade it
+        # meets is a lit one -- that is where the warmth comes from, and it
+        # avoids staring into a 12-degree sun for twenty seconds.
         aim = bpy.data.objects.new("Day47RevealAim", None)
         world_col.objects.link(aim)
         cam_data = bpy.data.cameras.new("Day47RevealCamera")
-        cam_data.lens = 24
-        cam_data.clip_start = 10.0
+        cam_data.lens = 26
+        cam_data.clip_start = 2.0
         cam_data.clip_end = 18000.0
         cam_data.dof.use_dof = False
         cam_obj = bpy.data.objects.new("Day47RevealCamera", cam_data)
@@ -12924,20 +12933,23 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         track.up_axis = "UP_Y"
 
         beats = (
-            # Five seconds of held overview on the empty Ember Ridge streets,
-            # so the ground reads as ground before anything appears on it.
-            (1,   (-268.0, 505.0, 250.0), (-575.0, 728.0, 6.0), 24),
-            (150, (-292.0, 500.0, 258.0), (-578.0, 730.0, 6.0), 24),
-            # Twelve seconds carrying the whole 37-home wave.  Slow outward
-            # arc only: every home stays inside the frame from its rise to
-            # the end of the sequence, which is what "one by one" needs.
-            (330, (-332.0, 490.0, 272.0), (-582.0, 732.0, 6.0), 24),
-            (510, (-380.0, 472.0, 294.0), (-586.0, 734.0, 6.0), 23),
-            # Seven-second accelerating climb south-east.  The aim leaves
-            # Ember Ridge and settles on the historic core, so the pullback
-            # is one continuous move rather than a cut to a new setup.
-            (600, (-250.0, 380.0, 620.0), (-430.0, 560.0, 10.0), 28),
-            (720, (430.0, -430.0, 1180.0), (31.0, 53.0, 10.0), 32),
+            # Five seconds standing in the empty street at the east end, so
+            # the ground reads as ground before anything stands on it.
+            (1,   (-320.0, 738.0, 10.5), (-450.0, 738.0, 8.5), 26),
+            (150, (-370.0, 738.0, 10.5), (-500.0, 738.0, 8.5), 26),
+            # Eleven seconds gliding west down the centreline at about 25m/s
+            # while the homes rise. The camera keeps roughly 45m of lead on
+            # the wave: any nearer and a home at 8.5m off the centreline
+            # falls outside the narrow horizontal field before it finishes
+            # rising. Checked by projecting all 37 homes at their own rise
+            # frame -- 37/37 are on screen at the moment they appear.
+            (330, (-535.0, 738.0, 10.5), (-660.0, 738.0, 8.5), 26),
+            (500, (-690.0, 738.0, 11.5), (-800.0, 738.0, 9.0), 26),
+            # Lift out of the street and whip south-east. The ending stays
+            # low -- 130m over the historic core, not the 1180m of the first
+            # cut -- so the film finishes inside the city it is showing.
+            (580, (-660.0, 560.0, 120.0), (-420.0, 380.0, 40.0), 28),
+            (720, (300.0, -230.0, 130.0), (40.0, 50.0, 5.0), 28),
         )
         for frame, position, target, lens in beats:
             cam_obj.location = position
@@ -12951,9 +12963,15 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "BEZIER"
                     kp.easing = "AUTO"
-        # Aerial throughout -- lowest altitude is 250m -- so the 10m near
-        # plane the aerial modes require is kept for the whole flight and
-        # never keyframed back down.
+        # 2m near plane while the camera is between the houses, widening to
+        # the 10m the aerial modes require once it is above the city.
+        for frame, near in ((1, 2.0), (500, 2.0), (580, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
         bpy.context.scene.camera = cam_obj
     elif cam == "day46sunsetdrone":
         # Day 46: one exact 16-second sunset flight authored from Zach's two
@@ -15158,7 +15176,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44downtown", "day44allapproach", "day44alldrone",
                    "day44allfield", "day44southfpv", "day44swrooftop",
                    "day44westbank", "day44sereverse",
-                   "day44fullarc", "day46sunsetdrone") and tod == "sunset":
+                   "day44fullarc", "day46sunsetdrone",
+                   "day47reveal") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -15819,16 +15838,24 @@ def main(cfg=None):
 
         # Roads stand from frame one: the story is the 37 homes, and finished
         # pavement is what makes an empty street read as an empty street.
-        # East to west, starting after the five-second overview hold and
-        # finishing before the climb-out begins at frame 510.  Both Ember
-        # Ridge streets are mixed into one spatial front by x alone, so the
-        # wave crosses the area rather than completing one street at a time.
+        # East to west, keeping pace with the westbound camera so each home
+        # rises about 45m ahead of the lens, and finishing at frame 468 --
+        # before the lift at 500, or the last home rises as the aim swings
+        # away and is never seen.
         east_x = max(root.location.x for root in home_roots)
         west_x = min(root.location.x for root in home_roots)
         span_x = max(1.0, east_x - west_x)
         for root in home_roots:
-            progress = (east_x - root.location.x) / span_x
-            start = 150 + int(progress * 330.0)
+            # Two of the 37 sit off the corridor, 27m and 44m south of the
+            # centreline. At the wave's 45m lead they would be 30-45 degrees
+            # off axis and never enter the narrow horizontal frame, so they
+            # rise early instead, while the camera is still far enough east
+            # for them to sit inside it.
+            if abs(root.location.y - 738.0) > 12.0:
+                start = 155 if root.location.y > 700.0 else 170
+            else:
+                progress = (east_x - root.location.x) / span_x
+                start = 150 + int(progress * 318.0)
             animate_rise(root, start, dur=22)
     elif cfg.get("cam") == "day46sunsetdrone":
         frame_end = FPS * 16          # exact brief: sixteen seconds / 480 frames
