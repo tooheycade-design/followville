@@ -367,6 +367,28 @@ WEST_QUARTER_FIRST_ID = (sum(street["count"] for street in STREETS)
                          - sum(street["count"] for street in WEST_QUARTER_STREETS)
                          + 1)
 
+# ---------------------------------------------------------------- chapter five
+#
+# The North Reach: 1,000 more homes and 23 reserved parcels across the city's
+# northern edge, on the same 70 x 36m block.  Appended for the same reasons
+# chapter four is, and after it, so chapters one to four keep plan_ids 1..2148
+# and none of their addresses can move.
+from north_reach_plan import STREETS as NORTH_REACH_STREETS
+
+STREETS = STREETS + tuple(dict(street) for street in NORTH_REACH_STREETS)
+
+# The first plan_id chapter five owns.  This gates the North Crown campus
+# clearance in build_plan() to this chapter alone, for exactly the reason the
+# Crown Quarter gate is limited to chapter four: build_plan() re-solves a whole
+# street at once, so applying a new rule to an earlier chapter would recompute
+# addresses that are already BUILT.  A built house's position lives in
+# world_state.json while its road comes from here, so the road would move and
+# the house would not, leaving it standing in the street.
+NORTH_REACH_FIRST_ID = (sum(street["count"] for street in STREETS)
+                        - sum(street["count"] for street in NORTH_REACH_STREETS)
+                        + 1)
+
+
 def _districts_from_streets():
     """(name, address count) per district, in the order the streets build."""
     order, totals = [], {}
@@ -706,6 +728,25 @@ def build_plan():
                                    (float(b[0]), float(b[1])),
                                    street["width"] / 2.0))
 
+    # The North Crown campus driveway, which this module does not own either.
+    # It was grown into the live world on 2026-08-15 and leaves the West
+    # Quarter at the Ridge Avenue / Orchard Street junction, so chapter five's
+    # Beacon Street and Foundry Street cross it at x=-452 and x=-416. Without
+    # this an address would simply be placed in the middle of it -- nothing in
+    # build_plan was looking at that road at all.
+    #
+    # Gated to chapter five for the same reason the Crown Quarter gate is
+    # limited to chapter four; see NORTH_REACH_FIRST_ID.
+    campus_segments = []
+    try:
+        from north_reach_plan import CAMPUS_ACCESS, CAMPUS_ACCESS_HALF_WIDTH
+    except ImportError:
+        CAMPUS_ACCESS, CAMPUS_ACCESS_HALF_WIDTH = (), 0.0
+    for a, b in zip(CAMPUS_ACCESS, CAMPUS_ACCESS[1:]):
+        campus_segments.append(((float(a[0]), float(a[1])),
+                                (float(b[0]), float(b[1])),
+                                float(CAMPUS_ACCESS_HALF_WIDTH)))
+
     for street_index, street in enumerate(STREETS):
         path = street_paths[street_index]
         offset = DISTRICT_OFFSETS.get(street["district"], (0.0, 0.0))
@@ -762,6 +803,20 @@ def build_plan():
                         elif any(_polygon_segment_distance(corners, a, b)
                                  < half + 2.0
                                  for a, b, half in metro_segments):
+                            continue
+                    # The campus driveway. Chapter five only -- see the note
+                    # where campus_segments is built.
+                    if sequence >= NORTH_REACH_FIRST_ID and campus_segments:
+                        corners = footprint_corners(world[0], world[1], rot,
+                                                    kind, sequence)
+                        if kind == "house":
+                            if any(_distance_to_segment(world, a, b)
+                                   < half + 3.75
+                                   for a, b, half in campus_segments):
+                                continue
+                        elif any(_polygon_segment_distance(corners, a, b)
+                                 < half + 2.0
+                                 for a, b, half in campus_segments):
                             continue
                     if sequence > RIVER_RESERVE_CAPACITY and not _chapter_three_fits(
                             world, rot, kind, street_index, street["district"],
