@@ -68,9 +68,18 @@ Videos auto-copy to Desktop.
 
 Cameras: `overhead street park housefront newgrowth newstreet newgrowthoverhead
 wholeoverhead storybookstreet cinematic dronezoom dronehover day25reveal
-day29reveal day30reveal day31reveal day32campaign day33storm day34fire`.
+day29reveal day30reveal day31reveal day32campaign day33storm day34fire
+day47reveal day48crown day49northreach`. **This list is a selection, not the
+set** — the generator answers to 64 names. Read `neighborhood_blender.py`'s
+header comment for the full list rather than assuming a name is unavailable
+because it is missing here.
 `--cam housefront`, `--cam day34fire`'s emergency vignette, and `--godzilla`
 are **render-only** and never change state, GLBs or the Blend.
+
+The `day4Xreveal` / `day48crown` / `day49northreach` cameras are **day-specific
+and will refuse to run on any other day**: each asserts its own exact home count
+and measures every rise off its own street's centreline. A new growth day needs
+a new camera, not a reused one.
 
 ### Deploying
 

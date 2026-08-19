@@ -205,6 +205,11 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #                     streets, then a climbing turn south-east that lands on
 #                     Crown Quarter's first tower as it rises.
 #                     Authored for --time sunset.
+#   --cam day49northreach 24-second sunset approach across the y=824 seam and
+#                     north up the Maple Avenue North centreline, 152 homes
+#                     rising on five Crown Fields streets, then a climbing
+#                     bank that looks back south-west down all five.
+#                     Authored for --time sunset.
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -11824,6 +11829,70 @@ def day48_frame_at_x(x):
     (f0, x0), (f1, x1) = DAY48_CAM_KNOTS[-2], DAY48_CAM_KNOTS[-1]
     return f1 + (x - x1) * (f1 - f0) / (x1 - x0)
 
+# -- Day 49: the North Reach wave --------------------------------------------
+#
+# Day 49 is the first growth that crosses y=824. Crown Quarter's own six
+# north/south streets stop being the city's boundary and run on into open land,
+# and 152 homes stand up along five of them. The sixth, Anvil Avenue North
+# (x=160), gets nothing: the count runs out ten homes into Quarry Avenue North 2.
+#
+# The five streets that DO build, as centrelines, with houses 8.5m either side:
+DAY49_RIBBON_X = (-190.0, -120.0, -50.0, 20.0, 90.0)
+# Maple Avenue North is the exact middle of those five, which is why the street
+# run flies it: the outer ribbons sit symmetrically at +/-140m and +/-70m, so
+# one line reaches every home in the growth.
+DAY49_STREET_X = -50.0
+# The camera's northbound path as (frame, camera y). Same contract as
+# DAY48_CAM_KNOTS: the rig keyframes these positions with LINEAR interpolation
+# on Y and the wave inverts this same table to find when the lens reaches a
+# given northing. One copy of the numbers, never two.
+DAY49_CAM_KNOTS = ((1, 350.0), (80, 455.0), (200, 700.0),
+                   (260, 830.0), (545, 1122.0))
+# How far ahead of the lens a home stands up, keyed by its distance from the
+# Maple Avenue North centreline. 9:16 makes the HORIZONTAL field the narrow one
+# -- the 36mm sensor lands on the 1920 axis, so the horizontal half-width is
+# 10.125mm -- and the depth at which a home first enters frame at all is
+# (offset + 5m half-width) / tan(atan(10.125/L)).
+#
+# Those bare minima are 32m / 158m / 198m / 323m / 364m at 24mm. The leads below
+# are NOT those numbers. The first cut of this shot used them plus a few metres
+# and passed the on-screen test 152/152 -- while putting seven West Market homes
+# at u=0.03, three per cent from the left edge and 330m out, which is "on
+# screen" in the way a pixel is on screen. Each lead is set so its home enters
+# at roughly u=0.13, about a quarter of the way in from the frame edge, which is
+# where a house at that distance is actually legible as a house appearing.
+# Verified end to end by verify_day49_camera.py, which reads the rise frames out
+# of the installed animation rather than back off this table.
+DAY49_WAVE_LEAD = {8.5: 46.0, 61.5: 215.0, 78.5: 260.0,
+                   131.5: 360.0, 148.5: 405.0}
+
+
+def day49_frame_at_y(y):
+    """Frame at which the day49northreach camera reaches world y.
+
+    South of the first knot there is no answer -- the camera has not started.
+    North of the last one the answer is extrapolated at the street run's own
+    rate rather than refused, for the same reason day48_frame_at_x extrapolates:
+    the far end of the block genuinely wants to rise after the run ends, and
+    that number is real input to the squeeze that pulls it back into frames the
+    camera is actually alive for.
+    """
+    if y < DAY49_CAM_KNOTS[0][1]:
+        return None
+    for (f0, y0), (f1, y1) in zip(DAY49_CAM_KNOTS, DAY49_CAM_KNOTS[1:]):
+        if y0 <= y <= y1:
+            return f0 + (f1 - f0) * (y - y0) / (y1 - y0)
+    (f0, y0), (f1, y1) = DAY49_CAM_KNOTS[-2], DAY49_CAM_KNOTS[-1]
+    return f1 + (y - y1) * (f1 - f0) / (y1 - y0)
+
+
+# The last homes on Maple would otherwise rise at 533 and finish at 555, ten
+# frames into the climb-out. Frames past the knee are compressed so the whole
+# wave finishes and is held before the camera leaves the street. Compression
+# only ever moves a home EARLIER, which means more depth than the lead asked
+# for, so it can never push one out of the narrow horizontal frame.
+DAY49_WAVE_KNEE, DAY49_WAVE_SQUEEZE = 430.0, 0.80
+
 DAY40_GAS_X, DAY40_GAS_Y = 118.25, 319.70
 
 # ═══════════════ FOLLOWVILLE STORIES #001 -- "The Price Sign" ═══════════════
@@ -11993,7 +12062,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44allfield", "day44southfpv", "day44swrooftop",
                "day44westbank", "day44sereverse",
                "day44fullarc", "day46sunsetdrone",
-               "day47reveal", "day48crown") and tod == "sunset":
+               "day47reveal", "day48crown",
+               "day49northreach") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -13133,6 +13203,151 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # modes require once the camera is above the rooflines.
         for frame, near in ((1, 10.0), (110, 2.0), (465, 2.0),
                             (555, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day49northreach":
+        # Day 49: one uninterrupted 24-second sunset move, no cuts. The day the
+        # city crosses y=824. Chapter five's reserve opens and 152 homes stand
+        # up on five of Crown Quarter's own north/south streets, which stop
+        # being the city's edge and run on into open land.
+        #
+        # The art-direction problem this shot exists to solve: these 152 homes
+        # are NOT a compact new neighbourhood. They are five long north/south
+        # ribbons spanning the full 320m depth of Crown Fields, and the
+        # east/west avenues between them do not reveal until plan_id 2345 --
+        # forty-four addresses past this growth. So there is no grid to shoot.
+        # What is actually there is five streets reaching north out of the
+        # built city, 70m apart, with meadow between them, and the film is
+        # built to read that as intent rather than as a sparse grid.
+        #
+        # Measured, not assumed:
+        #   * the 152 homes sit on FIVE parallel streets, houses 8.5m either
+        #     side of centrelines x=-190/-120/-50/20/90. Maple Avenue North
+        #     (x=-50) is the exact middle one, so flying its centreline puts
+        #     every home in the growth at 8.5m, 61.5m, 78.5m, 131.5m or 148.5m
+        #     off the line -- the five offsets DAY49_WAVE_LEAD is keyed on.
+        #   * Crown Fields is not one shelf. terrain_height is 5.0 up to y=820,
+        #     ramps down over the next 80m and is level at 3.22 from y=900
+        #     north. That is a 2.25% grade, so the street run holds 17m of
+        #     altitude at the seam and 15m past y=900, keeping the same ~3.5m
+        #     of clearance over the 8.2m rooflines the whole way.
+        #   * the northern roads simply stop at y=1170 -- Northmoor Street does
+        #     not reveal until plan_id 2751 -- so the run ends at y=1122 and
+        #     lifts, and the aim never dwells on the cut ends.
+        #   * the Crown Expressway's own unfinished end at (222, 858) is 272m
+        #     east of Maple and stays 69 degrees off the closing axis. It is
+        #     out of frame for the whole shot, deliberately: whether it gets
+        #     extended or terminated is Cade's call and not this film's.
+        #
+        # Sunset light travels west, so east-facing walls are the lit ones.
+        # Day 47 and day 48 both flew west to keep the sun behind the lens;
+        # this growth runs north, so the sun is broadside right instead. That
+        # is the trade the geometry forces, and it is the better one here: a
+        # raking cross-light models five parallel rows far more strongly than
+        # flat frontal light would, and it throws long shadows west across the
+        # meadow between the ribbons, which is what stops the gaps between them
+        # reading as nothing. The closing bank turns west so the shot still
+        # ends with the sun behind it.
+        aim = bpy.data.objects.new("Day49NorthReachAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day49NorthReachCamera")
+        cam_data.lens = 20
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 18000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day49NorthReachCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        # The y positions at frames 1/80/200/260/545 are DAY49_CAM_KNOTS, and
+        # the rise schedule inverts exactly that table. Keep the two in step.
+        beats = (
+            # Frames 1-200: a long descending approach from the south, held
+            # high over Crown Quarter's grid so the built city fills the lower
+            # frame and the empty meadow beyond the seam fills the upper. 20mm
+            # rather than 24 because the outer ribbons are 148.5m off the axis
+            # and this is the only part of the shot far enough back to hold
+            # them: their southern homes rise here, from frame 60, while the
+            # camera is still 474m short of the seam. The lens holds 20mm all
+            # the way to the street for the same reason -- tightening it during
+            # the approach is what pinned the far West Market homes against the
+            # left edge in the first cut of this shot.
+            (1,   (-50.0, 350.0, 118.0), (-50.0, 690.0, 44.0), 20),
+            (80,  (-50.0, 455.0, 104.0), (-50.0, 775.0, 36.0), 20),
+            (200, (-50.0, 700.0, 62.0),  (-50.0, 900.0, 22.0), 20),
+            # Frames 200-260: down through the seam itself. This is the beat
+            # the whole film is about, so the camera crosses y=824 at street
+            # height rather than looking down on it.
+            (260, (-50.0, 830.0, 17.0),  (-50.0, 905.0, 8.0),  20),
+            # Frames 260-545: down in Maple Avenue North, a steady 1.025m per
+            # frame north along the centreline -- day 48's street speed
+            # exactly -- while the wave runs ahead of the lens. The aim stays
+            # low and ~75m out so rising homes fill the frame. The lens
+            # tightens 20mm to 24mm across this stretch, once every home still
+            # to come is one of Maple's own and 8.5m off the lens axis.
+            (400, (-50.0, 973.5, 15.0),  (-50.0, 1048.0, 7.0), 24),
+            (545, (-50.0, 1122.0, 15.0), (-50.0, 1197.0, 7.0), 24),
+            # Frames 545-720: the wave finished at 512, so the camera climbs
+            # out of the street and banks east, then turns back to look
+            # south-west down all five ribbons at once. Ending here rather
+            # than facing north is what keeps both unfinished edges -- the
+            # roads' cut ends at y=1170 behind the lens, the expressway's at
+            # (222, 858) far off axis -- out of the closing image, and it puts
+            # the whole city behind the new quarter instead of empty meadow.
+            #
+            # 82m, not the 124m this shot first closed at. The horizon seam --
+            # the 5.33m step where the authored terrain's perimeter meets the
+            # z=0 background slabs, diagnosed on day 48 and deliberately left
+            # alone because Cade reviewed it and called it fine -- is a settled
+            # matter, but how hard a camera stares at it is not. Measured at
+            # the closing beat with tune_day49_close.py: 124m gives a 12px band
+            # at 3.6% of local sky brightness, which is a black bar; 100m gives
+            # 8px at 10.8%; 82m gives 8px at 31.9%; 64m gives 4px at 32.2%.
+            # Day 48's accepted closing frame is 2-5px at 5-34%, from 58m. 82m
+            # is the lowest altitude that still reads the five ribbons as five
+            # parallel streets rather than flattening them into one band of
+            # roofs, and its 31.9% sits inside the range already accepted.
+            (600, (-14.0, 1168.0, 46.0), (-42.0, 1120.0, 14.0), 26),
+            (650, (34.0, 1166.0, 70.0),  (-84.0, 1000.0, 15.0), 28),
+            (720, (58.0, 1098.0, 82.0),  (-106.0, 872.0, 14.0), 28),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+        # The camera's Y through the approach and street run must be exactly
+        # the piecewise line the rise schedule inverted, so those keyframes are
+        # LINEAR -- same reason day48crown pins its X. A Bezier ease there runs
+        # the camera ahead of its own wave mid-run and pushes the outer ribbons
+        # out of the narrow horizontal frame. X and Z stay Bezier: they do not
+        # enter the on-screen test, and easing the descent is what makes the
+        # arrival at the seam readable.
+        for fc in obj_fcurves(cam_obj):
+            if fc.data_path == "location" and fc.array_index == 1:
+                for kp in fc.keyframe_points:
+                    if kp.co[0] <= 545:
+                        kp.interpolation = "LINEAR"
+        # 10m near plane for the aerial approach, as every aerial mode requires
+        # so thin roads and ponds do not flash from lost depth precision, then
+        # 2m down in the street, then back to 10m for the climb-out.
+        for frame, near in ((1, 10.0), (200, 10.0), (250, 2.0), (545, 2.0),
+                            (610, 10.0), (720, 10.0)):
             cam_data.clip_start = near
             cam_data.keyframe_insert("clip_start", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -15301,7 +15516,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_start = 1
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
-               "day48crown",
+               "day48crown", "day49northreach",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
@@ -15345,7 +15560,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44allfield", "day44southfpv", "day44swrooftop",
                    "day44westbank", "day44sereverse",
                    "day44fullarc", "day46sunsetdrone",
-                   "day47reveal", "day48crown") and tod == "sunset":
+                   "day47reveal", "day48crown",
+                   "day49northreach") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -16032,6 +16248,42 @@ def main(cfg=None):
         # it into frame at ~600. It rises across the whole approach and tops out
         # at 675, leaving a second and a half of held skyline to end on.
         animate_rise(tower_roots[0], 580, dur=95)
+    elif cfg.get("cam") == "day49northreach":
+        frame_end = FPS * 24          # exact brief: twenty-four seconds
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 152 or len(rise) != 152:
+            raise RuntimeError(
+                "day49northreach requires exactly 152 Day 49 homes and nothing "
+                "else rising; got %d homes / %d rising records. Use the exact "
+                "2360 -> 2512 growth. No tower is touched by this growth: the "
+                "allocator takes ordinary house addresses first, and chapter "
+                "five put 1,023 of them back."
+                % (len(home_roots), len(rise)))
+
+        # Roads stand from frame one, including the five new ribbons. The story
+        # is the 152 homes; finished pavement reaching north into meadow is
+        # what makes the empty ground read as a street rather than as nothing,
+        # and it is what makes the crossing of y=824 legible at all.
+        for root in home_roots:
+            offset = round(abs(root.location.x - DAY49_STREET_X), 1)
+            lead = DAY49_WAVE_LEAD.get(offset)
+            if lead is None:
+                raise RuntimeError(
+                    "day49northreach: home at x=%.1f is %.1fm off the Maple "
+                    "Avenue North centreline, which is not one of the five "
+                    "ribbons this wave was measured for. Expected one of %s."
+                    % (root.location.x, offset,
+                       ", ".join("%.1f" % k for k in sorted(DAY49_WAVE_LEAD))))
+            start = day49_frame_at_y(root.location.y - lead)
+            if start is None:
+                raise RuntimeError(
+                    "day49northreach: no frame reaches y=%.1f, so the home at "
+                    "(%.1f, %.1f) would rise behind the camera"
+                    % (root.location.y - lead,
+                       root.location.x, root.location.y))
+            if start > DAY49_WAVE_KNEE:
+                start = DAY49_WAVE_KNEE + (start - DAY49_WAVE_KNEE) * DAY49_WAVE_SQUEEZE
+            animate_rise(root, max(1, int(round(start))), dur=22)
     elif cfg.get("cam") == "day47reveal":
         frame_end = FPS * 24          # exact brief: twenty-four seconds / 720 frames
         home_roots = [root for root in rise if root.name.startswith("house_d")]
@@ -16505,6 +16757,9 @@ def main(cfg=None):
     elif cfg.get("cam") == "day48crown":
         # Day 48's spatial wave and tower rise are installed with its frame
         # length above.
+        pass
+    elif cfg.get("cam") == "day49northreach":
+        # Day 49's spatial wave is installed with its frame length above.
         pass
     elif cfg.get("cam") == "day46sunsetdrone":
         # Day 46's exact spatial wave is installed with its frame length above.
