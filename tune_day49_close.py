@@ -4,6 +4,15 @@ Diagnostic only. Renders the closing beat at a handful of candidate altitudes at
 quarter resolution and low samples -- a fraction of the cost of one --still --
 and measures the dark band at the horizon in each.
 
+**Use this to RANK altitudes, never to quote a number.** At 270x480 a band that
+is 7px wide in the delivered 1080x1920 frame is about 1px, and that pixel is a
+blend of dark band and bright sky, so it measures far lighter than the real
+thing. This pass called the 82m close "31.9% of local sky brightness"; the
+delivered full-size frame is 3.0%. The ordering it gives (higher altitude =
+wider, darker band) held up; the absolute figures did not, and quoting them
+against day 48's full-resolution numbers produced a false all-clear. Measure the
+finished frame before believing anything about severity.
+
 The seam itself is settled and is NOT being re-opened: TEAM_LOG 2026-08-18
 diagnosed it as the 5.33m step where the authored terrain's perimeter meets the
 z=0 background slabs, Cade reviewed the day 48 reel and called it fine, and the

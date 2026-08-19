@@ -13307,14 +13307,34 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             # the 5.33m step where the authored terrain's perimeter meets the
             # z=0 background slabs, diagnosed on day 48 and deliberately left
             # alone because Cade reviewed it and called it fine -- is a settled
-            # matter, but how hard a camera stares at it is not. Measured at
-            # the closing beat with tune_day49_close.py: 124m gives a 12px band
-            # at 3.6% of local sky brightness, which is a black bar; 100m gives
-            # 8px at 10.8%; 82m gives 8px at 31.9%; 64m gives 4px at 32.2%.
-            # Day 48's accepted closing frame is 2-5px at 5-34%, from 58m. 82m
-            # is the lowest altitude that still reads the five ribbons as five
-            # parallel streets rather than flattening them into one band of
-            # roofs, and its 31.9% sits inside the range already accepted.
+            # matter, but how hard a camera stares at it is not, and dropping
+            # the close from 124m to 82m measurably narrows it.
+            #
+            # MEASURE THE SEAM AT FULL RESOLUTION. tune_day49_close.py compares
+            # altitudes at 270x480 to keep the diagnostic cheap, and that is
+            # fine for ranking them but its brightness figures are not real: a
+            # band 7px wide at 1920 is about 1px at 480, and that single pixel
+            # is a blend of dark band and bright sky, so it reads far lighter
+            # than it is. The low-res pass called 82m "31.9% of local sky",
+            # which would have put it inside day 48's accepted range. The
+            # delivered 1080x1920 frame is 3.0%. Rank altitudes at low
+            # resolution if you like; only ever quote numbers from a full-size
+            # frame.
+            #
+            # Full-resolution, closing frame: 124m gives a 10px band at 1.8% of
+            # local sky brightness, 82m gives 7px at 3.0%. For scale, the same
+            # measurement over day 48's delivered reel -- the one Cade reviewed
+            # and accepted -- gives 4px at 27.5% at its close but 20px at 10.2%
+            # at its frame 600, which is thicker than anything in this shot. So
+            # this is the same artefact within the same range, not a new one.
+            # 82m is also the lowest altitude that still reads the five ribbons
+            # as five parallel streets rather than flattening them into one
+            # band of roofs.
+            #
+            # Worth knowing: the seam does not appear at all during the street
+            # run. Frames 300 and 470 have no band, because down at 15m the
+            # near ground fills the frame and the map perimeter is occluded.
+            # It is only ever an aerial problem.
             (600, (-14.0, 1168.0, 46.0), (-42.0, 1120.0, 14.0), 26),
             (650, (34.0, 1166.0, 70.0),  (-84.0, 1000.0, 15.0), 28),
             (720, (58.0, 1098.0, 82.0),  (-106.0, 872.0, 14.0), 28),
