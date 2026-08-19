@@ -300,14 +300,25 @@ stored coordinates never move.
 **`neighborhood_plan.py`** deterministically reserves every future address:
 366 across six curved-road districts, then 250 more in the river chapter, then
 the gridded Northgate quarter, then chapter four's West Quarter — 1,000 more
-homes and 22 empty parcels, declared in `west_quarter_plan.py` and appended to
-`STREETS`. **Read the total from `HOUSE_CAPACITY`**, which
+homes and 22 empty parcels, declared in `west_quarter_plan.py` — then chapter
+five's North Reach, 1,000 more homes and 23 empty parcels across the city's
+northern edge, declared in `north_reach_plan.py`. Each is appended to
+`STREETS`, never inserted. **Read the total from `HOUSE_CAPACITY`**, which
 is derived from `STREETS` — how many addresses a street seats depends on how
 much room its specials take, so any figure written in prose goes stale. A
 handful of chapter-three addresses are civic buildings rather than houses, and
 are consumed in the same order. Planned roads and houses create no object until
 `+N` growth consumes their exact addresses, and existing geometry never moves.
-See `NEIGHBORHOOD_EXPANSION_PLAN.md` and `WEST_QUARTER_PLAN.md`.
+See `NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEST_QUARTER_PLAN.md` and
+`NORTH_REACH_PLAN.md`.
+
+**A new chapter continues streets that already exist, so check what the last
+one left behind.** Chapter four's Orchard Street houses are built at y=818.5,
+and four of the eight West Quarter cross streets cannot be carried north past
+them — two are blocked by a built house 3.00m and 0.59m off the line, two by
+reserved civic footprints. Chapter five measured that before drawing and
+connects on the four that are clear. Sweep the nearest existing address to
+every line you mean to extend before you assume the ladder continues.
 
 **Sizing a new chapter's streets: the placer is the authority, not arithmetic.**
 `build_plan()` raises if a street cannot seat its declared `count`, and how much
@@ -471,6 +482,7 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `export_web.py` | Bakes the WORLD collection to full + district GLBs. |
 | `neighborhood_plan.py` | The 366-house structural reserve. |
 | `west_quarter_plan.py` | Chapter four: 1,000 homes + 22 empty parcels, west. |
+| `north_reach_plan.py` | Chapter five: 1,000 homes + 23 empty parcels, north. |
 | `NUCLEAR_STATION.md` | The nuclear plant, its roads, and the temporary interior set. |
 | `metropolitan_plan.py` | The post-Northgate 20-tower / 2,000-follower reserve. |
 | `world_layout.py` | District offsets, authored roads, audit declarations. |
@@ -504,6 +516,7 @@ panel or `profiles.inventory` — note the fish IDs are permanent and the
 (read before changing downtown or terrain), `FOLLOWVILLE_STORIES.md` (read
 before writing, storyboarding or producing a Story video),
 `NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEST_QUARTER_PLAN.md`,
+`NORTH_REACH_PLAN.md`,
 `WEB_VIEWER_CHANGELOG.md`.
 
 `condense_day9.py`, the `render_day9_*.command` scripts and the assorted
