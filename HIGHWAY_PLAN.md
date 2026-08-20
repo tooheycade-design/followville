@@ -99,15 +99,15 @@ Green, 383 planned homes, were 1,000m from any highway.
 
 Two routes: a north–south spine through the city, and a ring around the outside
 of it. Between them they touch every district that exists or is reserved, and
-they leave the modelled world at two map edges.
+they leave the modelled world at three map edges.
 
-### F-1 — Crown Expressway (north–south spine), 1,168m, 560m of it new
+### F-1 — Crown Expressway (north–south spine), 1,272m, 664m of it new
 
 | Section | Extent | Form |
 | --- | --- | --- |
 | Crown Approach (new) | (112, 56) → (222, 250) | at grade rising to the deck, 14m opening to 24m |
 | Existing viaduct (upgraded) | y 250 → 858 at x=222 | elevated deck z=14.0, 24m |
-| North extension (new) | y 858 → (300, 1176) | descends at 5.0%, at grade from y=1082, bending east to x=300 |
+| North extension (new) | y 858 → (300, 1280) | descends at 5.0%, at grade from y=1082, bending east to x=300 and passing under F-2 |
 
 **Southern terminus: a T-junction with the Kaleidoscope Crest access road at
 (112, 56)**, which runs west to downtown at (87, 33) and east onto the Crest.
@@ -131,19 +131,20 @@ comes down. It holds the 14m arterial width past the Food Court and the East
 Woods reserve — 9.07m of edge clearance at the closer of the two — and only
 flares to the full 24m deck at y=228, north of everything it has to thread.
 
-**Northern terminus: the IC-4 trumpet, where F-1 ends at the Ring Freeway.**
+**Northern terminus: the map edge at (300, 1280), after passing beneath the
+raised Ring Freeway at IC-4.**
 The extension bends 78m east above IC-3, on a 340m radius. That bend is not
 decoration: at x=222 the two south-western quadrants of the ring junction are
 40m from Crown Fields' reserve and every ramp that needs them runs through
 reserved addresses. At x=300 the nearest reserved address is 131m away and all
 four quadrants are open meadow.
 
-F-1 could not both cross the ring and reach the map edge. It is on the ground
-after its 5% descent and has 66m left before y=1280, which is nowhere near
-enough to climb over a freeway and come back down; the alternative — leaving
-the modelled world 7m in the air on a stub — is the same defect this job exists
-to fix. Ending at a system interchange is a real terminus, and the ring carries
-the regional connection out of the world instead, twice.
+The first built version ended F-1 at y=1176 and forced all four movements into
+a trumpet south of the Ring. That was based on the false premise that F-1 had
+to climb over F-2. F-2 already carries its own overpass here: F-1 is on the
+ground after y=1082, so it simply continues underneath at grade for the final
+104m. This both reaches the map edge honestly and gives IC-4 two real northern
+quadrants instead of piling every ramp into the south side.
 
 ### F-2 — Followville Ring Freeway, 3,229m, at grade
 
@@ -185,7 +186,7 @@ Six, plus the southern terminal junction. Every one lands on a road that is
 | IC-1 | Northgate | F-1 | y=396 | diamond | Northgate + Southline, via East Line Road |
 | IC-2 | Crown Boulevard | F-1 | y=654 | diamond (existing, rebuilt) | Crown Quarter, 20 towers |
 | IC-3 | Crown Fields | F-1 | y=920 | diamond | Crown Fields, via East Line Road North |
-| IC-4 | Ring | F-1 × F-2 | (300, 1214) | trumpet | freeway to freeway |
+| IC-4 | Ring | F-1 × F-2 | (300, 1214) | directional diamond | freeway to freeway |
 | IC-5 | Orchard | F-2 | y=810 | diamond | West Quarter + Gatehouse Green |
 | IC-6 | West Line | F-2 | y=500 | diamond | Harrow Green + cross-town Kettle Row |
 | — | Crest junction | F-1 south end | (112, 56) | at-grade T | downtown, Kaleidoscope Crest |
@@ -194,7 +195,7 @@ Six, plus the southern terminal junction. Every one lands on a road that is
 x=211 southbound, x=233 northbound — never mid-carriageway. Ramps are sized
 from the height they have to lose rather than drawn as diagonals: the fit grows
 the gore's distance from the cross road until the curve is long enough. Worst
-ramp grade in the system is **7.40%**, against the 11.9% of the four it
+ramp grade in the system is **7.36%**, against the 11.9% of the four it
 replaces.
 
 Spacing on F-1: 396 → 654 → 920 → 1214, i.e. 258m, 266m, 294m. On a world whose
@@ -223,14 +224,13 @@ Street junction, 19.6m from the nearest of them; IC-6 lands at (−750, 500), in
 the 45m break between the homes at y=478.98 and y=524.07, 14m north of Kettle
 Row West's western end.
 
-**IC-4 is a trumpet.** A freeway meeting another freeway at a T has one
-unavoidable problem: traffic off the stem has to reach both carriageways of the
-through road, so something must cross something. Trumpets solve it with a loop
-and one bridge — and here the bridge already exists, because the ring carries
-its own overpass across the junction. The two loops pass beneath its crown at
-x=308 and x=332 with 5.2m of clearance, and the interchange needs no structure
-of its own. Nothing in it crosses F-1: everything that changes sides does it
-north of y=1176, where the expressway no longer exists.
+**IC-4 is a directional diamond.** The raised Ring crosses over the continuous
+at-grade F-1. Two road-tangent cubic ramps occupy the southern quadrants and
+two mirror them to the north, each with its own merge. No ramp crosses another,
+no two ramps share a terminal, and `validate_plan()` now rejects any interior
+plan crossing between the four connectors. This replaces the first built
+trumpet, whose polygonal loops passed the numerical audits while reading in the
+camera as overlapping ribbons and loose stubs.
 
 ---
 
@@ -332,10 +332,9 @@ disappears in an earlier replay exactly as the expressway does.
 
 ## 8. What this plan does not solve
 
-- **Neither end of F-1 reaches a map edge.** The south is measured shut in §3;
-  the north ends at IC-4 because 66m is not enough to cross a freeway and come
-  back down. The ring reaches the map edge twice, so the system does leave
-  town — F-1 by itself does not.
+- **F-1's south end does not reach a map edge.** The south is measured shut in
+  §3. The north now passes beneath the raised Ring and reaches y=1280; the Ring
+  itself reaches the map edge twice as well.
 - **The North Reach's five stub ribbons stay stubs.** Out of scope by
   instruction; §5 says where the future connection goes. **This is the one
   thing worth a decision from Cade**: a 30m link from the East Line Road North
@@ -363,12 +362,13 @@ Four things. Each is in the document above; they are collected here so the
 difference between the plan as written and the plan as built is visible rather
 than quietly reconciled.
 
-1. **F-1's northern terminus moved from the map edge to IC-4**, and the
-   extension bends east to x=300. The first draft ran it dead straight at x=222
-   to y=1280 and crossed the ring on the way. Laying out the interchange showed
-   both south-western quadrants land inside Crown Fields' reserve, and that
-   F-1 had 66m to get back down from an overpass. Bending east solved the first
-   and a trumpet solved the second.
+1. **F-1 bends east to x=300, passes under the Ring, and reaches the north map
+   edge.** Bending east keeps the interchange out of Crown Fields' reserve. The
+   first built version then stopped at y=1176 and forced a trumpet into the
+   south side, based on the mistaken assumption that F-1 had to climb over the
+   crossing. Visual review caught the resulting ramp pile-up. Because the Ring
+   is already the raised road, F-1 now stays at grade underneath it to y=1280
+   and IC-4 uses four separated quadrant ramps.
 2. **The Ring Freeway jogs to y=1252 around the North Crown Campus.** The
    campus is at (−370, 1088) with a 200 × 280m declared footprint reaching
    y=1228; the straight ring at y=1214 ran through it. `check_world_geometry`

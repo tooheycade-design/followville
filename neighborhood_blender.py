@@ -9678,7 +9678,7 @@ def _build_gantry(world_col, entry, mats):
         deck = HP.ring_height(centre_x, centre_y)
         heading = math.pi/2
     elif entry["id"] == "IC-4":
-        centre_x, centre_y = HP.NORTH_JUNCTION_X - 6.0, HP.NORTH_SPLIT_Y - 120.0
+        centre_x, centre_y = HP.NORTH_JUNCTION_X - 6.0, HP.NORTH_TERMINUS_Y - 120.0
         deck = HP.mainline_deck_z(centre_y)
         heading = math.pi/2
     else:
@@ -13994,8 +13994,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         track.up_axis = "UP_Y"
 
         beats = (
-            # Wide enough for Gateway Row while its nine new homes rise.
-            # homes rise. The target leans west without losing Quarry/Anvil.
+            # Wide enough for Gateway Row while its nine new homes rise. The
+            # target leans west without losing Quarry/Anvil.
             (1,   (125.0, 300.0, 135.0), (-35.0, 835.0, 28.0), 18),
             (100, (125.0, 500.0, 105.0), (15.0, 865.0, 24.0),  19),
             (200, (125.0, 750.0, 60.0),  (112.0, 925.0, 17.0), 20),
@@ -14005,7 +14005,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
             (380, (125.0, 975.0, 16.0),  (125.0, 1055.0, 7.0), 23),
             (500, (125.0, 1100.0, 16.0), (125.0, 1175.0, 7.0), 24),
             # With every new address standing, climb east and look north-west
-            # through the expressway bend to the Ring Freeway and trumpet.
+            # through the expressway bend to the Ring Freeway interchange.
             (560, (182.0, 1162.0, 42.0), (235.0, 1174.0, 9.0),  24),
             (630, (350.0, 1105.0, 108.0), (285.0, 1190.0, 6.0), 28),
             (720, (520.0, 1050.0, 160.0), (280.0, 1170.0, 0.0), 34),

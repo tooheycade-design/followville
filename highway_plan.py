@@ -161,6 +161,36 @@ def _bezier(start, end, bulge, step=4.0):
             for t in (i / count for i in range(count + 1))]
 
 
+def _tangent_curve(start, end, start_dir, end_dir, start_run, end_run,
+                   step=4.0):
+    """Cubic curve with explicit travel direction at both road connections.
+
+    A quadratic's one control point cannot make both ends tangent to the roads
+    they join. That was especially visible at IC-4: the four nominal trumpet
+    ramps arrived as angular ribbons, crossed one another, and read as loose
+    road stubs. These cubic connectors leave and merge parallel to their host
+    carriageways, with the two handle lengths controlling only how broad the
+    turn is.
+    """
+    c1 = (start[0] + start_dir[0] * start_run,
+          start[1] + start_dir[1] * start_run)
+    c2 = (end[0] - end_dir[0] * end_run,
+          end[1] - end_dir[1] * end_run)
+    span = (math.hypot(c1[0] - start[0], c1[1] - start[1])
+            + math.hypot(c2[0] - c1[0], c2[1] - c1[1])
+            + math.hypot(end[0] - c2[0], end[1] - c2[1]))
+    count = max(8, int(math.ceil(span / step)))
+    out = []
+    for index in range(count + 1):
+        t = index / count
+        u = 1.0 - t
+        out.append((u**3 * start[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0]
+                    + t**3 * end[0],
+                    u**3 * start[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1]
+                    + t**3 * end[1]))
+    return out
+
+
 # =============================================================== F-1 mainline
 #
 # The viaduct itself is untouched: same x, same deck, same length. What is new
@@ -234,10 +264,9 @@ def crown_approach_widths(points):
 NORTH_EXTENSION_SPINE = (
     (EXPRESSWAY_X, EXPRESSWAY_Y1), (EXPRESSWAY_X, 950.0), (238.0, 1006.0),
     (264.0, 1068.0), (288.0, 1120.0), (297.0, 1150.0), (300.0, 1176.0),
+    (300.0, NORTH_TERMINUS_Y),
 )
 NORTH_JUNCTION_X = 300.0
-# Where the mainline ends and its two carriageways become the trumpet's ramps.
-NORTH_SPLIT_Y = 1176.0
 
 
 def north_extension_points(step=3.0):
@@ -719,10 +748,10 @@ def interchanges():
                 east_height=lambda bx, by, b=bridge: _overbridge_height(bx, by, b)),
             "high_mast": ((RING_X - 30.0, y - 24.0), (RING_X + 30.0, y + 24.0))})
 
-    # IC-4, the system interchange, where F-1 ends. See system_ramps().
+    # IC-4, where F-1 passes under the raised Ring. See system_ramps().
     entries.append({
         "id": "IC-4", "name": "Ring", "route": "F-1 x F-2", "y": RING_Y,
-        "kind": "trumpet", "serves": "freeway to freeway",
+        "kind": "directional diamond", "serves": "freeway to freeway",
         "cross_road": None,
         "ramps": system_ramps(),
         "high_mast": ((NORTH_JUNCTION_X - 54.0, RING_Y - 46.0),
@@ -744,71 +773,56 @@ def _overbridge_height(x, y, bridge):
 
 
 def system_ramps():
-    """IC-4: a trumpet, because F-1 ends here rather than crossing.
+    """IC-4: a clean four-quadrant diamond around the raised Ring.
 
-    A freeway meeting another freeway at a T has one unavoidable problem:
-    traffic off the stem has to reach both carriageways of the through road,
-    so something must cross something. Trumpets solve it with a loop and one
-    bridge. Here the bridge already exists -- the ring is on its own overpass
-    across the whole junction -- so the two loops simply pass beneath its crown
-    and the interchange needs no structure of its own.
-
-    F-1 could not both cross the ring and reach the map edge: it is on the
-    ground after its 5% descent and has 66m left, which is nowhere near enough
-    to climb over a freeway and come back down. Ending it here is the honest
-    answer, and a system interchange is a real terminus. The ring carries the
-    regional connection out of the world instead, twice.
-
-    Nothing in here crosses F-1: everything that has to change sides does it
-    north of NORTH_SPLIT_Y, where the expressway no longer exists.
+    F-1 stays at grade, passes underneath F-2, and continues to the north map
+    edge. Each ramp therefore gets a real quadrant and a separate merge north
+    or south of the crossing. Cubics make both ends tangent to their host
+    carriageways; no ramp crosses another or piles onto a shared terminal.
     """
-    split = (NORTH_JUNCTION_X, NORTH_SPLIT_Y)
     west = NORTH_JUNCTION_X - GORE_INSET
     east = NORTH_JUNCTION_X + GORE_INSET
     eb_shoulder = RING_Y - GORE_INSET
     wb_shoulder = RING_Y + GORE_INSET
+    north = (0.0, 1.0)
+    south = (0.0, -1.0)
+    eastward = (1.0, 0.0)
+    westward = (-1.0, 0.0)
     ramps = []
 
     def add(name, carriageway, role, plan, z_start, z_end):
-        # Densified before profiling: these four are authored as 8-point
-        # polylines spanning 350m, and both the height profile and the browser
-        # walk surface read control points as given.
         ramps.append({"name": name, "carriageway": carriageway, "role": role,
-                      "points": _ramp_profile(_densify(plan, 4.0),
-                                              z_start, z_end)})
+                      "points": _ramp_profile(plan, z_start, z_end)})
 
     def ground(x, y):
         return terrain_height(x, y) + ROAD_TOP
 
-    # 1. The free right: F-1 northbound swings east onto the ring, entirely in
-    #    the south-east quadrant, crossing nothing.
+    # South pair.
+    nb_east = (east, 1138.0)
+    ring_east_out = (452.0, eb_shoulder)
     add("Ring northbound to eastbound", "northbound", "exit",
-        _bezier((east, split[1] - 56.0), (470.0, eb_shoulder), 46.0),
-        ground(east, split[1] - 56.0), ring_height(470.0, RING_Y))
+        _tangent_curve(nb_east, ring_east_out, north, eastward, 66.0, 72.0),
+        ground(*nb_east), ring_height(ring_east_out[0], RING_Y))
 
-    # 2. The free right, mirrored: the ring's eastbound carriageway drops south
-    #    onto F-1, entirely in the south-west quadrant.
+    ring_east_in = (148.0, eb_shoulder)
+    sb_west = (west, 1138.0)
     add("Ring eastbound to southbound", "southbound", "entrance",
-        _bezier((200.0, eb_shoulder), (west, split[1] - 46.0), 40.0),
-        ring_height(200.0, RING_Y), ground(west, split[1] - 46.0))
+        _tangent_curve(ring_east_in, sb_west, eastward, south, 72.0, 66.0),
+        ring_height(ring_east_in[0], RING_Y), ground(*sb_west))
 
-    # 3. The loop: F-1 northbound to the ring westbound. East, north under the
-    #    ring's crown at x=332, then west along its northern side to a merge
-    #    where the ring has come back down to 8.1m.
-    add("Ring northbound to westbound", "northbound", "exit",
-        [(east, split[1] - 30.0), (334.0, 1168.0), (338.0, 1206.0),
-         (330.0, 1242.0), (300.0, 1258.0), (250.0, 1250.0),
-         (206.0, wb_shoulder + 4.0), (200.0, wb_shoulder)],
-        ground(east, split[1] - 30.0), ring_height(200.0, RING_Y))
+    # North pair, mirrored across the Ring. These use F-1's continuing
+    # carriageways rather than folding back into the already crowded south.
+    sb_north = (west, 1270.0)
+    ring_west_out = (148.0, wb_shoulder)
+    add("Ring southbound to westbound", "southbound", "exit",
+        _tangent_curve(sb_north, ring_west_out, south, westward, 58.0, 72.0),
+        ground(*sb_north), ring_height(ring_west_out[0], RING_Y))
 
-    # 4. The other loop: the ring westbound to F-1 southbound. West along the
-    #    ring's northern side, under the crown at x=308, then south to the
-    #    expressway's western shoulder.
-    add("Ring westbound to southbound", "southbound", "entrance",
-        [(430.0, wb_shoulder), (386.0, 1252.0), (340.0, 1258.0),
-         (312.0, 1238.0), (308.0, 1210.0), (300.0, 1186.0),
-         (292.0, 1150.0), (west, split[1] - 76.0)],
-        ring_height(430.0, RING_Y), ground(west, split[1] - 76.0))
+    ring_west_in = (452.0, wb_shoulder)
+    nb_north = (east, 1270.0)
+    add("Ring westbound to northbound", "northbound", "entrance",
+        _tangent_curve(ring_west_in, nb_north, westward, north, 72.0, 58.0),
+        ring_height(ring_west_in[0], RING_Y), ground(*nb_north))
     return ramps
 
 
@@ -1125,6 +1139,21 @@ def _worst_grade(points):
     return worst, at
 
 
+def _proper_segment_crossing(a, b, c, d):
+    """Interior plan crossing, excluding endpoints that intentionally merge."""
+    ab = (b[0] - a[0], b[1] - a[1])
+    cd = (d[0] - c[0], d[1] - c[1])
+    denom = ab[0] * cd[1] - ab[1] * cd[0]
+    if abs(denom) < 1e-8:
+        return None
+    ac = (c[0] - a[0], c[1] - a[1])
+    t = (ac[0] * cd[1] - ac[1] * cd[0]) / denom
+    u = (ac[0] * ab[1] - ac[1] * ab[0]) / denom
+    if .01 < t < .99 and .01 < u < .99:
+        return (a[0] + t * ab[0], a[1] + t * ab[1])
+    return None
+
+
 def validate_plan():
     """Grades, clearances and terminus honesty, checked from the data itself."""
     errors = []
@@ -1165,6 +1194,21 @@ def validate_plan():
                               % (name, turn, b[0], b[1]))
                 break
 
+    # IC-4 is a directional diamond, not a pile of ribbons. The first authored
+    # version passed every grade and ground audit while its four ramps crossed
+    # and visually overlapped. A plan-space crossing between those connectors
+    # is now a hard failure; the Ring itself supplies the grade separation.
+    system = system_ramps()
+    for index, first in enumerate(system):
+        for second in system[index + 1:]:
+            crossing = next((hit for a, b in zip(first["points"], first["points"][1:])
+                             for c, d in zip(second["points"], second["points"][1:])
+                             if (hit := _proper_segment_crossing(a, b, c, d))), None)
+            if crossing:
+                errors.append("IC-4 ramps %s and %s cross at (%.1f, %.1f)"
+                              % (first["name"], second["name"],
+                                 crossing[0], crossing[1]))
+
     # Nothing may be authored below the ground it stands on.
     for name, points, _half in named_roads():
         for x, y, z in points:
@@ -1173,10 +1217,9 @@ def validate_plan():
                 break
 
     # Every road end must be a junction, a map edge or a declared turnaround.
-    # F-1's northern end is the trumpet split at IC-4; the ring carries the
-    # regional connection off the map from there.
-    if abs(north_extension_points()[-1][1] - NORTH_SPLIT_Y) > 0.01:
-        errors.append("the northern terminus is not the IC-4 trumpet split")
+    # F-1 passes under the raised Ring and now reaches the north map edge.
+    if abs(north_extension_points()[-1][1] - MAP_Y1) > 0.01:
+        errors.append("the northern F-1 terminus is not at the map edge")
     ring = ring_points()
     if abs(ring[0][0] - MAP_X1) > 0.01 or abs(ring[-1][1] - MAP_Y0) > 0.01:
         errors.append("a ring terminus is not at the map edge")
