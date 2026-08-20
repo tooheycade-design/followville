@@ -211,6 +211,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #                     rising on five Crown Fields streets, then a climbing
 #                     bank that looks back south-west down all five.
 #                     Authored for --time sunset.
+#   --cam day50highway 24-second sunset construction chase through the 50 new
+#                     Crown Fields addresses, ending on the rebuilt Crown
+#                     Expressway / Ring Freeway interchange.
+#                     Authored for --time sunset.
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -12462,6 +12466,30 @@ def day49_frame_at_y(y):
 # for, so it can never push one out of the narrow horizontal frame.
 DAY49_WAVE_KNEE, DAY49_WAVE_SQUEEZE = 430.0, 0.80
 
+# -- Day 50: Quarry / Anvil growth and the highway reveal --------------------
+#
+# The next fifty ordinary-house addresses are not one homogeneous row: thirteen
+# finish Quarry Avenue North, twenty-eight fill Anvil Avenue North, and nine
+# begin Gateway Row. Ordinary growth deliberately steps over that stretch's
+# reserved pond and Followmart parcels; they stay empty until explicitly built.
+# The camera flies between Quarry and Anvil; Gateway rises during the wide
+# opening while the lens still has enough depth to hold its large lateral offset.
+DAY50_STREET_X = 125.0
+DAY50_CAM_KNOTS = ((1, 300.0), (100, 500.0), (200, 750.0),
+                   (260, 850.0), (500, 1100.0))
+DAY50_WAVE_LEAD = {23.6: 90.0, 26.5: 100.0, 43.5: 165.0, 57.2: 210.0}
+
+
+def day50_frame_at_y(y):
+    """Frame at which the linear part of day50highway reaches world y."""
+    if y < DAY50_CAM_KNOTS[0][1]:
+        return None
+    for (f0, y0), (f1, y1) in zip(DAY50_CAM_KNOTS, DAY50_CAM_KNOTS[1:]):
+        if y0 <= y <= y1:
+            return f0 + (f1 - f0) * (y - y0) / (y1 - y0)
+    (f0, y0), (f1, y1) = DAY50_CAM_KNOTS[-2], DAY50_CAM_KNOTS[-1]
+    return f1 + (y - y1) * (f1 - f0) / (y1 - y0)
+
 DAY40_GAS_X, DAY40_GAS_Y = 118.25, 319.70
 
 # ═══════════════ FOLLOWVILLE STORIES #001 -- "The Price Sign" ═══════════════
@@ -12632,7 +12660,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44westbank", "day44sereverse",
                "day44fullarc", "day46sunsetdrone",
                "day47reveal", "day48crown",
-               "day49northreach") and tod == "sunset":
+               "day49northreach", "day50highway") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -13937,6 +13965,72 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # 2m down in the street, then back to 10m for the climb-out.
         for frame, near in ((1, 10.0), (200, 10.0), (250, 2.0), (545, 2.0),
                             (610, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day50highway":
+        # Day 50: one continuous 24-second sunset move. The opening is wide
+        # enough to catch the first Gateway Row homes west of the flight line;
+        # the middle drops between Quarry and Anvil while their addresses rise;
+        # the closing climb turns east onto IC-4, where the Crown Expressway
+        # curves into the new Ring Freeway. This is intentionally not a copy of
+        # Day 49's old south-west close: the highway is part of today's story.
+        aim = bpy.data.objects.new("Day50HighwayAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day50HighwayCamera")
+        cam_data.lens = 18
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 18000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day50HighwayCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Wide enough for Gateway Row while its nine new homes rise.
+            # homes rise. The target leans west without losing Quarry/Anvil.
+            (1,   (125.0, 300.0, 135.0), (-35.0, 835.0, 28.0), 18),
+            (100, (125.0, 500.0, 105.0), (15.0, 865.0, 24.0),  19),
+            (200, (125.0, 750.0, 60.0),  (112.0, 925.0, 17.0), 20),
+            # Low chase between the two north/south ribbons. Their houses are
+            # only 26.5m or 43.5m off axis, so each rise reads at street scale.
+            (260, (125.0, 850.0, 20.0),  (125.0, 935.0, 7.0),  21),
+            (380, (125.0, 975.0, 16.0),  (125.0, 1055.0, 7.0), 23),
+            (500, (125.0, 1100.0, 16.0), (125.0, 1175.0, 7.0), 24),
+            # With every new address standing, climb east and look north-west
+            # through the expressway bend to the Ring Freeway and trumpet.
+            (560, (182.0, 1162.0, 42.0), (235.0, 1174.0, 9.0),  24),
+            (630, (350.0, 1105.0, 108.0), (285.0, 1190.0, 6.0), 28),
+            (720, (520.0, 1050.0, 160.0), (280.0, 1170.0, 0.0), 34),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+        # The rise schedule inverts this exact Y path. Keep it linear until the
+        # growth chase ends; easing it would move the lens away from its wave.
+        for fc in obj_fcurves(cam_obj):
+            if fc.data_path == "location" and fc.array_index == 1:
+                for kp in fc.keyframe_points:
+                    if kp.co[0] <= 500:
+                        kp.interpolation = "LINEAR"
+        for frame, near in ((1, 10.0), (200, 10.0), (250, 2.0), (500, 2.0),
+                            (575, 10.0), (720, 10.0)):
             cam_data.clip_start = near
             cam_data.keyframe_insert("clip_start", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -16105,7 +16199,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_start = 1
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
-               "day48crown", "day49northreach",
+               "day48crown", "day49northreach", "day50highway",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
@@ -16150,7 +16244,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44westbank", "day44sereverse",
                    "day44fullarc", "day46sunsetdrone",
                    "day47reveal", "day48crown",
-                   "day49northreach") and tod == "sunset":
+                   "day49northreach", "day50highway") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -16839,6 +16933,41 @@ def main(cfg=None):
         # it into frame at ~600. It rises across the whole approach and tops out
         # at 675, leaving a second and a half of held skyline to end on.
         animate_rise(tower_roots[0], 580, dur=95)
+    elif cfg.get("cam") == "day50highway":
+        frame_end = FPS * 24
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        if len(home_roots) != 50 or len(rise) != 50:
+            raise RuntimeError(
+                "day50highway requires the exact Day 50 +50 allocation: 50 "
+                "ordinary homes, with the reserved pond and Followmart slots "
+                "skipped; got %d homes / %d rising records. Use the exact "
+                "2512 -> 2562 growth."
+                % (len(home_roots), len(rise)))
+
+        # Gateway Row is almost 300m west of the flight line, so its nine new
+        # homes rise during the wide opening. Everything else follows the
+        # camera's measured northbound Y path between Quarry and Anvil.
+        for root in rise:
+            if root.location.x < 0.0:
+                start = min(105.0, 45.0 + (root.location.x + 167.0) * .65
+                            + (root.location.y - 837.5) * .55)
+            else:
+                offset = round(abs(root.location.x - DAY50_STREET_X), 1)
+                lead = DAY50_WAVE_LEAD.get(offset)
+                if lead is None:
+                    raise RuntimeError(
+                        "day50highway: new record at (%.1f, %.1f) is %.1fm "
+                        "off the Quarry/Anvil flight line; expected one of %s."
+                        % (root.location.x, root.location.y, offset,
+                           ", ".join("%.1f" % k for k in sorted(DAY50_WAVE_LEAD))))
+                start = day50_frame_at_y(root.location.y - lead)
+                if start is None:
+                    raise RuntimeError(
+                        "day50highway: no frame reaches y=%.1f for new record "
+                        "at (%.1f, %.1f)"
+                        % (root.location.y - lead,
+                           root.location.x, root.location.y))
+            animate_rise(root, max(1, int(round(start))), dur=22)
     elif cfg.get("cam") == "day49northreach":
         frame_end = FPS * 24          # exact brief: twenty-four seconds
         home_roots = [root for root in rise if root.name.startswith("house_d")]
@@ -17359,6 +17488,9 @@ def main(cfg=None):
     elif cfg.get("cam") == "day48crown":
         # Day 48's spatial wave and tower rise are installed with its frame
         # length above.
+        pass
+    elif cfg.get("cam") == "day50highway":
+        # Day 50's exact spatial wave is installed with its frame length above.
         pass
     elif cfg.get("cam") == "day49northreach":
         # Day 49's spatial wave is installed with its frame length above.
