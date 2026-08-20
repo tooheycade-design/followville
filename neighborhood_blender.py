@@ -9738,17 +9738,26 @@ def build_highway_mast(col, _seed=0):
 
 
 def build_high_mast(col, _seed=0):
-    """A 20m interchange high-mast tower with a ring of eight heads."""
+    """A 20m interchange high-mast light with a ring of eight heads.
+
+    Every part is named highmast_*. They were "tower", "tower_base",
+    "tower_crown" and "tower_head", which is a lighting column's vocabulary and
+    a Crown Quarter skyscraper's vocabulary at the same time: in the exported
+    GLB thirteen light columns read as 117 nodes called tower-something, next
+    to twenty buildings the project also calls towers. Nothing keys off the
+    names, so this changes no behaviour -- it stops the export lying about what
+    is in it.
+    """
     m = std_mats()
     warm = mat("FV_expressway_light_warm", (.96, .73, .38), .42, metallic=.04)
-    add_ngon_cone(col, "tower", .62, .30, HP.HIGH_MAST_HEIGHT, 8, 0, 0, 0,
-                  m["metal"])
-    add_ngon_cone(col, "tower_base", 1.15, .95, 1.10, 8, 0, 0, 0, m["cap"])
-    add_ngon_cone(col, "tower_crown", 1.95, 1.60, .40, 8, 0, 0,
+    add_ngon_cone(col, "highmast_column", .62, .30, HP.HIGH_MAST_HEIGHT, 8,
+                  0, 0, 0, m["metal"])
+    add_ngon_cone(col, "highmast_base", 1.15, .95, 1.10, 8, 0, 0, 0, m["cap"])
+    add_ngon_cone(col, "highmast_ring", 1.95, 1.60, .40, 8, 0, 0,
                   HP.HIGH_MAST_HEIGHT - .30, m["metal"])
     for index in range(8):
         angle = math.tau*index/8
-        head = add_box(col, "tower_head", .66, .40, .26,
+        head = add_box(col, "highmast_head", .66, .40, .26,
                        math.cos(angle)*1.62, math.sin(angle)*1.62,
                        HP.HIGH_MAST_HEIGHT - .74, warm)
         head.rotation_euler = (0, 0, angle)

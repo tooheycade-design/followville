@@ -1,17 +1,17 @@
 {
   "base": {
-    "bytes": 6382480,
+    "bytes": 6383020,
     "compression": "draco",
     "file": "town_chunks/base.glb",
-    "sha256": "e3ee59f7a92abce8b9b37948eab59db0bf73e9710d80576d580c0339cfb06f8c"
+    "sha256": "bd7125d10005a8399f0355ddca2e3e74fa9df5651897e709e228b825903e1b89"
   },
   "chunks": [
     {
       "asset": {
-        "bytes": 1386516,
+        "bytes": 1386512,
         "compression": "draco",
         "file": "town_chunks/bramble-park.glb",
-        "sha256": "1024af8629e953feb67055781cf0fe662e6fb7195f45080f4822d1f4fc092eef"
+        "sha256": "4532a1b1d3d57f195fd3ba0ff768a1611714a740ee05ec18028d1354c9762e8f"
       },
       "bounds": {
         "center": [
@@ -554,10 +554,10 @@
     },
     {
       "asset": {
-        "bytes": 125480,
+        "bytes": 125472,
         "compression": "draco",
         "file": "town_chunks/cedarbank.glb",
-        "sha256": "31b6ac4af250decb76b2a7f12c39b2ea13c15f0fc37023712f255d463f738928"
+        "sha256": "68270930cad5ac740f1d77cb833a3bebf53f09d16c0fca114656cc5c6ce6679b"
       },
       "bounds": {
         "center": [
@@ -692,10 +692,10 @@
     },
     {
       "asset": {
-        "bytes": 251536,
+        "bytes": 251528,
         "compression": "draco",
         "file": "town_chunks/civic-center.glb",
-        "sha256": "0e79fcdbd4fd0df082c55017f020b443a02c0509f020d6f0912d3b2c383a8611"
+        "sha256": "184fa422fd9e6d66c850e84813a7253ef432e793ca9c410d4e37bb7f08b2facf"
       },
       "bounds": {
         "center": [
@@ -716,10 +716,10 @@
     },
     {
       "asset": {
-        "bytes": 781260,
+        "bytes": 781256,
         "compression": "draco",
         "file": "town_chunks/creekside-bend.glb",
-        "sha256": "73d2c5a444fd9337f7c857961eb46054ba2c311275b8726b83e28b2ac7e4b13c"
+        "sha256": "0bf611d3a827fa2b9582188c48811ea88327b31c138964f08b5ab11fed4d8dcd"
       },
       "bounds": {
         "center": [
@@ -846,10 +846,10 @@
     },
     {
       "asset": {
-        "bytes": 1330028,
+        "bytes": 1330020,
         "compression": "draco",
         "file": "town_chunks/crown-fields.glb",
-        "sha256": "015ba9275b05add115690c869434271fcc94b092df5e00647ab0624c407de0d2"
+        "sha256": "0d7b511333380473b24a02b2d12a1ef64e0e9feb0c868bdce1e34eb70b586822"
       },
       "bounds": {
         "center": [
@@ -1172,10 +1172,10 @@
     },
     {
       "asset": {
-        "bytes": 71280,
+        "bytes": 71276,
         "compression": "draco",
         "file": "town_chunks/crown-quarter.glb",
-        "sha256": "0b71544955b4dd48d0a42aac9670c219c83d5c1be6e58bbc92c1367434c1efd1"
+        "sha256": "a9d18cf7f8fae99bbcd9b59887e624e1c3c517d2daf5c04854f02af1609e7668"
       },
       "bounds": {
         "center": [
@@ -1194,10 +1194,10 @@
     },
     {
       "asset": {
-        "bytes": 130276,
+        "bytes": 130272,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-m1.glb",
-        "sha256": "9ba9f70f4d9fb9b51d28bf928ddde91cbd292bbe6d6d1a736dac948108acccc7"
+        "sha256": "5f92f8dd048ee84776dba3c5a06f5f35356e99c63413670e5fb0738642a8510e"
       },
       "bounds": {
         "center": [
@@ -1232,10 +1232,10 @@
     },
     {
       "asset": {
-        "bytes": 124904,
+        "bytes": 124896,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-m2.glb",
-        "sha256": "ef40d1bd05fb3fb6778f3cb7e616bbc3cca93914c73d9db217a5b2a06a8acec6"
+        "sha256": "30051def653f2a819fd50b0217e6ae5688aa5cbc54e3d2b8234fe2164873b0e3"
       },
       "bounds": {
         "center": [
@@ -1270,10 +1270,10 @@
     },
     {
       "asset": {
-        "bytes": 132820,
+        "bytes": 132812,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-p0.glb",
-        "sha256": "afe643e0f03697fcd474ac87299d686ebc54d102e1d42a4afcb300dc7b4f1715"
+        "sha256": "ed69c83415de922a1177ae44ccfca6a74f54f888450ae1e4aa1e6988a6e834ae"
       },
       "bounds": {
         "center": [
@@ -1308,10 +1308,10 @@
     },
     {
       "asset": {
-        "bytes": 108312,
+        "bytes": 108308,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m1-p1.glb",
-        "sha256": "c92044ae0514adc2705285373d45e3b92a8d8ec751c0ab1af24d1885f346dc2b"
+        "sha256": "636f77a432216db44c344ec84ce0b0f9041ae5b75ea723610323a985b1c31bcb"
       },
       "bounds": {
         "center": [
@@ -1346,10 +1346,10 @@
     },
     {
       "asset": {
-        "bytes": 107648,
+        "bytes": 107644,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m2-m1.glb",
-        "sha256": "7616d69cc70432a2fbb7e24cf4a9ed427f7e6b434660cff8ac44e9338bad8e71"
+        "sha256": "fdf5a198f99126eab3c07def5371c364b67dcfe78a43413327d9f25add1d6da3"
       },
       "bounds": {
         "center": [
@@ -1384,10 +1384,10 @@
     },
     {
       "asset": {
-        "bytes": 94184,
+        "bytes": 94180,
         "compression": "draco",
         "file": "town_chunks/downtown-block-m2-p0.glb",
-        "sha256": "524c28381bff267af3ecf02ac192d9c55fe968f7674bef46b2276dadda1ca8c0"
+        "sha256": "8698e6bfcd13bfbe0a6e399a40e8d307da90871447b0ad240178a72cf49f3db4"
       },
       "bounds": {
         "center": [
@@ -1422,10 +1422,10 @@
     },
     {
       "asset": {
-        "bytes": 138188,
+        "bytes": 138180,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-m1.glb",
-        "sha256": "a8801ca1a7791a1d400e081423299a9d99ca226bf9cd95d00f9cbf39ae966060"
+        "sha256": "ad7f227829e17729ce5df511dd3514871c78218d9e7557f693b434109de265c2"
       },
       "bounds": {
         "center": [
@@ -1460,10 +1460,10 @@
     },
     {
       "asset": {
-        "bytes": 110020,
+        "bytes": 110016,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-m2.glb",
-        "sha256": "410e5631cde587713c8e95ed03b5961ea31d873b4049691e64facfa7f2f96e2f"
+        "sha256": "76867eaeebd646cc2369dbd698df2d9a10a35fde2c44d1fb25fcfceebf3c03ce"
       },
       "bounds": {
         "center": [
@@ -1498,10 +1498,10 @@
     },
     {
       "asset": {
-        "bytes": 1303576,
+        "bytes": 1303572,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p0.glb",
-        "sha256": "3908f5d834370fd0453cff0389c5f7dfe974e4bf4be599f0fb46ccf4eba8afdd"
+        "sha256": "783e914a2dc319939ad7690b49399b82c67c040ff8ba70bcc850ae4e955e60c9"
       },
       "bounds": {
         "center": [
@@ -1541,10 +1541,10 @@
     },
     {
       "asset": {
-        "bytes": 122876,
+        "bytes": 122872,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p0-p1.glb",
-        "sha256": "1fc00e5d48af427bd400c7a03e6af8a740e311beb32b0074943c5bb64e5a26ca"
+        "sha256": "ddf291514a059b85210fac3d2c0f262d1af69689a8e81c1692135b695dfd2742"
       },
       "bounds": {
         "center": [
@@ -1579,10 +1579,10 @@
     },
     {
       "asset": {
-        "bytes": 201420,
+        "bytes": 201412,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p1-m1.glb",
-        "sha256": "17ae7048bcc59eb5fc0eee6cef1cd537851dbb5ec1bf69103e56208eb68b9f3d"
+        "sha256": "f7a1725008ac3ed0311f9bdcc458dc16e0007c6dd5e87f67b768cbc6224b7826"
       },
       "bounds": {
         "center": [
@@ -1616,10 +1616,10 @@
     },
     {
       "asset": {
-        "bytes": 164476,
+        "bytes": 164472,
         "compression": "draco",
         "file": "town_chunks/downtown-block-p1-p0.glb",
-        "sha256": "05c76fe5d614fb5e030fc1018bd5baef3c855be690a68492bdf19d9d4e849103"
+        "sha256": "1b75683a7573081b9918bb2fc58f94a1fed617e57212ac2d4434d5447f688507"
       },
       "bounds": {
         "center": [
@@ -1649,10 +1649,10 @@
     },
     {
       "asset": {
-        "bytes": 97392,
+        "bytes": 97388,
         "compression": "draco",
         "file": "town_chunks/east-woods.glb",
-        "sha256": "81b7cd081dc095d5535953255d8d3af3a555c0059215246bdf35d5238445c042"
+        "sha256": "6d10ab5b4b603e5490c10bceb511b7e7d904d46c4fde436f3a9ec199b0c54872"
       },
       "bounds": {
         "center": [
@@ -1671,10 +1671,10 @@
     },
     {
       "asset": {
-        "bytes": 125708,
+        "bytes": 125700,
         "compression": "draco",
         "file": "town_chunks/eastbank-village.glb",
-        "sha256": "f36974084073ec9e3b4faa24ca5f9e32a00b399bba2e5fe3a89093f28f9fef26"
+        "sha256": "b27cf26496b8218201b00bea32261487c3e9002aba0a2124cbecae28f5aefe2d"
       },
       "bounds": {
         "center": [
@@ -1809,10 +1809,10 @@
     },
     {
       "asset": {
-        "bytes": 178992,
+        "bytes": 178984,
         "compression": "draco",
         "file": "town_chunks/elementary-school.glb",
-        "sha256": "0ff374c12485b7aa22e6101b99a1e99d8bc686274b109c4e35e711f94ec25b30"
+        "sha256": "3ac8e8a0494d53508bb41d1fa95fee3a310fb9b269e4cc80b882d50848fc2d53"
       },
       "bounds": {
         "center": [
@@ -1831,10 +1831,10 @@
     },
     {
       "asset": {
-        "bytes": 1478152,
+        "bytes": 1478144,
         "compression": "draco",
         "file": "town_chunks/ember-ridge.glb",
-        "sha256": "9befa97765527aa2c46f44f5ccdf48e5d08ae4abbe03596a2760d0aa70328cc6"
+        "sha256": "8fc11d27bca6716aef45b33bd2a06e066eeceb1ca18334a2ea7d5741f79e71f8"
       },
       "bounds": {
         "center": [
@@ -2735,10 +2735,10 @@
     },
     {
       "asset": {
-        "bytes": 225504,
+        "bytes": 225496,
         "compression": "draco",
         "file": "town_chunks/fire-station.glb",
-        "sha256": "117f8364335330664adf60293f29f47251223b05486420f3f2867f608fa7d4d4"
+        "sha256": "e1fec3cf358cb6461b00695d0e5d6620d5c773783e03192b1657ee861f215f7b"
       },
       "bounds": {
         "center": [
@@ -2757,10 +2757,10 @@
     },
     {
       "asset": {
-        "bytes": 111592,
+        "bytes": 111588,
         "compression": "draco",
         "file": "town_chunks/fishing-pond.glb",
-        "sha256": "ac5fd0be56c3fe41559af67dd994a1a2803ead2d97b07568723256f8af7bca12"
+        "sha256": "32d533fab9e2318a64b8fdeb11f47a4057848693adeb34cb2dc947c2ff4bada9"
       },
       "bounds": {
         "center": [
@@ -2779,10 +2779,10 @@
     },
     {
       "asset": {
-        "bytes": 237664,
+        "bytes": 237656,
         "compression": "draco",
         "file": "town_chunks/follow-mart.glb",
-        "sha256": "56d3d055d18208eceb15db0e6d6671e18f0d061b1e99c53fda7afe5bafd66e1a"
+        "sha256": "e82ce5090a9f1f01663804dfa1065bc0416413d390550dd287e96a27e7e2a8cf"
       },
       "bounds": {
         "center": [
@@ -2801,10 +2801,10 @@
     },
     {
       "asset": {
-        "bytes": 162384,
+        "bytes": 162380,
         "compression": "draco",
         "file": "town_chunks/food-court.glb",
-        "sha256": "2b9ff3205038afa024e0296fec6dfc39b9f8c9b65ef98445fde2fbf29f798183"
+        "sha256": "9ecfad95a4f01f53448a459c760768e04cda75bb8c8942c736f0cadebceeea3f"
       },
       "bounds": {
         "center": [
@@ -2861,10 +2861,10 @@
     },
     {
       "asset": {
-        "bytes": 722848,
+        "bytes": 722840,
         "compression": "draco",
         "file": "town_chunks/founder-park.glb",
-        "sha256": "d76cd1c5796920173fd644c9ec24f8687a7d7d123e22bd6ac9de68ffb25fc9b0"
+        "sha256": "4341f3937f111601e5d017b7c0ae4cff28b651fd25d51b00dd02a641555b7248"
       },
       "bounds": {
         "center": [
@@ -2966,10 +2966,10 @@
     },
     {
       "asset": {
-        "bytes": 1402692,
+        "bytes": 1402684,
         "compression": "draco",
         "file": "town_chunks/harrow-green.glb",
-        "sha256": "68c531ed659d82ad0a2f7c4fd3e56637d45b26800697c9e3704a8fe24d4c2ed6"
+        "sha256": "bb68190da877080072970fa1afb252f386fd68d4bbcb344d38d32874c05b887a"
       },
       "bounds": {
         "center": [
@@ -3582,10 +3582,10 @@
     },
     {
       "asset": {
-        "bytes": 238764,
+        "bytes": 238756,
         "compression": "draco",
         "file": "town_chunks/kaleidoscope-crest.glb",
-        "sha256": "af4ba0950ba989237d23526f40b47d4a1a4e165615abae6e2ae0ee35d6775102"
+        "sha256": "c4c68102ec547b022c5133a0fb861d5d7d2217e0dd8f8e8f43d19728867eaa68"
       },
       "bounds": {
         "center": [
@@ -3624,10 +3624,10 @@
     },
     {
       "asset": {
-        "bytes": 984916,
+        "bytes": 984908,
         "compression": "draco",
         "file": "town_chunks/meadow-run.glb",
-        "sha256": "11bc10ff850da3758917b96843539c8624907ed1a8f748f359b5bf7b53e90e3d"
+        "sha256": "ac1465f1a918a5f070f891c96c7af079b5a02d9d7b8bc188938f59987f39ec4d"
       },
       "bounds": {
         "center": [
@@ -3798,10 +3798,10 @@
     },
     {
       "asset": {
-        "bytes": 89588,
+        "bytes": 89580,
         "compression": "draco",
         "file": "town_chunks/movie-theater.glb",
-        "sha256": "cc1bfbb9db81d3b0bbcfc33a62f8efe2290322a8b6273fefc5865613c764e6a9"
+        "sha256": "d6a533b1db51c31e430091fba1a6da67cd005de5313f4d77f54e607c5f9673fb"
       },
       "bounds": {
         "center": [
@@ -3820,10 +3820,10 @@
     },
     {
       "asset": {
-        "bytes": 47580,
+        "bytes": 47576,
         "compression": "draco",
         "file": "town_chunks/north-crown-campus.glb",
-        "sha256": "cb68c8289a0b440ab6a8da2cf0c3aad960b4a23e5b0ad84335fc2bef25821903"
+        "sha256": "f4b4df838332eb17f29a48e3c0ad4615e73f909b0f53b0cfa2eae348c574b530"
       },
       "bounds": {
         "center": [
@@ -3842,10 +3842,10 @@
     },
     {
       "asset": {
-        "bytes": 691748,
+        "bytes": 691740,
         "compression": "draco",
         "file": "town_chunks/north-ridge.glb",
-        "sha256": "3dd425871241ab105c3e3f6da5aa86ea01ed79979e03252e276274db7a80c0cf"
+        "sha256": "64599b30423924caea39517dfc4ed2a9832bad55799c1f8b218b37e65409509e"
       },
       "bounds": {
         "center": [
@@ -3960,10 +3960,10 @@
     },
     {
       "asset": {
-        "bytes": 41764,
+        "bytes": 41756,
         "compression": "draco",
         "file": "town_chunks/north-woods.glb",
-        "sha256": "5ac2c54a0de0bc2fb100ef305fdedba2868efebf30800ea2131971729efba3dd"
+        "sha256": "caa994bd4122aba2961f406b2115ff4127de234a64a231060594d223fdaca67c"
       },
       "bounds": {
         "center": [
@@ -4029,10 +4029,10 @@
     },
     {
       "asset": {
-        "bytes": 1420076,
+        "bytes": 1420068,
         "compression": "draco",
         "file": "town_chunks/northgate.glb",
-        "sha256": "a6a3ea8bd9bd2ccd402d6a4beb46c3d8155f5ed42b017c23b204d05b84dd71fd"
+        "sha256": "fa92c497f0313853178e7213ef49b2b644b8103e53b536d034bc3a01594e8f29"
       },
       "bounds": {
         "center": [
@@ -4664,10 +4664,10 @@
     },
     {
       "asset": {
-        "bytes": 840556,
+        "bytes": 840552,
         "compression": "draco",
         "file": "town_chunks/pine-hollow.glb",
-        "sha256": "877578fb6ef6aecf0f4d60a43cee2633ccc378185b6c1348ce1952bef22b8db0"
+        "sha256": "876f502ffb93812328c6c4af1c85e8b0fc35d92372082c21fbf28711318a6c4b"
       },
       "bounds": {
         "center": [
@@ -4802,10 +4802,10 @@
     },
     {
       "asset": {
-        "bytes": 193184,
+        "bytes": 193180,
         "compression": "draco",
         "file": "town_chunks/rafting-station.glb",
-        "sha256": "52962057b2ee57537d6adce2a3ad4951e9baa945266afeaf95435ca69fde4ae3"
+        "sha256": "6b4a74c43b21d7a9e841534a4e85dbcccb51b01403370a739021339341b92389"
       },
       "bounds": {
         "center": [
@@ -4824,10 +4824,10 @@
     },
     {
       "asset": {
-        "bytes": 111228,
+        "bytes": 111220,
         "compression": "draco",
         "file": "town_chunks/river-meadows.glb",
-        "sha256": "b13ceb9c9dcba7e230fa5a9b68e8717bd13fdb7585b8e72b313e94d62a0afa97"
+        "sha256": "5ce7ea83f36714686730c875670593c2551d23f908577dc7346ea709ba439999"
       },
       "bounds": {
         "center": [
@@ -4910,10 +4910,10 @@
     },
     {
       "asset": {
-        "bytes": 119740,
+        "bytes": 119732,
         "compression": "draco",
         "file": "town_chunks/rivergate.glb",
-        "sha256": "ee25135c70d5fdd03c7289ab58ac91c53868b2a6619b47abd96d61a01ce5d492"
+        "sha256": "a555d556a731552c11b1fb80a19fa12228d3efadb6ae078fc1e0eb808970a33d"
       },
       "bounds": {
         "center": [
@@ -5028,10 +5028,10 @@
     },
     {
       "asset": {
-        "bytes": 1343928,
+        "bytes": 1343920,
         "compression": "draco",
         "file": "town_chunks/southline.glb",
-        "sha256": "93e6e94eab10044b93fec92fc69888e54a1468884c09aa8fad2ac93c3fdadfe4"
+        "sha256": "b25560d60d68b522706d1e1e73fa727af71e133d2d1ec8e09e0e2e8c7a7ba8db"
       },
       "bounds": {
         "center": [
@@ -5438,10 +5438,10 @@
     },
     {
       "asset": {
-        "bytes": 123188,
+        "bytes": 123180,
         "compression": "draco",
         "file": "town_chunks/timber-bend.glb",
-        "sha256": "5b6e92d2df593892d876fc35926d8dc83b17601445d3996c6a26f0a9fc8ae1bd"
+        "sha256": "ff4fc381e2e0ec1e2cfcf7f187f83d576c25c3fe3e5ae765c34bc18be1dc4e0e"
       },
       "bounds": {
         "center": [
@@ -5568,10 +5568,10 @@
     },
     {
       "asset": {
-        "bytes": 978756,
+        "bytes": 978748,
         "compression": "draco",
         "file": "town_chunks/twin-oaks.glb",
-        "sha256": "4ea07691f77024f6782736b413df693f89f6f24a98b234ea97f6f6229befaba3"
+        "sha256": "a2e85b81fe2f7902149f46209f712bdaaf3d9d286310333fa49946412221e647"
       },
       "bounds": {
         "center": [
@@ -5726,10 +5726,10 @@
     },
     {
       "asset": {
-        "bytes": 218036,
+        "bytes": 218028,
         "compression": "draco",
         "file": "town_chunks/weather-station.glb",
-        "sha256": "2c48943911d8c89d53cbb590a03cf39c8687a7ec9a4cc4bfe0b0900a23749649"
+        "sha256": "1874a883292dd5213097254b15b17cef002346d3ead71f2a8e41645aa43fed85"
       },
       "bounds": {
         "center": [
@@ -5748,10 +5748,10 @@
     },
     {
       "asset": {
-        "bytes": 899516,
+        "bytes": 899512,
         "compression": "draco",
         "file": "town_chunks/willow-hills.glb",
-        "sha256": "a3ceb20d320caaff5e2ad1bc36f6cf447dc9cde07c324c3a849dc2b26a6ac86c"
+        "sha256": "3371b0c8ca9c1025efcec9990fc5faa1d8de4a2033c6e55265c63daa3369ffb6"
       },
       "bounds": {
         "center": [
@@ -5894,9 +5894,9 @@
     }
   ],
   "fallback": {
-    "bytes": 53954044,
+    "bytes": 53954588,
     "file": "town.glb",
-    "sha256": "c03ba9aab19d48434fb19581912fddae6d2cccce6f6c2d59f956c31a6f20eb9e"
+    "sha256": "82b7869583b61772a9602395730d6a921778d4304cf8248f6c0b33e85cee008f"
   },
   "state": {
     "building_count": 2500,
