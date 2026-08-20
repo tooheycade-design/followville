@@ -57,6 +57,27 @@ MAX_MAINLINE_GRADE = 0.062
 MAX_RAMP_GRADE = 0.075
 MAX_ENTRANCE_GRADE = 0.065                # entrances are longer than exits
 
+# How a ramp joins the deck it leaves. The gore sits inboard of the deck edge
+# by half a ramp width, so the whole ramp is standing on the mainline at the
+# point it separates; anything less leaves a sliver of ramp hanging over the
+# edge with nothing under it. It then holds the deck's own height for
+# DIVERGE_TAPER while it moves outboard, so it peels away at deck level and
+# only starts descending once it is clear -- which is both what a real exit
+# does and what stops the ramp appearing out of the underside of the viaduct.
+GORE_INSET = FREEWAY_WIDTH / 2.0 - RAMP_WIDTH / 2.0
+DIVERGE_TAPER = 44.0
+
+# And how it meets the road at the other end. The last LANDING metres are level
+# at the cross road's own height, so the ramp visibly flattens onto it instead
+# of still descending when it gets there.
+LANDING = 26.0
+
+# Exit and entrance terminals are pulled TERMINAL_SPLIT apart along the road
+# they land on. A diamond's two ramps do share one intersection, but building
+# them to a single point made their tangents continuous: the pair read as one
+# road curving past the cross street rather than two ramps ending on it.
+TERMINAL_SPLIT = 13.0
+
 # ------------------------------------------------------------------- helpers
 
 
@@ -442,28 +463,83 @@ def collector_points(collector, step=3.0):
 # ============================================================== interchanges
 
 
-def _fit_ramp(shoulder_x, cross_y, side, terminal, z_deck, z_ground, bulge,
-              max_grade):
-    """Lay out one ramp long enough to hold its grade, then apply the profile.
+def _smoothstep(t):
+    return t * t * (3.0 - 2.0 * t)
 
-    The gore is pushed further from the cross road until the curve is long
-    enough for the height it has to lose. That is the whole difference between
-    a ramp and a diagonal line: the existing four drop 8.8m in 74m.
+
+def _fit_ramp(centre_x, cross_y, side, terminal, z_deck, z_ground, bulge,
+              max_grade):
+    """Lay out one ramp, deck end first, long enough to hold its grade.
+
+    Three parts. A diverge taper that starts on the deck, inboard of its edge,
+    and slides outboard while staying at deck level. A curve out to the cross
+    road. A straight level landing on it. The gore is pushed further from the
+    cross road until the whole thing is long enough for the height it has to
+    lose -- which is the difference between a ramp and a diagonal line: the
+    four that were here before dropped 8.8m in 74m.
     """
+    outward = 1.0 if terminal[0] > centre_x else -1.0
+    gore_x = centre_x + outward * GORE_INSET
+    edge_x = centre_x + outward * (FREEWAY_WIDTH / 2.0 + RAMP_WIDTH / 2.0)
     drop = abs(z_deck - z_ground)
-    needed = max(drop / max_grade, 70.0)
-    along = 45.0
-    plan = _bezier((shoulder_x, cross_y + side * along), terminal, bulge)
+    needed = max(drop / max_grade, 70.0) + DIVERGE_TAPER + LANDING
+
+    def build(along):
+        knee = (edge_x, cross_y + side * along)
+        taper = [(gore_x + (edge_x - gore_x) * _smoothstep(t),
+                  cross_y + side * (along + DIVERGE_TAPER * (1.0 - t)))
+                 for t in (0.0, 0.28, 0.56, 0.82)]
+        # A straight landing aimed at the terminal, so the ramp arrives on the
+        # cross road pointing somewhere rather than curving through it. The
+        # curve is TRIMMED back to where the landing starts first: appending
+        # the landing to a curve that already reached the terminal made the
+        # centreline double back 26m and run in twice, which is what put the
+        # kink and the unsupported deck at every ramp terminal.
+        curve = [point for point in _bezier(knee, terminal[:2], bulge)
+                 if math.hypot(terminal[0] - point[0],
+                               terminal[1] - point[1]) > LANDING]
+        anchor = curve[-1] if curve else knee
+        landing = [(anchor[0] + (terminal[0] - anchor[0]) * f,
+                    anchor[1] + (terminal[1] - anchor[1]) * f)
+                   for f in (0.25, 0.5, 0.75, 1.0)]
+        return taper + curve + landing
+
+    along = 50.0
+    plan = build(along)
     for _ in range(80):
         if _length(plan) >= needed:
             break
         along += 5.0
-        plan = _bezier((shoulder_x, cross_y + side * along), terminal, bulge)
+        plan = build(along)
     return plan
 
 
+def _ramp_profile(points, z_deck, z_ground):
+    """Level at the deck for the taper, level at the cross road for the
+    landing, one constant grade in between, and never below the ground."""
+    run = [0.0]
+    for index in range(1, len(points)):
+        run.append(run[-1] + math.hypot(points[index][0] - points[index - 1][0],
+                                        points[index][1] - points[index - 1][1]))
+    total = run[-1] or 1.0
+    slope_start = min(DIVERGE_TAPER, total * 0.3)
+    slope_end = max(total - LANDING, total * 0.7)
+    span = max(1e-6, slope_end - slope_start)
+    out = []
+    for point, distance in zip(points, run):
+        if distance <= slope_start:
+            z = z_deck
+        elif distance >= slope_end:
+            z = z_ground
+        else:
+            z = z_deck + (z_ground - z_deck) * (distance - slope_start) / span
+        out.append((point[0], point[1],
+                    max(z, terrain_height(point[0], point[1]) + ROAD_TOP)))
+    return _limit_grade(out, MAX_RAMP_GRADE)
+
+
 def _diamond(name, cross_y, deck_z, terminal_west, terminal_east,
-             centre_x=None, west_bow=1.0):
+             centre_x=None, west_bow=1.0, west_height=None, east_height=None):
     """A four-ramp diamond, correctly named for the direction each ramp serves.
 
     Right-hand traffic. The southbound carriageway is west of the median and
@@ -476,47 +552,58 @@ def _diamond(name, cross_y, deck_z, terminal_west, terminal_east,
     mid-carriageway, which is where all four of the existing ones start.
     """
     cx = EXPRESSWAY_X if centre_x is None else centre_x
-    west = cx - SHOULDER_HALF
-    east = cx + SHOULDER_HALF
-    west_xy, west_z = terminal_west[:2], terminal_west[2]
-    east_xy, east_z = terminal_east[:2], terminal_east[2]
+
+    def split(terminal, sign, height):
+        """Pull a terminal along the road it sits on, so the exit and the
+        entrance land at two junctions instead of kissing at one point.
+
+        The height is re-read at the moved point, not carried over. Both ring
+        links climb an overbridge, so their surface is a metre different 13m
+        along -- carrying the old number left the ramp ending in the air beside
+        the road it was supposed to land on.
+        """
+        x, y, z = terminal[0], terminal[1], terminal[2]
+        axis = terminal[3] if len(terminal) > 3 else "x"
+        if axis == "y":
+            x, y = x, y + sign * TERMINAL_SPLIT
+        else:
+            x, y = x + sign * TERMINAL_SPLIT, y
+        return (x, y, height(x, y) if height else z)
+
     ramps = [
         # North-west quadrant: leave the southbound deck, land west.
         {"name": "%s southbound exit" % name, "carriageway": "southbound",
-         "role": "exit",
-         "plan": _fit_ramp(west, cross_y, +1, west_xy, deck_z, west_z,
-                           -16.0 * west_bow, MAX_RAMP_GRADE),
-         "z": (deck_z, west_z)},
+         "role": "exit", "centre": cx, "cross": cross_y, "side": +1,
+         "terminal": split(terminal_west, +1, west_height),
+         "bulge": -16.0 * west_bow, "grade": MAX_RAMP_GRADE, "deck": deck_z},
         # South-west quadrant: leave the west terminal, join southbound.
         {"name": "%s southbound entrance" % name, "carriageway": "southbound",
-         "role": "entrance",
-         "plan": _fit_ramp(west, cross_y, -1, west_xy, deck_z, west_z,
-                           16.0 * west_bow, MAX_ENTRANCE_GRADE),
-         "z": (west_z, deck_z), "reverse": True},
+         "role": "entrance", "centre": cx, "cross": cross_y, "side": -1,
+         "terminal": split(terminal_west, -1, west_height),
+         "bulge": 16.0 * west_bow, "grade": MAX_ENTRANCE_GRADE, "deck": deck_z},
         # South-east quadrant: leave the northbound deck, land east.
         {"name": "%s northbound exit" % name, "carriageway": "northbound",
-         "role": "exit",
-         "plan": _fit_ramp(east, cross_y, -1, east_xy, deck_z, east_z,
-                           16.0, MAX_RAMP_GRADE),
-         "z": (deck_z, east_z)},
+         "role": "exit", "centre": cx, "cross": cross_y, "side": -1,
+         "terminal": split(terminal_east, -1, east_height),
+         "bulge": 16.0, "grade": MAX_RAMP_GRADE, "deck": deck_z},
         # North-east quadrant: leave the east terminal, join northbound.
         {"name": "%s northbound entrance" % name, "carriageway": "northbound",
-         "role": "entrance",
-         "plan": _fit_ramp(east, cross_y, +1, east_xy, deck_z, east_z,
-                           -16.0, MAX_ENTRANCE_GRADE),
-         "z": (east_z, deck_z), "reverse": True},
+         "role": "entrance", "centre": cx, "cross": cross_y, "side": +1,
+         "terminal": split(terminal_east, +1, east_height),
+         "bulge": -16.0, "grade": MAX_ENTRANCE_GRADE, "deck": deck_z},
     ]
     return [_finish_ramp(ramp) for ramp in ramps]
 
 
 def _finish_ramp(ramp):
-    plan = list(ramp["plan"])
-    if ramp.pop("reverse", False):
-        plan.reverse()
-    z_start, z_end = ramp.pop("z")
-    ramp["points"] = _limit_grade(_graded(plan, z_start, z_end, floor=ROAD_TOP),
-                                  MAX_RAMP_GRADE)
-    ramp.pop("plan")
+    """Lay the ramp out deck-end first, profile it, then point it the way it
+    is driven: exits run away from the deck, entrances run towards it."""
+    terminal = ramp.pop("terminal")
+    plan = _fit_ramp(ramp.pop("centre"), ramp.pop("cross"), ramp.pop("side"),
+                     terminal, ramp["deck"], terminal[2], ramp.pop("bulge"),
+                     ramp.pop("grade"))
+    points = _ramp_profile(plan, ramp.pop("deck"), terminal[2])
+    ramp["points"] = points if ramp["role"] == "exit" else tuple(reversed(points))
     return ramp
 
 
@@ -548,14 +635,14 @@ def interchanges():
         "serves": "Northgate and Southline, via East Line Road",
         "cross_road": {
             "name": "Northgate interchange road",
-            "points": ((EAST_LINE_ROAD_X, IC1_Y), (262.0, IC1_Y)),
+            "points": ((EAST_LINE_ROAD_X, IC1_Y), (280.0, IC1_Y)),
             "width": CROSS_ROAD_WIDTH},
         # west_bow is flipped so the two southbound ramps bow east, away from
         # the Southline homes at x=191.4 rather than towards them.
         "ramps": _diamond("Northgate", IC1_Y, EXPRESSWAY_DECK_Z,
-                          (EAST_LINE_ROAD_X, IC1_Y, ic1_ground),
-                          (262.0, IC1_Y, terrain_height(262.0, IC1_Y) + ROAD_TOP),
-                          west_bow=-1.0),
+                          (EAST_LINE_ROAD_X, IC1_Y, ic1_ground, "y"),
+                          (262.0, IC1_Y, terrain_height(262.0, IC1_Y) + ROAD_TOP, "x"),
+                          west_bow=-1.0, west_height=lambda x, y: terrain_height(x, y) + ROAD_TOP, east_height=lambda x, y: terrain_height(x, y) + ROAD_TOP),
         "high_mast": ((EXPRESSWAY_X - 21.0, IC1_Y - 30.0),
                       (EXPRESSWAY_X + 21.0, IC1_Y + 30.0))})
 
@@ -568,8 +655,8 @@ def interchanges():
         "serves": "Crown Quarter and its twenty towers",
         "cross_road": None,
         "ramps": _diamond("Crown Boulevard", IC2_Y, EXPRESSWAY_DECK_Z,
-                          (186.0, IC2_Y, TERRACE_DATUM + 0.18),
-                          (258.0, IC2_Y, TERRACE_DATUM + 0.18)),
+                          (186.0, IC2_Y, TERRACE_DATUM + 0.18, "x"),
+                          (258.0, IC2_Y, TERRACE_DATUM + 0.18, "x")),
         "high_mast": ((EXPRESSWAY_X - 23.0, IC2_Y - 32.0),
                       (EXPRESSWAY_X + 23.0, IC2_Y + 32.0))})
 
@@ -583,11 +670,12 @@ def interchanges():
         "serves": "Crown Fields, via East Line Road North",
         "cross_road": {
             "name": "Crown Fields interchange road",
-            "points": ((EAST_LINE_NORTH_X, IC3_Y), (262.0, IC3_Y)),
+            "points": ((EAST_LINE_NORTH_X, IC3_Y), (280.0, IC3_Y)),
             "width": CROSS_ROAD_WIDTH},
         "ramps": _diamond("Crown Fields", IC3_Y, ic3_deck,
-                          (EAST_LINE_NORTH_X, IC3_Y, ic3_ground),
-                          (262.0, IC3_Y, terrain_height(262.0, IC3_Y) + ROAD_TOP)),
+                          (EAST_LINE_NORTH_X, IC3_Y, ic3_ground, "y"),
+                          (262.0, IC3_Y, terrain_height(262.0, IC3_Y) + ROAD_TOP, "x"),
+                          west_height=lambda x, y: terrain_height(x, y) + ROAD_TOP, east_height=lambda x, y: terrain_height(x, y) + ROAD_TOP),
         "high_mast": ((EXPRESSWAY_X - 21.0, IC3_Y - 30.0),
                       (EXPRESSWAY_X + 21.0, IC3_Y + 30.0))})
 
@@ -615,17 +703,20 @@ def interchanges():
         # x=-750 where it meets a built junction, which leaves 80m and 8.2%.
         bridge = (RING_X, deck, 110.0, 80.0)
         west_terminal = (RING_X - 58.0, y,
-                         _overbridge_height(RING_X - 58.0, y, bridge))
+                         _overbridge_height(RING_X - 58.0, y, bridge), "x")
         east_terminal = (RING_X + 58.0, y,
-                         _overbridge_height(RING_X + 58.0, y, bridge))
+                         _overbridge_height(RING_X + 58.0, y, bridge), "x")
         entries.append({
             "id": ident, "name": name, "route": "F-2", "y": y,
             "kind": "diamond", "serves": serves,
             "cross_road": {"name": "%s interchange road" % name,
                            "points": link, "width": CROSS_ROAD_WIDTH,
                            "overbridge": bridge},
-            "ramps": _diamond(name, y, ground, west_terminal, east_terminal,
-                              centre_x=RING_X),
+            "ramps": _diamond(
+                name, y, ground, west_terminal, east_terminal,
+                centre_x=RING_X,
+                west_height=lambda bx, by, b=bridge: _overbridge_height(bx, by, b),
+                east_height=lambda bx, by, b=bridge: _overbridge_height(bx, by, b)),
             "high_mast": ((RING_X - 30.0, y - 24.0), (RING_X + 30.0, y + 24.0))})
 
     # IC-4, the system interchange, where F-1 ends. See system_ramps().
@@ -672,17 +763,19 @@ def system_ramps():
     north of NORTH_SPLIT_Y, where the expressway no longer exists.
     """
     split = (NORTH_JUNCTION_X, NORTH_SPLIT_Y)
-    west = NORTH_JUNCTION_X - SHOULDER_HALF
-    east = NORTH_JUNCTION_X + SHOULDER_HALF
-    eb_shoulder = RING_Y - SHOULDER_HALF
-    wb_shoulder = RING_Y + SHOULDER_HALF
+    west = NORTH_JUNCTION_X - GORE_INSET
+    east = NORTH_JUNCTION_X + GORE_INSET
+    eb_shoulder = RING_Y - GORE_INSET
+    wb_shoulder = RING_Y + GORE_INSET
     ramps = []
 
     def add(name, carriageway, role, plan, z_start, z_end):
+        # Densified before profiling: these four are authored as 8-point
+        # polylines spanning 350m, and both the height profile and the browser
+        # walk surface read control points as given.
         ramps.append({"name": name, "carriageway": carriageway, "role": role,
-                      "points": _limit_grade(
-                          _graded(plan, z_start, z_end, floor=ROAD_TOP),
-                          MAX_RAMP_GRADE)})
+                      "points": _ramp_profile(_densify(plan, 4.0),
+                                              z_start, z_end)})
 
     def ground(x, y):
         return terrain_height(x, y) + ROAD_TOP
@@ -858,10 +951,57 @@ def ring_masts():
     return tuple(masts)
 
 
+HIGH_MAST_CLEARANCE = 2.0
+
+
+def _point_to_segment(point, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    denom = dx * dx + dy * dy
+    if denom <= 1e-9:
+        return math.hypot(point[0] - a[0], point[1] - a[1])
+    t = max(0.0, min(1.0, ((point[0] - a[0]) * dx
+                           + (point[1] - a[1]) * dy) / denom))
+    return math.hypot(point[0] - (a[0] + t * dx), point[1] - (a[1] + t * dy))
+
+
+def road_spare(x, y, clearance=HIGH_MAST_CLEARANCE):
+    """How much room a point has beside the nearest highway kerb. Negative
+    means it is standing in the road."""
+    worst = 1e9
+    for _name, points, half in named_roads():
+        for a, b in zip(points, points[1:]):
+            if abs(a[0] - x) > 90.0 and abs(b[0] - x) > 90.0:
+                continue
+            if abs(a[1] - y) > 90.0 and abs(b[1] - y) > 90.0:
+                continue
+            worst = min(worst, _point_to_segment((x, y), a, b) - half - clearance)
+    return worst
+
+
 def high_masts():
+    """Interchange lighting towers, nudged out of any road they land in.
+
+    The declared positions are aimed at the middle of each interchange, which
+    is exactly where the ramps are. Four of the thirteen came out standing in
+    one -- including a 20m tower planted dead centre on an IC-4 loop -- so each
+    is pushed to the nearest clear spot rather than hand-placed and hoped for.
+    """
     towers = []
     for entry in interchanges():
         for x, y in entry["high_mast"]:
+            if road_spare(x, y) < 0.0:
+                for reach in range(6, 52, 3):
+                    found = None
+                    for index in range(24):
+                        angle = math.tau * index / 24.0
+                        cx = round(x + math.cos(angle) * reach, 2)
+                        cy = round(y + math.sin(angle) * reach, 2)
+                        if road_spare(cx, cy) >= 0.0:
+                            found = (cx, cy)
+                            break
+                    if found:
+                        x, y = found
+                        break
             towers.append((x, y, terrain_height(x, y)))
     return tuple(towers)
 
@@ -871,8 +1011,14 @@ def high_masts():
 # What world_layout has to declare and what check_world_geometry has to audit.
 # Kept here so the road data and the paperwork about it cannot drift apart.
 
+_NAMED_ROADS_CACHE = None
+
+
 def named_roads():
     """(name, points-with-z, half width) for every centreline this creates."""
+    global _NAMED_ROADS_CACHE
+    if _NAMED_ROADS_CACHE is not None:
+        return _NAMED_ROADS_CACHE
     roads = [("Crown Approach", crown_approach_points(), ARTERIAL_WIDTH / 2.0),
              ("Crown Expressway North", north_extension_points(),
               FREEWAY_WIDTH / 2.0),
@@ -887,7 +1033,8 @@ def named_roads():
                           cross["width"] / 2.0))
         for ramp in entry["ramps"]:
             roads.append((ramp["name"], ramp["points"], RAMP_WIDTH / 2.0))
-    return tuple(roads)
+    _NAMED_ROADS_CACHE = tuple(roads)
+    return _NAMED_ROADS_CACHE
 
 
 def authored_elevation_roads():
@@ -998,6 +1145,26 @@ def validate_plan():
                 errors.append("%s reaches %.1f%% at (%.1f, %.1f)"
                               % (ramp["name"], grade * 100, at[0], at[1]))
 
+    # No centreline may double back on itself. A road that reverses direction
+    # is not a road, and it is invisible in every other check here: the grades
+    # stay legal, the clearances stay legal, and the geometry still exports.
+    # It shipped once, as a ramp whose landing was appended to a curve that had
+    # already reached the terminal, so the deck ran the last 26m twice.
+    for name, points, _half in named_roads():
+        for a, b, c in zip(points, points[1:], points[2:]):
+            first = (b[0] - a[0], b[1] - a[1])
+            second = (c[0] - b[0], c[1] - b[1])
+            one = math.hypot(*first)
+            two = math.hypot(*second)
+            if one < 0.05 or two < 0.05:
+                continue
+            turn = math.degrees(math.acos(max(-1.0, min(1.0, (
+                first[0]*second[0] + first[1]*second[1]) / (one * two)))))
+            if turn > 95.0:
+                errors.append("%s doubles back %.0f degrees at (%.1f, %.1f)"
+                              % (name, turn, b[0], b[1]))
+                break
+
     # Nothing may be authored below the ground it stands on.
     for name, points, _half in named_roads():
         for x, y, z in points:
@@ -1022,6 +1189,14 @@ def validate_plan():
             errors.append("a vehicle at (%.1f, %.1f) is %.2fm below the ground"
                           % (vehicle["px"], vehicle["py"],
                              terrain_height(vehicle["px"], vehicle["py"]) - vehicle["pz"]))
+            break
+
+    # No lighting tower may stand in a road. One 20m high mast was placed dead
+    # centre on an IC-4 loop, which the probe found as the one piece of ramp in
+    # the whole system with nothing under it -- the ray hit the tower instead.
+    for x, y, _z in high_masts():
+        if road_spare(x, y) < 0.0:
+            errors.append("a high mast at (%.1f, %.1f) stands in a road" % (x, y))
             break
 
     # Underpasses have to be tall enough to be underpasses.

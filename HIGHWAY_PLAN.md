@@ -385,3 +385,33 @@ than quietly reconciled.
    two roads read as never touching — and reached the viaduct with a 38m
    radius. IC-6 moved from y=486 to y=500 in the same pass, out of the Harrow
    Green homes at x=−758.5.
+
+Then Cade looked at the exits and found three more, all of them in the same
+40m of road at each gore, and all of them things the audits are blind to.
+
+5. **Every ramp centreline doubled back on itself.** The landing was appended
+   to a bezier that had already reached the terminal, so the last 26m of all
+   24 ramps ran forwards, jumped 26m backwards, and ran forwards again. Grades
+   stayed legal, clearances stayed legal, and it exported cleanly — the
+   geometry is what was wrong, not any measurement of it. `validate_plan()`
+   now rejects any centreline that turns more than 95° between segments.
+6. **347 of 606 ramp centreline points stood in the air with nothing under
+   them.** Ramps were built as viaducts: a 5.4m ribbon on 34m pier spacing,
+   which at that width reads as no support at all. Ramps are earthworks now —
+   solid embankment to 6.5m, structure with 16m pier spacing only above that,
+   where the ramp is alongside the viaduct it leaves. The gore also moved
+   inboard by half a ramp width, so the ramp is standing on the mainline at
+   the point it separates instead of overhanging the deck edge by 1.7m, and it
+   holds deck level for 44m before it starts to descend. Measured the same way
+   afterwards: **0 of 934.**
+7. **Exit and entrance kissed instead of landing.** Both ramps of a pair ran
+   to the same point with continuous tangents, so they read as one road
+   curving past the cross street. They are pulled 13m apart along the road
+   they land on, and the last 26m of each is level at that road's height.
+8. **Four lighting towers stood in roads**, one of them a 20m high mast dead
+   centre on an IC-4 loop. Mast positions are now pushed to the nearest clear
+   spot rather than hand-placed, and `validate_plan()` checks it.
+9. **The gantry signs faced along the carriageway instead of across it.**
+   `add_box` builds axis-aligned; the beam and both panels were never rotated
+   onto the road's heading, so on a north-south freeway every overhead sign
+   was edge-on to the driver who was supposed to read it.

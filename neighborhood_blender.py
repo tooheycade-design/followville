@@ -9159,6 +9159,28 @@ def _offset_path(points, offset):
     return out
 
 
+def _extend_path(points, reach):
+    """Carry a centreline a little past both ends, along its own direction."""
+    def push(near, far):
+        dx, dy = near[0]-far[0], near[1]-far[1]
+        length = math.hypot(dx, dy) or 1.0
+        return (near[0] + dx/length*reach, near[1] + dy/length*reach, near[2])
+    return ([push(points[0], points[1])] + list(points)
+            + [push(points[-1], points[-2])])
+
+
+def _densify_path(points, step):
+    """Resample a centreline, keeping every authored point."""
+    out = []
+    for a, b in zip(points, points[1:]):
+        count = max(1, int(math.ceil(math.hypot(b[0]-a[0], b[1]-a[1])/step)))
+        for index in range(count):
+            t = index/count
+            out.append(tuple(a[i] + (b[i]-a[i])*t for i in range(3)))
+    out.append(tuple(points[-1][:3]))
+    return out
+
+
 def _path_runs(points, keep):
     """Split a centreline into the contiguous runs where keep(point) is true.
 
@@ -9193,6 +9215,10 @@ def _add_grade_skirt(world_col, name, points, material, width,
     """
     if len(points) < 2:
         return None
+    # Run 1.6m past each end. The ribbon used to stop exactly on its last
+    # control point, which left a hairline of unsupported deck at the terminal
+    # of every ramp -- eight of them, each one vertex wide.
+    points = _extend_path(list(points), 1.6)
     dense = []
     for a, b in zip(points, points[1:]):
         steps = max(1, int(math.ceil(math.hypot(b[0]-a[0], b[1]-a[1])/3.0)))
@@ -9315,23 +9341,50 @@ def _highway_markings(world_col, name, points, white, gores=()):
     return [obj for obj in created if obj is not None]
 
 
-def _highway_supports(world_col, name, points, width, concrete, m):
-    """Whatever holds a deck up: embankment when low, piers when high."""
+def _highway_supports(world_col, name, points, width, concrete,
+                      skirt_limit=3.4, pier_step=34.0, bridge_spans=()):
+    """Whatever holds a deck up: embankment when it can be, structure when not.
+
+    ``skirt_limit`` is the height below which the deck rides on solid ground
+    rather than on piers. It is 3.4m for a six-lane mainline, where a viaduct
+    is the point, and much higher for a ramp, where it is not: a 5.4m ribbon on
+    34m pier spacing put 347 of 606 ramp centreline points in the air with
+    nothing visible under them. Real interchange ramps are earthworks that
+    climb to meet a structure, not viaducts the whole way.
+
+    ``bridge_spans`` forces structure inside a rectangle whatever the height,
+    which is how a link road crosses the ring without burying it in fill.
+    """
+    def spanning(point):
+        return any(x0 <= point[0] <= x1 and y0 <= point[1] <= y1
+                   for x0, x1, y0, y1 in bridge_spans)
+
+    def stands(point):
+        return point[2] - terrain_height(point[0], point[1])
+
+    def on_structure(point):
+        return spanning(point) or stands(point) > skirt_limit
+
+    # Sampled every few metres before the runs are cut. A hand-authored ramp
+    # can be eight points across 350m, and testing the height only at those
+    # eight decides forty-five metres of embankment on one sample.
+    points = _densify_path(points, 4.0)
     created = []
-    low = _path_runs(points, lambda p: .30 < p[2] - terrain_height(p[0], p[1]) <= 3.4)
+    low = _path_runs(points,
+                     lambda p: stands(p) > .30 and not on_structure(p))
     for index, run in enumerate(low):
         created.append(_add_grade_skirt(world_col, "%s_embankment_%d" % (name, index),
                                         run, concrete, width + 3.2))
-    high = _path_runs(points, lambda p: p[2] - terrain_height(p[0], p[1]) > 3.4)
+    high = _path_runs(points, on_structure)
     piers = []
     caps = []
     for index, run in enumerate(high):
         created.append(_add_road_strip(
             world_col, "%s_structure_%d" % (name, index), run, concrete,
             width=width + HP.STRUCTURE_EXTRA, bottom_offset=-1.05, top_offset=-.05))
-        for x, y, z, heading in _walk_path(run, 34.0):
+        for x, y, z, heading in _walk_path(run, pier_step):
             ground = terrain_height(x, y)
-            if z - ground < 3.4:
+            if z - ground < 1.6:
                 continue
             # The cap's top is pushed 2cm into the underside of the structure
             # ribbon rather than meeting it exactly: a shared plane there is
@@ -9419,20 +9472,27 @@ def _build_freeway(world_col, name, points, mats, gaps=(), gores=()):
                                    mats["asphalt"], width=HP.FREEWAY_WIDTH,
                                    bottom_offset=-.04, top_offset=HP.DECK_SURFACE))
     created.extend(_highway_supports(world_col, name, points, HP.FREEWAY_WIDTH,
-                                     mats["concrete"], mats))
+                                     mats["concrete"]))
     created.extend(_highway_barriers(world_col, name, points, mats["rail"], gaps))
     created.extend(_highway_markings(world_col, name, points, mats["white"], gores))
     return created
 
 
 def _build_ramp(world_col, name, points, mats, width=None):
-    """A ramp: deck, kerbs, whatever holds it up, and a centre line."""
+    """A ramp: deck, kerbs, whatever holds it up, and a centre line.
+
+    A ramp is an earthwork up to 6.5m and a short structure above that, where
+    it is alongside the viaduct it leaves. Piers go in at 16m rather than 34m,
+    because a ramp is a fifth the width of the mainline and the same spacing
+    reads as no support at all.
+    """
     width = width or HP.RAMP_WIDTH
     created = [_add_road_strip(world_col, name + "_deck", points, mats["asphalt"],
                                width=width, bottom_offset=-.04,
                                top_offset=HP.DECK_SURFACE)]
     created.extend(_highway_supports(world_col, name, points, width,
-                                     mats["concrete"], mats))
+                                     mats["concrete"], skirt_limit=6.5,
+                                     pier_step=16.0))
     for side in (-1, 1):
         created.append(_add_road_strip(
             world_col, name + "_kerb", _offset_path(points, side*(width/2.0 + .26)),
@@ -9444,13 +9504,15 @@ def _build_ramp(world_col, name, points, mats, width=None):
     return [obj for obj in created if obj is not None]
 
 
-def _build_surface_road(world_col, name, points, width, mats, centre_line=True):
+def _build_surface_road(world_col, name, points, width, mats, centre_line=True,
+                        bridge_spans=()):
     """A collector, link or interchange cross road: at grade unless it bridges."""
     created = [_add_road_strip(world_col, name + "_deck", points, mats["asphalt"],
                                width=width, bottom_offset=-.04,
                                top_offset=HP.DECK_SURFACE)]
     created.extend(_highway_supports(world_col, name, points, width,
-                                     mats["concrete"], mats))
+                                     mats["concrete"], skirt_limit=7.5,
+                                     pier_step=18.0, bridge_spans=bridge_spans))
     if centre_line:
         line = [(x, y, z + HP.DECK_SURFACE + .012, 1.6, .07, heading)
                 for x, y, z, heading in _walk_path(points, 9.0)]
@@ -9515,7 +9577,7 @@ def build_highway_system(world_col, buildings, m):
         bottom_offset=-.04, top_offset=HP.DECK_SURFACE))
     created.extend(_highway_supports(world_col, "highway_crown_approach",
                                      approach, HP.ARTERIAL_WIDTH + 4.0,
-                                     mats["concrete"], mats))
+                                     mats["concrete"], skirt_limit=9.0))
     created.extend(_highway_markings(world_col, "highway_crown_approach",
                                      approach, mats["white"]))
 
@@ -9556,9 +9618,17 @@ def build_highway_system(world_col, buildings, m):
     for entry in HP.interchanges():
         cross = entry.get("cross_road")
         if cross:
+            bridge = cross.get("overbridge")
+            spans = ()
+            if bridge:
+                # Over the freeway itself the link is a bridge; fill there
+                # would bury the road it is crossing.
+                spans = ((bridge[0] - 22.0, bridge[0] + 22.0,
+                          entry["y"] - 30.0, entry["y"] + 30.0),)
             created.extend(_build_surface_road(
                 world_col, "highway_cross_" + _slug(cross["name"]),
-                list(HP.cross_road_points(cross)), cross["width"], mats))
+                list(HP.cross_road_points(cross)), cross["width"], mats,
+                bridge_spans=spans))
         for ramp in entry["ramps"]:
             created.extend(_build_ramp(world_col,
                                        "highway_ramp_" + _slug(ramp["name"]),
@@ -9612,21 +9682,33 @@ def _build_gantry(world_col, entry, mats):
         centre_x = HP.mainline_x(centre_y)
         deck = HP.mainline_deck_z(centre_y)
         heading = math.pi/2
+    # A gantry crosses the road it signs. add_box builds axis-aligned, so the
+    # beam and both panels have to be rotated onto the road's own heading --
+    # without that they were built with their long axis along +Y, which on a
+    # north-south freeway meant every sign faced along the carriageway instead
+    # of across it, and read edge-on to the driver.
+    across = (-math.sin(heading), math.cos(heading))
     for side in (-1, 1):
         post = add_box(world_col, "highway_gantry_post", .34, .34, 5.6,
-                       centre_x - math.sin(heading)*side*(HP.SHOULDER_HALF - 1.2),
-                       centre_y + math.cos(heading)*side*(HP.SHOULDER_HALF - 1.2),
+                       centre_x + across[0]*side*(HP.SHOULDER_HALF - 1.2),
+                       centre_y + across[1]*side*(HP.SHOULDER_HALF - 1.2),
                        deck + HP.DECK_SURFACE, mats["metal"])
         created.append(post)
-    beam = add_box(world_col, "highway_gantry_beam", 1.0, HP.FREEWAY_WIDTH - 2.0,
+    beam = add_box(world_col, "highway_gantry_beam", HP.FREEWAY_WIDTH - 2.0, .42,
                    .38, centre_x, centre_y, deck + HP.DECK_SURFACE + 5.55,
                    mats["metal"])
+    beam.rotation_euler = (0, 0, heading + math.pi/2)
     created.append(beam)
     for side in (-1, 1):
-        panel = add_box(world_col, "highway_gantry_sign", .26, 8.4, 2.5,
-                        centre_x + side*.52,
-                        centre_y + side*(HP.FREEWAY_WIDTH*.25),
+        # Panels hang either side of the median, facing the traffic that reads
+        # them: their face is across the road, their thickness along it.
+        panel = add_box(world_col, "highway_gantry_sign", 8.4, .26, 2.5,
+                        centre_x + across[0]*side*(HP.FREEWAY_WIDTH*.25)
+                        + math.cos(heading)*.42,
+                        centre_y + across[1]*side*(HP.FREEWAY_WIDTH*.25)
+                        + math.sin(heading)*.42,
                         deck + HP.DECK_SURFACE + 2.85, mats["sign"])
+        panel.rotation_euler = (0, 0, heading + math.pi/2)
         created.append(panel)
     return created
 
