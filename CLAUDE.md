@@ -140,10 +140,15 @@ pane, whose WebGL dies after a few 3D loads):
 ```text
 town.html?local=1&view=free&at=311.7,-7&look=322,1,10       walker's eye at x,z
 town.html?local=1&view=free&eye=300,150,-25&look=305,0,-5   fixed camera
+town.html?local=1&view=free&eye=...&look=...&far=2600       see past 500m
 ```
 
 `at=` stands a walker there (`&dist=8` for third person); `eye=` parks a fixed
-camera. `window.__followvilleTerrainQA.probe(x, z)` returns what a downward ray
+camera. **`far=` is required for anything longer than a district**: the walking
+camera's clip is 500m and its fog saturates at 390m, so a corridor shot of the
+highway renders as an empty sky without it. It raises both together, on the
+parked camera only, and is unreachable unless `?local=1&view=free` is set.
+`window.__followvilleTerrainQA.probe(x, z)` returns what a downward ray
 actually strikes, by GLB node name — the only way to see geometry hidden *under*
 other geometry.
 
@@ -162,7 +167,16 @@ in `world_layout.py`: `LANDMARK_FOOTPRINTS`, `KEEP_OUT_REGIONS`,
 `RETAINED_PADS`, `INTENTIONALLY_RAISED_ROADS`, `LEVEL_WATER`,
 `LANDMARK_APPROACHES`, `AUTHORED_ELEVATION_ROADS`. **Adding a landmark or an
 authored road means adding it there too** — an undeclared landmark is reported
-as *unaudited*, not failed, so silence is not proof. `--self-test` re-creates
+as *unaudited*, not failed, so silence is not proof. The **highway system is
+the exception**: its raised regions and authored-elevation names are derived
+from the alignments by `highway_plan.py` and merged in by
+`check_world_geometry.py`, because `world_layout` cannot import that module
+without closing the cycle through `neighborhood_plan`. Change a highway
+alignment and its declarations follow it; do not hand-write them.
+**Neither audit measures shape.** Grades, clearances and heights are all they
+check, so a centreline that doubles back on itself passes both and exports
+cleanly — that shipped once. `highway_plan.validate_plan()` is where that
+class of check lives now. `--self-test` re-creates
 five known regressions and requires each to be caught; the count is whatever
 `self_test()` declares, so read the output rather than trusting this sentence.
 
@@ -345,6 +359,14 @@ Partial hundreds earn a tower immediately and fill before the next tower is
 created. See `METROPOLITAN_EXPANSION_PLAN.md`; validate the assets with
 `check_metropolitan_assets.py`.
 
+**That expressway is now one route in a city-wide system**, built by
+`build_highway_system()` from `highway_plan.py` and revealed on the same
+`metrotower` condition. `metropolitan_plan.py` still owns the viaduct's
+alignment, deck height and width, and `ramp_plan()` is kept as the record of the
+original four ramps — but **`RAMPS` is no longer built, walked or audited**, so
+do not add geometry from it. `HIGHWAY_PLAN.md` is the authority for everything
+else about the roads.
+
 Milestones auto-build at population 500 (fountain plaza — suppressed while the
 houses-only reserve runs), 2,000 (skyscraper), 10,000 (stadium).
 
@@ -494,6 +516,7 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `north_reach_plan.py` | Chapter five: 1,000 homes + 23 empty parcels, north. |
 | `NUCLEAR_STATION.md` | The nuclear plant, its roads, and the temporary interior set. |
 | `metropolitan_plan.py` | The post-Northgate 20-tower / 2,000-follower reserve. |
+| `highway_plan.py` | **The highway system.** Every freeway, ramp, collector, vehicle and light, as data. Self-validates grades, clearances, termini and shape. |
 | `world_layout.py` | District offsets, authored roads, audit declarations. |
 | `downtown_visual_plan.py` | `terrain_height` and the shared terrain model. |
 | `check_town_glb.py` | Export completeness and state consistency. |
@@ -524,6 +547,9 @@ panel or `profiles.inventory` — note the fish IDs are permanent and the
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `FOLLOWVILLE_STORIES.md` (read
 before writing, storyboarding or producing a Story video),
+`HIGHWAY_PLAN.md` (read before touching any freeway, ramp, interchange
+or collector -- it carries the measurement behind every alignment,
+including the two the geometry could not have),
 `NEIGHBORHOOD_EXPANSION_PLAN.md`, `WEST_QUARTER_PLAN.md`,
 `NORTH_REACH_PLAN.md`,
 `WEB_VIEWER_CHANGELOG.md`.
