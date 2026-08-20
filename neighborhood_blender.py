@@ -48,6 +48,7 @@ from metropolitan_plan import (TOWER_PLAN as METRO_TOWER_PLAN,
                                INTERCHANGE_Y as METRO_INTERCHANGE_Y,
                                TERRACE_DATUM as METRO_TERRACE_DATUM,
                                expressway_points)
+import highway_plan as HP
 from downtown_visual_plan import TERRAIN_BOUNDS, mounted_face_center
 from downtown_visuals import build_downtown_visuals, terrain_height
 from downtown_visual_plan import (FISHING_POND_X, FISHING_POND_Y,
@@ -7188,6 +7189,10 @@ ASSET_VARIANTS = {
     "park":        [("AST_park_%d" % i, lambda c, i=i: build_park(c, 400 + i)) for i in range(3)],
     "tree":        [("AST_tree_%d" % i, lambda c, i=i: build_lone_tree(c, 500 + i)) for i in range(4)],
     "streetlight": [("AST_light_0", lambda c: build_streetlight(c))],
+    "highwaymast": [("AST_light_highway_mast",
+                     lambda c: build_highway_mast(c))],
+    "highmast":    [("AST_light_high_mast",
+                     lambda c: build_high_mast(c))],
     "bush":        [("AST_bush_%d" % i, lambda c, i=i: build_bush(c, 1700 + i)) for i in range(4)],
     "rock":        [("AST_rock_%d" % i, lambda c, i=i: build_rock(c, 1800 + i)) for i in range(3)],
     "car":         [("AST_car_%d" % i, lambda c, i=i: build_car(c, 600 + i)) for i in range(4)],
@@ -7305,6 +7310,7 @@ def hillside_pad_levels(x, y, rotation=0.0, width=8.4, depth=9.0):
 
 # building footprint in lots (per side); milestone buildings can span a whole block
 SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1, "rock": 1,
+        "highwaymast": 1, "highmast": 1,
         "storybookhouse": 1,
         "mushroomhouse": 1, "casinohouse": 1, "cathouse": 1, "castlehouse": 1,
         "eiffelhouse": 1, "flowerhouse": 1, "burjhouse": 1, "toilethouse": 1, "beachhouse": 1,
@@ -9116,82 +9122,554 @@ def build_metropolitan_district(world_col, buildings, m):
                        sign_green)
         created.extend((body, canopy, counter, service_window, sign, menu))
 
-    # Six-lane expressway: continuous deck, median, lane markings, barriers,
-    # paired piers, and a diamond interchange into Crown Boulevard.
-    highway_points = list(expressway_points())
-    structure = _add_road_strip(world_col, "metro_expressway_structure",
-                                highway_points, highway_concrete,
-                                width=EXPRESSWAY_WIDTH+1.8,
-                                bottom_offset=-1.05, top_offset=-.04)
-    deck = _add_road_strip(world_col, "metro_expressway_deck", highway_points,
-                           asphalt, width=EXPRESSWAY_WIDTH,
-                           bottom_offset=-.03, top_offset=.18)
-    created.extend((structure, deck))
-    highway_length = EXPRESSWAY_Y1-EXPRESSWAY_Y0
-    highway_mid = (EXPRESSWAY_Y0+EXPRESSWAY_Y1)/2
-    for xoff in (-12.05, 0.0, 12.05):
-        barrier = add_box(world_col, "metro_expressway_barrier", .38,
-                          highway_length, .82, EXPRESSWAY_X+xoff,
-                          highway_mid, EXPRESSWAY_DECK_Z+.18, highway_rail)
-        created.append(barrier)
-    # Broken lane separators read correctly at driving height; solid edge
-    # lines keep the outer shoulders legible from the skyline camera.
-    for xoff in (-11.0, 11.0):
-        edge_line = add_box(world_col, "metro_expressway_edge_line", .13,
-                            highway_length-8.0, .025, EXPRESSWAY_X+xoff,
-                            highway_mid, EXPRESSWAY_DECK_Z+.185, white)
-        created.append(edge_line)
-    for xoff in (-8.0, -4.0, 4.0, 8.0):
-        for y in range(int(EXPRESSWAY_Y0)+8, int(EXPRESSWAY_Y1)-5, 12):
-            lane_dash = add_box(world_col, "metro_expressway_lane_dash", .13,
-                                4.0, .025, EXPRESSWAY_X+xoff, y,
-                                EXPRESSWAY_DECK_Z+.185, white)
-            created.append(lane_dash)
-    # Paired, inward-facing lights give the viaduct its own night-time rhythm
-    # without competing with the gantries at the Crown Boulevard interchange.
-    for y in range(int(EXPRESSWAY_Y0)+28, int(EXPRESSWAY_Y1)-18, 56):
-        for side in (-1, 1):
-            x = EXPRESSWAY_X + side*11.55
-            pole = add_box(world_col, "metro_expressway_light_pole", .20, .20,
-                           6.4, x, y, EXPRESSWAY_DECK_Z+.18, metal)
-            arm = add_box(world_col, "metro_expressway_light_arm", 1.45, .16,
-                          .16, x-side*.70, y, EXPRESSWAY_DECK_Z+6.50, metal)
-            lamp = add_box(world_col, "metro_expressway_light", .72, .38, .18,
-                           x-side*1.30, y, EXPRESSWAY_DECK_Z+6.35, warm_light)
-            created.extend((pole, arm, lamp))
-    for y in range(int(EXPRESSWAY_Y0)+24, int(EXPRESSWAY_Y1)-20, 38):
-        ground = terrain_height(EXPRESSWAY_X, y)
-        for xoff in (-6.2, 6.2):
-            pier = add_ngon_cone(world_col, "metro_expressway_pier", .95, .72,
-                                 EXPRESSWAY_DECK_Z-ground-1.02, 8,
-                                 EXPRESSWAY_X+xoff, y, ground, highway_concrete)
-            created.append(pier)
-        cap = add_box(world_col, "metro_expressway_pier_cap", 17.0, 1.2, .75,
-                      EXPRESSWAY_X, y, EXPRESSWAY_DECK_Z-1.72, highway_concrete)
-        created.append(cap)
-    for index, ramp in enumerate(METRO_RAMPS):
-        ramp_obj = _add_road_strip(world_col, "metro_interchange_ramp_%d" % index,
-                                   list(ramp["points"]), asphalt, width=5.4,
-                                   bottom_offset=-.34, top_offset=.14)
-        created.append(ramp_obj)
-
-    # Overhead wayfinding gives the regional road a credible purpose.
-    for y, label_side in ((566.0, -1), (742.0, 1)):
-        for xoff in (-9.5, 9.5):
-            post = add_box(world_col, "metro_sign_post", .32, .32, 5.4,
-                           EXPRESSWAY_X+xoff, y, EXPRESSWAY_DECK_Z+.18, metal)
-            created.append(post)
-        beam = add_box(world_col, "metro_sign_gantry", 20.0, .36, .36,
-                       EXPRESSWAY_X, y, EXPRESSWAY_DECK_Z+5.35, metal)
-        sign = add_box(world_col, "metro_expressway_sign", 8.8, .22, 2.4,
-                       EXPRESSWAY_X+label_side*4.8, y,
-                       EXPRESSWAY_DECK_Z+4.15, sign_green)
-        created.extend((beam, sign))
+    # The Crown Expressway used to be built here, in seventy lines wedged
+    # between the towers and the kiosks, which is a large part of why it
+    # never grew past one interchange and never got a proper end. It now
+    # lives in build_highway_system() with the rest of the network.
 
     for obj in created:
         if obj is not None:
             obj["nb_feature_role"] = obj.get("nb_feature_role", "metropolitan")
     return [obj for obj in created if obj is not None]
+
+
+# ═══════════════════════════ HIGHWAY SYSTEM ═══════════════════════════════
+#
+# The freeway and collector tiers. The alignments, heights, ramps, vehicles and
+# lighting are all data in highway_plan.py; nothing here decides where a road
+# goes, only what it is made of.
+#
+# This owns the Crown Expressway outright. It used to be built inside
+# build_metropolitan_district as one 70-line block with the towers, which is
+# why it never grew past a single interchange.
+
+
+def _offset_path(points, offset):
+    """Offset a centreline sideways in plan, keeping every authored height."""
+    if len(points) < 2:
+        return list(points)
+    out = []
+    for index, point in enumerate(points):
+        before = points[max(0, index-1)]
+        after = points[min(len(points)-1, index+1)]
+        dx, dy = after[0]-before[0], after[1]-before[1]
+        length = math.hypot(dx, dy) or 1.0
+        out.append((point[0] - dy/length*offset, point[1] + dx/length*offset,
+                    point[2] if len(point) > 2 else 0.0))
+    return out
+
+
+def _path_runs(points, keep):
+    """Split a centreline into the contiguous runs where keep(point) is true.
+
+    Runs carry one point of overlap at each end so consecutive pieces of
+    structure meet instead of leaving a gap the width of one sample.
+    """
+    runs, current = [], []
+    for index, point in enumerate(points):
+        if keep(point):
+            if not current and index:
+                current.append(points[index-1])
+            current.append(point)
+        elif current:
+            current.append(point)
+            if len(current) > 1:
+                runs.append(current)
+            current = []
+    if len(current) > 1:
+        runs.append(current)
+    return runs
+
+
+def _add_grade_skirt(world_col, name, points, material, width,
+                     top_drop=.02, sink=.55):
+    """The embankment under a low deck: top just below it, bottom in the ground.
+
+    _add_road_strip's structure box is a constant 1.05m deep, which is right
+    for a viaduct on piers and wrong for a road standing two metres over a
+    meadow -- it leaves the deck floating on nothing. This ribbon's underside
+    follows the terrain instead, so a road that rises out of the ground carries
+    its own embankment up with it.
+    """
+    if len(points) < 2:
+        return None
+    dense = []
+    for a, b in zip(points, points[1:]):
+        steps = max(1, int(math.ceil(math.hypot(b[0]-a[0], b[1]-a[1])/3.0)))
+        for step in range(steps):
+            t = step/steps
+            dense.append(tuple(a[i] + (b[i]-a[i])*t for i in range(3)))
+    dense.append(tuple(points[-1][:3]))
+    offsets = []
+    for index in range(len(dense)):
+        before = dense[max(0, index-1)]
+        after = dense[min(len(dense)-1, index+1)]
+        dx, dy = after[0]-before[0], after[1]-before[1]
+        length = math.hypot(dx, dy) or 1.0
+        offsets.append((-dy/length*width/2.0, dx/length*width/2.0))
+    verts = []
+    for point, offset in zip(dense, offsets):
+        for side in (1, -1):
+            x = point[0] + side*offset[0]
+            y = point[1] + side*offset[1]
+            verts.append((x, y, terrain_height(x, y) - sink))
+    for point, offset in zip(dense, offsets):
+        for side in (1, -1):
+            verts.append((point[0] + side*offset[0], point[1] + side*offset[1],
+                          point[2] - top_drop))
+    count = len(dense)
+    faces = []
+    for i in range(count-1):
+        faces.extend(((2*i, 2*i+1, 2*i+3, 2*i+2),
+                      (2*count+2*i, 2*count+2*i+2, 2*count+2*i+3, 2*count+2*i+1),
+                      (2*i, 2*i+2, 2*count+2*i+2, 2*count+2*i),
+                      (2*i+1, 2*count+2*i+1, 2*count+2*i+3, 2*i+3)))
+    faces.extend(((0, 2*count, 2*count+1, 1),
+                  (2*count-2, 2*count-1, 4*count-1, 4*count-2)))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    world_col.objects.link(obj)
+    return obj
+
+
+def _batch_plates(world_col, name, plates, material):
+    """Many oriented flat plates as one mesh: lane lines, dashes, gore chevrons.
+
+    Road markings on a curve cannot be axis-aligned boxes, and one object per
+    dash would put four thousand of them in the scene.
+    """
+    if not plates:
+        return None
+    verts, faces = [], []
+    for x, y, z, half_length, half_width, heading in plates:
+        cos_h, sin_h = math.cos(heading), math.sin(heading)
+        start = len(verts)
+        for dx, dy in ((-half_length, -half_width), (half_length, -half_width),
+                       (half_length, half_width), (-half_length, half_width)):
+            verts.append((x + dx*cos_h - dy*sin_h, y + dx*sin_h + dy*cos_h, z))
+        faces.append((start, start+1, start+2, start+3))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    world_col.objects.link(obj)
+    return obj
+
+
+def _walk_path(points, step):
+    """Sample (x, y, z, heading) along a centreline at fixed intervals."""
+    out = []
+    carried = 0.0
+    for a, b in zip(points, points[1:]):
+        span = math.hypot(b[0]-a[0], b[1]-a[1])
+        if span < 1e-6:
+            continue
+        heading = math.atan2(b[1]-a[1], b[0]-a[0])
+        travelled = carried
+        while travelled < span:
+            t = travelled/span
+            out.append((a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t,
+                        a[2] + (b[2]-a[2])*t, heading))
+            travelled += step
+        carried = travelled - span
+    return out
+
+
+def _highway_markings(world_col, name, points, white, gores=()):
+    """Edge lines, lane separators and gore chevrons for a six-lane deck.
+
+    Markings sit 5mm above the deck surface -- above MIN_VISIBLE_SURFACE_
+    CLEARANCE -- because a painted line coplanar with the asphalt is exactly
+    the depth-fight the visible-surface rule exists to prevent.
+    """
+    created = []
+    lift = HP.DECK_SURFACE + .025
+    edge, dash = [], []
+    for x, y, z, heading in _walk_path(points, 3.0):
+        for side in (-1, 1):
+            edge.append((x - math.sin(heading)*side*HP.SHOULDER_HALF,
+                         y + math.cos(heading)*side*HP.SHOULDER_HALF,
+                         z + lift, 1.55, .085, heading))
+    for x, y, z, heading in _walk_path(points, 12.0):
+        for offset in (-8.0, -4.0, 4.0, 8.0):
+            dash.append((x - math.sin(heading)*offset,
+                         y + math.cos(heading)*offset,
+                         z + lift, 2.0, .075, heading))
+    created.append(_batch_plates(world_col, name + "_edge_line", edge, white))
+    created.append(_batch_plates(world_col, name + "_lane_dash", dash, white))
+    chevrons = []
+    for gore_x, gore_y, gore_z, heading, side in gores:
+        for index in range(7):
+            reach = 3.0 + index*3.4
+            spread = .55 + index*.62
+            chevrons.append((gore_x + math.cos(heading)*reach
+                             - math.sin(heading)*side*(HP.SHOULDER_HALF + spread*.5),
+                             gore_y + math.sin(heading)*reach
+                             + math.cos(heading)*side*(HP.SHOULDER_HALF + spread*.5),
+                             gore_z + lift, 1.5, spread*.5, heading))
+    created.append(_batch_plates(world_col, name + "_gore", chevrons, white))
+    return [obj for obj in created if obj is not None]
+
+
+def _highway_supports(world_col, name, points, width, concrete, m):
+    """Whatever holds a deck up: embankment when low, piers when high."""
+    created = []
+    low = _path_runs(points, lambda p: .30 < p[2] - terrain_height(p[0], p[1]) <= 3.4)
+    for index, run in enumerate(low):
+        created.append(_add_grade_skirt(world_col, "%s_embankment_%d" % (name, index),
+                                        run, concrete, width + 3.2))
+    high = _path_runs(points, lambda p: p[2] - terrain_height(p[0], p[1]) > 3.4)
+    piers = []
+    caps = []
+    for index, run in enumerate(high):
+        created.append(_add_road_strip(
+            world_col, "%s_structure_%d" % (name, index), run, concrete,
+            width=width + HP.STRUCTURE_EXTRA, bottom_offset=-1.05, top_offset=-.05))
+        for x, y, z, heading in _walk_path(run, 34.0):
+            ground = terrain_height(x, y)
+            if z - ground < 3.4:
+                continue
+            # The cap's top is pushed 2cm into the underside of the structure
+            # ribbon rather than meeting it exactly: a shared plane there is
+            # two visible faces on one plane, which is the depth fight the
+            # visible-surface rule exists to prevent.
+            cap_top = z - 1.03
+            cap_bottom = cap_top - .76
+            caps.append((x, y, cap_bottom, heading, width * .72))
+            for side in (-1, 1):
+                reach = side * width * .26
+                piers.append((x - math.sin(heading)*reach,
+                              y + math.cos(heading)*reach,
+                              ground, cap_bottom - ground + .04))
+    for px, py, base, height in piers:
+        created.append(add_ngon_cone(world_col, "%s_pier" % name, .98, .74,
+                                     max(.4, height), 8, px, py, base, concrete))
+    for x, y, base, heading, span in caps:
+        # add_box's width runs along local X, and rotating by the road's
+        # heading puts local X along the road. A pier cap crosses it, so the
+        # span goes in the depth slot.
+        cap = add_box(world_col, "%s_pier_cap" % name, 1.25, span, .76,
+                      x, y, base, concrete)
+        cap.rotation_euler = (0, 0, heading)
+        created.append(cap)
+    return [obj for obj in created if obj is not None]
+
+
+def _highway_barriers(world_col, name, points, rail, gaps=()):
+    """Median and outside barriers, with real openings at every ramp gore.
+
+    The existing viaduct runs all three unbroken for 608m, so its four ramps
+    leave from behind a barrier. A gap is a (start, end) distance along the
+    centreline where a ramp diverges or merges.
+    """
+    created = []
+    run_length = []
+    total = 0.0
+    for index, point in enumerate(points):
+        if index:
+            total += math.hypot(point[0]-points[index-1][0],
+                                point[1]-points[index-1][1])
+        run_length.append(total)
+
+    def blocked(distance, side):
+        return any(start <= distance <= end and gap_side == side
+                   for start, end, gap_side in gaps)
+
+    # Barriers start 12cm inside the deck rather than on its top face, so no
+    # part of the deck shares a plane with the underside of a barrier.
+    base = HP.DECK_SURFACE - .12
+    # Left and right of the direction the point list runs, not compass points:
+    # the ring turns a corner and spends half its length running east-west.
+    # _offset_path's positive offset is the left-hand side, which is the same
+    # sign convention _ramp_gaps_and_gores uses to decide which barrier a ramp
+    # needs opened.
+    for label, offset, height, side in (("median", 0.0, .94, 0),
+                                        ("left", HP.SHOULDER_HALF + 1.05, .90, 1),
+                                        ("right", -HP.SHOULDER_HALF - 1.05, .90, -1)):
+        line = _offset_path(points, offset)
+        piece, index = [], 0
+        for point, distance in zip(line, run_length):
+            if offset == 0.0 or not blocked(distance, side):
+                piece.append(point)
+            elif len(piece) > 1:
+                created.append(_add_road_strip(
+                    world_col, "%s_barrier_%s_%d" % (name, label, index), piece,
+                    rail, width=.38, bottom_offset=base,
+                    top_offset=base + height))
+                index += 1
+                piece = []
+            else:
+                piece = []
+        if len(piece) > 1:
+            created.append(_add_road_strip(
+                world_col, "%s_barrier_%s_%d" % (name, label, index), piece,
+                rail, width=.38, bottom_offset=base,
+                top_offset=base + height))
+    return [obj for obj in created if obj is not None]
+
+
+def _build_freeway(world_col, name, points, mats, gaps=(), gores=()):
+    """One freeway carriageway pair: deck, supports, barriers and markings."""
+    created = []
+    created.append(_add_road_strip(world_col, name + "_deck", points,
+                                   mats["asphalt"], width=HP.FREEWAY_WIDTH,
+                                   bottom_offset=-.04, top_offset=HP.DECK_SURFACE))
+    created.extend(_highway_supports(world_col, name, points, HP.FREEWAY_WIDTH,
+                                     mats["concrete"], mats))
+    created.extend(_highway_barriers(world_col, name, points, mats["rail"], gaps))
+    created.extend(_highway_markings(world_col, name, points, mats["white"], gores))
+    return created
+
+
+def _build_ramp(world_col, name, points, mats, width=None):
+    """A ramp: deck, kerbs, whatever holds it up, and a centre line."""
+    width = width or HP.RAMP_WIDTH
+    created = [_add_road_strip(world_col, name + "_deck", points, mats["asphalt"],
+                               width=width, bottom_offset=-.04,
+                               top_offset=HP.DECK_SURFACE)]
+    created.extend(_highway_supports(world_col, name, points, width,
+                                     mats["concrete"], mats))
+    for side in (-1, 1):
+        created.append(_add_road_strip(
+            world_col, name + "_kerb", _offset_path(points, side*(width/2.0 + .26)),
+            mats["rail"], width=.30, bottom_offset=HP.DECK_SURFACE - .12,
+            top_offset=HP.DECK_SURFACE + .46))
+    line = [(x, y, z + HP.DECK_SURFACE + .012, 1.3, .07, heading)
+            for x, y, z, heading in _walk_path(points, 8.0)]
+    created.append(_batch_plates(world_col, name + "_line", line, mats["white"]))
+    return [obj for obj in created if obj is not None]
+
+
+def _build_surface_road(world_col, name, points, width, mats, centre_line=True):
+    """A collector, link or interchange cross road: at grade unless it bridges."""
+    created = [_add_road_strip(world_col, name + "_deck", points, mats["asphalt"],
+                               width=width, bottom_offset=-.04,
+                               top_offset=HP.DECK_SURFACE)]
+    created.extend(_highway_supports(world_col, name, points, width,
+                                     mats["concrete"], mats))
+    if centre_line:
+        line = [(x, y, z + HP.DECK_SURFACE + .012, 1.6, .07, heading)
+                for x, y, z, heading in _walk_path(points, 9.0)]
+        created.append(_batch_plates(world_col, name + "_line", line, mats["white"]))
+    return [obj for obj in created if obj is not None]
+
+
+def _ramp_gaps_and_gores(points, ramps):
+    """Where each ramp touches the mainline, as barrier gaps and gore marks.
+
+    Read straight off the ramp geometry rather than authored twice, so a ramp
+    that moves takes its barrier opening and its chevrons with it.
+    """
+    run = [0.0]
+    for index in range(1, len(points)):
+        run.append(run[-1] + math.hypot(points[index][0]-points[index-1][0],
+                                        points[index][1]-points[index-1][1]))
+    gaps, gores = [], []
+    for ramp in ramps:
+        touch = ramp["points"][0] if ramp["role"] == "exit" else ramp["points"][-1]
+        best, best_at = None, 0.0
+        for index, point in enumerate(points):
+            distance = math.hypot(point[0]-touch[0], point[1]-touch[1])
+            if best is None or distance < best:
+                best, best_at, best_index = distance, run[index], index
+        if best is None or best > 26.0:
+            continue
+        neighbour = points[min(len(points)-1, best_index+1)]
+        anchor = points[best_index]
+        heading = math.atan2(neighbour[1]-anchor[1], neighbour[0]-anchor[0])
+        # Which side of the deck the ramp leaves from, in the road's own frame:
+        # the cross product of its heading with the offset to the ramp.
+        cross = (math.cos(heading)*(touch[1]-anchor[1])
+                 - math.sin(heading)*(touch[0]-anchor[0]))
+        side = 1 if cross > 0 else -1
+        gaps.append((best_at - 16.0, best_at + 16.0, side))
+        if ramp["role"] == "exit":
+            gores.append((anchor[0], anchor[1], anchor[2], heading, side))
+    return gaps, gores
+
+
+def build_highway_system(world_col, buildings, m):
+    """Build the whole freeway and collector network for the current state."""
+    if not HP.is_active(buildings):
+        return []
+
+    mats = {
+        "asphalt": mat("FV_highway_asphalt", (.255, .265, .285), .92),
+        "concrete": mat("FV_expressway_concrete", (.42, .43, .42), .97),
+        "rail": mat("FV_expressway_rail", (.22, .25, .25), .78, metallic=.18),
+        "white": mat("FV_highway_paint", (.93, .93, .90), .62),
+        "sign": mat("FV_expressway_sign", (.08, .30, .22), .76),
+        "metal": mat("NB_metal", (0.25, 0.27, 0.30), 0.5),
+    }
+    created = []
+
+    # ---- F-1, the Crown Expressway, end to end -------------------------------
+    approach = list(HP.crown_approach_points())
+    created.append(_add_road_strip(
+        world_col, "highway_crown_approach_deck", approach, mats["asphalt"],
+        widths=list(HP.crown_approach_widths(approach)),
+        bottom_offset=-.04, top_offset=HP.DECK_SURFACE))
+    created.extend(_highway_supports(world_col, "highway_crown_approach",
+                                     approach, HP.ARTERIAL_WIDTH + 4.0,
+                                     mats["concrete"], mats))
+    created.extend(_highway_markings(world_col, "highway_crown_approach",
+                                     approach, mats["white"]))
+
+    mainline = [(HP.EXPRESSWAY_X, y, HP.EXPRESSWAY_DECK_Z)
+                for y in _frange(EXPRESSWAY_Y0, EXPRESSWAY_Y1, 3.0)]
+    north = list(HP.north_extension_points())
+    all_ramps = [ramp for entry in HP.interchanges() if entry["route"] == "F-1"
+                 for ramp in entry["ramps"]]
+    all_ramps.extend(ramp for entry in HP.interchanges()
+                     if entry["id"] == "IC-4" for ramp in entry["ramps"])
+    gaps, gores = _ramp_gaps_and_gores(mainline, all_ramps)
+    created.extend(_build_freeway(world_col, "highway_crown_viaduct", mainline,
+                                  mats, gaps, gores))
+    north_gaps, north_gores = _ramp_gaps_and_gores(north, all_ramps)
+    created.extend(_build_freeway(world_col, "highway_crown_north", north, mats,
+                                  north_gaps, north_gores))
+
+    # ---- F-2, the Ring Freeway ----------------------------------------------
+    ring = list(HP.ring_points())
+    ring_ramps = [ramp for entry in HP.interchanges()
+                  if entry["route"] in ("F-2", "F-1 x F-2")
+                  for ramp in entry["ramps"]]
+    ring_gaps, ring_gores = _ramp_gaps_and_gores(ring, ring_ramps)
+    created.extend(_build_freeway(world_col, "highway_ring", ring, mats,
+                                  ring_gaps, ring_gores))
+
+    # ---- collectors, links and interchange cross roads ----------------------
+    for collector in HP.COLLECTORS:
+        created.extend(_build_surface_road(
+            world_col, "highway_collector_" + _slug(collector["name"]),
+            list(HP.collector_points(collector)), collector["width"], mats))
+    for index, (bulb_x, bulb_y) in enumerate(HP.turnarounds()):
+        created.append(add_ngon_cone(
+            world_col, "highway_turnaround_%d" % index, HP.TURNAROUND_RADIUS,
+            HP.TURNAROUND_RADIUS, .23, 20, bulb_x, bulb_y,
+            terrain_height(bulb_x, bulb_y) - .04, mats["asphalt"]))
+
+    for entry in HP.interchanges():
+        cross = entry.get("cross_road")
+        if cross:
+            created.extend(_build_surface_road(
+                world_col, "highway_cross_" + _slug(cross["name"]),
+                list(HP.cross_road_points(cross)), cross["width"], mats))
+        for ramp in entry["ramps"]:
+            created.extend(_build_ramp(world_col,
+                                       "highway_ramp_" + _slug(ramp["name"]),
+                                       list(ramp["points"]), mats))
+
+    # ---- overhead wayfinding at every decision point ------------------------
+    for entry in HP.interchanges():
+        created.extend(_build_gantry(world_col, entry, mats))
+
+    # ---- lighting -----------------------------------------------------------
+    # Named so _build_video_practicals() finds them. The viaduct's own fixtures
+    # were called metro_expressway_light* and matched nothing, which is why the
+    # deck has looked unlit at night with no obvious cause.
+    for index, (x, y, z, arm) in enumerate(HP.mainline_masts() + HP.ring_masts()):
+        lamp = place_instance(world_col, {"type": "highwaymast", "gx": 0, "gy": 0,
+                                          "px": x, "py": y, "pz": z,
+                                          "rot": 0.0 if arm > 0 else math.pi,
+                                          "seed": 61000 + index},
+                              "metro_streetlight_highway_mast")
+        created.append(lamp)
+    for index, (x, y, z) in enumerate(HP.high_masts()):
+        tower = place_instance(world_col, {"type": "highmast", "gx": 0, "gy": 0,
+                                           "px": x, "py": y, "pz": z, "rot": 0.0,
+                                           "seed": 62000 + index},
+                               "metro_streetlight_high_mast")
+        created.append(tower)
+
+    # ---- traffic ------------------------------------------------------------
+    for vehicle in HP.vehicles():
+        created.append(place_instance(world_col, dict(vehicle), "highway_car"))
+
+    for obj in created:
+        if obj is not None:
+            obj["nb_feature_role"] = obj.get("nb_feature_role", "highway")
+    return [obj for obj in created if obj is not None]
+
+
+def _build_gantry(world_col, entry, mats):
+    """Sign gantry over the mainline, one interchange ahead of each exit."""
+    created = []
+    if entry["route"] == "F-2":
+        centre_x, centre_y = HP.RING_X, entry["y"] + 150.0
+        deck = HP.ring_height(centre_x, centre_y)
+        heading = math.pi/2
+    elif entry["id"] == "IC-4":
+        centre_x, centre_y = HP.NORTH_JUNCTION_X - 6.0, HP.NORTH_SPLIT_Y - 120.0
+        deck = HP.mainline_deck_z(centre_y)
+        heading = math.pi/2
+    else:
+        centre_y = entry["y"] + 150.0
+        centre_x = HP.mainline_x(centre_y)
+        deck = HP.mainline_deck_z(centre_y)
+        heading = math.pi/2
+    for side in (-1, 1):
+        post = add_box(world_col, "highway_gantry_post", .34, .34, 5.6,
+                       centre_x - math.sin(heading)*side*(HP.SHOULDER_HALF - 1.2),
+                       centre_y + math.cos(heading)*side*(HP.SHOULDER_HALF - 1.2),
+                       deck + HP.DECK_SURFACE, mats["metal"])
+        created.append(post)
+    beam = add_box(world_col, "highway_gantry_beam", 1.0, HP.FREEWAY_WIDTH - 2.0,
+                   .38, centre_x, centre_y, deck + HP.DECK_SURFACE + 5.55,
+                   mats["metal"])
+    created.append(beam)
+    for side in (-1, 1):
+        panel = add_box(world_col, "highway_gantry_sign", .26, 8.4, 2.5,
+                        centre_x + side*.52,
+                        centre_y + side*(HP.FREEWAY_WIDTH*.25),
+                        deck + HP.DECK_SURFACE + 2.85, mats["sign"])
+        created.append(panel)
+    return created
+
+
+def _frange(start, end, step):
+    count = max(1, int(math.ceil((end-start)/step)))
+    return [start + (end-start)*index/count for index in range(count+1)]
+
+
+def _slug(text):
+    return "".join(character if character.isalnum() else "_"
+                   for character in text.lower())
+
+
+def build_highway_mast(col, _seed=0):
+    """A 11.5m freeway lighting mast: a real pole, not a street lamp on a deck."""
+    m = std_mats()
+    add_ngon_cone(col, "mast", .22, .13, HP.MAST_HEIGHT, 8, 0, 0, 0, m["metal"])
+    add_box(col, "mast_arm", 2.6, .17, .17, 1.30, 0, HP.MAST_HEIGHT - .30, m["metal"])
+    add_box(col, "mast_brace", 1.5, .12, .12, .80, 0, HP.MAST_HEIGHT - 1.15,
+            m["metal"])
+    head = add_box(col, "mast_head", 1.05, .52, .22, 2.42, 0,
+                   HP.MAST_HEIGHT - .58,
+                   mat("FV_expressway_light_warm", (.96, .73, .38), .42,
+                       metallic=.04))
+    return head
+
+
+def build_high_mast(col, _seed=0):
+    """A 20m interchange high-mast tower with a ring of eight heads."""
+    m = std_mats()
+    warm = mat("FV_expressway_light_warm", (.96, .73, .38), .42, metallic=.04)
+    add_ngon_cone(col, "tower", .62, .30, HP.HIGH_MAST_HEIGHT, 8, 0, 0, 0,
+                  m["metal"])
+    add_ngon_cone(col, "tower_base", 1.15, .95, 1.10, 8, 0, 0, 0, m["cap"])
+    add_ngon_cone(col, "tower_crown", 1.95, 1.60, .40, 8, 0, 0,
+                  HP.HIGH_MAST_HEIGHT - .30, m["metal"])
+    for index in range(8):
+        angle = math.tau*index/8
+        head = add_box(col, "tower_head", .66, .40, .26,
+                       math.cos(angle)*1.62, math.sin(angle)*1.62,
+                       HP.HIGH_MAST_HEIGHT - .74, warm)
+        head.rotation_euler = (0, 0, angle)
 
 
 def build_river_chapter(world_col, buildings, m):
@@ -16196,6 +16674,8 @@ def main(cfg=None):
     river_objects = build_river_chapter(world_col, keep or state["buildings"], m)
     metro_objects = build_metropolitan_district(
         world_col, keep or state["buildings"], m)
+    highway_objects = build_highway_system(
+        world_col, keep or state["buildings"], m)
     build_hillside_foundations(world_col, keep or state["buildings"])
     build_storybook_street(world_col, keep or state["buildings"])
     # Isolated, state-free public-realm layer. The module owns no houses,
@@ -16756,11 +17236,22 @@ def main(cfg=None):
         first_metro_day = any(int(e.get("nb_world_metro_id", 0)) == 1
                               for e in tower_roots)
         if first_metro_day:
-            ribbon_prefixes = ("metro_road_", "metro_expressway_structure",
-                               "metro_expressway_deck", "metro_interchange_ramp_")
-            ribbons = [obj for obj in metro_objects
-                       if obj.name.startswith(ribbon_prefixes)]
-            trim = [obj for obj in metro_objects if obj not in ribbons]
+            # The expressway used to be built inside the metropolitan district,
+            # so its deck, structure and ramps were in metro_objects and
+            # matched here by name. They live in build_highway_system() now,
+            # and the whole highway network builds on with the streets: without
+            # this the prefixes below would match nothing and 4.4km of freeway
+            # would appear in a single frame.
+            ribbon_prefixes = ("metro_road_", "highway_")
+            # Everything under highway_ that is furniture rather than roadway:
+            # animate_road_build sweeps a ribbon along its length, which is the
+            # wrong verb for a parked car or a lighting mast.
+            not_roadway = ("highway_car", "highway_gantry", "highway_turnaround")
+            candidates = list(metro_objects) + list(highway_objects)
+            ribbons = [obj for obj in candidates
+                       if obj.name.startswith(ribbon_prefixes)
+                       and not obj.name.startswith(not_roadway)]
+            trim = [obj for obj in candidates if obj not in ribbons]
             for index, obj in enumerate(ribbons):
                 animate_road_build(obj, 285 + min(index, 10)*4, dur=112)
             for index, obj in enumerate(trim):

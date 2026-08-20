@@ -79,21 +79,54 @@ paved podium forecourt replaces it.
 
 ## Crown Expressway
 
-The expressway is a 24m-wide, six-lane elevated regional road centered at
-x=222m. It runs from y=250 through y=858 and continues beyond the district in
-both directions visually; it does not terminate at the towers.
+**Superseded 2026-08-20. The expressway is now one route in a city-wide
+highway system; `HIGHWAY_PLAN.md` is the authority and `highway_plan.py` is the
+data. What follows describes what is actually built.**
 
-- Paired concrete piers at roughly 38m spacing.
-- Three lanes each direction, median barrier, outside barriers and shoulders.
-- A grade-separated diamond interchange at Crown Boulevard, y=654m.
-- Four authored, grade-limited ramps.
-- Crown Boulevard passes under the viaduct with useful clearance and continues
-  to both ramp terminals.
-- Overhead gantries and signs establish regional scale.
+The section this chapter created is unchanged in position and height: a
+24m-wide, six-lane elevated deck centered at x=222m, z=14.0, from y=250 to
+y=858, on paired concrete piers, with three lanes each direction, a median
+barrier, outside barriers and shoulders, overhead gantries, and a
+grade-separated diamond interchange at Crown Boulevard (y=654) whose terminals
+are still at x=186 and x=258 with the boulevard running on to x=278 to reach
+them.
 
-The expressway, ramps and local streets are included in the browser walk
-surface manifest and world-geometry audit. Raised road regions and authored
-elevations are declared in `world_layout.py`.
+Everything else about it changed, because the paragraph this replaces claimed
+the road "continues beyond the district in both directions visually; it does
+not terminate at the towers", and it did terminate — in mid-air, at both ends.
+
+- **It no longer stops at either end.** South of y=250 the deck comes down at
+  6.04% as the Crown Approach and ends at a T-junction with the Kaleidoscope
+  Crest access road at (112, 56). North of y=858 it descends at 5.0%, reaches
+  the ground at y=1082, bends east to x=300 and ends at a trumpet interchange
+  with the Ring Freeway at (300, 1214).
+- **Four interchanges, not one:** Northgate (y=396), Crown Boulevard (y=654),
+  Crown Fields (y=920) and the Ring system interchange.
+- **The four original ramps were rebuilt.** Their names were inverted relative
+  to their geometry — the ramp called "southbound-off" sits in the south-west
+  quadrant, which is the southbound *entrance* — they diverged from
+  mid-carriageway rather than the shoulder, they had no tapers, and they passed
+  beneath an outside barrier that ran unbroken for all 608m. All four now leave
+  and rejoin at the shoulder with tapers, gore striping and real barrier
+  openings, and the worst ramp grade in the whole system is 7.40% against the
+  11.9% of the originals.
+- **The deck lighting was replaced.** The old `metro_expressway_light*` boxes
+  matched none of the names `_build_video_practicals()` looks for, so the
+  viaduct cast no light pools at night. Lighting is now placed through
+  `place_instance` under names containing `metro_streetlight`.
+- **`metropolitan_plan.RAMPS` is no longer built, walked or audited.**
+  `ramp_plan()` is retained as the record of the original geometry;
+  `highway_plan.interchanges()` supplies the ramps that exist.
+- Six built streets (Northgate Avenue, Foundry Street, Lantern Row, Southline
+  Avenue, Millrace Street and Kettle Row) dead-ended at x=210, 0.9m inside the
+  viaduct's structure. East Line Road, a new 10m collector at x=204, now
+  collects all six.
+
+The expressway, its ramps, the rest of the highway network and the local
+streets are all in the browser walk surface manifest and the world-geometry
+audit. Raised road regions and authored elevations for the highway system are
+derived from the alignments in `highway_plan.py` and merged into the
+declarations by `check_world_geometry.py`.
 
 ## Tower design system
 

@@ -49,6 +49,19 @@ from world_layout import (AUTHORED_ELEVATION_ROADS, CITY_HALL_APPROACH,
                           weather_station_access_points,
                           transform_building_point, transform_point,
                           walk_surface_manifest)
+import highway_plan
+
+# world_layout cannot import highway_plan -- highway_plan reaches
+# downtown_visual_plan, which reaches neighborhood_plan, which imports
+# DISTRICT_OFFSETS straight back out of world_layout. So the highway system's
+# raised sections and authored-elevation names are merged here, where
+# world_layout has already finished loading. There is still exactly one source
+# for them: highway_plan derives both from the alignments themselves, so a ramp
+# that moves takes its declarations with it.
+INTENTIONALLY_RAISED_ROADS = (list(INTENTIONALLY_RAISED_ROADS)
+                              + list(highway_plan.raised_road_regions()))
+AUTHORED_ELEVATION_ROADS = (set(AUTHORED_ELEVATION_ROADS)
+                            | set(highway_plan.authored_elevation_roads()))
 
 LOT, BLOCK_N, ROAD = 13, 3, 6
 PITCH = BLOCK_N * LOT + ROAD
@@ -184,15 +197,18 @@ def every_road(state):
         roads.append(("North Crown campus access",
                       list(NORTH_CROWN_CAMPUS_ACCESS)))
     if any(b.get("type") == "metrotower" for b in buildings):
-        from metropolitan_plan import STREETS, RAMPS, expressway_points
+        from metropolitan_plan import STREETS, expressway_points
+        import highway_plan
         for street in STREETS:
             roads.append(("Crown Quarter " + street["name"],
                           list(street["points"])))
         roads.append(("Crown Expressway",
                       [(x, y) for x, y, _z in expressway_points()]))
-        for ramp in RAMPS:
-            roads.append(("Crown interchange ramps",
-                          [(x, y) for x, y, _z in ramp["points"]]))
+        # metropolitan_plan.RAMPS is deliberately not audited any more:
+        # highway_plan rebuilt those four ramps with real tapers and shoulder
+        # gores, and auditing both sets would be checking geometry that is no
+        # longer built. The replacements come back in audited_roads().
+        roads.extend(highway_plan.audited_roads())
     return roads
 
 

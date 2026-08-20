@@ -9299,6 +9299,24 @@ Promise.all([fetch("world_state.json").then(r=>r.json()),localWalkSurfacePromise
             gameRunning=false;
             camera.position.set(eye[0],eye[1],eye[2]);
             if(look.length>=3)camera.lookAt(look[0],look[1],look[2]);
+            // The walking camera's 500m far clip is right for a person on a
+            // street and wrong for auditing anything longer than a district.
+            // A corridor shot of the highway system is 1.5km end to end, and
+            // at 500m it renders as an empty sky. ?far= raises it for this
+            // parked camera only -- localAuditView is null unless ?local=1 is
+            // set, so the public viewer can never reach this line.
+            const far=Number(pageParams.get("far")||0);
+            if(Number.isFinite(far)&&far>camera.far){
+              camera.far=far;
+              // The fog is tuned to the walking clip and saturates at 390m, so
+              // raising the clip on its own just reveals 2km of flat haze.
+              // Push it out with the clip, keeping the same proportions.
+              if(scene.fog){
+                const scale=far/500;
+                scene.fog.near*=scale;
+                scene.fog.far*=scale;
+              }
+            }
             camera.updateProjectionMatrix();
           }else if(at.length>=2){
             const [ax,az]=at;

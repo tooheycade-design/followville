@@ -490,6 +490,13 @@ DEFAULT_MAX_PAD_STAND = 1.6
 
 # Road decks that are meant to be off the ground, and why. Rectangles in world
 # coordinates, as (name, x0, x1, y0, y1).
+#
+# The highway system's own raised sections are NOT listed here. They are
+# derived from the alignments in highway_plan, and this module cannot import
+# that one: highway_plan reaches downtown_visual_plan, which reaches
+# neighborhood_plan, which imports DISTRICT_OFFSETS straight back out of here.
+# check_world_geometry merges the two lists instead -- see
+# highway_plan.raised_road_regions().
 INTENTIONALLY_RAISED_ROADS = [
     ("Founders Crossing bridge deck", 275.0, 415.0, -230.0, -195.0),
     ("rafting launch boardwalk", 332.0, 360.0, -34.0, -26.0),
@@ -500,7 +507,9 @@ INTENTIONALLY_RAISED_ROADS = [
     # keep 0.90m of daylight over it.
     ("Timber Bend Crossing deck", 332.0, 400.0, 137.0, 147.0),
     ("Crown Expressway viaduct", 208.0, 236.0, 250.0, 858.0),
-    ("Crown interchange ramps", 183.0, 261.0, 580.0, 730.0),
+    # The old "Crown interchange ramps" rectangle (183..261 x 580..730) is
+    # gone: highway_plan rebuilt those four ramps with real tapers and shoulder
+    # gores, and its own declaration covers the replacements.
 ]
 
 # Water surfaces that must be level, with how far their rim may fall across
@@ -535,8 +544,9 @@ LANDMARK_APPROACHES = {
 # Roads that carry their own authored heights rather than following the
 # terrain. These are allowed inside KEEP_OUT_REGIONS, because climbing onto
 # the raised ground is the whole point of them.
-AUTHORED_ELEVATION_ROADS = {"Kaleidoscope Crest access",
-                            "Crown Expressway", "Crown interchange ramps"}
+# As above, the highway system's own names are merged in by
+# check_world_geometry from highway_plan.authored_elevation_roads().
+AUTHORED_ELEVATION_ROADS = {"Kaleidoscope Crest access", "Crown Expressway"}
 
 
 def rafting_access_points(step=3.0):
@@ -779,7 +789,6 @@ def walk_surface_manifest(state):
     if any(building.get("type") == "metrotower"
            for building in state.get("buildings", [])):
         from metropolitan_plan import (STREETS as METRO_STREETS,
-                                       RAMPS as METRO_RAMPS,
                                        TERRACE_DATUM as METRO_DATUM,
                                        EXPRESSWAY_WIDTH,
                                        expressway_points)
@@ -790,9 +799,23 @@ def walk_surface_manifest(state):
         append_graded_road(
             [(x, y, z + .18) for x, y, z in expressway_points()],
             EXPRESSWAY_WIDTH / 2.0)
-        for ramp in METRO_RAMPS:
-            append_graded_road(
-                [(x, y, z + .14) for x, y, z in ramp["points"]], 2.7)
+        # The rest of the highway system: the Crown Approach, the northern
+        # extension, the Ring Freeway, every collector, cross road and ramp.
+        # metropolitan_plan.RAMPS is no longer walked here -- highway_plan
+        # rebuilt those four, and walking both would put two surfaces at the
+        # same place with different heights.
+        #
+        # Imported inside the function, not at module scope: by the time
+        # anything calls this the cycle through neighborhood_plan has long
+        # since resolved, but at import time it has not.
+        import highway_plan
+        for name, points, half_width in highway_plan.named_roads():
+            append_graded_road([(x, y, z + .18) for x, y, z in points],
+                               half_width)
+        for bulb_x, bulb_y in highway_plan.turnarounds():
+            bulbs.append([stable_height(bulb_x), stable_height(-bulb_y),
+                          stable_height(terrain_height(bulb_x, bulb_y)),
+                          highway_plan.TURNAROUND_RADIUS])
 
     # Point Road and the station trail appear with the station they serve.
     if any(building.get("type") == "nuclearplant"
