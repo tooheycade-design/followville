@@ -32,6 +32,36 @@ FISHING_POND_SHELF = (27.0, 58.0, 1.4)
 # water reads as flush with the meadow rather than held inside a channel.
 RIVER_BANK_FREEBOARD = 0.45
 
+# Followville High's campus platform.  The high school stands on the block
+# immediately south of the elementary school, across the y=-93 street, and
+# Cade asked for the ground there to be flattened to suit -- so this carries
+# the downtown datum south out of the grid instead of perching a level campus
+# on a hillside.  The core is exactly the campus rectangle declared as
+# world_layout.LANDMARK_FOOTPRINTS["highschool"].
+#
+# North of y=-113 the downtown platform is already flat, so this cuts nothing
+# there and the campus meets the town's south street with no step at all.
+# South and west it removes up to 8m of the slope climbing toward the
+# (-235, -155) landform.
+#
+# It is a min() cap, like the downtown platform's own edge ramp above, and NOT
+# a lerp toward a datum like the Food Court or the West Quarter.  That is the
+# whole safety property: a cap can only ever LOWER ground, so no feather of it
+# can push the meadow up through a standing house, and ground already below
+# the ramp is left exactly as it was.
+#
+# HIGH_SCHOOL_BANK_RUN is metres of run per metre of rise -- 3.5 is a 28.6%
+# grass bank.  That is steep on purpose, and it is the steepest the site
+# allows in both directions:
+#   * shallower moves the world.  Meadow Run road 363 sits 5.28m up and 20.8m
+#     out from the core's south-west corner, which needs 3.94 or steeper
+#     before its ground starts to drop, and existing geometry never moves.
+#   * steeper buys nothing.  Nothing outside the core is closer than that.
+# Verified over all 2,550 standing buildings and every revealed road
+# centreline: the largest ground change is 0.000m.
+HIGH_SCHOOL_PAD = (-101.0, -37.0, -212.0, -100.0)
+HIGH_SCHOOL_BANK_RUN = 3.5
+
 
 def mounted_face_center(face, outward, thickness, visible_clearance):
     """Mount a detail across a support plane without sharing its visible face."""
@@ -144,6 +174,17 @@ def terrain_height(x, y):
     # This preserves the established distant terrain while guaranteeing that
     # the new rectangular platform cannot create a steep lip at its corners.
     height = min(height, downtown_edge_distance * .09)
+
+    # Followville High's campus, cut out of the hillside immediately south of
+    # the grid.  Same shape of operation as the platform edge above -- a cap,
+    # never a lift -- and deliberately placed with it: everything below this
+    # line either multiplies the height down (the ring, Crest and pond masks)
+    # or lerps toward a datum whose weight is zero this far west and south, so
+    # nothing downstream can raise the campus back out of its own cut.
+    campus_x0, campus_x1, campus_y0, campus_y1 = HIGH_SCHOOL_PAD
+    campus_distance = math.hypot(max(0.0, campus_x0 - x, x - campus_x1),
+                                 max(0.0, campus_y0 - y, y - campus_y1))
+    height = min(height, campus_distance / HIGH_SCHOOL_BANK_RUN)
 
     # Preserve the established ring district and its connector at grade zero.
     ring_distance = math.hypot((x-169.0)/1.25, (y+3.0)/.85)

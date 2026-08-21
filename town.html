@@ -4478,6 +4478,13 @@ const FISHING_POND_SHELF = [27, 58, 1.4];
 // bank must stand above its own water before the water reads as flush with
 // the meadow rather than held inside a channel.
 const RIVER_BANK_FREEBOARD = 0.45;
+/* Mirrors downtown_visual_plan.HIGH_SCHOOL_PAD / HIGH_SCHOOL_BANK_RUN -- the
+   level platform Followville High's campus stands on, cut out of the hillside
+   on the block immediately south of the elementary school. The pad rectangle
+   is the same one declared as world_layout.LANDMARK_FOOTPRINTS["highschool"],
+   in Blender coordinates (x0, x1, y0, y1). */
+const HIGH_SCHOOL_PAD = [-101, -37, -212, -100];
+const HIGH_SCHOOL_BANK_RUN = 3.5;
 
 function redesignGaussian(x,z,cx,cz,sx,sz,height){
   return height*Math.exp(-.5*(Math.pow((x-cx)/sx,2)+Math.pow((z-cz)/sz,2)));
@@ -4531,6 +4538,17 @@ function regionalTerrainHeight(x,z){
   const downtownDistance=Math.hypot((x+3)/1.05,(y+5));
   height*=redesignSmoothstep(88,155,downtownDistance);
   height=Math.min(height,Math.hypot(downtownDx,downtownDy)*.09);
+  // Followville High's campus platform -- faithful port of
+  // downtown_visual_plan.terrain_height's HIGH_SCHOOL_PAD cut, and it has to
+  // stay in lockstep with it. A min() cap, like the platform edge above and
+  // unlike the lerp-to-a-datum shelves below: it can only ever lower ground,
+  // so nothing standing outside the campus can be lifted by it. The run is
+  // 3.5m per metre of rise -- a 28.6% bank, the steepest the neighbouring
+  // Meadow Run road allows before its own ground would start to move.
+  const campusDistance=Math.hypot(
+    Math.max(0,HIGH_SCHOOL_PAD[0]-x,x-HIGH_SCHOOL_PAD[1]),
+    Math.max(0,HIGH_SCHOOL_PAD[2]-y,y-HIGH_SCHOOL_PAD[3]));
+  height=Math.min(height,campusDistance/HIGH_SCHOOL_BANK_RUN);
   const ringDistance=Math.hypot((x-169)/1.25,(y+3)/.85);
   height*=redesignSmoothstep(78,112,ringDistance);
   const storyDistance=Math.hypot((x-305)/1.15,(y-60)/.9);
@@ -5047,7 +5065,8 @@ function addLandmarkColliders(root){
   const configured=new Set();
   for(const building of worldBuildings){
     if(!["burjhouse","followmart","firestation","cityhall","constructionzone",
-         "movietheater","raftingstation","weatherstation","salmonproshop","apartmentcomplex"].includes(building.type))continue;
+         "movietheater","raftingstation","weatherstation","salmonproshop","apartmentcomplex",
+         "highschool"].includes(building.type))continue;
     configured.add(building.type);
     const visual=landmarkRoot(root,building);
     if(!visual)continue;
@@ -5074,6 +5093,24 @@ function addLandmarkColliders(root){
     }else if(building.type==="constructionzone"){
       colliders.push(rootLocalBoxCollider(visual,0,0,16.2,16.2,
                                           "landmark-construction-zone"));
+    }else if(building.type==="highschool"){
+      // The three buildings, the bank of bleachers, the field house and the
+      // monument sign. Everything else on the campus -- quad, drive, running
+      // track, the field itself -- is meant to be walked across, and the
+      // campus walk pad in world_layout.py is what carries the player over it.
+      // Local coordinates are the asset's own, with three z = -blender y.
+      colliders.push(rootLocalBoxCollider(visual,-20,-34,11.7,9.7,
+                                          "landmark-highschool-hall"));
+      colliders.push(rootLocalBoxCollider(visual,2,-33.5,7.6,9.1,
+                                          "landmark-highschool-wing"));
+      colliders.push(rootLocalBoxCollider(visual,21.5,-34.5,9.15,10.15,
+                                          "landmark-highschool-gym"));
+      colliders.push(rootLocalBoxCollider(visual,-26.85,17,4.45,21.0,
+                                          "landmark-highschool-stand"));
+      colliders.push(rootLocalBoxCollider(visual,-25,48.4,5.6,5.1,
+                                          "landmark-highschool-field-house"));
+      colliders.push(rootLocalBoxCollider(visual,-22,-52.4,4.3,.95,
+                                          "landmark-highschool-sign"));
     }else if(building.type==="raftingstation"){
       colliders.push(rootLocalBoxCollider(visual,-1.6,0,6.35,4.35,
                                           "landmark-rafting-lodge"));
@@ -5111,6 +5148,7 @@ function addLandmarkColliders(root){
   if(worldBuildings.some(b=>b.type==="weatherstation"))expected.push("weatherstation");
   if(worldBuildings.some(b=>b.type==="salmonproshop"))expected.push("salmonproshop");
   if(worldBuildings.some(b=>b.type==="apartmentcomplex"))expected.push("apartmentcomplex");
+  if(worldBuildings.some(b=>b.type==="highschool"))expected.push("highschool");
   document.body.dataset.landmarkHitboxes=expected.every(type=>configured.has(type))?"pass":"partial";
   document.body.dataset.landmarkHitboxesMapped=[...mapped].sort().join(",");
 }
@@ -6451,7 +6489,8 @@ function frontDirsFor(b){
    claims feed as the 3D name tags. A normal growth/export therefore updates
    the map without a second map file or any hand-maintained coordinates. */
 const MAP_LANDMARK_NAMES = {
-  elementaryschool:"Followville Elementary", firestation:"Followville Fire & Rescue",
+  elementaryschool:"Followville Elementary", highschool:"Followville High School",
+  firestation:"Followville Fire & Rescue",
   constructionzone:"What Should Rise Next?", movietheater:"Followville Cinema",
   forestreserve:"East Woods",
   cityhall:"Followville City Hall", civicsquare:"Civic Square",
@@ -6969,6 +7008,9 @@ function rebuildTownMap3D(){
     }else if(item.building.type==="weatherstation"){
       geometry=new THREE.BoxGeometry(16,7,10);
       material=new THREE.MeshStandardMaterial({color:0x173653,roughness:.64,metalness:.08});
+    }else if(item.building.type==="highschool"){
+      geometry=new THREE.BoxGeometry(64,7.5,112);
+      material=new THREE.MeshStandardMaterial({color:0x8c4034,roughness:.78});
     }else{
       geometry=new THREE.BoxGeometry(item.building.type==="elementaryschool"?13:8,4.8,item.building.type==="elementaryschool"?9:7);
       material=new THREE.MeshStandardMaterial({color:0xe0ad43,roughness:.72});

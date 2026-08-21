@@ -54,6 +54,7 @@ def _chunk_id_for_building(building):
         "cityhallroad": "civic-center",
         "civicsquare": "civic-center",
         "elementaryschool": "elementary-school",
+        "highschool": "high-school",
         "constructionzone": "construction-zone",
         "movietheater": "movie-theater",
         "firestation": "fire-station",
@@ -394,6 +395,7 @@ def export_web_glb():
                  "Fire Station" if chunk_id == "fire-station" else
                  "Fishing Pond" if chunk_id == "fishing-pond" else
                  "River Run Outfitters" if chunk_id == "rafting-station" else
+                 "Followville High" if chunk_id == "high-school" else
                  "Elementary School" if chunk_id == "elementary-school" else
                  "Construction Vote Site" if chunk_id == "construction-zone" else
                  "Followville Cinema" if chunk_id == "movie-theater" else

@@ -184,6 +184,9 @@ def every_road(state):
                       [(x, y) for x, y, _z in weather_station_access_points()]))
     if "salmonproshop" in present:
         roads.append(("Salmon Pro Shop approach", list(SALMON_SHOP_APPROACH)))
+    if "highschool" in present:
+        from world_layout import HIGH_SCHOOL_APPROACH
+        roads.append(("Followville High approach", list(HIGH_SCHOOL_APPROACH)))
     if any(b.get("district") == "Timber Bend" for b in buildings):
         roads.append(("Timber Bend Crossing",
                       [(x, y) for x, y, _z in timber_crossing_points()]))

@@ -210,6 +210,15 @@ curl -s "https://api.github.com/repos/tooheycade-design/followville/commits/main
 curl -s "https://api.github.com/repos/tooheycade-design/followville/check-runs/<id>/annotations" | jq -r '.[] | select(.annotation_level=="notice") | .message'
 ```
 
+`check_high_school_assets.py` needs Blender too, and it is the standalone
+geometry check the visible-surface depth rule below asks for. Neither audit
+above can see a coplanar face — they measure where things stand, not whether
+two faces are fighting for the same depth — and Followville High is almost
+entirely stacked flat slabs. It reports a shared plane only when the face is
+actually seen: it samples just outside it and asks whether any other solid
+encloses that point, and it only compares bounding planes a real polygon lies
+in. It caught nine defects that reviewing renders had passed.
+
 `check_food_assets.py` needs Blender, because the only honest answer comes from
 building the assets. The Food Court's homes are the one district made of loose
 primitives rather than the shared suburban shell, so it builds all ten designs
@@ -370,6 +379,16 @@ else about the roads.
 Milestones auto-build at population 500 (fountain plaza — suppressed while the
 houses-only reserve runs), 2,000 (skyscraper), 10,000 (stadium).
 
+**Followville High** (`--highschool`) is one record on the block immediately
+south of the elementary school, and the only landmark whose ground had to be
+cut for it: `downtown_visual_plan.HIGH_SCHOOL_PAD` carries the downtown datum
+south, and `town.html`'s port of it must change in lockstep. The site is not a
+preference — nothing in Followville seats a full-size 400m track within 270m of
+the elementary school, so the campus is 64x112 and the track is scaled to fit.
+**Read `HIGH_SCHOOL.md` before moving, resizing or regrading any of it**; the
+survey behind every number is in there, including why the bank is 28.6% and why
+a wider oval would hold a *smaller* football field.
+
 ---
 
 ## Web viewer
@@ -515,6 +534,7 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `west_quarter_plan.py` | Chapter four: 1,000 homes + 22 empty parcels, west. |
 | `north_reach_plan.py` | Chapter five: 1,000 homes + 23 empty parcels, north. |
 | `NUCLEAR_STATION.md` | The nuclear plant, its roads, and the temporary interior set. |
+| `HIGH_SCHOOL.md` | **Followville High.** Why the campus is where and what size it is, and the survey behind its levelled platform. |
 | `metropolitan_plan.py` | The post-Northgate 20-tower / 2,000-follower reserve. |
 | `highway_plan.py` | **The highway system.** Every freeway, ramp, collector, vehicle and light, as data. Self-validates grades, clearances, termini and shape. |
 | `world_layout.py` | District offsets, authored roads, audit declarations. |
@@ -522,6 +542,7 @@ in **`FOLLOWVILLE_STORIES.md`**; read it before producing one.
 | `check_town_glb.py` | Export completeness and state consistency. |
 | `check_world_geometry.py` | Is anything off the ground, on a road, in the street. |
 | `check_food_assets.py` | Are the ten Food Court home designs sound (needs Blender). |
+| `check_high_school_assets.py` | Does Followville High's campus put two visible faces on one plane (needs Blender). |
 | `check_metropolitan_assets.py` | Are all twenty tower assets inside their parcels (needs Blender). |
 | `assets/asset_sources.json` | Approved third-party asset provenance and licenses. |
 | `assets/asset_library_manifest.json` | Generated hashes and geometry stats for the review library. |
@@ -547,6 +568,8 @@ panel or `profiles.inventory` — note the fish IDs are permanent and the
 `ASSET_PIPELINE.md` (read before downloading, importing or promoting assets), `DOWNTOWN_TERRAIN_HANDOFF.md`
 (read before changing downtown or terrain), `FOLLOWVILLE_STORIES.md` (read
 before writing, storyboarding or producing a Story video),
+`HIGH_SCHOOL.md` (read before moving, resizing or regrading Followville
+High, or its levelled platform),
 `HIGHWAY_PLAN.md` (read before touching any freeway, ramp, interchange
 or collector -- it carries the measurement behind every alignment,
 including the two the geometry could not have),

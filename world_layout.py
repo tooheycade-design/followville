@@ -44,6 +44,26 @@ SALMON_SHOP_APPROACH = [(-101.0, -88.0), (-99.0, -78.0), (-102.0, -70.0),
 # meets the lot surface flush instead of stepping into its edge.
 SALMON_SHOP_ENTRY_RAMP = 30.0
 
+# Followville High's entrance loop, off the town's own southern street.
+#
+# The campus is the block immediately south of the elementary school, so it
+# needs no approach road in the usual sense -- the grid already runs along
+# y=-93, three metres from its northern edge. This is the drop-off loop
+# itself: in at x=-83, along the front of the school, and back out at x=-55.
+# It is declared here so check_world_geometry can see it like any other road,
+# and so LANDMARK_APPROACHES can tell it apart from a street the campus is
+# accidentally sitting on.
+#
+# It is deliberately NOT in the walk-surface manifest as a road. Its asphalt
+# is part of the campus deck, 31cm up, and a road deck that far above the
+# terrain is exactly what check_roads_sit_on_the_ground exists to catch. The
+# campus pad below covers the whole platform, loop included.
+HIGH_SCHOOL_APPROACH = [(-83.0, -93.0), (-83.0, -106.5),
+                        (-55.0, -106.5), (-55.0, -93.0)]
+# The campus deck the browser stands the player on. Must stay in lockstep with
+# neighborhood_blender's HS_WALK_Z + the quad's thickness.
+HIGH_SCHOOL_DECK_TOP = 0.28
+
 # Authored roads that are not in the suburban plan. They live here so that
 # check_world_geometry.py can see every road in the town; a checker that only
 # knows about half the roads will happily approve a building sitting on one of
@@ -408,6 +428,12 @@ LANDMARK_FOOTPRINTS = {
     "pond":             (-6.20,  6.20,  -6.20,  6.20, False),
     "park":            (-12.25, 12.25, -12.25, 12.25, False),
     "elementaryschool": (-14.20, 14.20, -14.20, 14.20, False),
+    # Followville High. The whole campus -- three buildings, the drop-off, the
+    # car park and the stadium -- is one record and one rectangle, and this is
+    # also the core of the levelled platform in
+    # downtown_visual_plan.HIGH_SCHOOL_PAD, so the two cannot drift apart
+    # without the ground appearing from under the running track.
+    "highschool":      (-32.00, 32.00, -56.00, 56.00, False),
     "followmart":      (-17.00, 17.00, -17.00, 17.00, False),
     "firestation":     (-18.00, 18.00, -18.00, 18.00, False),
     # Crown Quarter podium slab; the tower mass stays inside this envelope.
@@ -536,6 +562,7 @@ LANDMARK_APPROACHES = {
     "salmonproshop": {"Salmon Pro Shop approach"},
     "apartmentcomplex": {"Followville Commons approach"},
     "weatherstation": {"First Alert Weather access"},
+    "highschool": {"Followville High approach"},
     # The trail exists to reach the gate, and Point Road runs along the site's
     # eastern fence on its way north to the overlook.
     "nuclearplant": {"Station Trail", "Point Road"},
@@ -827,6 +854,19 @@ def walk_surface_manifest(state):
             [(x, y, terrain_height(x, y) + .06) for x, y in station_trail_points()],
             NUCLEAR_TRAIL_HALF_WIDTH)
 
+    high_school = next((building for building in state.get("buildings", [])
+                        if building.get("type") == "highschool"), None)
+    if high_school:
+        x, y = transform_building_point(high_school)
+        # One pad for the whole campus platform. Half-extents are the declared
+        # footprint; the top is the quad paving, which is the highest surface
+        # anyone walks on and within 6cm of the lawn, the drive and the track.
+        # The ground under it is the level HIGH_SCHOOL_PAD shelf, so the deck
+        # stands a uniform 28cm proud -- a kerb, not a terrace.
+        pads.append([
+            stable_height(x), stable_height(-y),
+            stable_height(HIGH_SCHOOL_DECK_TOP), 32.0, 56.0, "high-school-campus",
+        ])
     salmon_shop = next((building for building in state.get("buildings", [])
                         if building.get("type") == "salmonproshop"), None)
     if salmon_shop:

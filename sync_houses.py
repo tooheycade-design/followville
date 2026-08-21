@@ -37,7 +37,8 @@ import urllib.error
 # 2026-07-09) is claimable. Flip any row later with:
 #   update houses set claimable = true/false where id = <seed>;
 NON_CLAIMABLE_TYPES = {"pond", "park", "parkdistrict", "lanestreet", "plaza", "streetlight", "car",
-                       "elementaryschool", "followmart", "coffeetruck", "firestation",
+                       "elementaryschool", "highschool",
+                       "followmart", "coffeetruck", "firestation",
                        "cityhallroad", "cityhall",
                        "civicsquare", "fishingpond", "raftingstation",
                        "weatherstation",

@@ -172,6 +172,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day35store  24-second continuous town/homes/Salmon Pro Shop reveal
 #   --cam day36reveal 16-second held skyline, fast transfer, 13 Heron Reach rises
 #   --salmonproshop  add the permanent Salmon Pro Shop west of downtown
+#   --highschool     add Followville High -- three buildings and the stadium,
+#                     on the block south of the elementary school
 #   --commons        add Followville Commons, the permanent apartment complex
 #   --northcrowncampus add North Crown's permanent planned apartment campus
 #                     with four finished blocks and sixteen grass parcels
@@ -258,6 +260,7 @@ def _cli():
              "--eastwoods": "eastwoods",
              "--raftingstation": "raftingstation",
              "--salmonproshop": "salmonproshop",
+             "--highschool": "highschool",
              "--commons": "apartmentcomplex",
              "--northcrowncampus": "northcrowncampus",
              "--gasstation": "gasstation",
@@ -311,6 +314,13 @@ RAFTING_STATION_Y = -30.0
 # genuinely retained platform rather than a slab resting on a slope.
 SALMON_SHOP_X = -128.0
 SALMON_SHOP_Y = -36.0
+
+# Followville High. The block immediately south of the elementary school,
+# across the town's own y=-93 street. The anchor is the centre of the campus
+# rectangle declared in world_layout.LANDMARK_FOOTPRINTS["highschool"] and cut
+# level by downtown_visual_plan.HIGH_SCHOOL_PAD; all three must agree.
+HIGH_SCHOOL_X = -69.0
+HIGH_SCHOOL_Y = -156.0
 
 # Followville Commons. Sited by scanning the meadow for the largest clear,
 # level ground within reach of the civic district: 60m clear in every
@@ -3616,6 +3626,851 @@ def build_elementary_school(col, seed):
         for y in (-12.25, -10.15):
             add_box(col, "school_bus_wheel", .75, .32, .75, x, y, .34, dark)
     add_box(col, "school_bus_stop_arm", .12, .95, .95, 7.7, -12.65, 1.25, red)
+
+
+
+# ── Followville High School ─────────────────────────────────────────────────
+# The campus stands on the block immediately south of Followville Elementary,
+# across the y=-93 street, on the level platform cut for it in
+# downtown_visual_plan.HIGH_SCHOOL_PAD.  Local origin is the anchor stored in
+# world_state (-69, -156); the declared footprint in
+# world_layout.LANDMARK_FOOTPRINTS is x +/-32, y +/-56, and every piece of
+# geometry below stays inside it.
+#
+# North (+Y) faces the town, so the drive, drop-off and car park go there.
+# The three buildings stand in a row across the middle with their entrances on
+# -Y -- both the campus convention (place_instance leaves civic assets
+# unrotated so their doors face local -Y) and the side the town's cameras look
+# at.  The stadium fills the southern two thirds.
+CAMPUS_HALF_X = 32.0
+CAMPUS_HALF_Y = 56.0
+# Every horizontal layer gets its own elevation.  Two hardscape surfaces that
+# share a plane z-fight in the browser -- the standing rule in CLAUDE.md -- so
+# these are staggered by a centimetre or more, and every painted marking sits
+# clear above the surface it is painted on rather than in it.
+# The lawn sits high enough that the whole campus -- lawn, paving, drive and
+# running track -- lies within 6cm of one deck height, which is what lets
+# world_layout declare a single 0.28m walk pad for the platform instead of the
+# player sinking into the paving or hovering over the grass.
+HS_LAWN_TOP = .22
+HS_WALK_Z, HS_WALK_H = .15, .13          # plaza and footway, top .28
+HS_ASPHALT_Z, HS_ASPHALT_H = .16, .15    # drive and car park, top .31
+HS_TURF_Z, HS_TURF_H = .17, .09          # stadium infield, top .26
+HS_TRACK_Z, HS_TRACK_H = .18, .14        # running surface, top .32
+HS_TURF_PAINT_Z = .27                    # yard lines, clear of the turf top
+HS_ASPHALT_PAINT_Z = .32                 # bay stripes, clear of the asphalt
+HS_TRACK_PAINT_Z = .33                   # lane lines, clear of the running top
+# The running track: an obround with its straights along Y, described by the
+# inner kerb radius, half the straight, and a six-lane band.  The proportions
+# are a real 400m track brought down to the scale this town is built at.  What
+# matters is that the infield (40.6 x 62.6) holds a 23 x 50 football field with
+# its corners inside the bends, exactly as a full-size field sits inside a
+# full-size track.  Fitting the widest oval the site allows instead gives a
+# round one, and a round oval can only hold a square field.
+HS_TRACK_CX, HS_TRACK_CY = 5.0, -18.0
+HS_TRACK_INNER_R = 20.3
+HS_TRACK_HALF_STRAIGHT = 11.0
+HS_TRACK_LANES = 6
+HS_TRACK_LANE_W = .95
+HS_FIELD_W, HS_FIELD_L = 23.0, 50.0      # x across the field, y along it
+HS_END_ZONE = 5.0
+
+
+def _obround_loop(cx, cy, half_straight, radius, arc_steps):
+    """Closed loop round an obround whose two straights run along +/-Y.
+
+    The straights are implied by the segments joining the two arcs, so an
+    inner and an outer loop built with the same arc_steps always have matching
+    point counts and stitch into a ring with no special-casing.
+    """
+    points = []
+    for index in range(arc_steps + 1):          # north end, east -> west
+        angle = math.pi * index / arc_steps
+        points.append((cx + radius * math.cos(angle),
+                       cy + half_straight + radius * math.sin(angle)))
+    for index in range(arc_steps + 1):          # south end, west -> east
+        angle = math.pi + math.pi * index / arc_steps
+        points.append((cx + radius * math.cos(angle),
+                       cy - half_straight + radius * math.sin(angle)))
+    return points
+
+
+def _add_obround_pad(col, name, cx, cy, half_straight, radius, z, height,
+                     material, arc_steps=18):
+    """A filled obround slab -- the stadium infield, a stadium apron."""
+    loop = _obround_loop(cx, cy, half_straight, radius, arc_steps)
+    count = len(loop)
+    verts = ([(x, y, 0.0) for x, y in loop] + [(x, y, height) for x, y in loop]
+             + [(cx, cy, 0.0), (cx, cy, height)])
+    bottom_hub, top_hub = 2 * count, 2 * count + 1
+    faces = []
+    for index in range(count):
+        nxt = (index + 1) % count
+        faces.append((bottom_hub, nxt, index))
+        faces.append((top_hub, count + index, count + nxt))
+        faces.append((index, nxt, count + nxt, count + index))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (0.0, 0.0, z)
+    col.objects.link(obj)
+    return obj
+
+
+def _add_obround_band(col, name, cx, cy, half_straight, inner_r, outer_r,
+                      z, height, material, arc_steps=18):
+    """A closed obround ring -- the lane band, or one painted lane line."""
+    inner = _obround_loop(cx, cy, half_straight, inner_r, arc_steps)
+    outer = _obround_loop(cx, cy, half_straight, outer_r, arc_steps)
+    count = len(inner)
+    verts = ([(x, y, 0.0) for x, y in inner] + [(x, y, 0.0) for x, y in outer]
+             + [(x, y, height) for x, y in inner]
+             + [(x, y, height) for x, y in outer])
+    i0, o0, i1, o1 = 0, count, 2 * count, 3 * count
+    faces = []
+    for index in range(count):
+        nxt = (index + 1) % count
+        faces.append((i0 + index, i0 + nxt, o0 + nxt, o0 + index))
+        faces.append((i1 + index, o1 + index, o1 + nxt, i1 + nxt))
+        faces.append((i0 + index, i1 + index, i1 + nxt, i0 + nxt))
+        faces.append((o0 + index, o0 + nxt, o1 + nxt, o1 + index))
+    mesh = bpy.data.meshes.new(name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = (0.0, 0.0, z)
+    col.objects.link(obj)
+    return obj
+
+
+def _hs_campus_tree(col, rng, x, y, scale=1.0, z=HS_LAWN_TOP):
+    """A campus tree standing on the raised lawn rather than on the collection
+    origin, which is where build_tree() would put it -- 14cm underground."""
+    trunk = mat("NB_hs_trunk", (.40, .28, .19), 1.0)
+    index = rng.randrange(3)
+    canopy = mat("NB_hs_canopy_%d" % index,
+                 ((.24, .44, .25), (.29, .50, .27), (.21, .40, .23))[index],
+                 1.0)
+    add_ngon_cone(col, "hs_tree_trunk", .34 * scale, .26 * scale,
+                  2.3 * scale, 6, x, y, z, trunk)
+    add_ngon_cone(col, "hs_tree_crown", 1.85 * scale, .70 * scale,
+                  2.9 * scale, 7, x, y, z + 2.1 * scale, canopy)
+    add_ngon_cone(col, "hs_tree_top", .72 * scale, 0.0, 1.0 * scale, 7,
+                  x, y, z + 4.75 * scale, canopy)
+
+
+def _hs_window(col, name, width, height, cx, cy, cz, outward, wall,
+               trim, pane, mullion):
+    """One window: a proud stone frame, glazing recessed inside it, a mullion
+    and a sill.  outward is the outward axis as (dx, dy) -- (0,-1) on a south
+    wall, (1,0) on an east one -- and wall is the coordinate of the wall plane.
+
+    Every layer is placed with mounted_face_center() off that plane, so each is
+    anchored inside the masonry while its visible face stands clear of the one
+    behind it, and nothing here ends up coplanar with the wall.
+    """
+    dx, dy = outward
+    sign = dx or dy
+    frame_c = mounted_face_center(wall, sign, .26, .20)
+    pane_c = mounted_face_center(wall, sign, .16, .14)
+    mullion_c = mounted_face_center(wall, sign, .18, .17)
+    sill_c = mounted_face_center(wall, sign, .34, .28)
+    if dx:
+        add_box(col, name + "_frame", .26, width + .44, height + .40,
+                frame_c, cy, cz - .20, trim)
+        add_box(col, name + "_pane", .16, width, height,
+                pane_c, cy, cz, pane)
+        add_box(col, name + "_mullion", .18, .11, height - .10,
+                mullion_c, cy, cz + .05, mullion)
+        add_box(col, name + "_sill", .34, width + .74, .16,
+                sill_c, cy, cz - .40, trim)
+    else:
+        add_box(col, name + "_frame", width + .44, .26, height + .40,
+                cx, frame_c, cz - .20, trim)
+        add_box(col, name + "_pane", width, .16, height,
+                cx, pane_c, cz, pane)
+        add_box(col, name + "_mullion", .11, .18, height - .10,
+                cx, mullion_c, cz + .05, mullion)
+        add_box(col, name + "_sill", width + .74, .34, .16,
+                cx, sill_c, cz - .40, trim)
+
+
+def _hs_entrance(col, name, cx, front, base_z, ground_top, width, height,
+                 leaf_h, pier, reveal, pane, door, accent, metal, steps=3):
+    """A masonry entrance portal on a -Y facade: two piers, a header, glazing
+    set back inside the reveal, doors standing proud of the glazing, a canopy
+    and broad steps.  The planes step forward in 6-10cm increments from the
+    glazing out to the door pulls, so none shares a face with the one behind.
+
+    Each step is one box rising from just below the paving to its own tread
+    level, so the treads are all at different heights and the only faces they
+    share are the buried undersides.
+    """
+    pier_w = width * .21
+    opening = width - 2 * pier_w
+    glaze_y = front - .58
+    for side in (-1, 1):
+        add_box(col, name + "_pier", pier_w, 1.30, height,
+                cx + side * (width - pier_w) / 2, front - .55, base_z, pier)
+        # Stands 6cm proud of the lintel so the two caps and the lintel do
+        # not present one flat top.
+        add_box(col, name + "_pier_cap", pier_w + .26, 1.56, .28,
+                cx + side * (width - pier_w) / 2, front - .68,
+                base_z + height - .22, pier)
+    # A lintel across the opening, not a full-width block: a header the width
+    # of the portal put its face, both sides and both edges in exactly the
+    # same planes as the piers -- one facade made of three coplanar solids.
+    add_box(col, name + "_header", opening + .02, 1.42,
+            max(.9, height - leaf_h - 1.05),
+            cx, front - .61, base_z + leaf_h + 1.05, pier)
+    add_box(col, name + "_reveal", opening + .10, .46, leaf_h + 1.05,
+            cx, front - .02, base_z, reveal)
+    add_box(col, name + "_glazing", opening - .26, .18, leaf_h + .60,
+            cx, glaze_y, base_z + .34, pane)
+    add_box(col, name + "_transom", opening - .06, .24, .18,
+            cx, glaze_y - .02, base_z + leaf_h + .36, pier)
+    for side in (-1, 1):
+        add_box(col, name + "_door", opening * .30, .17, leaf_h,
+                cx + side * opening * .17, glaze_y - .16, base_z + .18, door)
+        add_box(col, name + "_pull", .08, .08, .92,
+                cx + side * opening * .295, glaze_y - .29,
+                base_z + 1.02, metal)
+    add_box(col, name + "_door_stile", .17, .21, leaf_h + .12,
+            cx, glaze_y - .15, base_z + .14, pier)
+    add_box(col, name + "_canopy", width + 1.60, 2.60, .38,
+            cx, front - 1.70, base_z + leaf_h + 1.44, accent)
+    add_box(col, name + "_canopy_fascia", width + 1.92, 2.92, .14,
+            cx, front - 1.70, base_z + leaf_h + 1.30, metal)
+    for side in (-1, 1):
+        add_ngon_cone(col, name + "_column", .22, .20, leaf_h + 1.32, 10,
+                      cx + side * (width / 2 + .34), front - 2.70,
+                      base_z + .12, pier)
+    rise = (base_z - ground_top) / (steps + .5)
+    for index in range(steps):
+        tread = base_z - (index + 1) * rise
+        add_box(col, name + "_step", width + 1.0 + index * .70, .48,
+                tread - ground_top + .09,
+                cx, front - 3.20 - index * .48, ground_top - .09, pier)
+
+
+def build_high_school(col, seed):
+    """Followville High: three buildings, a stadium, and the campus round it.
+
+    Authored in campus-local coordinates about the anchor stored in
+    world_state, front doors on -Y.  See the HS_* constants above for the site
+    plan and the elevation each horizontal layer sits at.
+
+    The north/south budget is tight and deliberate: 13.8m of arrival, 17.2m of
+    buildings, a 5.6m quad, then the 74m stadium.  That is the whole 112m the
+    platform gives, which is why the quad is one slab rather than a forecourt
+    per building and why the planting sits in the corners the oval leaves.
+    """
+    rng = random.Random(seed)
+    m = std_mats()
+    brick = mat("NB_hs_brick", (.55, .25, .20), .93)
+    brick_dark = mat("NB_hs_brick_shadow", (.42, .185, .15), .95)
+    stone = mat("NB_hs_stone", (.87, .83, .73), .84)
+    stone_dark = mat("NB_hs_stone_shadow", (.70, .66, .58), .89)
+    slate = mat("NB_hs_roof", (.235, .265, .325), .80)
+    navy = mat("NB_hs_navy", (.105, .165, .32), .70)
+    gold = mat("NB_hs_gold", (.85, .66, .19), .46, .30)
+    pane = m["window"]
+    darkpane = m["windark"]
+    steel = m["metal"]
+    charcoal = mat("NB_hs_charcoal", (.135, .15, .175), .62)
+    asphalt = mat("NB_hs_asphalt", (.17, .175, .19), .95)
+    paint = mat("NB_hs_paint", (.95, .95, .91), .74)
+    concrete = mat("NB_hs_concrete", (.73, .73, .71), .92)
+    lawn = mat("NB_hs_lawn", (.36, .60, .28), 1.0)
+    turf = mat("NB_hs_turf", (.20, .46, .23), .98)
+    rubber = mat("NB_hs_track", (.62, .27, .19), .96)
+    hedge = mat("NB_hs_hedge", (.24, .43, .24), 1.0)
+    # Paved areas that meet each other get slightly different tops and are made
+    # to overlap, so a shared edge is always one slab passing under another
+    # rather than two coplanar faces butting together.
+    QUAD_TOP = HS_WALK_Z + .13          # .28
+    LINK_TOP = HS_WALK_Z + .11          # .26
+    STADIUM_TOP = HS_WALK_Z + .10       # .25
+    STREET_TOP = HS_WALK_Z + .12        # .27
+
+    # ── campus ground ───────────────────────────────────────────────────────
+    # One slab for the whole platform, sunk well below grade so its underside
+    # is buried rather than sharing the terrain's plane, and standing 14cm
+    # proud so the campus reads as engineered ground with a real kerb.
+    add_box(col, "hs_campus_pad", CAMPUS_HALF_X * 2, CAMPUS_HALF_Y * 2, .60,
+            0, 0, HS_LAWN_TOP - .60, lawn)
+    # Inset far enough that the kerb itself stays inside the declared
+    # footprint -- the rectangle is what the geometry audit defends, so nothing
+    # built should hang over its edge.
+    # The two runs cross at all four corners, so the east/west pair is a
+    # centimetre taller and covers the north/south pair where they meet.
+    for side in (-1, 1):
+        add_box(col, "hs_campus_kerb", .55, CAMPUS_HALF_Y * 2 - .60, .24,
+                side * (CAMPUS_HALF_X - .30), 0, HS_LAWN_TOP - .14, concrete)
+        add_box(col, "hs_campus_kerb", CAMPUS_HALF_X * 2 - .60, .55, .23,
+                0, side * (CAMPUS_HALF_Y - .30), HS_LAWN_TOP - .14, concrete)
+    # The west edge is the top of the cut: the meadow climbs a 28.6% bank from
+    # here up to Meadow Run, so the campus holds it back with a wall instead of
+    # letting the hillside spill onto the running track.
+    add_box(col, "hs_retaining_wall", .68, 96.0, 1.30,
+            -CAMPUS_HALF_X + .70, -7.0, HS_LAWN_TOP - .30, stone_dark)
+    for y in range(-54, 41, 7):
+        add_box(col, "hs_retaining_pier", 1.00, .88, 1.58,
+                -CAMPUS_HALF_X + .70, float(y), HS_LAWN_TOP - .30, stone)
+
+    # ── arrival: drive, drop-off, bus lay-by, car park ──────────────────────
+    # The town's own street runs along y=-93 in world coordinates, 3m north of
+    # this campus edge, so the drive needs only two kerb cuts.  Its west leg is
+    # on the centreline of world_layout.HIGH_SCHOOL_APPROACH.
+    # Every paved surface here overlaps its neighbour, and two slabs at one
+    # top height z-fight across the whole overlap. So each is a centimetre
+    # lower than the one it runs into and the taller one covers the join.
+    add_box(col, "hs_drive_cross", 56.0, 6.50, HS_ASPHALT_H,
+            0, 49.5, HS_ASPHALT_Z, asphalt)
+    for leg_x in (-14.0, 14.0):
+        add_box(col, "hs_drive_leg", 6.50, 8.0, HS_ASPHALT_H - .01,
+                leg_x, 49.5, HS_ASPHALT_Z, asphalt)
+    add_box(col, "hs_bus_bay", 22.0, 4.20, HS_ASPHALT_H - .02,
+            -19.0, 46.0, HS_ASPHALT_Z, asphalt)
+    add_box(col, "hs_car_park", 15.0, 10.0, HS_ASPHALT_H - .03,
+            23.0, 50.8, HS_ASPHALT_Z, asphalt)
+    # No dash at x=0: the crossing is there, and the two markings would have
+    # been painted on top of one another.
+    for x in range(-24, 25, 6):
+        if x:
+            add_box(col, "hs_drive_dash", 2.60, .22, .02,
+                    float(x), 49.5, HS_ASPHALT_PAINT_Z, m["dash"])
+    for index in range(5):
+        add_box(col, "hs_bay_stripe", .16, 4.60, .02,
+                17.0 + index * 3.0, 53.3, HS_ASPHALT_PAINT_Z - .024, paint)
+    add_box(col, "hs_bay_kerb", 14.4, .30, .18,
+            23.0, 55.6, HS_ASPHALT_Z + HS_ASPHALT_H - .07, concrete)
+    for x in (-2.2, -1.1, 0.0, 1.1, 2.2):
+        add_box(col, "hs_crosswalk", .44, 6.10, .02,
+                x, 49.5, HS_ASPHALT_PAINT_Z, paint)
+    # Kerb cuts. The town's asphalt tops out at 0.17 and the campus deck at
+    # 0.31, so each leg ramps the 14cm difference over twelve metres rather
+    # than stepping up onto the platform. The far end runs in under the drive
+    # leg, whose own top is 1cm higher, so the two never share a face.
+    for leg_x in (-14.0, 14.0):
+        _add_road_strip(col, "hs_kerb_cut",
+                        [(leg_x, 64.0, .02), (leg_x, 61.0, .05),
+                         (leg_x, 58.0, .09), (leg_x, 55.0, .13),
+                         (leg_x, 52.0, .145)],
+                        asphalt, width=6.20, bottom_offset=.005,
+                        top_offset=.15)
+    add_box(col, "hs_street_walk", 60.0, 2.60, STREET_TOP - HS_WALK_Z,
+            0, 54.4, HS_WALK_Z, concrete)
+    for walk_x in (-20.0, 2.0, 22.0):
+        add_box(col, "hs_entry_walk", 2.60, 12.4, STREET_TOP - HS_WALK_Z,
+                walk_x, 46.2, HS_WALK_Z, concrete)
+    for x, y in ((-24.0, 46.9), (-4.0, 46.9), (11.0, 46.9), (26.0, 54.4)):
+        add_ngon_cone(col, "hs_drive_light", .17, .13, 5.20, 8,
+                      x, y, HS_ASPHALT_Z + .10, steel)
+        add_box(col, "hs_drive_light_head", 1.10, .40, .22,
+                x, y - .40, HS_ASPHALT_Z + 5.30, charcoal)
+        add_box(col, "hs_drive_light_lens", .84, .26, .08,
+                x, y - .40, HS_ASPHALT_Z + 5.21, m["bulb"])
+
+    # ── the vehicles that make the arrival read as a school ─────────────────
+    # Built here rather than instanced through place_instance: that path wants
+    # a world_state record and a grid lot, and these belong to the asset.
+    bus_yellow = mat("NB_hs_bus", (.94, .69, .12), .74)
+    bus_deck = HS_ASPHALT_Z + HS_ASPHALT_H - .02
+    add_box(col, "hs_bus_body", 8.60, 2.40, 2.10, -21.0, 46.0, bus_deck + .34,
+            bus_yellow)
+    add_box(col, "hs_bus_roof", 8.00, 2.46, .34, -21.2, 46.0, bus_deck + 2.44,
+            paint)
+    add_box(col, "hs_bus_hood", 1.70, 2.24, 1.05, -16.1, 46.0, bus_deck + .30,
+            bus_yellow)
+    add_box(col, "hs_bus_windshield", 1.10, 2.28, .96, -16.0, 46.0,
+            bus_deck + 1.42, darkpane)
+    for x in (-24.6, -23.2, -21.8, -20.4, -19.0, -17.6):
+        for y, outward in ((44.86, -1), (47.14, 1)):
+            add_box(col, "hs_bus_window", 1.05, .14, .82, x,
+                    mounted_face_center(y, outward, .14, .10),
+                    bus_deck + 1.44, darkpane)
+    add_box(col, "hs_bus_band", 8.66, 2.46, .18, -21.0, 46.0, bus_deck + 1.16,
+            charcoal)
+    for x in (-24.4, -17.4):
+        for y in (44.72, 47.28):
+            add_box(col, "hs_bus_wheel", .84, .34, .84, x, y, bus_deck,
+                    charcoal)
+    add_box(col, "hs_bus_stop_arm", .14, .95, .95, -22.6, 44.42,
+            bus_deck + 1.10, mat("NB_hs_bus_stop", (.78, .16, .14), .78))
+    # Three cars nose-in on the staff bays.
+    body_colours = (mat("NB_hs_car_a", (.32, .42, .56), .58, .10),
+                    mat("NB_hs_car_b", (.72, .72, .70), .56, .10),
+                    mat("NB_hs_car_c", (.48, .30, .28), .58, .10))
+    car_deck = HS_ASPHALT_Z + HS_ASPHALT_H - .05
+    for index, car_x in enumerate((18.5, 21.5, 27.5)):
+        paintwork = body_colours[index]
+        add_box(col, "hs_car_body", 2.00, 4.40, .82, car_x, 52.9,
+                car_deck + .26, paintwork)
+        add_box(col, "hs_car_cabin", 1.78, 2.30, .68, car_x, 53.1,
+                car_deck + 1.08, paintwork)
+        add_box(col, "hs_car_glass", 1.62, 2.10, .48, car_x, 53.1,
+                car_deck + 1.20, darkpane)
+        for wheel_x in (car_x - .96, car_x + .96):
+            for wheel_y in (51.6, 54.2):
+                add_box(col, "hs_car_wheel", .26, .74, .74, wheel_x, wheel_y,
+                        car_deck, charcoal)
+
+    # ── monument sign, double sided, at the campus entrance ─────────────────
+    add_box(col, "hs_sign_base", 8.60, 1.90, .40, -22.0, 52.4, HS_LAWN_TOP,
+            stone_dark)
+    add_box(col, "hs_sign_plinth", 8.00, 1.52, .46, -22.0, 52.4,
+            HS_LAWN_TOP + .40, stone)
+    add_box(col, "hs_sign_panel", 7.30, 1.00, 2.20, -22.0, 52.4,
+            HS_LAWN_TOP + .86, brick)
+    add_box(col, "hs_sign_cap", 7.92, 1.44, .28, -22.0, 52.4,
+            HS_LAWN_TOP + 3.06, stone)
+    # Read from the street on one side and from the campus on the other, which
+    # is also the side every town camera looks at.
+    for face_y, rotation in ((52.93, (math.pi / 2, 0, math.pi)),
+                             (51.87, (math.pi / 2, 0, 0))):
+        add_text(col, "hs_sign_line_1", "FOLLOWVILLE", .58, .05,
+                 -22.0, face_y, HS_LAWN_TOP + 2.36, gold, rotation=rotation)
+        add_text(col, "hs_sign_line_2", "HIGH SCHOOL", .58, .05,
+                 -22.0, face_y, HS_LAWN_TOP + 1.62, gold, rotation=rotation)
+        add_text(col, "hs_sign_line_3", "EST. 2026", .28, .04,
+                 -22.0, face_y, HS_LAWN_TOP + 1.10, stone, rotation=rotation)
+    for side in (-1, 1):
+        add_ngon_cone(col, "hs_sign_light", .17, .13, .34, 8,
+                      -22.0 + side * 4.55, 52.4, HS_LAWN_TOP + .86, steel)
+        add_ngon_cone(col, "hs_sign_shrub", .95, .42, 1.05, 9,
+                      -22.0 + side * 5.60, 51.6, HS_LAWN_TOP, hedge)
+    add_box(col, "hs_flag_base", 2.20, 2.20, .34, -30.0, 51.6, HS_LAWN_TOP,
+            stone)
+    add_ngon_cone(col, "hs_flagpole", .14, .09, 12.0, 10,
+                  -30.0, 51.6, HS_LAWN_TOP + .34, steel)
+    flag_mesh = bpy.data.meshes.new("hs_flag_mesh")
+    flag_mesh.from_pydata([(-29.88, 51.6, HS_LAWN_TOP + 11.20),
+                           (-26.10, 51.6, HS_LAWN_TOP + 10.45),
+                           (-29.88, 51.6, HS_LAWN_TOP + 9.70)],
+                          [], [(0, 1, 2)])
+    flag_mesh.materials.append(navy)
+    flag_mesh.update()
+    col.objects.link(bpy.data.objects.new("hs_flag", flag_mesh))
+
+    # ── the quad, one slab in front of all three buildings ──────────────────
+    # Deliberately a single piece of paving rather than a forecourt each: three
+    # slabs at one level would meet along shared faces, and staggering them
+    # would put steps across the front of the school.
+    add_box(col, "hs_quad_paving", 60.0, 5.60, QUAD_TOP - HS_WALK_Z,
+            0, 22.2, HS_WALK_Z, concrete)
+    add_box(col, "hs_quad_kerb", 60.4, .50, .12, 0, 19.60, HS_WALK_Z + .08,
+            stone_dark)
+    for x in (11.0, 29.0):
+        add_box(col, "hs_quad_bench", 2.20, .58, .46, x, 20.4, QUAD_TOP,
+                stone)
+        for side in (-.86, .86):
+            add_box(col, "hs_quad_bench_leg", .18, .46, .50,
+                    x + side, 20.4, QUAD_TOP - .05, charcoal)
+    add_box(col, "hs_bike_rack_kerb", 4.40, 2.20, .10, -11.0, 20.5, QUAD_TOP,
+            concrete)
+    for offset in (-1.5, -.5, .5, 1.5):
+        add_box(col, "hs_bike_rack", .10, 1.70, .80, -11.0 + offset, 20.5,
+                QUAD_TOP + .08, steel)
+
+    # ── building one: Founders Hall, the academic building ──────────────────
+    HALL_X, HALL_Y, HALL_W, HALL_D, HALL_H = -20.0, 34.0, 22.0, 18.0, 8.60
+    hall_front, hall_back = HALL_Y - HALL_D / 2, HALL_Y + HALL_D / 2
+    hall_floor = HS_LAWN_TOP + .55
+    add_box(col, "hs_hall_base", HALL_W + 1.40, HALL_D + 1.40, .55,
+            HALL_X, HALL_Y, HS_LAWN_TOP, stone_dark)
+    add_box(col, "hs_hall_body", HALL_W, HALL_D, HALL_H,
+            HALL_X, HALL_Y, hall_floor, brick)
+    add_box(col, "hs_hall_plinth_course", HALL_W + .28, HALL_D + .28, .90,
+            HALL_X, HALL_Y, hall_floor, stone)
+    add_box(col, "hs_hall_belt", HALL_W + .22, HALL_D + .22, .34,
+            HALL_X, HALL_Y, hall_floor + 3.95, stone)
+    add_box(col, "hs_hall_cornice", HALL_W + .62, HALL_D + .62, .50,
+            HALL_X, HALL_Y, hall_floor + HALL_H - .50, stone)
+    add_prism_roof(col, "hs_hall_roof", HALL_W + 1.24, HALL_D + 1.24, 3.00,
+                   HALL_X, HALL_Y, hall_floor + HALL_H, slate)
+    add_box(col, "hs_hall_ridge", HALL_W + 1.54, .48, .26,
+            HALL_X, HALL_Y, hall_floor + HALL_H + 2.94, stone_dark)
+    for side in (-1, 1):
+        add_box(col, "hs_hall_stack", 1.30, 1.30, 2.30,
+                HALL_X + side * 7.60, HALL_Y, hall_floor + HALL_H + 1.50,
+                brick_dark)
+        add_box(col, "hs_hall_stack_cap", 1.64, 1.64, .22,
+                HALL_X + side * 7.60, HALL_Y, hall_floor + HALL_H + 3.80,
+                stone)
+    for index, offset in enumerate((-9.2, -6.0, 6.0, 9.2)):
+        for level, z in ((0, hall_floor + 1.55), (1, hall_floor + 5.20)):
+            _hs_window(col, "hs_hall_s%d%d" % (index, level), 2.10, 2.20,
+                       HALL_X + offset, None, z, (0, -1), hall_front,
+                       stone, pane, navy)
+    for index, offset in enumerate((-7.6, -3.8, 0.0, 3.8, 7.6)):
+        for level, z in ((0, hall_floor + 1.55), (1, hall_floor + 5.20)):
+            _hs_window(col, "hs_hall_n%d%d" % (index, level), 2.10, 2.20,
+                       HALL_X + offset, None, z, (0, 1), hall_back,
+                       stone, pane, navy)
+    for side, wall in ((-1, HALL_X - HALL_W / 2), (1, HALL_X + HALL_W / 2)):
+        for y in (HALL_Y - 5.4, HALL_Y, HALL_Y + 5.4):
+            for z in (hall_floor + 1.55, hall_floor + 5.20):
+                _hs_window(col, "hs_hall_side", 2.10, 2.20, None, y, z,
+                           (side, 0), wall, stone, pane, navy)
+    _hs_entrance(col, "hs_hall_entry", HALL_X, hall_front, hall_floor,
+                 QUAD_TOP, 8.60, 7.60, 2.95, stone, brick_dark, darkpane,
+                 navy, navy, steel, steps=3)
+    # The name, on the face the town's cameras look at.
+    add_box(col, "hs_hall_name_band", 8.20, .20, 1.50,
+            HALL_X, hall_front - 1.28, hall_floor + 5.24, navy)
+    add_text(col, "hs_hall_name_1", "FOLLOWVILLE", .56, .06,
+             HALL_X, hall_front - 1.40, hall_floor + 6.42, gold)
+    add_text(col, "hs_hall_name_2", "HIGH SCHOOL", .56, .06,
+             HALL_X, hall_front - 1.40, hall_floor + 5.72, gold)
+    # Clock in the entrance gable, above the name.
+    add_box(col, "hs_hall_gable", 7.40, 1.14, 2.40,
+            HALL_X, hall_front - .60, hall_floor + 7.60, stone)
+    add_prism_roof(col, "hs_hall_gable_roof", 7.90, 1.54, 1.05,
+                   HALL_X, hall_front - .60, hall_floor + 10.00, slate)
+    add_box(col, "hs_hall_clock_rim", 2.36, .18, 2.36,
+            HALL_X, hall_front - 1.26, hall_floor + 7.85, navy)
+    clock = add_ngon_cone(col, "hs_hall_clock", 1.02, 1.02, .20, 24,
+                          HALL_X, hall_front - 1.38, hall_floor + 9.03, paint)
+    clock.rotation_euler.x = math.pi / 2
+    add_box(col, "hs_hall_clock_hand_v", .10, .12, .70,
+            HALL_X, hall_front - 1.63, hall_floor + 9.03, navy)
+    hand = add_box(col, "hs_hall_clock_hand_h", .60, .12, .10,
+                   HALL_X + .20, hall_front - 1.64, hall_floor + 9.16, navy)
+    hand.rotation_euler.z = math.radians(22)
+
+    # ── building two: the science and arts wing ─────────────────────────────
+    WING_X, WING_Y, WING_W, WING_D, WING_H = 2.0, 33.5, 14.0, 17.0, 7.60
+    wing_front, wing_back = WING_Y - WING_D / 2, WING_Y + WING_D / 2
+    wing_floor = HS_LAWN_TOP + .48
+    add_box(col, "hs_wing_base", WING_W + 1.20, WING_D + 1.20, .48,
+            WING_X, WING_Y, HS_LAWN_TOP, stone_dark)
+    add_box(col, "hs_wing_body", WING_W, WING_D, WING_H,
+            WING_X, WING_Y, wing_floor, brick)
+    add_box(col, "hs_wing_plinth_course", WING_W + .26, WING_D + .26, .80,
+            WING_X, WING_Y, wing_floor, stone)
+    add_box(col, "hs_wing_belt", WING_W + .20, WING_D + .20, .30,
+            WING_X, WING_Y, wing_floor + 3.60, stone)
+    add_box(col, "hs_wing_parapet", WING_W + .54, WING_D + .54, .98,
+            WING_X, WING_Y, wing_floor + WING_H - .34, stone)
+    add_box(col, "hs_wing_roof", WING_W + .30, WING_D + .30, .24,
+            WING_X, WING_Y, wing_floor + WING_H - .32, slate)
+    add_box(col, "hs_wing_coping", WING_W + .80, WING_D + .80, .18,
+            WING_X, WING_Y, wing_floor + WING_H + .64, stone_dark)
+    # A north-lit studio clerestory, and the rooftop plant beside it.
+    add_box(col, "hs_wing_clerestory", 9.20, 3.20, 1.70,
+            WING_X, WING_Y + 3.40, wing_floor + WING_H - .10, stone)
+    add_box(col, "hs_wing_clerestory_glass", 8.40, .20, 1.10, WING_X,
+            mounted_face_center(WING_Y + 1.80, -1, .20, .15),
+            wing_floor + WING_H + .20, pane)
+    add_box(col, "hs_wing_clerestory_cap", 9.64, 3.62, .20,
+            WING_X, WING_Y + 3.40, wing_floor + WING_H + 1.60, slate)
+    add_box(col, "hs_wing_plant", 3.20, 2.20, 1.05,
+            WING_X - 4.20, WING_Y - 4.60, wing_floor + WING_H - .10, charcoal)
+    add_box(col, "hs_wing_plant_grille", 2.60, .18, .64,
+            WING_X - 4.20, WING_Y - 5.76, wing_floor + WING_H + .08, steel)
+    for index, x in enumerate((WING_X - 4.80, WING_X + 4.80)):
+        for level, z in ((0, wing_floor + 1.45), (1, wing_floor + 5.00)):
+            _hs_window(col, "hs_wing_s%d%d" % (index, level), 2.60, 2.30,
+                       x, None, z, (0, -1), wing_front, stone, pane, navy)
+    for index, x in enumerate((WING_X - 4.60, WING_X + 4.60)):
+        for level, z in ((0, wing_floor + 1.45), (1, wing_floor + 5.00)):
+            _hs_window(col, "hs_wing_n%d%d" % (index, level), 2.60, 2.30,
+                       x, None, z, (0, 1), wing_back, stone, pane, navy)
+    for side, wall in ((-1, WING_X - WING_W / 2), (1, WING_X + WING_W / 2)):
+        for y in (WING_Y - 4.6, WING_Y + 1.0, WING_Y + 6.0):
+            for z in (wing_floor + 1.45, wing_floor + 5.00):
+                _hs_window(col, "hs_wing_side", 2.20, 2.30, None, y, z,
+                           (side, 0), wall, stone, pane, navy)
+    _hs_entrance(col, "hs_wing_entry", WING_X, wing_front, wing_floor,
+                 QUAD_TOP, 5.60, 5.70, 2.70, stone, brick_dark, darkpane,
+                 navy, navy, steel, steps=2)
+    add_box(col, "hs_wing_sign", 4.60, .18, .66,
+            WING_X, wing_front - 1.24, wing_floor + 4.16, navy)
+    add_text(col, "hs_wing_sign_text", "SCIENCE & ARTS", .34, .05,
+             WING_X, wing_front - 1.36, wing_floor + 4.49, gold)
+
+    # ── building three: the gymnasium ───────────────────────────────────────
+    GYM_X, GYM_Y, GYM_W, GYM_D, GYM_H = 21.50, 34.50, 17.0, 19.0, 9.80
+    gym_front, gym_back = GYM_Y - GYM_D / 2, GYM_Y + GYM_D / 2
+    gym_floor = HS_LAWN_TOP + .52
+    add_box(col, "hs_gym_base", GYM_W + 1.30, GYM_D + 1.30, .52,
+            GYM_X, GYM_Y, HS_LAWN_TOP, stone_dark)
+    add_box(col, "hs_gym_body", GYM_W, GYM_D, GYM_H,
+            GYM_X, GYM_Y, gym_floor, brick)
+    add_box(col, "hs_gym_plinth_course", GYM_W + .28, GYM_D + .28, 1.70,
+            GYM_X, GYM_Y, gym_floor, stone)
+    add_box(col, "hs_gym_cornice", GYM_W + .58, GYM_D + .58, .46,
+            GYM_X, GYM_Y, gym_floor + GYM_H - .46, stone)
+    add_prism_roof(col, "hs_gym_roof", GYM_W + 1.10, GYM_D + 1.10, 3.30,
+                   GYM_X, GYM_Y, gym_floor + GYM_H, slate)
+    add_box(col, "hs_gym_ridge_vent", 7.20, 1.90, .90,
+            GYM_X, GYM_Y, gym_floor + GYM_H + 2.20, stone)
+    add_box(col, "hs_gym_ridge_vent_cap", 7.70, 2.30, .20,
+            GYM_X, GYM_Y, gym_floor + GYM_H + 3.10, slate)
+    # One tall volume, so it gets a high clerestory band rather than two
+    # storeys of classroom windows -- the same brick, read differently.
+    for index, x in enumerate((GYM_X - 6.20, GYM_X + 6.20)):
+        _hs_window(col, "hs_gym_s%d" % index, 3.20, 2.40, x, None,
+                   gym_floor + 6.30, (0, -1), gym_front, stone, pane, navy)
+    for index, x in enumerate((GYM_X - 5.40, GYM_X, GYM_X + 5.40)):
+        _hs_window(col, "hs_gym_n%d" % index, 3.20, 2.40, x, None,
+                   gym_floor + 6.30, (0, 1), gym_back, stone, pane, navy)
+    for side, wall in ((-1, GYM_X - GYM_W / 2), (1, GYM_X + GYM_W / 2)):
+        for y in (GYM_Y - 5.6, GYM_Y, GYM_Y + 5.6):
+            _hs_window(col, "hs_gym_side", 3.20, 2.40, None, y,
+                       gym_floor + 6.30, (side, 0), wall, stone, pane, navy)
+    _hs_entrance(col, "hs_gym_entry", GYM_X, gym_front, gym_floor,
+                 QUAD_TOP, 7.20, 6.90, 2.95, stone, brick_dark, darkpane,
+                 navy, gold, steel, steps=2)
+    add_box(col, "hs_gym_sign", 6.00, .18, .76,
+            GYM_X, gym_front - 1.24, gym_floor + 4.60, navy)
+    add_text(col, "hs_gym_sign_text", "GYMNASIUM", .44, .05,
+             GYM_X, gym_front - 1.36, gym_floor + 4.98, gold)
+
+    # ── breezeways linking the three buildings ──────────────────────────────
+    # Their paving runs in under the quad and in under each building's base, so
+    # every join is one slab inside another rather than two faces meeting.
+    for link_x in (-7.0, 11.0):
+        add_box(col, "hs_link_walk", 4.20, 22.0, LINK_TOP - HS_WALK_Z,
+                link_x, 33.0, HS_WALK_Z, concrete)
+        add_box(col, "hs_link_roof", 4.90, 9.60, .26,
+                link_x, 33.5, HS_LAWN_TOP + 3.35, slate)
+        add_box(col, "hs_link_beam", 4.30, 9.20, .22,
+                link_x, 33.5, HS_LAWN_TOP + 3.13, stone)
+        for post_y in (29.6, 33.5, 37.4):
+            for side in (-1, 1):
+                add_ngon_cone(col, "hs_link_post", .20, .18, 3.10, 10,
+                              link_x + side * 1.90, post_y,
+                              LINK_TOP - .02, stone)
+
+    # ── the stadium: infield, running track, football field ─────────────────
+    # Layer elevations from the infield up.  Each surface's underside is buried
+    # in the one below rather than resting on its face, and each painted layer
+    # clears the surface it is painted on, so nothing here is coplanar.
+    END_ZONE_Z, END_ZONE_H = .240, .048          # top .288
+    FIELD_Z, FIELD_H = .240, .056                # top .296
+    PAINT_Z, PAINT_H = .300, .022                # top .322
+    track_outer_r = HS_TRACK_INNER_R + HS_TRACK_LANES * HS_TRACK_LANE_W
+    _add_obround_pad(col, "hs_infield", HS_TRACK_CX, HS_TRACK_CY,
+                     HS_TRACK_HALF_STRAIGHT, HS_TRACK_INNER_R + 1.20,
+                     HS_TURF_Z, HS_TURF_H, turf)
+    _add_obround_band(col, "hs_track", HS_TRACK_CX, HS_TRACK_CY,
+                      HS_TRACK_HALF_STRAIGHT, HS_TRACK_INNER_R,
+                      track_outer_r, HS_TRACK_Z, HS_TRACK_H, rubber)
+    for lane in range(1, HS_TRACK_LANES):
+        radius = HS_TRACK_INNER_R + lane * HS_TRACK_LANE_W
+        _add_obround_band(col, "hs_track_lane_%d" % lane, HS_TRACK_CX,
+                          HS_TRACK_CY, HS_TRACK_HALF_STRAIGHT,
+                          radius - .05, radius + .05,
+                          HS_TRACK_PAINT_Z, .02, paint)
+    _add_obround_band(col, "hs_track_outer_line", HS_TRACK_CX, HS_TRACK_CY,
+                      HS_TRACK_HALF_STRAIGHT, track_outer_r - .16,
+                      track_outer_r - .06, HS_TRACK_PAINT_Z, .02, paint)
+    # The kerb on the inside of lane one, standing clear of the running surface.
+    _add_obround_band(col, "hs_track_kerb", HS_TRACK_CX, HS_TRACK_CY,
+                      HS_TRACK_HALF_STRAIGHT, HS_TRACK_INNER_R - .10,
+                      HS_TRACK_INNER_R + .08, HS_TRACK_Z, HS_TRACK_H + .07,
+                      paint)
+    # The football field.  The end zones reach 0.60m in under the playing
+    # surface so the two slabs meet inside each other, not face to face.
+    goal_south = HS_TRACK_CY - HS_FIELD_L / 2 + HS_END_ZONE
+    goal_north = HS_TRACK_CY + HS_FIELD_L / 2 - HS_END_ZONE
+    for sign, tag in ((-1, "south"), (1, "north")):
+        add_box(col, "hs_end_zone_" + tag, HS_FIELD_W, HS_END_ZONE + .60,
+                END_ZONE_H, HS_TRACK_CX,
+                HS_TRACK_CY + sign * (HS_FIELD_L / 2 - HS_END_ZONE / 2 + .30),
+                END_ZONE_Z, navy)
+    add_box(col, "hs_field", HS_FIELD_W, goal_north - goal_south, FIELD_H,
+            HS_TRACK_CX, HS_TRACK_CY, FIELD_Z, turf)
+    line_count = int(round((goal_north - goal_south) / 4.0))
+    for index in range(line_count + 1):
+        y = goal_south + index * (goal_north - goal_south) / line_count
+        add_box(col, "hs_yard_line", HS_FIELD_W - .60, .22, PAINT_H,
+                HS_TRACK_CX, y, PAINT_Z, paint)
+    for index in range(line_count * 2):
+        y = (goal_south + (index + .5) *
+             (goal_north - goal_south) / (line_count * 2))
+        for hash_x in (HS_TRACK_CX - 4.40, HS_TRACK_CX + 4.40):
+            add_box(col, "hs_hash", .18, .70, PAINT_H, hash_x, y, PAINT_Z,
+                    paint)
+    for side in (-1, 1):
+        add_box(col, "hs_sideline", .30, HS_FIELD_L - .60, PAINT_H,
+                HS_TRACK_CX + side * (HS_FIELD_W / 2 - .15), HS_TRACK_CY,
+                PAINT_Z, paint)
+        add_box(col, "hs_end_line", HS_FIELD_W, .30, PAINT_H, HS_TRACK_CX,
+                HS_TRACK_CY + side * (HS_FIELD_L / 2 - .15), PAINT_Z, paint)
+    add_box(col, "hs_midfield_mark", 2.60, .26, PAINT_H + .006,
+            HS_TRACK_CX, HS_TRACK_CY, PAINT_Z + .008, gold)
+    for side in (-1, 1):
+        post_y = HS_TRACK_CY + side * (HS_FIELD_L / 2 - .30)
+        add_box(col, "hs_goal_base", 1.00, 1.00, .26,
+                HS_TRACK_CX, post_y, HS_TURF_Z + HS_TURF_H - .03, paint)
+        add_ngon_cone(col, "hs_goal_stem", .16, .14, 3.05, 8,
+                      HS_TRACK_CX, post_y, HS_TURF_Z + HS_TURF_H + .21, gold)
+        add_box(col, "hs_goal_crossbar", 5.80, .17, .17,
+                HS_TRACK_CX, post_y, HS_TURF_Z + HS_TURF_H + 3.18, gold)
+        for upright in (-2.75, 2.75):
+            add_ngon_cone(col, "hs_goal_upright", .13, .11, 3.40, 8,
+                          HS_TRACK_CX + upright, post_y,
+                          HS_TURF_Z + HS_TURF_H + 3.35, gold)
+
+    # ── home stand, on the west touchline ───────────────────────────────────
+    # Each tier reaches half a metre back under the one above it, so the only
+    # faces two neighbouring tiers share are buried, and every visible riser is
+    # a single exposed face at its own height.
+    STAND_FRONT, STAND_Y, STAND_L = -22.40, -17.0, 42.0
+    STAND_TIERS, TIER_DEPTH, TIER_RISE = 6, 1.40, .42
+    add_box(col, "hs_stand_apron", 1.20, STAND_L + 2.0, STADIUM_TOP - HS_WALK_Z,
+            STAND_FRONT + .60, STAND_Y, HS_WALK_Z, concrete)
+    for tier in range(STAND_TIERS):
+        tread = HS_LAWN_TOP + .55 + tier * TIER_RISE
+        east = STAND_FRONT - tier * TIER_DEPTH
+        west = STAND_FRONT - (tier + 1) * TIER_DEPTH - .50
+        add_box(col, "hs_stand_tier_%d" % tier, east - west, STAND_L,
+                tread - HS_LAWN_TOP + .30, (east + west) / 2, STAND_Y,
+                HS_LAWN_TOP - .30, concrete)
+        add_box(col, "hs_stand_seat_%d" % tier, TIER_DEPTH - .34,
+                STAND_L - .60, .10, east - TIER_DEPTH / 2 + .02, STAND_Y,
+                tread + .02, navy if tier % 2 else gold)
+    stand_back = STAND_FRONT - STAND_TIERS * TIER_DEPTH - .50
+    stand_top = HS_LAWN_TOP + .55 + (STAND_TIERS - 1) * TIER_RISE
+    add_box(col, "hs_stand_back_wall", .50, STAND_L + .60, 1.18,
+            stand_back + .25, STAND_Y, stand_top, concrete)
+    # Full-height ends, wrapped round the tiers rather than set inside them:
+    # six tiers finishing on one plane at either end is six visible faces
+    # fighting over the same depth. Their own west face is buried inside the
+    # retaining wall behind the bank.
+    for y in (STAND_Y - STAND_L / 2 - .10, STAND_Y + STAND_L / 2 + .10):
+        add_box(col, "hs_stand_end_wall", 9.50, 1.00,
+                stand_top + .45 - HS_LAWN_TOP + .30,
+                -26.85, y, HS_LAWN_TOP - .30, concrete)
+    for y in (STAND_Y - 12.0, STAND_Y + 12.0):
+        for tier in range(STAND_TIERS):
+            add_box(col, "hs_stand_rail", .10, .10, .95,
+                    STAND_FRONT - tier * TIER_DEPTH + .12, y,
+                    HS_LAWN_TOP + .55 + tier * TIER_RISE + .04, steel)
+    # Press box, on the back of the stand, looking east over the field.
+    # Far enough east that the press deck clears the retaining wall behind
+    # the stand instead of standing in it.
+    PRESS_X, PRESS_Z = stand_back + 3.40, stand_top + 1.30
+    add_box(col, "hs_press_deck", 5.60, 10.40, .34, PRESS_X, STAND_Y,
+            PRESS_Z - .34, concrete)
+    add_box(col, "hs_press_body", 4.80, 9.60, 2.90, PRESS_X, STAND_Y,
+            PRESS_Z, stone)
+    add_box(col, "hs_press_glass", .20, 8.60, 1.35,
+            mounted_face_center(PRESS_X + 2.40, 1, .20, .14), STAND_Y,
+            PRESS_Z + .75, darkpane)
+    add_box(col, "hs_press_sill", .34, 9.10, .16,
+            mounted_face_center(PRESS_X + 2.40, 1, .34, .28), STAND_Y,
+            PRESS_Z + .52, stone_dark)
+    add_box(col, "hs_press_roof", 5.90, 10.70, .30, PRESS_X, STAND_Y,
+            PRESS_Z + 2.90, slate)
+    add_box(col, "hs_press_fascia", 6.14, 10.94, .18, PRESS_X, STAND_Y,
+            PRESS_Z + 2.74, navy)
+    add_text(col, "hs_press_name", "FOLLOWVILLE HIGH", .50, .06,
+             PRESS_X + 2.45, STAND_Y, PRESS_Z + 2.38, gold,
+             rotation=(math.pi / 2, 0, math.pi / 2))
+
+    # ── scoreboard, on the infield beyond the north end zone ────────────────
+    BOARD_X = HS_TRACK_CX
+    BOARD_Y = HS_TRACK_CY + HS_FIELD_L / 2 + 3.80
+    board_base = HS_TURF_Z + HS_TURF_H
+    for side in (-1, 1):
+        add_ngon_cone(col, "hs_board_post", .26, .22, 4.30, 8,
+                      BOARD_X + side * 2.90, BOARD_Y, board_base, steel)
+    add_box(col, "hs_board_body", 8.20, .70, 3.60, BOARD_X, BOARD_Y,
+            board_base + 4.10, navy)
+    add_box(col, "hs_board_frame", 8.70, .90, .26, BOARD_X, BOARD_Y,
+            board_base + 7.70, stone_dark)
+    add_box(col, "hs_board_header", 7.60, .16, .80, BOARD_X,
+            mounted_face_center(BOARD_Y - .35, -1, .16, .11),
+            board_base + 6.70, gold)
+    add_text(col, "hs_board_header_text", "FOLLOWVILLE HIGH", .44, .05,
+             BOARD_X, BOARD_Y - .49, board_base + 7.10, navy)
+    for index, (label, offset) in enumerate((("HOME", -2.10), ("GUEST", 2.10))):
+        add_box(col, "hs_board_digits", 2.30, .16, 1.50,
+                BOARD_X + offset,
+                mounted_face_center(BOARD_Y - .35, -1, .16, .11),
+                board_base + 4.40, charcoal)
+        for digit in (-.55, .55):
+            add_box(col, "hs_board_digit_glow", .78, .09, 1.20,
+                    BOARD_X + offset + digit,
+                    mounted_face_center(BOARD_Y - .35, -1, .09, .07),
+                    board_base + 4.55, gold)
+        add_text(col, "hs_board_label_%d" % index, label, .38, .04,
+                 BOARD_X + offset, BOARD_Y - .41, board_base + 6.10, paint)
+
+    # ── stadium lights, field house, fencing and planting ───────────────────
+    for mast_x, mast_y in ((-18.0, 13.0), (28.0, 13.0),
+                           (-18.0, -49.0), (28.0, -49.0)):
+        add_box(col, "hs_mast_base", 1.60, 1.60, .40, mast_x, mast_y,
+                HS_LAWN_TOP, concrete)
+        add_ngon_cone(col, "hs_mast", .38, .22, 15.5, 8, mast_x, mast_y,
+                      HS_LAWN_TOP + .40, steel)
+        add_box(col, "hs_mast_head", 4.20, .60, .32, mast_x, mast_y,
+                HS_LAWN_TOP + 15.90, charcoal)
+        for offset in (-1.5, -.5, .5, 1.5):
+            add_box(col, "hs_mast_lamp", .82, .46, .30,
+                    mast_x + offset, mast_y - .16, HS_LAWN_TOP + 15.58,
+                    charcoal)
+            add_box(col, "hs_mast_lens", .64, .10, .22,
+                    mast_x + offset, mast_y - .44, HS_LAWN_TOP + 15.62,
+                    m["bulb"])
+    FIELD_HOUSE_X, FIELD_HOUSE_Y = -25.00, -48.40
+    add_box(col, "hs_field_house_base", 11.20, 10.20, .40,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y, HS_LAWN_TOP, stone_dark)
+    add_box(col, "hs_field_house", 10.40, 9.40, 3.60,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y, HS_LAWN_TOP + .40, brick)
+    add_box(col, "hs_field_house_band", 10.70, 9.70, .26,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y, HS_LAWN_TOP + 3.72, stone)
+    add_prism_roof(col, "hs_field_house_roof", 11.24, 10.24, 1.50,
+                   FIELD_HOUSE_X, FIELD_HOUSE_Y, HS_LAWN_TOP + 4.00, slate)
+    add_box(col, "hs_field_house_counter", 5.60, .34, 1.10,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y + 4.86, HS_LAWN_TOP + 1.30, stone)
+    add_box(col, "hs_field_house_hatch", 5.20, .18, 1.50,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y + 4.74, HS_LAWN_TOP + 2.46,
+            charcoal)
+    add_box(col, "hs_field_house_awning", 6.60, 1.90, .20,
+            FIELD_HOUSE_X, FIELD_HOUSE_Y + 5.50, HS_LAWN_TOP + 4.02, navy)
+    add_box(col, "hs_field_house_door", 1.40, .18, 2.18,
+            FIELD_HOUSE_X + 3.90, FIELD_HOUSE_Y + 4.76, HS_LAWN_TOP + .42,
+            navy)
+    # Walks from the quad down the west side of the stadium to the field house.
+    add_box(col, "hs_stadium_walk", 4.00, 24.0, STADIUM_TOP - HS_WALK_Z,
+            -27.50, 14.0, HS_WALK_Z, concrete)
+    add_box(col, "hs_stadium_walk_south", 4.00, 10.0, STADIUM_TOP - HS_WALK_Z,
+            -27.50, -41.0, HS_WALK_Z, concrete)
+    # Boundary fence on the two sides that face neighbours.  The west side is
+    # held by the retaining wall and the north side is the campus frontage, so
+    # neither is fenced.
+    for post_y in range(-55, 25, 3):
+        add_box(col, "hs_fence_post", .11, .11, 1.55, 31.40, float(post_y),
+                HS_LAWN_TOP, steel)
+    for post_x in range(-30, 32, 3):
+        add_box(col, "hs_fence_post", .11, .11, 1.55, float(post_x), -55.40,
+                HS_LAWN_TOP, steel)
+    for rail_z in (.90, 1.52):
+        add_box(col, "hs_fence_rail", .09, 79.0, .10, 31.40, -15.50,
+                HS_LAWN_TOP + rail_z, steel)
+        add_box(col, "hs_fence_rail", 62.0, .09, .10, 0.0, -55.40,
+                HS_LAWN_TOP + rail_z, steel)
+    for y in range(-52, 22, 8):
+        add_ngon_cone(col, "hs_hedge_east", 1.05, .55, 1.20, 8, 30.20,
+                      float(y), HS_LAWN_TOP, hedge)
+    for x in range(-12, 30, 8):
+        add_ngon_cone(col, "hs_hedge_south", 1.05, .55, 1.20, 8, float(x),
+                      -54.20, HS_LAWN_TOP, hedge)
+    # Planting goes where the oval leaves room: the four corners the track's
+    # bends cut off, and the two lawn panels either side of the entrance drive.
+    for x, y, scale in ((-24.0, 15.0, .88), (-11.0, 15.5, .84),
+                        (24.0, 15.5, .86), (30.0, 8.0, .80),
+                        (28.0, -52.0, .85), (18.0, -53.0, .78),
+                        (-8.0, 52.0, .80), (6.0, 52.0, .85)):
+        _hs_campus_tree(col, rng, x, y, scale)
 
 
 def _add_followmart_text(col, body, size, x, y, z, material,
@@ -7217,6 +8072,7 @@ ASSET_VARIANTS = {
     "stadium":     [("AST_stadium_0", lambda c: build_stadium(c, 900))],
     "pond":        [("AST_pond_0", lambda c: build_pond(c, 1950))],
     "elementaryschool": [("AST_elementaryschool_0", lambda c: build_elementary_school(c, 2500))],
+    "highschool": [("AST_highschool_0", lambda c: build_high_school(c, 2600))],
     "constructionzone": [("AST_constructionzone_0", lambda c: build_construction_zone(c, 3300))],
     "movietheater": [("AST_movietheater_0", lambda c: build_movie_theater(c, 3500))],
     "arcade": [("AST_arcade_0", lambda c: build_followville_arcade(c, 129))],
@@ -7288,6 +8144,8 @@ def web_chunk_id(b):
         return "apartment-complex"
     if b.get("type") == "northcrowncampus":
         return "north-crown-campus"
+    if b.get("type") == "highschool":
+        return "high-school"
     if b.get("type") in ("foodhouse", "foodcourt"):
         return "food-court"
     if b.get("type") == "weatherstation":
@@ -7322,6 +8180,7 @@ SIZE = {"house": 1, "tree": 1, "shop": 1, "streetlight": 1, "car": 1, "bush": 1,
         "apartment": 2, "park": 2, "plaza": 2, "skyscraper": 2,
         "metrotower": 1, "stadium": 3,
         "elementaryschool": 3, "constructionzone": 3, "movietheater": 3, "followmart": 3,
+        "highschool": 1,
         "arcade": 1,
         "coffeetruck": 1, "firestation": 3, "forestreserve": 1,
         "cityhallroad": 1, "cityhall": 4, "civicsquare": 3, "fishingpond": 1,
@@ -7352,6 +8211,26 @@ def footprint(b):
                           "raftingstation", "forestreserve", "salmonproshop", "apartmentcomplex",
                           "northcrowncampus", "foodhouse", "foodcourt")):
         return []
+    if b["type"] == "highschool":
+        # The campus stands on the block immediately south of the grid, on
+        # lots the downtown block-fill would otherwise reach within a few
+        # days' growth. Reserving every lot it covers keeps houses off the
+        # pitch, and keeps scatter_nature off it too -- the scatter works from
+        # the same occupied set, so no tree can be planted on the running
+        # track without this.
+        cells = []
+        cx, cy = build_pos(b)
+        reach_x, reach_y = CAMPUS_HALF_X + 10.0, CAMPUS_HALF_Y + 10.0
+        # LOT is smaller than a block's per-lot pitch, so dividing by it
+        # always over-estimates the index range rather than clipping it.
+        for gx in range(int(math.floor((cx - reach_x) / LOT)) - BLOCK_N,
+                        int(math.ceil((cx + reach_x) / LOT)) + BLOCK_N + 1):
+            for gy in range(int(math.floor((cy - reach_y) / LOT)) - BLOCK_N,
+                            int(math.ceil((cy + reach_y) / LOT)) + BLOCK_N + 1):
+                x, y = lot_to_world(gx, gy)
+                if abs(x - cx) <= reach_x and abs(y - cy) <= reach_y:
+                    cells.append((gx, gy))
+        return cells
     if b["type"] == "parkdistrict":
         # reserve every lot whose center falls inside the district circle
         cells, rr = [], b.get("r", 57) + LOT
@@ -16444,7 +17323,7 @@ def main(cfg=None):
                 cfg.get("movietheater") or cfg.get("arcade") or
                 cfg.get("eastwoods") or cfg.get("raftingstation") or
                 cfg.get("gasstation") or cfg.get("salmonproshop") or
-                cfg.get("northcrowncampus")):
+                cfg.get("highschool") or cfg.get("northcrowncampus")):
             state["day"] += 1
             state["pop"] = max(0, state["pop"] + followers)
             # milestone buildings appear the day a threshold is crossed
@@ -16727,6 +17606,19 @@ def main(cfg=None):
             state["seed_counter"] += 1
             state["buildings"].append(salmon_pro_shop)
             new_batch.append(salmon_pro_shop)
+        if cfg.get("highschool"):
+            if any(b["type"] == "highschool" for b in state["buildings"]):
+                raise RuntimeError("Followville High already exists")
+            high_school = {
+                "type": "highschool", "gx": 0, "gy": 0,
+                "px": HIGH_SCHOOL_X, "py": HIGH_SCHOOL_Y, "pz": 0.0,
+                "rot": 0.0, "seed": state["seed_counter"],
+                "name": "Followville High School",
+                "day": state["day"],
+            }
+            state["seed_counter"] += 1
+            state["buildings"].append(high_school)
+            new_batch.append(high_school)
         if cfg.get("apartmentcomplex"):
             if any(b["type"] == "apartmentcomplex" for b in state["buildings"]):
                 raise RuntimeError("Followville Commons already exists")
