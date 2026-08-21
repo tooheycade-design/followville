@@ -1,7 +1,7 @@
 {
- "day": 50,
+ "day": 51,
  "pop": 2562,
- "seed_counter": 2551,
+ "seed_counter": 2552,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -32332,6 +32332,18 @@
    "street": "Gateway Row",
    "seed": 2550,
    "day": 50
+  },
+  {
+   "type": "highschool",
+   "gx": 0,
+   "gy": 0,
+   "px": -69.0,
+   "py": -156.0,
+   "pz": 0.0,
+   "rot": 0.0,
+   "seed": 2551,
+   "name": "Followville High School",
+   "day": 51
   }
  ],
  "milestones": [
