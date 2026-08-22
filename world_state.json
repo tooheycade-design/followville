@@ -1,7 +1,7 @@
 {
- "day": 51,
- "pop": 2562,
- "seed_counter": 2552,
+ "day": 52,
+ "pop": 2564,
+ "seed_counter": 2554,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -32344,6 +32344,32 @@
    "seed": 2551,
    "name": "Followville High School",
    "day": 51
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -96.169,
+   "py": 854.5,
+   "rot": 0.0,
+   "plan_id": 2354,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2552,
+   "day": 52
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": -89.195,
+   "py": 837.5,
+   "rot": 3.14159,
+   "plan_id": 2355,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2553,
+   "day": 52
   }
  ],
  "milestones": [
