@@ -214,6 +214,8 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #                     bank that looks back south-west down all five.
 #                     Authored for --time sunset.
 #   --cam day50highway 24-second sunset construction chase through the 50 new
+#   --cam highschoolreveal 24-second blue-hour downtown-to-campus reveal,
+#                     monument-sign pass, facade orbit, and stadium climb-out
 #                     Crown Fields addresses, ending on the rebuilt Crown
 #                     Expressway / Ring Freeway interchange.
 #                     Authored for --time sunset.
@@ -12680,6 +12682,76 @@ def _build_video_practicals(world_col, tod):
         lights.append(light)
     return lights
 
+
+def _build_high_school_video_lights(world_col, tod):
+    """Render-only blue-hour modelling lights for ``highschoolreveal``.
+
+    The campus asset already contains every visible fixture and lamp head.
+    These sources only make those authored fixtures cast the pools and long
+    shadows expected in the Reel; they never enter the Blend or web export.
+    """
+    if tod not in ("sunset", "dusk", "night"):
+        return []
+
+    lights = []
+
+    def aimed_spot(name, location, target, color, energy, size, blend=.48,
+                   shadow_soft=1.0):
+        aim = bpy.data.objects.new(name + "_Aim", None)
+        aim.location = target
+        aim["nb_render_only"] = True
+        world_col.objects.link(aim)
+        data = bpy.data.lights.new(name, "SPOT")
+        data.color = color
+        data.energy = energy
+        data.spot_size = math.radians(size)
+        data.spot_blend = blend
+        data.shadow_soft_size = shadow_soft
+        lamp = bpy.data.objects.new(name, data)
+        lamp.location = location
+        lamp["nb_render_only"] = True
+        lamp["nb_feature_role"] = "video-lighting"
+        track = lamp.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+        world_col.objects.link(lamp)
+        lights.append(lamp)
+
+    # Four authored floodlight masts model the field from opposing corners.
+    # Their cool-white pools keep the track and yard markings legible against
+    # the warm building light without flattening the stadium into one wash.
+    stadium_energy = 2800.0 if tod == "sunset" else (4200.0 if tod == "dusk" else 6000.0)
+    field_target = (HIGH_SCHOOL_X + HS_TRACK_CX,
+                    HIGH_SCHOOL_Y + HS_TRACK_CY, 0.35)
+    for index, (lx, ly) in enumerate(((-18.0, 13.0), (28.0, 13.0),
+                                      (-18.0, -49.0), (28.0, -49.0))):
+        aimed_spot("HighSchoolFieldLight_%02d" % index,
+                   (HIGH_SCHOOL_X + lx, HIGH_SCHOOL_Y + ly, 15.9),
+                   field_target, (.78, .86, 1.0), stadium_energy, 58.0,
+                   blend=.56, shadow_soft=1.7)
+
+    # Warm grazing light on the three south-facing entrances. It preserves
+    # relief in the masonry, clock gable, and gold-on-navy school name during
+    # the close orbit instead of merely raising the global exposure.
+    facade_energy = 900.0 if tod == "sunset" else (1500.0 if tod == "dusk" else 2200.0)
+    for index, local_x in enumerate((-20.0, 2.0, 21.5)):
+        world_x = HIGH_SCHOOL_X + local_x
+        aimed_spot("HighSchoolFacadeWash_%02d" % index,
+                   (world_x, HIGH_SCHOOL_Y + 15.0, 8.0),
+                   (world_x, HIGH_SCHOOL_Y + 29.0, 4.6),
+                   (1.0, .60, .29), facade_energy, 54.0,
+                   blend=.62, shadow_soft=1.4)
+
+    # A tight warm pool makes the exact double-sided monument copy readable
+    # during the low pass without bleaching the surrounding campus entrance.
+    aimed_spot("HighSchoolMonumentLight",
+               (HIGH_SCHOOL_X - 22.0, HIGH_SCHOOL_Y + 45.4, 3.2),
+               (HIGH_SCHOOL_X - 22.0, HIGH_SCHOOL_Y + 52.4, 1.9),
+               (1.0, .67, .32), 500.0 if tod != "night" else 850.0, 38.0,
+               blend=.58, shadow_soft=.65)
+    return lights
+
 # ═══════════════════════════ ANIMATION / CAMERA / STAGE ═════════════════════════
 
 def obj_fcurves(obj):
@@ -12726,17 +12798,64 @@ def _keyframe_hidden(empty, frame, hidden):
     empty.hide_render = hidden
     empty.keyframe_insert("hide_viewport", frame=frame)
     empty.keyframe_insert("hide_render", frame=frame)
+    # Visibility is a switch, not a value to ease. Blender 5 can interpolate
+    # boolean F-curves numerically, which flips the object halfway between an
+    # early hidden key and its intended reveal key. Explicit stepped keys keep
+    # every rising asset completely absent until the authored reveal frame.
+    for fc in obj_fcurves(empty):
+        if fc.data_path in ("hide_viewport", "hide_render"):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "CONSTANT"
 
 def animate_rise(empty, f_start, dur=22):
     rest = tuple(empty.get("nb_rest_scale", empty.scale))
     # invisible until its turn — no flattened houses lying on the ground
     _keyframe_hidden(empty, 1, True)
+    # Pin the hidden state on the immediately preceding frame as well. This is
+    # robust even when a Blender version or imported Action ignores the
+    # intended CONSTANT interpolation on a boolean visibility curve.
+    if f_start > 1:
+        _keyframe_hidden(empty, f_start - 1, True)
     _keyframe_hidden(empty, f_start, False)
     empty.scale = (rest[0], rest[1], max(.001, rest[2] * .001))
     empty.keyframe_insert("scale", frame=f_start)
     empty.scale = rest
     empty.keyframe_insert("scale", frame=f_start + dur)
     _ease_scale(empty, "EASE_OUT")
+
+
+def animate_landmark_emerge(empty, f_start, dur=64, depth=20.0):
+    """Bring a large landmark straight up without scale bounce or shimmer.
+
+    Scaling a campus root compresses every horizontal slab into the same few
+    centimetres, then ``BACK`` easing overshoots the finished height. On a
+    755-solid school that reads as surfaces popping out, dipping back under,
+    and fighting each other. A rigid underground translation preserves every
+    authored separation and finishes once, exactly at the stored location.
+    """
+    rest_location = tuple(empty.location)
+    rest_scale = tuple(empty.get("nb_rest_scale", empty.scale))
+    empty.animation_data_clear()
+    empty.scale = rest_scale
+    _keyframe_hidden(empty, 1, True)
+    if f_start > 1:
+        _keyframe_hidden(empty, f_start - 1, True)
+    empty.location = (rest_location[0], rest_location[1],
+                      rest_location[2] - depth)
+    empty.keyframe_insert("location", frame=f_start)
+    _keyframe_hidden(empty, f_start, False)
+    empty.location = rest_location
+    empty.keyframe_insert("location", frame=f_start + dur)
+    for fc in obj_fcurves(empty):
+        if fc.data_path == "location":
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+                kp.easing = "EASE_OUT"
+                try:
+                    kp.handle_left_type = "AUTO_CLAMPED"
+                    kp.handle_right_type = "AUTO_CLAMPED"
+                except AttributeError:
+                    pass
 
 
 def animate_road_extend(empty, f_start, dur=36):
@@ -13539,7 +13658,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44westbank", "day44sereverse",
                "day44fullarc", "day46sunsetdrone",
                "day47reveal", "day48crown",
-               "day49northreach", "day50highway") and tod == "sunset":
+               "day49northreach", "day50highway",
+               "highschoolreveal") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
         # separation, but lower and redden the sun, deepen the blue ambient,
@@ -14844,6 +14964,80 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # 2m down in the street, then back to 10m for the climb-out.
         for frame, near in ((1, 10.0), (200, 10.0), (250, 2.0), (545, 2.0),
                             (610, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "highschoolreveal":
+        # Followville High: one uninterrupted 24-second blue-hour shot. Start
+        # in the old downtown with the Burj house as a recognizable anchor,
+        # cross the y=-93 street onto an empty level campus, reveal the entire
+        # school in one clean rise, skim its exact monument copy, then orbit
+        # the three linked buildings before climbing over the stadium.
+        aim = bpy.data.objects.new("HighSchoolRevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("HighSchoolRevealCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("HighSchoolRevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Old downtown and the Burj house establish that this is the same
+            # persistent city before the move bends south toward the school.
+            (1,   (96.0, -42.0, 116.0), (1.0, 13.0, 15.0), 28),
+            (78,  (66.0, -52.0, 100.0), (-10.0, -5.0, 12.0), 29),
+            # The level pad is still empty here. The school begins rising at
+            # frame 176 while the camera is already committed to the approach.
+            (130, (20.0, -72.0, 78.0), (-58.0, -139.0, 2.0), 29),
+            (170, (-5.0, -83.0, 60.0), (-69.0, -151.0, 3.0), 30),
+            (220, (-38.0, -80.0, 36.0), (-74.0, -125.0, 4.2), 33),
+            # Town-street side of the double-sided sign. The north approach
+            # keeps Founders Hall behind the sign instead of between it and
+            # the lens; a longer focal length makes the exact copy readable.
+            (270, (-91.0, -87.0, 6.5), (-91.0, -103.1, 2.0), 39),
+            # Leave the sign around the west edge of the site. Every low beat
+            # remains outside the campus footprint, so the orbit cannot cut
+            # through Founders Hall, either wing, the gym, or a breezeway.
+            (330, (-108.0, -112.0, 15.0), (-88.0, -125.0, 5.0), 36),
+            (400, (-118.0, -157.0, 26.0), (-69.0, -130.0, 5.0), 32),
+            # Continue around the exterior: west of the stand, south of the
+            # oval, then up the east boundary before the centered climb-out.
+            (490, (-116.0, -216.0, 54.0), (-64.0, -172.0, 3.0), 29),
+            (575, (-30.0, -232.0, 72.0), (-64.0, -174.0, 2.0), 28),
+            (650, (-22.0, -174.0, 58.0), (-64.0, -150.0, 4.0), 30),
+            (720, (-64.0, -250.0, 120.0), (-64.0, -168.0, 1.2), 28),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+                    try:
+                        kp.handle_left_type = "AUTO_CLAMPED"
+                        kp.handle_right_type = "AUTO_CLAMPED"
+                    except AttributeError:
+                        pass
+        # Aerial precision for the city and final stadium, relaxed only for
+        # the sign/facade pass where nearby geometry must not clip away.
+        for frame, near in ((1, 10.0), (145, 10.0), (190, 1.0),
+                            (500, 1.0), (590, 10.0), (720, 10.0)):
             cam_data.clip_start = near
             cam_data.keyframe_insert("clip_start", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -16934,6 +17128,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     world_col.objects.link(fill)
     _configure_video_sky(tod, t)
     _build_video_practicals(world_col, tod)
+    if cam == "highschoolreveal":
+        _build_high_school_video_lights(world_col, tod)
     if cam == "day45northcrown" and tod in ("dusk", "night"):
         # Courtyard practicals are render-only.  The web keeps the authored
         # emissive lamp heads, while the cinematic file gets soft amber pools
@@ -17079,6 +17275,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
                "day48crown", "day49northreach", "day50highway",
+               "highschoolreveal",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
                "day44downtown", "day44allapproach", "day44alldrone",
@@ -17123,7 +17320,8 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44westbank", "day44sereverse",
                    "day44fullarc", "day46sunsetdrone",
                    "day47reveal", "day48crown",
-                   "day49northreach", "day50highway") and tod == "sunset":
+                   "day49northreach", "day50highway",
+                   "highschoolreveal") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
     except Exception:
@@ -17787,7 +17985,19 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day48crown":
+    if cfg.get("cam") == "highschoolreveal":
+        frame_end = FPS * 24
+        school_roots = [root for root in building_roots
+                        if root.get("nb_world_type") == "highschool"]
+        if len(school_roots) != 1:
+            raise RuntimeError(
+                "highschoolreveal requires exactly one Followville High "
+                "record; got %d" % len(school_roots))
+        # Render-only and state-independent: this remains the school reveal
+        # even after later follower growth makes the campus no longer today's
+        # new_batch. The city/state/export are untouched by this animation.
+        animate_landmark_emerge(school_roots[0], 176, dur=64, depth=20.0)
+    elif cfg.get("cam") == "day48crown":
         frame_end = FPS * 24          # exact brief: twenty-four seconds
         home_roots = [root for root in rise if root.name.startswith("house_d")]
         tower_roots = [root for root in rise
@@ -17896,6 +18106,10 @@ def main(cfg=None):
             if start > DAY49_WAVE_KNEE:
                 start = DAY49_WAVE_KNEE + (start - DAY49_WAVE_KNEE) * DAY49_WAVE_SQUEEZE
             animate_rise(root, max(1, int(round(start))), dur=22)
+    elif cfg.get("cam") == "highschoolreveal":
+        # Installed above from the canonical high-school root, rather than
+        # whichever records happen to belong to the current growth day.
+        pass
     elif cfg.get("cam") == "day47reveal":
         frame_end = FPS * 24          # exact brief: twenty-four seconds / 720 frames
         home_roots = [root for root in rise if root.name.startswith("house_d")]
