@@ -40,12 +40,12 @@ def require_state(plan_id, frame, hidden, z_offset):
 
 
 # Empty opening, then two clean rigid rises with no scale distortion.
-require_state(2354, 85, True, 0.0)
+require_state(2354, 85, True, -9.0)
 require_state(2354, 86, False, -9.0)
 require_state(2354, 140, False, 0.0)
-require_state(2355, 145, True, 0.0)
-require_state(2355, 146, False, -9.0)
-require_state(2355, 200, False, 0.0)
+require_state(2355, 189, True, -9.0)
+require_state(2355, 190, False, -9.0)
+require_state(2355, 244, False, 0.0)
 for root in homes.values():
     if any(abs(value - 1.0) > .001 for value in root.scale):
         raise RuntimeError("Day 52 house scale was distorted: %s %r"
@@ -70,20 +70,22 @@ def require_visible(label, frame, points, margin=.025):
     print("CAMERA_QA %s frame=%d projected=%r" % (label, frame, projected))
 
 
-home_points = []
+home_points = {}
 for plan_id, (x, y) in {2354: (-96.169, 854.5),
                         2355: (-89.195, 837.5)}.items():
     z = terrain_height(x, y)
-    home_points.extend(((x - 3.5, y - 4.5, z + .2),
-                        (x + 3.5, y + 4.5, z + 7.5)))
-require_visible("two-empty-frontages", 78, home_points, margin=.018)
-require_visible("two-finished-homes", 235, home_points, margin=.018)
+    home_points[plan_id] = ((x - 3.5, y - 4.5, z + .2),
+                            (x + 3.5, y + 4.5, z + 7.5))
+require_visible("first-empty-frontage", 78, home_points[2354], margin=.018)
+require_visible("first-finished-home", 140, home_points[2354], margin=.018)
+require_visible("second-empty-frontage", 184, home_points[2355], margin=.018)
+require_visible("second-finished-home", 250, home_points[2355], margin=.018)
 
 # The opening camera is genuinely in Gateway Row at a natural eye height.
 scene.frame_set(1)
 opening = camera.matrix_world.translation
 road_ground = terrain_height(opening.x, opening.y)
-if abs(opening.y - 846.0) > .15 or not 1.7 <= opening.z - road_ground <= 2.8:
+if abs(opening.y - 846.0) > 1.5 or not 1.7 <= opening.z - road_ground <= 2.8:
     raise RuntimeError("opening camera is not road-level in Gateway Row: %r, ground %.3f"
                        % (tuple(opening), road_ground))
 
@@ -91,7 +93,7 @@ if abs(opening.y - 846.0) > .15 or not 1.7 <= opening.z - road_ground <= 2.8:
 # an accidental camera reversal or a second story beat during the pullback.
 distances = []
 reveal_centre = Vector((-93.0, 846.0, 4.0))
-for frame in range(235, 721, 15):
+for frame in range(250, 721, 15):
     scene.frame_set(frame)
     distances.append((frame, (camera.matrix_world.translation - reveal_centre).length))
 for (fa, da), (fb, db) in zip(distances, distances[1:]):

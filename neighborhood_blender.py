@@ -12768,20 +12768,22 @@ def _build_day52_video_lights(world_col, tod):
         return []
 
     lights = []
-    homes = ((-96.169, 854.5, 86), (-89.195, 837.5, 146))
-    for index, (x, y, rise_frame) in enumerate(homes):
+    homes = ((-96.169, 854.5, -1.0, 86),
+             (-89.195, 837.5, 1.0, 190))
+    for index, (x, y, road_side, rise_frame) in enumerate(homes):
         aim = bpy.data.objects.new("Day52WarmAim_%02d" % index, None)
         aim.location = (x, y, terrain_height(x, y) + 3.2)
         aim["nb_render_only"] = True
         world_col.objects.link(aim)
 
         data = bpy.data.lights.new("Day52WarmPool_%02d" % index, "SPOT")
-        data.color = (1.0, .52, .23)
-        data.spot_size = math.radians(54.0)
-        data.spot_blend = .62
-        data.shadow_soft_size = 1.55
+        data.color = (1.0, .43, .16)
+        data.spot_size = math.radians(46.0)
+        data.spot_blend = .58
+        data.shadow_soft_size = 1.25
         lamp = bpy.data.objects.new("Day52WarmPool_%02d" % index, data)
-        lamp.location = (x + 5.5, y - 2.0, terrain_height(x, y) + 18.0)
+        lamp.location = (x + 2.5, y + road_side * 8.0,
+                         terrain_height(x, y) + 17.0)
         lamp["nb_render_only"] = True
         lamp["nb_feature_role"] = "video-lighting"
         track = lamp.constraints.new("TRACK_TO")
@@ -12795,7 +12797,7 @@ def _build_day52_video_lights(world_col, tod):
         # AUTO_CLAMPED handles give the light a photographic fade rather than
         # an electrical snap while retaining the warm highlight roll-off.
         for frame, energy in ((1, 0.0), (rise_frame - 14, 0.0),
-                              (rise_frame + 28, 2350.0), (720, 1500.0)):
+                              (rise_frame + 28, 3800.0), (720, 1800.0)):
             data.energy = energy
             data.keyframe_insert("energy", frame=frame)
         for fc in obj_fcurves(data):
@@ -15046,11 +15048,14 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         beats = (
             # Eye-height in the paved road. The first beat holds long enough
             # for the viewer to read two genuinely blank lots.
-            (1,   (-72.0, 846.0, 5.65), (-93.0, 846.0, 4.35), 24),
-            (78,  (-72.6, 846.0, 5.75), (-93.1, 846.0, 4.45), 25),
-            # Gentle close push while the north and south homes rise in turn.
-            (150, (-75.5, 846.0, 6.05), (-93.0, 846.0, 4.65), 27),
-            (235, (-77.0, 846.0, 6.35), (-92.7, 846.0, 4.85), 30),
+            (1,   (-96.169, 844.8, 5.45), (-96.169, 854.5, 5.05), 42),
+            (78,  (-96.169, 844.5, 5.55), (-96.169, 854.5, 5.15), 44),
+            # Hold the first facade through its completed rise, then make one
+            # quick, graceful road-bound orbit to face the opposite frontage.
+            (140, (-95.6, 844.8, 5.70), (-96.169, 854.5, 5.25), 44),
+            (160, (-83.0, 846.0, 8.0), (-93.0, 846.0, 4.8), 28),
+            (184, (-89.195, 847.2, 5.65), (-89.195, 837.5, 5.10), 42),
+            (250, (-89.0, 847.4, 5.85), (-89.195, 837.5, 5.20), 44),
             # The only story beat after the homes: one continuous physical
             # crane/dolly out. Lens widening supports the move but never
             # substitutes for it, so the expanding geography has parallax.
@@ -15078,7 +15083,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                         pass
         # Preserve close road geometry, then raise the near plane for the
         # aerial half to prevent distant streets flashing from depth loss.
-        for frame, near in ((1, .35), (260, .35), (390, 10.0), (720, 10.0)):
+        for frame, near in ((1, .35), (270, .35), (390, 10.0), (720, 10.0)):
             cam_data.clip_start = near
             cam_data.keyframe_insert("clip_start", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -18126,7 +18131,7 @@ def main(cfg=None):
         # Rigid underground rises retain every facade clearance and avoid the
         # toy-like squash/bounce of the generic daily scale animation.
         for root in home_roots:
-            start = 86 if int(root["nb_world_plan_id"]) == 2354 else 146
+            start = 86 if int(root["nb_world_plan_id"]) == 2354 else 190
             animate_landmark_emerge(root, start, dur=54, depth=9.0)
     elif cfg.get("cam") == "highschoolreveal":
         frame_end = FPS * 24
