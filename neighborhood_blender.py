@@ -214,11 +214,14 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #                     bank that looks back south-west down all five.
 #                     Authored for --time sunset.
 #   --cam day50highway 24-second sunset construction chase through the 50 new
-#   --cam highschoolreveal 24-second blue-hour downtown-to-campus reveal,
-#                     monument-sign pass, facade orbit, and stadium climb-out
 #                     Crown Fields addresses, ending on the rebuilt Crown
 #                     Expressway / Ring Freeway interchange.
 #                     Authored for --time sunset.
+#   --cam highschoolreveal 24-second blue-hour downtown-to-campus reveal,
+#                     monument-sign pass, facade orbit, and stadium climb-out
+#   --cam day52nightreveal 24-second road-level night reveal of the two Day 52
+#                     Gateway Row homes, then one pullback to the whole city.
+#                     Authored for --time night.
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -12752,6 +12755,56 @@ def _build_high_school_video_lights(world_col, tod):
                blend=.58, shadow_soft=.65)
     return lights
 
+
+def _build_day52_video_lights(world_col, tod):
+    """Warm render-only pools for the two-home ``day52nightreveal``.
+
+    The supplied lighting reference is a warm, soft-edged key surrounded by
+    deep darkness.  Followville's night preset supplies the cool moon/sky and
+    existing practicals; these two spot sources add the warm reveal without a
+    fog plane or world volume that would turn into a wall during the pullback.
+    """
+    if tod != "night":
+        return []
+
+    lights = []
+    homes = ((-96.169, 854.5, 86), (-89.195, 837.5, 146))
+    for index, (x, y, rise_frame) in enumerate(homes):
+        aim = bpy.data.objects.new("Day52WarmAim_%02d" % index, None)
+        aim.location = (x, y, terrain_height(x, y) + 3.2)
+        aim["nb_render_only"] = True
+        world_col.objects.link(aim)
+
+        data = bpy.data.lights.new("Day52WarmPool_%02d" % index, "SPOT")
+        data.color = (1.0, .52, .23)
+        data.spot_size = math.radians(54.0)
+        data.spot_blend = .62
+        data.shadow_soft_size = 1.55
+        lamp = bpy.data.objects.new("Day52WarmPool_%02d" % index, data)
+        lamp.location = (x + 5.5, y - 2.0, terrain_height(x, y) + 18.0)
+        lamp["nb_render_only"] = True
+        lamp["nb_feature_role"] = "video-lighting"
+        track = lamp.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+        world_col.objects.link(lamp)
+        lights.append(lamp)
+
+        # Let the pool breathe on just before its house clears the ground.
+        # AUTO_CLAMPED handles give the light a photographic fade rather than
+        # an electrical snap while retaining the warm highlight roll-off.
+        for frame, energy in ((1, 0.0), (rise_frame - 14, 0.0),
+                              (rise_frame + 28, 2350.0), (720, 1500.0)):
+            data.energy = energy
+            data.keyframe_insert("energy", frame=frame)
+        for fc in obj_fcurves(data):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "BEZIER"
+                kp.handle_left_type = "AUTO_CLAMPED"
+                kp.handle_right_type = "AUTO_CLAMPED"
+    return lights
+
 # ═══════════════════════════ ANIMATION / CAMERA / STAGE ═════════════════════════
 
 def obj_fcurves(obj):
@@ -14971,6 +15024,68 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day52nightreveal":
+        # Day 52: begin physically in Gateway Row, looking west between the
+        # two empty frontages.  Both homes rise within the same uninterrupted
+        # composition; only after they finish does the camera crane away and
+        # pull back far enough to hold the complete persistent city at night.
+        aim = bpy.data.objects.new("Day52NightRevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day52NightRevealCamera")
+        cam_data.lens = 24
+        cam_data.clip_start = .35
+        cam_data.clip_end = 8000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day52NightRevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # Eye-height in the paved road. The first beat holds long enough
+            # for the viewer to read two genuinely blank lots.
+            (1,   (-72.0, 846.0, 5.65), (-93.0, 846.0, 4.35), 24),
+            (78,  (-72.6, 846.0, 5.75), (-93.1, 846.0, 4.45), 25),
+            # Gentle close push while the north and south homes rise in turn.
+            (150, (-75.5, 846.0, 6.05), (-93.0, 846.0, 4.65), 27),
+            (235, (-77.0, 846.0, 6.35), (-92.7, 846.0, 4.85), 30),
+            # The only story beat after the homes: one continuous physical
+            # crane/dolly out. Lens widening supports the move but never
+            # substitutes for it, so the expanding geography has parallax.
+            (310, (-58.0, 812.0, 45.0), (-93.0, 846.0, 3.6), 28),
+            (430, (75.0, 620.0, 340.0), (-120.0, 610.0, 4.0), 26),
+            (575, (430.0, 120.0, 1040.0), (-155.0, 515.0, 3.0), 24),
+            (720, (780.0, -390.0, 1780.0), (-165.0, 505.0, 2.0), 24),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+                    try:
+                        kp.handle_left_type = "AUTO_CLAMPED"
+                        kp.handle_right_type = "AUTO_CLAMPED"
+                    except AttributeError:
+                        pass
+        # Preserve close road geometry, then raise the near plane for the
+        # aerial half to prevent distant streets flashing from depth loss.
+        for frame, near in ((1, .35), (260, .35), (390, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
     elif cam == "highschoolreveal":
         # Followville High: one uninterrupted 24-second blue-hour shot. Start
         # in the old downtown with the Burj house as a recognizable anchor,
@@ -17128,6 +17243,8 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
     world_col.objects.link(fill)
     _configure_video_sky(tod, t)
     _build_video_practicals(world_col, tod)
+    if cam == "day52nightreveal":
+        _build_day52_video_lights(world_col, tod)
     if cam == "highschoolreveal":
         _build_high_school_video_lights(world_col, tod)
     if cam == "day45northcrown" and tod in ("dusk", "night"):
@@ -17275,6 +17392,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
                "day48crown", "day49northreach", "day50highway",
+               "day52nightreveal",
                "highschoolreveal",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
@@ -17985,7 +18103,32 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "highschoolreveal":
+    if cfg.get("cam") == "day52nightreveal":
+        frame_end = FPS * 24
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        plan_ids = sorted(int(root.get("nb_world_plan_id", 0))
+                          for root in home_roots)
+        if len(rise) != 2 or len(home_roots) != 2 or plan_ids != [2354, 2355]:
+            raise RuntimeError(
+                "day52nightreveal requires exactly the two Day 52 Gateway "
+                "Row homes at plan_ids 2354 and 2355; got %d rising records, "
+                "%d homes, plan_ids %r. Use the exact 2562 -> 2564 growth."
+                % (len(rise), len(home_roots), plan_ids))
+        expected = {2354: (-96.169, 854.5), 2355: (-89.195, 837.5)}
+        for root in home_roots:
+            plan_id = int(root["nb_world_plan_id"])
+            x, y = expected[plan_id]
+            if math.hypot(root.location.x - x, root.location.y - y) > .01:
+                raise RuntimeError(
+                    "day52nightreveal plan_id %d moved from its authored "
+                    "Gateway Row lot: expected (%.3f, %.1f), got (%.3f, %.3f)"
+                    % (plan_id, x, y, root.location.x, root.location.y))
+        # Rigid underground rises retain every facade clearance and avoid the
+        # toy-like squash/bounce of the generic daily scale animation.
+        for root in home_roots:
+            start = 86 if int(root["nb_world_plan_id"]) == 2354 else 146
+            animate_landmark_emerge(root, start, dur=54, depth=9.0)
+    elif cfg.get("cam") == "highschoolreveal":
         frame_end = FPS * 24
         school_roots = [root for root in building_roots
                         if root.get("nb_world_type") == "highschool"]
@@ -18109,6 +18252,9 @@ def main(cfg=None):
     elif cfg.get("cam") == "highschoolreveal":
         # Installed above from the canonical high-school root, rather than
         # whichever records happen to belong to the current growth day.
+        pass
+    elif cfg.get("cam") == "day52nightreveal":
+        # Exact two-home schedule installed above.
         pass
     elif cfg.get("cam") == "day47reveal":
         frame_end = FPS * 24          # exact brief: twenty-four seconds / 720 frames
