@@ -15048,14 +15048,14 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         beats = (
             # Eye-height in the paved road. The first beat holds long enough
             # for the viewer to read two genuinely blank lots.
-            (1,   (-96.169, 844.8, 5.45), (-96.169, 854.5, 5.05), 42),
-            (78,  (-96.169, 844.5, 5.55), (-96.169, 854.5, 5.15), 44),
+            (1,   (-96.169, 842.0, 6.80), (-96.169, 854.5, 7.00), 20),
+            (78,  (-96.169, 842.0, 6.85), (-96.169, 854.5, 7.00), 20),
             # Hold the first facade through its completed rise, then make one
             # quick, graceful road-bound orbit to face the opposite frontage.
-            (140, (-95.6, 844.8, 5.70), (-96.169, 854.5, 5.25), 44),
+            (140, (-95.6, 842.0, 6.90), (-96.169, 854.5, 7.10), 21),
             (160, (-83.0, 846.0, 8.0), (-93.0, 846.0, 4.8), 28),
-            (184, (-89.195, 847.2, 5.65), (-89.195, 837.5, 5.10), 42),
-            (250, (-89.0, 847.4, 5.85), (-89.195, 837.5, 5.20), 44),
+            (184, (-89.195, 850.0, 6.80), (-89.195, 837.5, 7.00), 20),
+            (250, (-89.0, 850.0, 6.90), (-89.195, 837.5, 7.10), 21),
             # The only story beat after the homes: one continuous physical
             # crane/dolly out. Lens widening supports the move but never
             # substitutes for it, so the expanding geography has parallax.
