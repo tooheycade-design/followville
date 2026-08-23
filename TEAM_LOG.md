@@ -1,5 +1,7 @@
 # Team log — Followville
 
+2026-08-23 — Cade (via Windows Codex) — [WORLD] grew Day 53 by 26 planned North Reach houses to population 2,590 / 2,579 buildings; guarded growth/export/push and claim sync completed (`HOUSES_SYNC_OK`, 26 inserted), full and streamed GLBs are state-consistent, world geometry passed, and all 9 regression self-tests remain caught.
+
 2026-08-22 — Cade (via Windows Codex) — [WORLD] grew Day 52 by 2 followers to population 2,564 / 2,553 buildings, synced both new Gateway Row homes, and delivered a verified 24s 1080x1920 night reel that begins road-level on the two blank frontages, raises each house rigidly under warm reference-inspired spot pools, then pulls back continuously to the full illuminated city; guarded growth/export/push, camera framing and monotonic-motion checks, `check_world_geometry`, all 9 self-tests, and full/streamed GLB state coverage passed.
 
 2026-08-21 — Cade (via Windows Codex) — [WORLD] rendered a corrected 24s sunset Followville High School reveal: the campus now rises once as a rigid assembly with no scale bounce or reversal, the camera descends to the town-street monument sign first and then remains outside the buildings while orbiting through the three-building frontage and stadium, and render-only facade/stadium lighting plus Blender-native sign-occlusion, framing and 240-sample camera-clearance checks were added. The existing houses, `world_state.json`, web export and first review render were left unchanged.
