@@ -1,6 +1,6 @@
 # Team log — Followville
 
-2026-08-23 — Cade (via Windows Codex) — [WORLD] grew Day 53 by 26 planned North Reach houses to population 2,590 / 2,579 buildings; guarded growth/export/push and claim sync completed (`HOUSES_SYNC_OK`, 26 inserted), full and streamed GLBs are state-consistent, world geometry passed, and all 9 regression self-tests remain caught.
+2026-08-23 — Cade (via Windows Codex) — [WORLD] grew Day 53 by 26 planned North Reach houses to population 2,590 / 2,579 buildings and rendered the 9.7s 1080x1920 `day53_26homes` night reel with the full Gateway Row batch re-animated through `newgrowthall`; guarded growth/export/push and claim sync completed (`HOUSES_SYNC_OK`, 26 inserted), replay left state unchanged, full and streamed GLBs are state-consistent, world geometry passed, and all 9 regression self-tests remain caught.
 
 2026-08-22 — Cade (via Windows Codex) — [WORLD] grew Day 52 by 2 followers to population 2,564 / 2,553 buildings, synced both new Gateway Row homes, and delivered a verified 24s 1080x1920 night reel that begins road-level on the two blank frontages, raises each house rigidly under warm reference-inspired spot pools, then pulls back continuously to the full illuminated city; guarded growth/export/push, camera framing and monotonic-motion checks, `check_world_geometry`, all 9 self-tests, and full/streamed GLB state coverage passed.
 
