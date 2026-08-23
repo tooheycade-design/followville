@@ -222,6 +222,10 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #   --cam day52nightreveal 24-second road-level night reveal of the two Day 52
 #                     Gateway Row homes, then one pullback to the whole city.
 #                     Authored for --time night.
+#   --cam day53gatewayreveal 20-second sunset downtown overview, Gateway Row
+#                     approach and 26-home construction wave, then a southbound
+#                     aerial return that settles on Followville High.
+#                     Authored for --time sunset.
 #   --cam day41reveal 30-second town overhead, arc to the new quarter, roads
 #                     draw themselves on, 300 homes rise, low run home
 #   --cam metroreveal 26-second historic-core to expressway to skyline reveal
@@ -13714,6 +13718,7 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                "day44fullarc", "day46sunsetdrone",
                "day47reveal", "day48crown",
                "day49northreach", "day50highway",
+               "day53gatewayreveal",
                "highschoolreveal") and tod == "sunset":
         # This release is meant to read unmistakably as sunset, not merely as
         # daytime with a warm key. Keep the cool sky needed for material colour
@@ -15019,6 +15024,90 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
         # 2m down in the street, then back to 10m for the climb-out.
         for frame, near in ((1, 10.0), (200, 10.0), (250, 2.0), (545, 2.0),
                             (610, 10.0), (720, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
+    elif cam == "day53gatewayreveal":
+        # Day 53: a complete twenty-second growth reel rather than a generic
+        # batch orbit. One continuous drone move establishes the historic
+        # downtown, commits north to Gateway Row, runs the street while all 26
+        # homes rise ahead of the lens, then returns south and finishes on the
+        # full Followville High campus. The long geography is the point: the
+        # opening and closing anchors make the new northern edge feel like part
+        # of the same persistent city.
+        aim = bpy.data.objects.new("Day53GatewayRevealAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day53GatewayRevealCamera")
+        cam_data.lens = 28
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 12000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day53GatewayRevealCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # 0-3.3s: recognizable downtown overview, with enough motion to
+            # read as a drone establishing shot rather than a held map view.
+            (1,   (170.0, -120.0, 260.0), (-20.0, 90.0, 18.0), 28),
+            (100, (82.0, 150.0, 205.0),  (-18.0, 480.0, 22.0), 26),
+            # 3.3-6.3s: accelerate north and descend onto Gateway Row. The
+            # empty road remains in view before the first rise at frame 200.
+            (160, (-142.0, 690.0, 88.0), (-18.0, 846.0, 15.0), 24),
+            (190, (-155.0, 846.0, 17.5), (-80.0, 846.0, 7.0), 24),
+            # 6.3-14.0s: an eastbound street run. The camera's X is made
+            # exactly linear below because the construction schedule inverts
+            # this same 265m / 230-frame movement. Gateway Row is centred at
+            # y=846 with homes 8.5m to either side; a 24mm lens and a 45m wave
+            # lead keep both frontages comfortably inside the portrait frame.
+            (300, (-28.26, 846.0, 16.5), (46.74, 846.0, 7.0), 24),
+            (420, (110.0, 846.0, 16.0), (185.0, 846.0, 7.0), 24),
+            # 14-18s: climb out and cover the long southbound return. The aim
+            # sweeps across the completed town rather than staring into empty
+            # meadow, so the transfer itself supplies the requested third beat.
+            (450, (145.0, 810.0, 48.0), (48.0, 690.0, 13.0), 26),
+            (500, (126.0, 480.0, 178.0), (-4.0, 180.0, 18.0), 28),
+            (540, (55.0, 40.0, 130.0), (-69.0, -156.0, 6.0), 30),
+            # 18-20s: settle closer on the complete high-school campus rather
+            # than whipping past it. The final 34mm view holds its 64x112m pad.
+            (600, (15.0, -45.0, 105.0), (-69.0, -156.0, 6.0), 34),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+                    try:
+                        kp.handle_left_type = "AUTO_CLAMPED"
+                        kp.handle_right_type = "AUTO_CLAMPED"
+                    except AttributeError:
+                        pass
+        # The street-run X path is the timing authority for the house wave.
+        # Keep it linear from arrival through lift-off; eased X would let the
+        # camera outrun the schedule that is meant to keep every rise visible.
+        for fc in obj_fcurves(cam_obj):
+            if fc.data_path == "location" and fc.array_index == 0:
+                for kp in fc.keyframe_points:
+                    if 190 <= kp.co[0] <= 420:
+                        kp.interpolation = "LINEAR"
+        # Aerial shots use the mandatory 10m near plane for stable distant
+        # roads; the street run needs 2m, then returns to 10m for the flyback.
+        for frame, near in ((1, 10.0), (160, 10.0), (185, 2.0),
+                            (420, 2.0), (465, 10.0), (600, 10.0)):
             cam_data.clip_start = near
             cam_data.keyframe_insert("clip_start", frame=frame)
         for fc in obj_fcurves(cam_data):
@@ -17397,7 +17486,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
                "day48crown", "day49northreach", "day50highway",
-               "day52nightreveal",
+               "day52nightreveal", "day53gatewayreveal",
                "highschoolreveal",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
@@ -17444,6 +17533,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44fullarc", "day46sunsetdrone",
                    "day47reveal", "day48crown",
                    "day49northreach", "day50highway",
+                   "day53gatewayreveal",
                    "highschoolreveal") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
@@ -18108,7 +18198,35 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day52nightreveal":
+    if cfg.get("cam") == "day53gatewayreveal":
+        frame_end = FPS * 20
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        plan_ids = sorted(int(root.get("nb_world_plan_id", 0))
+                          for root in home_roots)
+        expected_ids = [2356, 2357, 2358, 2359, 2361, 2362, 2363, 2364,
+                        2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372,
+                        2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380,
+                        2381, 2382]
+        if len(rise) != 26 or len(home_roots) != 26 or plan_ids != expected_ids:
+            raise RuntimeError(
+                "day53gatewayreveal requires exactly the 26 Day 53 Gateway "
+                "Row homes; got %d rising records, %d homes, plan_ids %r. "
+                "Use the exact 2564 -> 2590 growth."
+                % (len(rise), len(home_roots), plan_ids))
+        for root in home_roots:
+            if abs(abs(root.location.y - 846.0) - 8.5) > .01:
+                raise RuntimeError(
+                    "day53gatewayreveal home plan_id %d moved off Gateway "
+                    "Row's two authored frontages: got (%.3f, %.3f)"
+                    % (int(root["nb_world_plan_id"]),
+                       root.location.x, root.location.y))
+            # Camera X is -155 at frame 190 and +110 at frame 420. Start each
+            # rise when its lot is 45m ahead of the lens. At 24mm that holds a
+            # complete 10m-wide home on either 8.5m frontage with real margin.
+            speed = 265.0 / 230.0
+            start = 190.0 + (root.location.x - 45.0 + 155.0) / speed
+            animate_rise(root, int(round(start)), dur=22)
+    elif cfg.get("cam") == "day52nightreveal":
         frame_end = FPS * 24
         home_roots = [root for root in rise if root.name.startswith("house_d")]
         plan_ids = sorted(int(root.get("nb_world_plan_id", 0))
@@ -18260,6 +18378,9 @@ def main(cfg=None):
         pass
     elif cfg.get("cam") == "day52nightreveal":
         # Exact two-home schedule installed above.
+        pass
+    elif cfg.get("cam") == "day53gatewayreveal":
+        # Exact 26-home Gateway Row wave installed above.
         pass
     elif cfg.get("cam") == "day47reveal":
         frame_end = FPS * 24          # exact brief: twenty-four seconds / 720 frames
