@@ -217,6 +217,9 @@ RES_X, RES_Y     = 1080, 1920   # 9:16 vertical for reels
 #                     Crown Fields addresses, ending on the rebuilt Crown
 #                     Expressway / Ring Freeway interchange.
 #                     Authored for --time sunset.
+#   --cam day54drone 16-second skyline hover, fast Gateway Row approach,
+#                     five-home construction wave, and high city pullback.
+#                     Authored for --time sunset.
 #   --cam highschoolreveal 24-second blue-hour downtown-to-campus reveal,
 #                     monument-sign pass, facade orbit, and stadium climb-out
 #   --cam day52nightreveal 24-second road-level night reveal of the two Day 52
@@ -15031,6 +15034,103 @@ def build_stage(world_col, buildings, frame_end, m, tod="day", hero=None, cam=No
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
         bpy.context.scene.camera = cam_obj
+    elif cam == "day54drone":
+        # Day 54: exactly sixteen seconds and one continuous drone move. The
+        # first five seconds hover on the established skyline, the middle
+        # accelerates north and drops to a low Gateway Row construction chase,
+        # and the close climbs above the finished five homes to look south over
+        # the city they just extended. The camera derives its low pass from the
+        # authored lots so the shot remains spatially locked to this batch.
+        latest_day = max((item.get("day", 0) for item in buildings), default=0)
+        newest_homes = [item for item in buildings
+                        if item.get("type") == "house"
+                        and item.get("day") == latest_day]
+        plan_ids = sorted(int(item.get("plan_id", 0)) for item in newest_homes)
+        if plan_ids != [2383, 2384, 2385, 2386, 2387]:
+            raise RuntimeError(
+                "day54drone requires exactly the five Day 54 Gateway Row "
+                "homes at plan_ids 2383..2387; got %r. Use the exact "
+                "2590 -> 2595 growth." % plan_ids)
+        points = [build_pos(item) for item in newest_homes]
+        west_x = min(x for x, _y in points)
+        east_x = max(x for x, _y in points)
+        mid_x = (west_x + east_x) * .5
+        road_y = sum(y for _x, y in points) / len(points)
+
+        aim = bpy.data.objects.new("Day54DroneAim", None)
+        world_col.objects.link(aim)
+        cam_data = bpy.data.cameras.new("Day54DroneCamera")
+        cam_data.lens = 30
+        cam_data.clip_start = 10.0
+        cam_data.clip_end = 14000.0
+        cam_data.dof.use_dof = False
+        cam_obj = bpy.data.objects.new("Day54DroneCamera", cam_data)
+        world_col.objects.link(cam_obj)
+        track = cam_obj.constraints.new("TRACK_TO")
+        track.target = aim
+        track.track_axis = "TRACK_NEGATIVE_Z"
+        track.up_axis = "UP_Y"
+
+        beats = (
+            # 0-5s: a restrained southeast skyline hover. Three close beats
+            # keep the city alive without spending the opening on travel.
+            (1,   (176.0, -204.0, 238.0), (-14.0, 112.0, 18.0), 30),
+            (78,  (160.0, -181.0, 230.0), (-18.0, 132.0, 18.0), 30),
+            (150, (142.0, -150.0, 220.0), (-20.0, 160.0, 18.0), 29),
+            # 5-7.3s: commit to a fast northern transfer and descend hard. The
+            # intermediate beat stops the long move from feeling like a zoom.
+            (184, (125.0, 390.0, 166.0), (mid_x, 705.0, 14.0), 26),
+            (220, (west_x - 54.0, road_y, 29.0),
+             (mid_x + 24.0, road_y, 7.0), 24),
+            # 7.3-11.7s: low eastbound pass, a little higher than true roof
+            # level so both frontages and all five rising homes remain visible.
+            (286, (mid_x - 18.0, road_y, 25.0),
+             (mid_x + 32.0, road_y, 7.0), 24),
+            (350, (east_x + 26.0, road_y, 24.0),
+             (east_x + 72.0, road_y, 7.0), 24),
+            # 11.7-16s: bank upward, turn south, and finish on a broad layered
+            # city view with the new edge in the foreground -- the visual
+            # "look how far we have come" rather than another empty horizon.
+            (390, (east_x + 48.0, road_y + 18.0, 78.0),
+             (mid_x - 40.0, road_y - 125.0, 13.0), 25),
+            (438, (210.0, 948.0, 215.0), (-20.0, 470.0, 18.0), 23),
+            (480, (238.0, 982.0, 310.0), (-12.0, 390.0, 17.0), 22),
+        )
+        for frame, position, target, lens in beats:
+            cam_obj.location = position
+            aim.location = target
+            cam_data.lens = lens
+            cam_obj.keyframe_insert("location", frame=frame)
+            aim.keyframe_insert("location", frame=frame)
+            cam_data.keyframe_insert("lens", frame=frame)
+        for obj in (cam_obj, aim, cam_data):
+            for fc in obj_fcurves(obj):
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "BEZIER"
+                    kp.easing = "AUTO"
+                    try:
+                        kp.handle_left_type = "AUTO_CLAMPED"
+                        kp.handle_right_type = "AUTO_CLAMPED"
+                    except AttributeError:
+                        pass
+        # The construction chase and its five-home timing share one linear X
+        # movement. Easing it would let the lens outrun the spatial wave.
+        for fc in obj_fcurves(cam_obj):
+            if fc.data_path == "location" and fc.array_index == 0:
+                for kp in fc.keyframe_points:
+                    if 220 <= kp.co[0] <= 350:
+                        kp.interpolation = "LINEAR"
+        # Preserve aerial depth precision, relaxing the near plane only for the
+        # close construction run where nearby roofs must remain intact.
+        for frame, near in ((1, 10.0), (184, 10.0), (214, 2.0),
+                            (350, 2.0), (402, 10.0), (480, 10.0)):
+            cam_data.clip_start = near
+            cam_data.keyframe_insert("clip_start", frame=frame)
+        for fc in obj_fcurves(cam_data):
+            if fc.data_path == "clip_start":
+                for kp in fc.keyframe_points:
+                    kp.interpolation = "LINEAR"
+        bpy.context.scene.camera = cam_obj
     elif cam == "day53gatewayreveal":
         # Day 53: a complete twenty-second growth reel rather than a generic
         # batch orbit. One continuous drone move establishes the historic
@@ -17486,7 +17586,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
     sc.frame_end = frame_end
     if cam in ("day45northcrown", "day46sunsetdrone", "day47reveal",
                "day48crown", "day49northreach", "day50highway",
-               "day52nightreveal", "day53gatewayreveal",
+               "day52nightreveal", "day53gatewayreveal", "day54drone",
                "highschoolreveal",
                "day43fpv", "day43pov",
                "day44approach", "day44drone",
@@ -17533,7 +17633,7 @@ def setup_render(state, frame_end, tag=None, tod="day", cam=None):
                    "day44fullarc", "day46sunsetdrone",
                    "day47reveal", "day48crown",
                    "day49northreach", "day50highway",
-                   "day53gatewayreveal",
+                   "day53gatewayreveal", "day54drone",
                    "highschoolreveal") and tod == "sunset":
             exposure = -.08
         sc.view_settings.exposure = exposure
@@ -18198,7 +18298,33 @@ def main(cfg=None):
     stagger = max(2, min(6, 240 // max(n_anim, 1)))
     posthold = int(2.5 * FPS)
     frame_end = prehold + max(n_anim - 1, 0) * stagger + 22 + posthold
-    if cfg.get("cam") == "day53gatewayreveal":
+    if cfg.get("cam") == "day54drone":
+        frame_end = FPS * 16
+        home_roots = [root for root in rise if root.name.startswith("house_d")]
+        plan_ids = sorted(int(root.get("nb_world_plan_id", 0))
+                          for root in home_roots)
+        if (len(rise) != 5 or len(home_roots) != 5
+                or plan_ids != list(range(2383, 2388))):
+            raise RuntimeError(
+                "day54drone requires exactly five Day 54 Gateway Row homes "
+                "at plan_ids 2383..2387; got %d rising records, %d homes, "
+                "plan_ids %r. Use the exact 2590 -> 2595 growth."
+                % (len(rise), len(home_roots), plan_ids))
+        west_x = min(root.location.x for root in home_roots)
+        east_x = max(root.location.x for root in home_roots)
+        span_x = max(1.0, east_x - west_x)
+        for root in home_roots:
+            if abs(abs(root.location.y - 846.0) - 8.5) > .01:
+                raise RuntimeError(
+                    "day54drone home plan_id %d moved off Gateway Row's two "
+                    "authored frontages: got (%.3f, %.3f)"
+                    % (int(root["nb_world_plan_id"]),
+                       root.location.x, root.location.y))
+            progress = (root.location.x - west_x) / span_x
+            # The wave begins after the camera reaches street height and stays
+            # roughly two blocks ahead, completing before the climb-out.
+            animate_rise(root, 232 + int(round(progress * 58.0)), dur=28)
+    elif cfg.get("cam") == "day53gatewayreveal":
         frame_end = FPS * 20
         home_roots = [root for root in rise if root.name.startswith("house_d")]
         plan_ids = sorted(int(root.get("nb_world_plan_id", 0))
