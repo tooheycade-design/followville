@@ -1,7 +1,7 @@
 {
- "day": 53,
- "pop": 2590,
- "seed_counter": 2580,
+ "day": 54,
+ "pop": 2595,
+ "seed_counter": 2585,
  "buildings": [
   {
    "type": "mushroomhouse",
@@ -32708,6 +32708,71 @@
    "street": "Gateway Row",
    "seed": 2579,
    "day": 53
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 105.303,
+   "py": 837.5,
+   "rot": 3.14159,
+   "plan_id": 2383,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2580,
+   "day": 54
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 106.078,
+   "py": 854.5,
+   "rot": 0.0,
+   "plan_id": 2384,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2581,
+   "day": 54
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 113.052,
+   "py": 837.5,
+   "rot": 3.14159,
+   "plan_id": 2385,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2582,
+   "day": 54
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 113.827,
+   "py": 854.5,
+   "rot": 0.0,
+   "plan_id": 2386,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2583,
+   "day": 54
+  },
+  {
+   "type": "house",
+   "gx": 0,
+   "gy": 0,
+   "px": 120.801,
+   "py": 837.5,
+   "rot": 3.14159,
+   "plan_id": 2387,
+   "district": "Crown Fields",
+   "street": "Gateway Row",
+   "seed": 2584,
+   "day": 54
   }
  ],
  "milestones": [
