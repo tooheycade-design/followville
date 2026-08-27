@@ -5,6 +5,9 @@
   "description": "Browser regression checks for the Followville public town.",
   "packageManager": "pnpm@11.9.0",
   "scripts": {
+    "company-os:typecheck": "pnpm --dir company-os typecheck",
+    "company-os:test": "pnpm --dir company-os test",
+    "company-os:simulate": "pnpm --dir company-os simulate",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:inventory": "node tests/inventory_panel_test.mjs && node tests/inventory_migration_test.mjs"

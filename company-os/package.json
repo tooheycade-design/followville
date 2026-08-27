@@ -1,0 +1,20 @@
+{
+  "name": "@followville/company-os-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Provider-neutral policy and workflow foundation for Followville Company OS.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
+    "simulate": "tsx src/cli/simulate.ts"
+  },
+  "dependencies": {
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

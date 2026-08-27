@@ -1,0 +1,6 @@
+packages:
+  - "."
+  - "company-os"
+
+onlyBuiltDependencies:
+  - esbuild
